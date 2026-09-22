@@ -340,8 +340,9 @@
       <div class="card" id="cardProg" style="display: none">
         <h2>Programação de produção desta semana <span class="tagP">DECLARADA</span></h2>
         <div class="note">
-          Produção declarada por dia × PVs atendidos (atrasados priorizados). Gerada pela skill de
-          reprogramação semanal.
+          Produção declarada por dia × PVs atendidos (atrasados priorizados).
+          <b>Clique no produto</b> para ver os PVs que ele cobre. Gerada pela skill de reprogramação
+          semanal.
         </div>
         <div class="wbtns" id="pbtns"></div>
         <div class="tblwrap" style="max-height: 420px">
@@ -5423,50 +5424,128 @@
           return a.dia === progDia
         })
         document.getElementById('trhP').innerHTML =
-          '<th>Código</th><th>Produto</th><th>Qtd</th><th>PV</th><th>Cliente</th><th>Valor</th><th>Situação</th>'
+          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Situação</th>'
+        // agrega produtos iguais no mesmo dia (mesmo modelo da tabela semanal)
+        const map = {}
+        rs.forEach(function (a) {
+          let p = map[a.cod]
+          if (!p) {
+            p = map[a.cod] = { cod: a.cod, desc: a.desc, qtd: 0, vtot: 0, pvs: {}, atrasado: false }
+          }
+          p.qtd += a.qtd
+          p.vtot += a.vtot
+          const atr = a.sit.indexOf('ATRASADO') >= 0
+          if (atr) p.atrasado = true
+          const kpv = String(a.pv) + '|' + a.cli
+          if (!p.pvs[kpv]) p.pvs[kpv] = { pv: a.pv, cli: a.cli, qtd: 0, vtot: 0, atr: false }
+          p.pvs[kpv].qtd += a.qtd
+          p.pvs[kpv].vtot += a.vtot
+          if (atr) p.pvs[kpv].atr = true
+        })
+        const prods = Object.values(map).sort(function (x, y) {
+          return y.vtot - x.vtot
+        })
         let tq = 0,
           tv = 0
-        document.getElementById('tbbP').innerHTML = rs
-          .map(function (a) {
-            tq += a.qtd
-            tv += a.vtot
-            const atr = a.sit.indexOf('ATRASADO') >= 0
+        document.getElementById('tbbP').innerHTML = prods
+          .map(function (p, ix) {
+            tq += p.qtd
+            tv += p.vtot
+            const pvList = Object.values(p.pvs).sort(function (x, y) {
+              return parseFloat(x.pv) - parseFloat(y.pv)
+            })
+            const pvRows = pvList
+              .map(function (v) {
+                return (
+                  '<tr><td class="pvtag">' +
+                  v.pv +
+                  '</td><td>' +
+                  v.cli +
+                  '</td>' +
+                  '<td class="num">' +
+                  NF.format(Math.round(v.qtd)) +
+                  '</td><td class="num">' +
+                  FMT.format(v.vtot) +
+                  '</td>' +
+                  '<td>' +
+                  (v.atr
+                    ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                    : '<span class="tagP">em dia</span>') +
+                  '</td></tr>'
+                )
+              })
+              .join('')
+            const det =
+              '<tr class="detrow" data-det="' +
+              ix +
+              '"><td colspan="5"><table class="mini">' +
+              '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Situação</th></tr>' +
+              pvRows +
+              '</table></td></tr>'
             return (
-              '<tr><td class="cod">' +
-              a.cod +
-              '</td><td>' +
-              a.desc +
+              '<tr class="prow" data-ix="' +
+              ix +
+              '"><td><div class="cod">' +
+              p.cod +
+              '</div><div class="dsc">' +
+              p.desc +
+              '</div></td>' +
+              '<td class="num">' +
+              NF.format(Math.round(p.qtd)) +
               '</td>' +
               '<td class="num">' +
-              NF.format(Math.round(a.qtd)) +
-              '</td>' +
-              '<td class="pvtag">' +
-              a.pv +
-              '</td><td>' +
-              a.cli +
+              FMT.format(p.vtot) +
               '</td>' +
               '<td class="num">' +
-              FMT.format(a.vtot) +
+              pvList.length +
+              ' PV' +
+              (pvList.length > 1 ? 's' : '') +
               '</td>' +
               '<td>' +
-              (atr
+              (p.atrasado
                 ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
                 : '<span class="tagP">em dia</span>') +
-              '</td></tr>'
+              '</td></tr>' +
+              det
             )
           })
           .join('')
         document.getElementById('trfP').innerHTML =
-          '<td colspan="2">TOTAL ' +
+          '<td>TOTAL ' +
           progDia +
           ' — ' +
-          rs.length +
-          ' alocações</td>' +
+          prods.length +
+          ' produtos</td>' +
           '<td class="num">' +
           NF.format(Math.round(tq)) +
-          '</td><td colspan="2"></td><td class="num">' +
+          '</td><td class="num">' +
           FMT.format(tv) +
-          '</td><td></td>'
+          '</td><td colspan="2"></td>'
+        document.getElementById('pbtns').setAttribute('data-prods', prods.length)
+        // toggle: clique no produto abre/fecha a caixa com os PVs
+        Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.prow'), function (tr) {
+          tr.addEventListener('click', function () {
+            const ix = tr.getAttribute('data-ix')
+            let open = tr.classList.contains('sel')
+            Array.prototype.forEach.call(
+              document.querySelectorAll('#tbbP tr.detrow'),
+              function (d) {
+                if (d.getAttribute('data-det') === ix) {
+                  d.style.display = open ? 'none' : ''
+                } else {
+                  d.style.display = 'none'
+                }
+              },
+            )
+            Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.prow'), function (x) {
+              x.classList.remove('sel')
+            })
+            if (!open) tr.classList.add('sel')
+          })
+        })
+        Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.detrow'), function (d) {
+          d.style.display = 'none'
+        })
       }
 
       // KPIs
