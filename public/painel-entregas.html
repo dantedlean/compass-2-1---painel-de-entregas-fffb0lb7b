@@ -7018,8 +7018,8 @@
             return a + x.qtd
           }, 0)
       }
-      // Entradas originadas da programação já estão refletidas em r.prod (produção declarada).
-      // Entradas manuais/ajustes representam produto pronto adicional e reduzem a demanda restante.
+      // O movimento para o SMKT é consumo da programação. Alocar depois em um PV
+      // apenas muda a destinação do pronto — não desconta a mesma unidade duas vezes.
       function smktManualTotal(cod) {
         return smktEntradas()
           .filter(function (x) {
@@ -7029,36 +7029,55 @@
             return a + x.qtd
           }, 0)
       }
-      function smktManualUnallocated(cod) {
-        const al = smktAlocs()
+      function smktProgramTotal(cod) {
+        return smktEntradas()
           .filter(function (x) {
-            return x.cod === cod
+            return x.cod === cod && String(x.origem || '').indexOf('prog:') === 0
           })
           .reduce(function (a, x) {
             return a + x.qtd
           }, 0)
-        return Math.max(0, smktManualTotal(cod) - al)
+      }
+      function declaradoTotal(cod) {
+        return DATA.rows
+          .filter(function (x) {
+            return x.codigo === cod && x.prod
+          })
+          .reduce(function (a, x) {
+            return a + Math.min(x.prod.qtd, x.qtd)
+          }, 0)
+      }
+      function smktExtraTotal(cod) {
+        // produção declarada já foi debitada em r.prod; só o excedente é adicional.
+        return smktManualTotal(cod) + Math.max(0, smktProgramTotal(cod) - declaradoTotal(cod))
+      }
+      function smktExtraForRow(r) {
+        let restante = smktExtraTotal(r.codigo)
+        if (restante <= 0) return 0
+        for (let i = 0; i < DATA.rows.length; i++) {
+          const x = DATA.rows[i]
+          if (x.codigo !== r.codigo) continue
+          const base = x.prod ? Math.max(0, x.qtd - x.prod.qtd) : x.qtd
+          const uso = Math.min(restante, base)
+          if (x === r) return uso
+          restante -= uso
+          if (restante <= 0) return 0
+        }
+        return 0
       }
       function qtdPend(r) {
         const base = r.prod ? Math.max(0, r.qtd - r.prod.qtd) : r.qtd
-        return Math.max(0, base - smktAlocadoEm(r.pv, r.codigo))
+        return Math.max(0, base - smktExtraForRow(r))
       }
       function qtdProd(r) {
-        return r.prod ? Math.min(r.prod.qtd, r.qtd) : 0
+        const declarado = r.prod ? Math.min(r.prod.qtd, r.qtd) : 0
+        return Math.min(r.qtd, declarado + smktExtraForRow(r))
       }
       function vPend(r) {
         return r.vtot * (r.qtd ? qtdPend(r) / r.qtd : 0)
       }
       function vProd(r) {
         return r.vtot * (r.qtd ? qtdProd(r) / r.qtd : 0)
-      }
-      function subtractSmktFromProduct(p) {
-        let extra = smktManualUnallocated(p.codigo)
-        if (extra <= 0 || p.qtdP <= 0) return
-        const unit = p.qtd ? p.vtot / p.qtd : 0
-        const used = Math.min(extra, p.qtdP)
-        p.qtdP = Math.max(0, p.qtdP - used)
-        p.vP = Math.max(0, p.vP - used * unit)
       }
       function renderCenario() {
         const on = cenario === 'plano'
@@ -8520,7 +8539,6 @@
             p.dmaxD = r.data
           }
         })
-        Object.values(map).forEach(subtractSmktFromProduct)
         const prods = Object.values(map)
           .filter(function (p) {
             return p.qtdP > 0.005
@@ -8754,46 +8772,6 @@
           p.cel[si].qtd += qtdPend(r)
           p.cel[si].vtot += vPend(r)
           p.total += vPend(r)
-        })
-        Object.values(map).forEach(function (p) {
-          let extra = smktManualUnallocated(p.codigo)
-          const unit =
-            p.total &&
-            p.cel.reduce(function (a, c) {
-              return a + c.qtd
-            }, 0)
-              ? p.total /
-                p.cel.reduce(function (a, c) {
-                  return a + c.qtd
-                }, 0)
-              : 0
-          for (let i = 0; i < p.cel.length && extra > 0; i++) {
-            const used = Math.min(extra, p.cel[i].qtd)
-            p.cel[i].qtd -= used
-            p.cel[i].vtot = Math.max(0, p.cel[i].vtot - used * unit)
-            p.total = Math.max(0, p.total - used * unit)
-            extra -= used
-          }
-        })
-        Object.values(map).forEach(function (p) {
-          let extra = smktManualUnallocated(p.codigo)
-          const unit =
-            p.total &&
-            p.cel.reduce(function (a, c) {
-              return a + c.qtd
-            }, 0)
-              ? p.total /
-                p.cel.reduce(function (a, c) {
-                  return a + c.qtd
-                }, 0)
-              : 0
-          for (let i = 0; i < p.cel.length && extra > 0; i++) {
-            const used = Math.min(extra, p.cel[i].qtd)
-            p.cel[i].qtd -= used
-            p.cel[i].vtot = Math.max(0, p.cel[i].vtot - used * unit)
-            p.total = Math.max(0, p.total - used * unit)
-            extra -= used
-          }
         })
         return Object.values(map)
           .filter(function (p) {
