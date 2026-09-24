@@ -51,6 +51,35 @@
         opacity: 0.75;
         margin-top: 4px;
       }
+      .tabnav {
+        display: flex;
+        gap: 6px;
+        margin: 0 0 -22px;
+        padding: 0 28px;
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      }
+      .tabnav button {
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-bottom: none;
+        background: rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        border-radius: 10px 10px 0 0;
+        padding: 10px 22px;
+        font-size: 13.5px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .tabnav button.on {
+        background: var(--bg);
+        color: #1e3a8a;
+        border-color: var(--line);
+      }
+      .view {
+        display: none;
+      }
+      .view.on {
+        display: block;
+      }
       .badge {
         background: rgba(255, 255, 255, 0.14);
         border: 1px solid rgba(255, 255, 255, 0.25);
@@ -322,6 +351,56 @@
         background: var(--acc);
         color: #fff;
       }
+      .tagR {
+        background: #fee2e2;
+        color: #991b1b;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      tr.rig td:first-child {
+        border-left: 3px solid var(--red);
+      }
+      td.exec {
+        white-space: nowrap;
+      }
+      td.exec input[type='number'] {
+        width: 56px;
+        padding: 2px 4px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      td.exec input[type='checkbox'] {
+        transform: scale(1.15);
+        margin-right: 4px;
+        cursor: pointer;
+      }
+      .exRl {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: 11px;
+        cursor: pointer;
+        margin-left: 4px;
+      }
+      .exRl:hover {
+        background: #fee2e2;
+        border-color: var(--red);
+      }
+      tr.exOK td {
+        background: #f0fdf4;
+      }
+      .tagS {
+        background: #fef3c7;
+        color: #92400e;
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-size: 10px;
+        font-weight: 800;
+      }
       footer {
         color: var(--mut);
         font-size: 11.5px;
@@ -351,144 +430,368 @@
         <span class="badge" id="badgePvs"></span>
       </div>
     </header>
-    <main>
-      <div
-        class="card"
-        style="padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap"
-      >
-        <b style="font-size: 13.5px">Cenário:</b>
-        <div class="toggle">
-          <button id="cOrig" class="on">Datas originais</button
-          ><button id="cPlano">Com plano de recuperação</button>
+    <nav class="tabnav">
+      <button id="tabEnt" class="on" onclick="showView('ent')">📅 Entregas por semana</button>
+      <button id="tabFat" onclick="showView('fat')">💰 Carteira a Faturar</button>
+    </nav>
+    <div id="viewEnt" class="view on">
+      <main>
+        <div
+          class="card"
+          style="padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap"
+        >
+          <b style="font-size: 13.5px">Cenário:</b>
+          <div class="toggle">
+            <button id="cOrig" class="on">Datas originais</button
+            ><button id="cPlano">Com plano de recuperação</button>
+          </div>
+          <span class="note" style="margin: 0" id="planoInfo"></span>
         </div>
-        <span class="note" style="margin: 0" id="planoInfo"></span>
-      </div>
-      <div class="card" id="cardProg" style="display: none">
-        <h2>Programação de produção desta semana <span class="tagP">DECLARADA</span></h2>
-        <div class="note">
-          Produção declarada por dia × PVs atendidos (atrasados priorizados).
-          <b>Clique no produto</b> para ver os PVs que ele cobre. Gerada pela skill de reprogramação
-          semanal.
+        <div
+          class="card"
+          id="cardHoje"
+          style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 18px"
+        >
+          <span
+            class="badge"
+            style="
+              background: #1e3a8a;
+              color: #fff;
+              border: none;
+              font-size: 13px;
+              font-weight: 800;
+            "
+            id="hojeSem"
+          ></span>
+          <span style="font-size: 14px; font-weight: 700" id="hojeDia"></span>
+          <span class="note" style="margin: 0" id="hojeRel"></span>
         </div>
-        <div class="wbtns" id="pbtns"></div>
-        <div style="margin: -6px 0 8px">
-          <button id="btnDlProg" class="dlbtn" style="display: none">
-            ⬇ Baixar Excel (devolutiva)
-          </button>
-        </div>
-        <div class="tblwrap" style="max-height: 420px">
-          <table id="tbProg">
-            <thead>
-              <tr id="trhP"></tr>
-            </thead>
-            <tbody id="tbbP"></tbody>
-            <tfoot>
-              <tr id="trfP"></tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-      <div class="kpis" id="kpis"></div>
-
-      <div class="card">
-        <h2>O que entregar por semana — produtos agregados</h2>
-        <div class="note">
-          Escolha a semana: produtos iguais somados numa linha. <b>Clique no produto</b> para abrir
-          a caixa com os PVs que ele cobre (cliente, data, qtd, valor). Atrasado = fila prioritária.
-        </div>
-        <div class="wbtns" id="wbtns"></div>
-        <div class="toolbar" style="justify-content: space-between">
-          <span class="note" id="semInfo" style="margin: 0"></span>
-          <div style="display: flex; gap: 12px; align-items: center">
-            <label class="chk"
-              ><input type="checkbox" id="chkFreteS" onchange="renderSemana()" /> incluir fretes
-              (50x/00043)</label
-            >
-            <button id="btnDlSem" class="dlbtn" style="display: none">
+        <div class="card" id="cardProg">
+          <h2>Programação de produção desta semana <span class="tagP">DECLARADA</span></h2>
+          <div class="note">
+            Produção declarada por dia × PVs atendidos (atrasados priorizados). Marque ✓
+            <b>Executado</b>, ajuste a <b>qtd realizada</b>, <b>Realocar</b> o saldo para o próximo
+            dia útil ou <b>troque o PV</b> de destino (supermercado: quem espera o produto acabado).
+            <b>Clique no produto</b> para ver os PVs.
+          </div>
+          <div class="wbtns" id="pbtns"></div>
+          <div style="margin: -6px 0 8px">
+            <button id="btnDlProg" class="dlbtn" style="display: none">
               ⬇ Baixar Excel (devolutiva)
             </button>
           </div>
-        </div>
-        <div class="tblwrap" style="max-height: 480px">
-          <table id="tbSem">
-            <thead>
-              <tr id="trhS"></tr>
-            </thead>
-            <tbody id="tbbS"></tbody>
-            <tfoot>
-              <tr id="trfS"></tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Gantt de entregas — quanto cada produto precisa entregar por semana</h2>
-        <div class="note">
-          Cada barra = um produto · cada cor = uma semana · vermelho = atrasado. Clique na legenda
-          para esconder semanas.
-        </div>
-        <div class="toolbar">
-          <div class="toggle">
-            <button id="mVal" class="on">R$ valor</button><button id="mUn">Unidades</button>
+          <div class="tblwrap" style="max-height: 420px">
+            <table id="tbProg">
+              <thead>
+                <tr id="trhP"></tr>
+              </thead>
+              <tbody id="tbbP"></tbody>
+              <tfoot>
+                <tr id="trfP"></tr>
+              </tfoot>
+            </table>
           </div>
-          <label class="chk"
-            ><input
-              type="checkbox"
-              id="chkFrete"
-              onchange="
-                renderGantt()
-                renderTimeline()
+        </div>
+        <div class="card" id="cardSmkt">
+          <h2>🛒 Supermercado — produtos acabados <span class="tagS">ESTOQUE DE PRONTOS</span></h2>
+          <div class="note">
+            Modelo WARD: o que foi fabricado e <b>não alocado em nenhum PV</b> fica aqui como
+            produto pronto. Depois você
+            <b>seleciona produto + quantidade e aloca em PVs</b> (destino conforme transporte).
+            Alocar aqui <b>consome o saldo</b> do produto nos outros cards.
+          </div>
+          <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
+            <select
+              id="smProd"
+              style="
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12.5px;
+                min-width: 260px;
+              "
+            ></select>
+            <input
+              type="number"
+              id="smQtd"
+              min="1"
+              placeholder="Qtd"
+              style="
+                width: 80px;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12.5px;
               "
             />
-            incluir fretes</label
-          >
-          <span class="note" id="gInfo" style="margin: 0"></span>
+            <button
+              id="smAdd"
+              class="dlbtn"
+              style="background: #16a34a; border-color: #16a34a; color: #fff"
+            >
+              + Entrada no SMKT
+            </button>
+            <span class="note" id="smInfo" style="margin: 0"></span>
+          </div>
+          <div class="tblwrap" style="max-height: 360px">
+            <table id="tbSmkt">
+              <thead>
+                <tr id="trhM"></tr>
+              </thead>
+              <tbody id="tbbM"></tbody>
+              <tfoot>
+                <tr id="trfM"></tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-        <div id="gantt" style="height: 900px"></div>
-      </div>
+        <div class="card" id="cardNF" style="display: none">
+          <details id="detNF">
+            <summary style="cursor: pointer; font-size: 15px; font-weight: 800; color: #1e3a8a">
+              📦 NFs emitidas — itens baixados da programação
+              <span class="tagP">MÉTODO COMPASS</span>
+            </summary>
+            <div class="note" style="margin-top: 8px">
+              NF emitida no MaxiProd → <b>saldo do item cai</b> → o PV
+              <b>sai da programação sozinho</b> na próxima rodada (a skill extrai o saldo
+              <i>quantidadeAFaturar</i>). Abaixo o que saiu na janela de 10 dias.
+            </div>
+            <div class="tblwrap" style="max-height: 360px">
+              <table id="tbNF">
+                <thead>
+                  <tr id="trhN"></tr>
+                </thead>
+                <tbody id="tbbN"></tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+        <div class="card" id="cardSug" style="display: none">
+          <details id="detSug">
+            <summary style="cursor: pointer; font-size: 15px; font-weight: 800; color: #1e3a8a">
+              Sugestão semana atual <span class="tagS">SUGESTÃO — não é ordem</span>
+            </summary>
+            <div class="note" style="margin-top: 8px">
+              Itens da carteira cuja <b>coleta máxima cai nesta semana</b> para chegar na data do
+              cliente. A coluna <b>Alocação</b> mostra o dia sugerido se você aceitar a sugestão.
+              Marque ✓, ajuste a qtd, realoce o saldo ou troque o PV.
+            </div>
+            <div class="tblwrap" style="max-height: 420px">
+              <table id="tbSug">
+                <thead>
+                  <tr id="trhG"></tr>
+                </thead>
+                <tbody id="tbbG"></tbody>
+                <tfoot>
+                  <tr id="trfG"></tr>
+                </tfoot>
+              </table>
+            </div>
+          </details>
+        </div>
+        <div class="kpis" id="kpis"></div>
 
-      <div class="card">
-        <h2>Linha do tempo semanal</h2>
-        <div class="note">Valor/unidades a entregar em cada semana + curva acumulada.</div>
-        <div id="timeline"></div>
-      </div>
+        <div class="card">
+          <h2>O que entregar por semana — produtos agregados</h2>
+          <div class="note">
+            Escolha a semana: produtos iguais somados numa linha. <b>Clique no produto</b> para
+            abrir a caixa com os PVs que ele cobre (cliente, data, qtd, valor). Atrasado = fila
+            prioritária.
+          </div>
+          <div class="wbtns" id="wbtns"></div>
+          <div class="wbtns" id="dbtns" style="margin-top: -6px"></div>
+          <div class="toolbar" style="justify-content: space-between">
+            <span class="note" id="semInfo" style="margin: 0"></span>
+            <div style="display: flex; gap: 12px; align-items: center">
+              <div class="toggle">
+                <button id="vSem" class="on" onclick="setVisaoSemana('sem')">Semana inteira</button
+                ><button id="vDia" onclick="setVisaoSemana('dia')">Dias úteis</button>
+              </div>
+              <label class="chk"
+                ><input type="checkbox" id="chkFreteS" onchange="renderSemana()" /> incluir fretes
+                (50x/00043)</label
+              >
+              <button id="btnDlSem" class="dlbtn" style="display: none">
+                ⬇ Baixar Excel (devolutiva)
+              </button>
+            </div>
+          </div>
+          <div class="tblwrap" style="max-height: 480px">
+            <table id="tbSem">
+              <thead>
+                <tr id="trhS"></tr>
+              </thead>
+              <tbody id="tbbS"></tbody>
+              <tfoot>
+                <tr id="trfS"></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
 
-      <div class="card">
-        <h2>Resumo por produto</h2>
-        <div class="note">
-          Clique nos títulos para ordenar · busca filtra por código ou descrição.
+        <div class="card">
+          <h2>Gantt de entregas — quanto cada produto precisa entregar por semana</h2>
+          <div class="note">
+            Cada barra = um produto · cada cor = uma semana · vermelho = atrasado. Clique na legenda
+            para esconder semanas.
+          </div>
+          <div class="toolbar">
+            <div class="toggle">
+              <button id="mVal" class="on">R$ valor</button><button id="mUn">Unidades</button>
+            </div>
+            <label class="chk"
+              ><input
+                type="checkbox"
+                id="chkFrete"
+                onchange="
+                  renderGantt()
+                  renderTimeline()
+                "
+              />
+              incluir fretes</label
+            >
+            <span class="note" id="gInfo" style="margin: 0"></span>
+          </div>
+          <div id="gantt" style="height: 900px"></div>
         </div>
-        <div class="toolbar">
-          <input type="search" id="busca" placeholder="Buscar código ou produto…" />
-          <label class="chk"
-            ><input type="checkbox" id="chkFrete2" onchange="renderTabela()" /> incluir
-            fretes</label
-          >
-          <button id="btnDlTotal" class="dlbtn" style="display: none">
-            ⬇ Baixar Excel (devolutiva)
-          </button>
+
+        <div class="card">
+          <h2>Linha do tempo semanal</h2>
+          <div class="note">Valor/unidades a entregar em cada semana + curva acumulada.</div>
+          <div id="timeline"></div>
         </div>
-        <div class="tblwrap">
-          <table id="tb">
-            <thead>
-              <tr id="trh"></tr>
-            </thead>
-            <tbody id="tbb"></tbody>
-            <tfoot>
-              <tr id="trf"></tr>
-            </tfoot>
-          </table>
+
+        <div class="card">
+          <h2>Resumo por produto</h2>
+          <div class="note">
+            Clique nos títulos para ordenar · busca filtra por código ou descrição.
+          </div>
+          <div class="toolbar">
+            <input type="search" id="busca" placeholder="Buscar código ou produto…" />
+            <label class="chk"
+              ><input type="checkbox" id="chkFrete2" onchange="renderTabela()" /> incluir
+              fretes</label
+            >
+            <button id="btnDlTotal" class="dlbtn" style="display: none">
+              ⬇ Baixar Excel (devolutiva)
+            </button>
+          </div>
+          <div class="tblwrap">
+            <table id="tb">
+              <thead>
+                <tr id="trh"></tr>
+              </thead>
+              <tbody id="tbb"></tbody>
+              <tfoot>
+                <tr id="trf"></tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-      </div>
-    </main>
-    <footer>
-      FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260922.xlsx · dados:
-      MaxiProd (data de entrega por item)
-    </footer>
+      </main>
+      <footer>
+        FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260923.xlsx ·
+        dados: MaxiProd (data de entrega por item)
+      </footer>
+    </div>
+
+    <div id="viewFat" class="view">
+      <main>
+        <div class="kpis" id="fKpis"></div>
+
+        <div class="card">
+          <h2>Por empresa</h2>
+          <div
+            class="grid2"
+            id="fEmp"
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+              gap: 12px;
+            "
+          ></div>
+        </div>
+
+        <div class="card">
+          <h2>Linha do tempo — quanto vence faturar por mês</h2>
+          <div class="tblwrap" style="max-height: 360px">
+            <table id="tbMes">
+              <thead>
+                <tr>
+                  <th>Mês da entrega</th>
+                  <th>Qtd</th>
+                  <th>Valor a faturar</th>
+                  <th>PVs</th>
+                  <th>Itens</th>
+                </tr>
+              </thead>
+              <tbody id="fMes"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Por produto — clique para ver os PVs</h2>
+          <input type="search" id="fQ" placeholder="Buscar código, produto, cliente ou PV…" />
+          <div class="tblwrap" style="max-height: 480px">
+            <table id="tbProdF">
+              <thead>
+                <tr>
+                  <th>Código / Produto</th>
+                  <th>Qtd</th>
+                  <th>Valor a faturar</th>
+                  <th>PVs</th>
+                  <th>Atrasado</th>
+                </tr>
+              </thead>
+              <tbody id="fProd"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Carteira completa — item a item</h2>
+          <div class="note">
+            Clique no cabeçalho para ordenar. <span class="tagP">PRODUZIDO dd/mm</span> = produção
+            já declarada para o PV (não altera o saldo do ERP).
+          </div>
+          <div class="toolbar">
+            <input
+              type="search"
+              id="fQ2"
+              placeholder="Buscar código, produto, cliente, PV ou empresa…"
+            />
+            <button id="btnDlFat" class="dlbtn">⬇ Baixar Excel</button>
+          </div>
+          <div class="tblwrap">
+            <table id="tbAll">
+              <thead>
+                <tr id="fAllH">
+                  <th>Entrega</th>
+                  <th>Código / Produto</th>
+                  <th>PV</th>
+                  <th>Cliente</th>
+                  <th>Empresa</th>
+                  <th>Qtd</th>
+                  <th>Valor unit.</th>
+                  <th>Valor total</th>
+                </tr>
+              </thead>
+              <tbody id="fAll"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+      <footer>
+        Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
+        nível do item · fretes (50x/00043) marcados · fonte
+        artifacts/entregas_por_semana_itens_20260923.xlsx
+      </footer>
+    </div>
+
     <script>
       const DATA = {
-        gerado: 'artifacts/entregas_por_semana_itens_20260922.xlsx',
+        gerado: 'artifacts/entregas_por_semana_itens_20260923.xlsx',
         semanas: [
           'Atrasado',
           'S39 · 21.09-25.09',
@@ -4408,6 +4711,102 @@
             prod: null,
           },
           {
+            data: '20/10',
+            iso: '2026-10-20',
+            semana: '2026-W43',
+            codigo: 'CR0001',
+            desc: 'CARRINHO DE TRANSPORTE MANUAL',
+            pv: '87',
+            cliente: 'VIACHEMI DISTRIBUIDORA LTDA',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 4.0,
+            vtot: 15840.0,
+            frete: false,
+            si: 5,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '20/10',
+            iso: '2026-10-20',
+            semana: '2026-W43',
+            codigo: 'CR0001',
+            desc: 'CARRINHO DE TRANSPORTE MANUAL',
+            pv: '87',
+            cliente: 'VIACHEMI DISTRIBUIDORA LTDA',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 1.0,
+            vtot: 4100.0,
+            frete: false,
+            si: 5,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '20/10',
+            iso: '2026-10-20',
+            semana: '2026-W43',
+            codigo: 'CR0001',
+            desc: 'CARRINHO DE TRANSPORTE MANUAL',
+            pv: '87',
+            cliente: 'VIACHEMI DISTRIBUIDORA LTDA',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 1.0,
+            vtot: 4350.0,
+            frete: false,
+            si: 5,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '20/10',
+            iso: '2026-10-20',
+            semana: '2026-W43',
+            codigo: 'CR0001',
+            desc: 'CARRINHO DE TRANSPORTE MANUAL',
+            pv: '87',
+            cliente: 'VIACHEMI DISTRIBUIDORA LTDA',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 2.0,
+            vtot: 5200.0,
+            frete: false,
+            si: 5,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '20/10',
+            iso: '2026-10-20',
+            semana: '2026-W43',
+            codigo: 'CR0001',
+            desc: 'CARRINHO DE TRANSPORTE MANUAL',
+            pv: '87',
+            cliente: 'VIACHEMI DISTRIBUIDORA LTDA',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 2.0,
+            vtot: 7024.0,
+            frete: false,
+            si: 5,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '20/10',
+            iso: '2026-10-20',
+            semana: '2026-W43',
+            codigo: 'MS0001',
+            desc: 'MESA PADRÃO',
+            pv: '87',
+            cliente: 'VIACHEMI DISTRIBUIDORA LTDA',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 1.0,
+            vtot: 5640.0,
+            frete: false,
+            si: 5,
+            siPlano: null,
+            prod: null,
+          },
+          {
             data: '22/10',
             iso: '2026-10-22',
             semana: '2026-W43',
@@ -5337,7 +5736,7 @@
           },
         ],
         progSemana: {
-          arquivo: 'artifacts/programacao_semana_corrente_20260922.xlsx',
+          arquivo: 'artifacts/programacao_semana_corrente_20260923.xlsx',
           dias: [
             {
               dia: 'Terça',
@@ -5614,6 +6013,923 @@
             },
           ],
         },
+        rigidas: [
+          {
+            pv: '554',
+            prod: 'MATILDE',
+            qtd: 5.0,
+            iso: '2026-09-14',
+            data: '14/09',
+            cli: '',
+            proj: 'JOÃO PESSOA',
+            local: 'START UP ',
+          },
+          {
+            pv: '554',
+            prod: 'BERENICE ',
+            qtd: 36.0,
+            iso: '2026-09-14',
+            data: '14/09',
+            cli: '',
+            proj: 'JOÃO PESSOA',
+            local: 'START UP ',
+          },
+          {
+            pv: '559',
+            prod: 'CARRINHO NOTEBOOK',
+            qtd: 15.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'NOVA SANTA RITA ',
+            local: 'START UP ',
+          },
+          {
+            pv: '2155',
+            prod: 'CARRINHO NOTEBOOK',
+            qtd: 12.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'RECIFE',
+            local: 'START UP ',
+          },
+          {
+            pv: '559',
+            prod: 'BERENICE ',
+            qtd: 38.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'NOVA SANTA RITA ',
+            local: 'START UP ',
+          },
+          {
+            pv: '559',
+            prod: 'MATILDA',
+            qtd: 2.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'NOVA SANTA RITA ',
+            local: 'START UP ',
+          },
+          {
+            pv: '2155',
+            prod: 'MATILDA',
+            qtd: 1.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'RECIFE',
+            local: 'START UP ',
+          },
+          {
+            pv: '2155',
+            prod: 'BERENICE ',
+            qtd: 38.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'RECIFE',
+            local: 'START UP ',
+          },
+          {
+            pv: '2154',
+            prod: 'CARRINHO DE TRANSPORTE MANUAL - NOTEBOOK',
+            qtd: 5.0,
+            iso: '2026-10-15',
+            data: '15/10',
+            cli: '',
+            proj: 'MARINGÁ/PR',
+            local: 'START UP',
+          },
+          {
+            pv: '2154',
+            prod: 'KIT INDUÇÃO ',
+            qtd: 4.0,
+            iso: '2026-10-15',
+            data: '15/10',
+            cli: '',
+            proj: 'MARINGÁ/PR',
+            local: 'START UP',
+          },
+          {
+            pv: '2154',
+            prod: 'BERENICE',
+            qtd: 1.0,
+            iso: '2026-10-15',
+            data: '15/10',
+            cli: '',
+            proj: 'MARINGÁ/PR',
+            local: 'START UP',
+          },
+          {
+            pv: '2154',
+            prod: 'MATILDE',
+            qtd: 8.0,
+            iso: '2026-10-15',
+            data: '15/10',
+            cli: '',
+            proj: 'MARINGÁ/PR',
+            local: 'START UP',
+          },
+          {
+            pv: '566',
+            prod: 'CARRINHO NOTEBOOK',
+            qtd: 6.0,
+            iso: '2026-10-18',
+            data: '18/10',
+            cli: '',
+            proj: 'MACAIBA/RN',
+            local: 'START UP ',
+          },
+          {
+            pv: '566',
+            prod: 'BERENICE',
+            qtd: 88.0,
+            iso: '2026-10-18',
+            data: '18/10',
+            cli: '',
+            proj: 'MACAIBA/RN',
+            local: 'START UP ',
+          },
+          {
+            pv: '566',
+            prod: 'KIT INDUÇÃO ',
+            qtd: 4.0,
+            iso: '2026-10-18',
+            data: '18/10',
+            cli: '',
+            proj: 'MACAIBA/RN',
+            local: 'START UP ',
+          },
+          {
+            pv: '566',
+            prod: 'MATILDE',
+            qtd: 1.0,
+            iso: '2026-10-18',
+            data: '18/10',
+            cli: '',
+            proj: 'MACAIBA/RN',
+            local: 'START UP ',
+          },
+          {
+            pv: '557',
+            prod: 'KIT INDUÇÃO ',
+            qtd: 1.0,
+            iso: '2026-10-20',
+            data: '20/10',
+            cli: '',
+            proj: 'CARIACICA/ES',
+            local: 'START UP ',
+          },
+          {
+            pv: '557',
+            prod: 'BERENICE ',
+            qtd: 35.0,
+            iso: '2026-10-20',
+            data: '20/10',
+            cli: '',
+            proj: 'CARIACICA/ES',
+            local: 'START UP ',
+          },
+          {
+            pv: '557',
+            prod: 'CARRINHO NOTEBOOK',
+            qtd: 20.0,
+            iso: '2026-10-20',
+            data: '20/10',
+            cli: '',
+            proj: 'CARIACICA/ES',
+            local: 'START UP ',
+          },
+          {
+            pv: '558',
+            prod: 'CARRINHO NOTEBOOK',
+            qtd: 5.0,
+            iso: '2026-10-22',
+            data: '22/10',
+            cli: '',
+            proj: 'SÃO CARLOS/SP',
+            local: 'START UP ',
+          },
+          {
+            pv: '558',
+            prod: 'BERENICE ',
+            qtd: 12.0,
+            iso: '2026-10-22',
+            data: '22/10',
+            cli: '',
+            proj: 'SÃO CARLOS/SP',
+            local: 'START UP ',
+          },
+          {
+            pv: '558',
+            prod: 'MATILDA',
+            qtd: 1.0,
+            iso: '2026-10-22',
+            data: '22/10',
+            cli: '',
+            proj: 'SÃO CARLOS/SP',
+            local: 'START UP ',
+          },
+          {
+            pv: '558',
+            prod: 'KIT INDUÇÃO ',
+            qtd: 7.0,
+            iso: '2026-10-22',
+            data: '22/10',
+            cli: '',
+            proj: 'SÃO CARLOS/SP',
+            local: 'START UP ',
+          },
+          {
+            pv: '549',
+            prod: 'FLOW RACK 3X2',
+            qtd: 34.0,
+            iso: '2026-10-02',
+            data: '02/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: 'SITE NOVO',
+          },
+          {
+            pv: '549',
+            prod: 'FLOW RACK 2X2',
+            qtd: 57.0,
+            iso: '2026-10-02',
+            data: '02/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: 'SITE NOVO',
+          },
+          {
+            pv: '549',
+            prod: 'KIT INDUÇÃO ',
+            qtd: 7.0,
+            iso: '2026-10-02',
+            data: '02/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: 'SITE NOVO',
+          },
+          {
+            pv: '110',
+            prod: 'ESCORREGADOR 1800MMX800MMX2000MM',
+            qtd: 26.0,
+            iso: '2026-09-29',
+            data: '29/09',
+            cli: '',
+            proj: 'GUARULHOS/SP',
+            local: '',
+          },
+          {
+            pv: '121',
+            prod: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+            qtd: 20.0,
+            iso: '2026-09-25',
+            data: '25/09',
+            cli: '',
+            proj: 'SÃO PAULO/SP',
+            local: '',
+          },
+          {
+            pv: '124',
+            prod: 'BANCADA PACKING MONO',
+            qtd: 13.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '123',
+            prod: 'BANCADA PARA TOTE - ESTEIRA BOXING',
+            qtd: 40.0,
+            iso: '2026-09-18',
+            data: '18/09',
+            cli: '',
+            proj: 'GUARULHOS/SP',
+            local: '',
+          },
+          {
+            pv: '123',
+            prod: 'BANCADA CHECK IN',
+            qtd: 128.0,
+            iso: '2026-09-30',
+            data: '30/09',
+            cli: '',
+            proj: 'GUARULHOS/SP',
+            local: '',
+          },
+          {
+            pv: '125',
+            prod: 'BANCADA PACKING MONO',
+            qtd: 9.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '124',
+            prod: 'BANCADA PACKING MULTI',
+            qtd: 2.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '120',
+            prod: 'BLUE FLOWRACK - 2000MM X 1000MM',
+            qtd: 20.0,
+            iso: '2026-09-28',
+            data: '28/09',
+            cli: '',
+            proj: 'NOVA SANTA RITA/RS',
+            local: '',
+          },
+          {
+            pv: '120',
+            prod: 'FLOWRACK PACKING MULTI PUT TO WALL',
+            qtd: 1.0,
+            iso: '2026-09-28',
+            data: '28/09',
+            cli: '',
+            proj: 'NOVA SANTA RITA/RS',
+            local: '',
+          },
+          {
+            pv: '125',
+            prod: 'BANCADA PACKING MULTI',
+            qtd: 1.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '122',
+            prod: 'BANCADA PACKING VOLUMOSO',
+            qtd: 15.0,
+            iso: '2026-09-25',
+            data: '25/09',
+            cli: '',
+            proj: 'FRANCO DA ROCHA/SP',
+            local: '',
+          },
+          {
+            pv: '124',
+            prod: 'BANCADA PACKING VOLUMOSO',
+            qtd: 4.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '125',
+            prod: 'BANCADA PACKING VOLUMOSO',
+            qtd: 2.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '125',
+            prod: 'BLUE FLOWRACK - 2000MM X 1000MM',
+            qtd: 7.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '124',
+            prod: 'FLOWRACK MONO - 750MM X 700MM X 1650MM',
+            qtd: 14.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '125',
+            prod: 'FLOWRACK MONO - 750MM X 700MM X 1650MM',
+            qtd: 9.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '124',
+            prod: 'FLOWRACK PACKING MULTI PUT TO WALL',
+            qtd: 2.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '125',
+            prod: 'FLOWRACK PACKING MULTI PUT TO WALL',
+            qtd: 3.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '127',
+            prod: 'LIXEIRA CUSTOMIZADA PVC',
+            qtd: 9.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '128',
+            prod: 'LIXEIRA CUSTOMIZADA PVC',
+            qtd: 25.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '126',
+            prod: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+            qtd: 60.0,
+            iso: '2026-10-06',
+            data: '06/10',
+            cli: '',
+            proj: 'GUARULHOS/SP',
+            local: '',
+          },
+          {
+            pv: '127',
+            prod: 'SUPORTE PARA TOTE INBOUND',
+            qtd: 20.0,
+            iso: '2026-10-08',
+            data: '08/10',
+            cli: '',
+            proj: 'HIDROLÂNDIA/GO',
+            local: '',
+          },
+          {
+            pv: '128',
+            prod: 'SUPORTE PARA TOTE INBOUND',
+            qtd: 10.0,
+            iso: '2026-10-09',
+            data: '09/10',
+            cli: '',
+            proj: 'CONTAGEM/MG',
+            local: '',
+          },
+          {
+            pv: '129',
+            prod: 'BANCADA PARA TOTE - ESTEIRA BOXING',
+            qtd: 96.0,
+            iso: '2026-09-30',
+            data: '30/09',
+            cli: '',
+            proj: 'GUARULHOS/SP',
+            local: '',
+          },
+        ],
+        nfBaixadas: {
+          gerado: '2026-09-23T22:42:02.186062',
+          janela: ['2026-09-13', '2026-09-23'],
+          nfs: [
+            {
+              nf: '768',
+              data: '2026-09-14',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '513',
+                  cod: '406-0001',
+                  desc: 'ESCORREGADOR SOLDADO MERCADO LIVRE',
+                  qtd: 2.0,
+                },
+                {
+                  pv: '513',
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '194',
+              data: '2026-09-14',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '112',
+                  cod: 'ID01386',
+                  desc: 'ESCORREGADOR SOLDADO SHOPEE - 1800x800x2000mm',
+                  qtd: 13.0,
+                },
+              ],
+            },
+            {
+              nf: '195',
+              data: '2026-09-14',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '115',
+                  cod: 'ID01386',
+                  desc: 'ESCORREGADOR SOLDADO SHOPEE - 1800x800x2000mm',
+                  qtd: 10.0,
+                },
+              ],
+            },
+            {
+              nf: '769',
+              data: '2026-09-15',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '527',
+                  cod: 'OUPH-0003',
+                  desc: 'ESTAÇÃO MODULAR COM NICHOS DE MDF E DIVISÓRIAS METALICAS - OUPH-0003',
+                  qtd: 8.0,
+                },
+                {
+                  pv: '527',
+                  cod: '504-0001-11',
+                  desc: 'SALVADOR-BA CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+                { pv: '527', cod: 'OUPW-0007', desc: 'Carrinho p/ PTW CPG 3.0', qtd: 5.0 },
+              ],
+            },
+            {
+              nf: '2448',
+              data: '2026-09-15',
+              emp: 'DLEAN',
+              itens: [
+                { pv: '2151', cod: '403-0011', desc: 'CARRINHO DE NOTEBOOK 900X600', qtd: 5.0 },
+              ],
+            },
+            {
+              nf: '2449',
+              data: '2026-09-15',
+              emp: 'DLEAN',
+              itens: [
+                { pv: '2151', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 5.0 },
+                {
+                  pv: '2151',
+                  cod: '404-0001',
+                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+                  qtd: 4.0,
+                },
+                {
+                  pv: '2151',
+                  cod: '502-0001-11',
+                  desc: 'SÃO PAULO-SP CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '771',
+              data: '2026-09-15',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '554',
+                  cod: '404-0002',
+                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+                  qtd: 3.0,
+                },
+                { pv: '554', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 1.0 },
+                {
+                  pv: '554',
+                  cod: '404-0001',
+                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+                  qtd: 6.0,
+                },
+                {
+                  pv: '554',
+                  cod: '504-0007-11',
+                  desc: 'JÃO PESSOA-PB CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '774',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '549', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 4.0 },
+                {
+                  pv: '549',
+                  cod: '502-0003-11',
+                  desc: 'BELO HORIZONTE-MG CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '775',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '549', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 3.0 },
+                {
+                  pv: '549',
+                  cod: '502-0003-11',
+                  desc: 'BELO HORIZONTE-MG CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '776',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '545',
+                  cod: '404-0002',
+                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+                  qtd: 3.0,
+                },
+                {
+                  pv: '545',
+                  cod: '502-0001-11',
+                  desc: 'SÃO PAULO-SP CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '107',
+              data: '2026-09-17',
+              emp: 'DLEAN FILIAL VINHEDO',
+              itens: [{ pv: '80', cod: 'QD0001', desc: 'QUADRO DE GESTÃO', qtd: 1.0 }],
+            },
+            {
+              nf: '108',
+              data: '2026-09-17',
+              emp: 'DLEAN FILIAL VINHEDO',
+              itens: [{ pv: '81', cod: 'QD0001', desc: 'QUADRO DE GESTÃO', qtd: 1.0 }],
+            },
+            {
+              nf: '109',
+              data: '2026-09-17',
+              emp: 'DLEAN FILIAL VINHEDO',
+              itens: [
+                {
+                  pv: '82',
+                  cod: '00458',
+                  desc: 'GANCHO PARA SUPORTE DE MATERIAIS EUCATEX',
+                  qtd: 50.0,
+                },
+                {
+                  pv: '82',
+                  cod: '00458',
+                  desc: 'GANCHO PARA SUPORTE DE MATERIAIS EUCATEX',
+                  qtd: 50.0,
+                },
+              ],
+            },
+            {
+              nf: '2450',
+              data: '2026-09-17',
+              emp: 'DLEAN',
+              itens: [
+                {
+                  pv: '2145',
+                  cod: '2040DW',
+                  desc: 'SUPORTE DE TRILHO DY-40X33 - REBAIXADO - DIYA',
+                  qtd: 20.0,
+                },
+                { pv: '2145', cod: 'F-E', desc: 'SUPORTE SIMPLES PARA TRILHO', qtd: 20.0 },
+                { pv: '2145', cod: '00043', desc: 'FRETE/ CAMINHÃO/ PARTICULAR', qtd: 1.0 },
+              ],
+            },
+            {
+              nf: '777',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '538', cod: 'AXTL-0001', desc: 'Mesa TL', qtd: 2.0 },
+                {
+                  pv: '538',
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '779',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              itens: [{ pv: '537', cod: 'AXDC-0001', desc: 'Mesa para Impressoras', qtd: 30.0 }],
+            },
+            {
+              nf: '780',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '548', cod: '403-0015', desc: 'CARRINHO RACK DE PLAYO MELI', qtd: 36.0 },
+              ],
+            },
+            {
+              nf: '196',
+              data: '2026-09-17',
+              emp: 'SLEAN',
+              itens: [
+                { pv: '118', cod: '401-0012', desc: 'FLOW RACK 2X2 COM DIVISORIAS', qtd: 1.0 },
+              ],
+            },
+            {
+              nf: '197',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '123',
+                  cod: 'ID02729',
+                  desc: 'BANCADA PARA TOTE - ESTEIRA BOXING',
+                  qtd: 20.0,
+                },
+              ],
+            },
+            {
+              nf: '198',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '123',
+                  cod: 'ID02729',
+                  desc: 'BANCADA PARA TOTE - ESTEIRA BOXING',
+                  qtd: 20.0,
+                },
+              ],
+            },
+            {
+              nf: '199',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '123',
+                  cod: 'ID02729',
+                  desc: 'BANCADA PARA TOTE - ESTEIRA BOXING',
+                  qtd: 10.0,
+                },
+              ],
+            },
+            {
+              nf: '200',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '123',
+                  cod: 'ID02729',
+                  desc: 'BANCADA PARA TOTE - ESTEIRA BOXING',
+                  qtd: 10.0,
+                },
+              ],
+            },
+            {
+              nf: '782',
+              data: '2026-09-18',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '531', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 3.0 },
+                {
+                  pv: '531',
+                  cod: '502-0001-10',
+                  desc: 'SÃO PAULO-SP TOCO/TRUCK - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '783',
+              data: '2026-09-18',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '531', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 4.0 },
+                {
+                  pv: '531',
+                  cod: '502-0001-11',
+                  desc: 'SÃO PAULO-SP CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '784',
+              data: '2026-09-19',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '554',
+                  cod: '404-0002',
+                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+                  qtd: 3.0,
+                },
+                {
+                  pv: '554',
+                  cod: '404-0001',
+                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+                  qtd: 22.0,
+                },
+                {
+                  pv: '554',
+                  cod: '504-0007-11',
+                  desc: 'JÃO PESSOA-PB CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '785',
+              data: '2026-09-21',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '527',
+                  cod: 'OUPH-0003',
+                  desc: 'ESTAÇÃO MODULAR COM NICHOS DE MDF E DIVISÓRIAS METALICAS - OUPH-0003',
+                  qtd: 8.0,
+                },
+                {
+                  pv: '527',
+                  cod: '504-0001-11',
+                  desc: 'SALVADOR-BA CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+                { pv: '527', cod: 'OUPW-0007', desc: 'Carrinho p/ PTW CPG 3.0', qtd: 11.0 },
+              ],
+            },
+            {
+              nf: '787',
+              data: '2026-09-22',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '445', cod: 'CR0001', desc: 'CARRINHO DE TRANSPORTE MANUAL', qtd: 18.0 },
+                {
+                  pv: '445',
+                  cod: '504-0001-11',
+                  desc: 'SALVADOR-BA CARRETA - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '788',
+              data: '2026-09-22',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '446', cod: 'CR0001', desc: 'CARRINHO DE TRANSPORTE MANUAL', qtd: 2.0 },
+              ],
+            },
+            {
+              nf: '789',
+              data: '2026-09-22',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '537', cod: 'AXDC-0001', desc: 'Mesa para Impressoras', qtd: 75.0 },
+                {
+                  pv: '537',
+                  cod: '502-0001-10',
+                  desc: 'SÃO PAULO-SP TOCO/TRUCK - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+          ],
+        },
       }
       const SEM = DATA.semanas
       const FMT = new Intl.NumberFormat('pt-BR', {
@@ -5624,6 +6940,30 @@
       const NF = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
       let modo = 'valor'
       let semSel = 1 // primeira semana futura (0 = Atrasado)
+      let visaoSemana = 'sem' // 'sem' = semana inteira | 'dia' = por dia útil
+      let diaSel = null
+
+      function setVisaoSemana(v) {
+        visaoSemana = v
+        document.getElementById('vSem').classList.toggle('on', v === 'sem')
+        document.getElementById('vDia').classList.toggle('on', v === 'dia')
+        if (v === 'dia' && !diaSel) diaSel = hojeDiaNome()
+        renderDias() // re-renderiza os botões de dia
+        renderSemana()
+      }
+      function hojeDiaNome() {
+        return (
+          ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+            new Date().getDay()
+          ] || 'Segunda'
+        )
+      }
+      // dia da semana (nome) a partir da ISO da linha — dentro da semana ISO de semSel
+      function diaNomeDe(iso) {
+        if (!iso) return ''
+        const d = new Date(iso + 'T12:00:00')
+        return ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][d.getDay()]
+      }
       let cenario = 'orig' // orig | plano
       const CORES = [
         '#dc2626',
@@ -5667,8 +7007,19 @@
         })
       }
       // produção declarada: qtd pendente e qtd produzida da linha
+      // alocações do SMKT consomem saldo do PV na carteira (modelo WARD: produto pronto atende o PV)
+      function smktAlocadoEm(pv, cod) {
+        return smktAlocs()
+          .filter(function (x) {
+            return x.cod === cod && String(x.pv) === String(pv)
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+      }
       function qtdPend(r) {
-        return r.prod ? Math.max(0, r.qtd - r.prod.qtd) : r.qtd
+        const base = r.prod ? Math.max(0, r.qtd - r.prod.qtd) : r.qtd
+        return Math.max(0, base - smktAlocadoEm(r.pv, r.codigo))
       }
       function qtdProd(r) {
         return r.prod ? Math.min(r.prod.qtd, r.qtd) : 0
@@ -5710,6 +7061,19 @@
           return diasOrdem.indexOf(a) - diasOrdem.indexOf(b)
         })
         const box = document.getElementById('pbtns')
+        if (!progDia) {
+          // dia atual se estiver na semana declarada; senão o primeiro dia
+          const nomes = {
+            Monday: 'Segunda',
+            Tuesday: 'Terça',
+            Wednesday: 'Quarta',
+            Thursday: 'Quinta',
+            Friday: 'Sexta',
+          }
+          const hojeN =
+            nomes[new Date().toLocaleDateString('en-US', { weekday: 'long' })] || 'Segunda'
+          progDia = dias.indexOf(hojeN) >= 0 ? hojeN : dias[0]
+        }
         box.innerHTML = dias
           .map(function (d, i) {
             const dt = DATA.progSemana.dias.find(function (a) {
@@ -5719,7 +7083,7 @@
               '<button data-d="' +
               d +
               '" class="' +
-              (i === 0 ? 'on' : '') +
+              (d === progDia ? 'on' : '') +
               '">' +
               d +
               ' · ' +
@@ -5728,7 +7092,6 @@
             )
           })
           .join('')
-        if (!progDia) progDia = dias[0]
         Array.prototype.forEach.call(box.children, function (b) {
           b.addEventListener('click', function () {
             progDia = b.getAttribute('data-d')
@@ -5746,7 +7109,7 @@
           return a.dia === progDia
         })
         document.getElementById('trhP').innerHTML =
-          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada no cliente</th><th>Situação</th>'
+          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada no cliente</th><th>Situação</th><th>Executado</th><th>Qtd realizada</th><th>Realocar / PV destino</th>'
         // agrega produtos iguais no mesmo dia (mesmo modelo da tabela semanal)
         const map = {}
         rs.forEach(function (a) {
@@ -5769,11 +7132,14 @@
           return y.vtot - x.vtot
         })
         let tq = 0,
-          tv = 0
+          tv = 0,
+          tex = 0
         document.getElementById('tbbP').innerHTML = prods
           .map(function (p, ix) {
             tq += p.qtd
             tv += p.vtot
+            const ex = getProgExec(p.cod, progDia) || { ok: false, qtd: 0 }
+            tex += ex.qtd || 0
             const pvList = Object.values(p.pvs).sort(function (x, y) {
               return parseFloat(x.pv) - parseFloat(y.pv)
             })
@@ -5801,10 +7167,45 @@
                 )
               })
               .join('')
+            // opções de troca de PV: outros PVs do mesmo produto na carteira (supermercado: destino flexível)
+            const outrosPVs = DATA.rows
+              .filter(function (r) {
+                return r.codigo === p.cod && !p.pvs[String(r.pv) + '|' + r.cli]
+              })
+              .sort(function (a, b) {
+                return b.vtot - a.vtot
+              })
+              .slice(0, 40)
+            const opts =
+              '<option value="">PV atual (' +
+              pvList
+                .map(function (v) {
+                  return v.pv
+                })
+                .join('/') +
+              ')</option>' +
+              '<option value="__SMKT__">🛒 Supermercado (produto pronto)</option>' +
+              outrosPVs
+                .map(function (r) {
+                  return (
+                    '<option value="' +
+                    r.pv +
+                    '|' +
+                    r.cliente +
+                    '">' +
+                    r.pv +
+                    ' · ' +
+                    r.cliente.slice(0, 22) +
+                    ' (' +
+                    NF.format(r.qtd) +
+                    ' un)</option>'
+                  )
+                })
+                .join('')
             const det =
               '<tr class="detrow" data-det="' +
               ix +
-              '"><td colspan="6"><table class="mini">' +
+              '"><td colspan="9"><table class="mini">' +
               '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Situação</th></tr>' +
               pvRows +
               '</table></td></tr>'
@@ -5822,8 +7223,22 @@
                 ? chegs[0]
                 : chegs[0] + ' … ' + chegs[chegs.length - 1]
               : '—'
+            const exInfo = ex.rl
+              ? '<div style="font-size:10px;color:#92400e;font-weight:700;margin-top:3px">→ ' +
+                ex.rl +
+                ' (' +
+                NF.format(ex.saldo) +
+                ' un)</div>'
+              : ''
+            const pvTrocado = ex.pvNovo
+              ? '<div style="font-size:10px;color:#1e3a8a;font-weight:700;margin-top:3px">PV ' +
+                ex.pvNovo.split('|')[0] +
+                '</div>'
+              : ''
             return (
-              '<tr class="prow" data-ix="' +
+              '<tr class="prow' +
+              (ex.ok ? ' exOK' : '') +
+              '" data-ix="' +
               ix +
               '"><td><div class="cod">' +
               p.cod +
@@ -5848,6 +7263,21 @@
               (p.atrasado
                 ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
                 : '<span class="tagP">em dia</span>') +
+              '</td>' +
+              '<td class="exec"><input type="checkbox" data-p="ok" ' +
+              (ex.ok ? 'checked' : '') +
+              '></td>' +
+              '<td class="exec"><input type="number" min="0" max="' +
+              p.qtd +
+              '" value="' +
+              (ex.qtd || '') +
+              '" placeholder="0" data-p="qtd"></td>' +
+              '<td class="exec"><button class="exRl" data-p="rl" title="Realocar saldo (qtd − realizada) para o próximo dia útil">Realocar ↦</button>' +
+              exInfo +
+              '<select data-p="pv" style="margin-top:4px;width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+              opts +
+              '</select>' +
+              pvTrocado +
               '</td></tr>' +
               det
             )
@@ -5863,33 +7293,835 @@
           NF.format(Math.round(tq)) +
           '</td><td class="num">' +
           FMT.format(tv) +
-          '</td><td colspan="3"></td>'
+          '</td><td colspan="3"></td>' +
+          '<td></td><td class="num">' +
+          NF.format(tex) +
+          '</td><td></td>'
         document.getElementById('pbtns').setAttribute('data-prods', prods.length)
-        // toggle: clique no produto abre/fecha a caixa com os PVs
-        Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.prow'), function (tr) {
-          tr.addEventListener('click', function () {
-            const ix = tr.getAttribute('data-ix')
-            let open = tr.classList.contains('sel')
-            Array.prototype.forEach.call(
-              document.querySelectorAll('#tbbP tr.detrow'),
-              function (d) {
-                if (d.getAttribute('data-det') === ix) {
-                  d.style.display = open ? 'none' : ''
-                } else {
-                  d.style.display = 'none'
-                }
-              },
+        // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
+        const tb = document.getElementById('tbbP')
+        if (!tb._toggleBound) {
+          tb._toggleBound = true
+          tb.addEventListener('click', function (e) {
+            if (
+              e.target.closest('td.exec') ||
+              e.target.closest('input') ||
+              e.target.closest('select') ||
+              e.target.closest('button')
             )
-            Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.prow'), function (x) {
+              return
+            const tr = e.target.closest('tr.prow')
+            if (!tr) return
+            const ix = tr.getAttribute('data-ix')
+            const det = tb.querySelector('tr.detrow[data-det="' + ix + '"]')
+            const open = tr.classList.contains('sel')
+            Array.prototype.forEach.call(tb.querySelectorAll('tr.detrow'), function (d) {
+              d.style.display = 'none'
+            })
+            Array.prototype.forEach.call(tb.querySelectorAll('tr.prow'), function (x) {
               x.classList.remove('sel')
             })
-            if (!open) tr.classList.add('sel')
+            if (det && !open) {
+              det.style.display = ''
+              tr.classList.add('sel')
+            }
           })
-        })
+        }
         Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.detrow'), function (d) {
           d.style.display = 'none'
         })
+        // eventos de execução (delegação em #tbbP)
+        if (!tb._execBound) {
+          tb._execBound = true
+          tb.addEventListener('change', function (e) {
+            const inp = e.target
+            if (!inp.matches || !inp.matches('#tbbP input[data-p], #tbbP select[data-p]')) return
+            const tr = inp.closest('tr')
+            const ix = parseInt(tr.getAttribute('data-ix'), 10)
+            const p = progProdsCache[ix]
+            if (!p) return
+            const prev = getProgExec(p.cod, progDia) || {}
+            const ok = tr.querySelector('input[data-p=ok]').checked
+            const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0
+            const pvSel = tr.querySelector('select[data-p=pv]').value
+            // destino = SMKT: a qtd realizada entra no supermercado como produto pronto (não vai para PV)
+            if (pvSel === '__SMKT__') {
+              const qSm = qtd > 0 ? qtd : prev.qtd || 0
+              if (qSm <= 0) {
+                alert('Informe a qtd realizada antes de alocar para o Supermercado.')
+                return
+              }
+              const ents = smktEntradas()
+              ents.push({
+                cod: p.cod,
+                qtd: qSm,
+                origem: 'prog:' + progDia,
+                data: new Date().toLocaleDateString('pt-BR'),
+              })
+              smktSave(ents, smktAlocs())
+              setProgExec(p.cod, progDia, {
+                ok: ok,
+                qtd: qtd,
+                rl: prev.rl,
+                saldo: prev.saldo,
+                pvNovo: null,
+                smkt: qSm,
+              })
+              renderSmkt()
+              renderKpis()
+              alert(
+                '🛒 ' +
+                  NF.format(qSm) +
+                  ' un de ' +
+                  p.cod +
+                  ' entraram no Supermercado (produtos acabados). Aloque em PVs no card Supermercado.',
+              )
+              return
+            }
+            setProgExec(p.cod, progDia, {
+              ok: ok,
+              qtd: qtd,
+              rl: prev.rl,
+              saldo: prev.saldo,
+              pvNovo: pvSel || null,
+              smkt: prev.smkt || null,
+            })
+            renderProgTabela()
+          })
+          tb.addEventListener('click', function (e) {
+            const btn = e.target
+            if (!btn.matches || !btn.matches('#tbbP .exRl')) return
+            const tr = btn.closest('tr')
+            const ix = parseInt(tr.getAttribute('data-ix'), 10)
+            const p = progProdsCache[ix]
+            if (!p) return
+            const ex = getProgExec(p.cod, progDia) || { ok: false, qtd: 0 }
+            const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+            if (saldo <= 0) {
+              alert('Nada a realocar — a qtd realizada cobre o planejado.')
+              return
+            }
+            const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+            const idx = dias.indexOf(progDia)
+            const nova = idx >= 0 && idx < 4 ? dias[idx + 1] : 'Segunda' // próximo dia útil da semana
+            setProgExec(p.cod, progDia, {
+              ok: ex.ok,
+              qtd: ex.qtd,
+              rl: nova,
+              saldo: saldo,
+              pvNovo: ex.pvNovo || null,
+            })
+            renderProgTabela()
+          })
+        }
       }
+      let progProdsCache = []
+      const _origRPT = renderProgTabela
+      renderProgTabela = function () {
+        // cache dos produtos agregados do dia para os handlers
+        const rs = DATA.progSemana.dias.filter(function (a) {
+          return a.dia === progDia
+        })
+        const map = {}
+        rs.forEach(function (a) {
+          let p = map[a.cod]
+          if (!p) {
+            p = map[a.cod] = { cod: a.cod, desc: a.desc, qtd: 0, vtot: 0, pvs: {}, atrasado: false }
+          }
+          p.qtd += a.qtd
+          p.vtot += a.vtot
+        })
+        progProdsCache = Object.values(map).sort(function (x, y) {
+          return y.vtot - x.vtot
+        })
+        _origRPT()
+      }
+
+      // ==================== CARD HOJE: semana + dia atual ====================
+      ;(function () {
+        const agora = new Date()
+        const ISO_W = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const y = agora.getFullYear()
+        const w = Math.ceil(
+          ((agora - new Date(Date.UTC(y, 0, 1))) / 86400000 +
+            new Date(Date.UTC(y, 0, 1)).getUTCDay() +
+            1) /
+            7,
+        )
+        const sem = 'S' + String(w).padStart(2, '0')
+        document.getElementById('hojeSem').textContent =
+          sem +
+          ' · ' +
+          String(agora.getDate()).padStart(2, '0') +
+          '/' +
+          String(agora.getMonth() + 1).padStart(2, '0')
+        document.getElementById('hojeDia').textContent = ISO_W[agora.getDay()]
+        const diff0 = Date.now()
+        function tick() {
+          const n = new Date()
+          document.getElementById('hojeRel').textContent =
+            n.toLocaleTimeString('pt-BR') + ' · horário local'
+        }
+        tick()
+        setInterval(tick, 1000)
+      })()
+
+      // ==================== ENTREGAS DE DATA RÍGIDA (planilha) ====================
+      function marcarRigidas() {
+        if (!DATA.rigidas || !DATA.rigidas.length) return
+        DATA.rows.forEach(function (r) {
+          r.rig = null
+          const pv = String(r.pv)
+          const cand = DATA.rigidas.filter(function (x) {
+            return x.pv === pv
+          })
+          if (!cand.length) return
+          const d = (r.desc || '').toUpperCase()
+          let hit = null
+          cand.forEach(function (x) {
+            const p = x.prod.toUpperCase()
+            if (p.indexOf('MATILD') >= 0 && d.indexOf('MATILD') >= 0) hit = x
+            else if (p.indexOf('BERENICE') >= 0 && d.indexOf('BERENICE') >= 0) hit = x
+            else if (p.indexOf('KIT INDU') >= 0 && d.indexOf('KIT INDU') >= 0) hit = x
+            else if (
+              (p.indexOf('CARRINHO NOTEBOOK') >= 0 || p.indexOf('NOTEBOOK') >= 0) &&
+              d.indexOf('NOTEBOOK') >= 0
+            )
+              hit = x
+            else if (p.indexOf('CARRINHO DE TRANSPORTE') >= 0 && d.indexOf('TRANSPORTE') >= 0)
+              hit = x
+            else if (p.indexOf('FLOW RACK 3X2') >= 0 && d.indexOf('3X2') >= 0) hit = x
+            else if (p.indexOf('FLOW RACK 2X2') >= 0 && d.indexOf('2X2') >= 0) hit = x
+            else if (p.indexOf('ESCORREGADOR') >= 0 && d.indexOf('ESCORREGADOR') >= 0) hit = x
+            else if (p.indexOf('BOXING') >= 0 && d.indexOf('BOXING') >= 0) hit = x
+            else if (p.indexOf('CHECK IN') >= 0 && d.indexOf('CHECK IN') >= 0) hit = x
+            else if (p.indexOf('PACKING MONO') >= 0 && d.indexOf('MONO') >= 0) hit = x
+            else if (p.indexOf('PACKING MULTI') >= 0 && d.indexOf('MULTI') >= 0) hit = x
+            else if (p.indexOf('PACKING VOLUMOSO') >= 0 && d.indexOf('VOLUMOSO') >= 0) hit = x
+            else if (p.indexOf('FLOWRACK MONO') >= 0 && d.indexOf('MONO') >= 0) hit = x
+            else if (p.indexOf('PUT TO WALL') >= 0 && d.indexOf('PUT TO WALL') >= 0) hit = x
+            else if (p.indexOf('LIXEIRA') >= 0 && d.indexOf('LIXEIRA') >= 0) hit = x
+            else if (p.indexOf('INBOUND') >= 0 && d.indexOf('INBOUND') >= 0) hit = x
+            else if (p.indexOf('BLUE') >= 0 && d.indexOf('BLUE') >= 0) hit = x
+            else if (p.indexOf('FLOWRACK PACKING') >= 0 && d.indexOf('PACKING') >= 0) hit = x
+          })
+          if (hit)
+            r.rig = { iso: hit.iso, data: hit.data, cli: hit.cli, proj: hit.proj, local: hit.local }
+        })
+        const n = DATA.rows.filter(function (r) {
+          return r.rig
+        }).length
+        console.log('Linhas marcadas RÍGIDAS:', n)
+      }
+      marcarRigidas()
+
+      // ==================== SUGESTÕES DA SEMANA VIGENTE ====================
+      const TRANSITO = {
+        GUARAPUAVA: [1, 254],
+        MARINGA: [1, 425],
+        ITAQUERA: [1, 441],
+        MAUA: [1, 445],
+        GRU: [1, 429],
+        GUARULHOS: [1, 429],
+        'NOVO MUNDO': [1, 420],
+        'SAO PAULO': [1, 420],
+        CACAPAVA: [1, 520],
+        'SAO CARLOS': [2, 615],
+        JALES: [2, 773],
+        BARRETOS: [2, 804],
+        'NOVA SANTA RITA': [2, 751],
+        'FLORES DA CUNHA': [2, 553],
+        ITABORAI: [2, 880],
+        GOIANIA: [3, 1282],
+        MACAIBA: [4, 3275],
+        RECIFE: [4, 3074],
+        'JOAO PESSOA': [4, 3188],
+        ATIBAIA: [1, 570],
+        ESTRELA: [2, 690],
+        BRASILIA: [3, 1360],
+        SBC: [1, 400],
+        SP35: [1, 420],
+        ITAPEVA: [1, 470],
+        CONTAGEM: [3, 981],
+        HIDROLANDIA: [3, 1248],
+        CARIACICA: [3, 1348],
+      }
+      function normS(s) {
+        return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
+      }
+      function cidadeDe(cli) {
+        const c = normS(cli)
+        for (const k in TRANSITO) {
+          if (c.indexOf(k) >= 0) return k
+        }
+        return null
+      }
+      function addDU(d, n) {
+        const x = new Date(d)
+        let i = 0
+        while (i < n) {
+          x.setDate(x.getDate() + 1)
+          const w = x.getDay()
+          if (w > 0 && w < 6) i++
+        }
+        return x
+      }
+      function subDU(d, n) {
+        const x = new Date(d)
+        let i = 0
+        while (i < n) {
+          x.setDate(x.getDate() - 1)
+          const w = x.getDay()
+          if (w > 0 && w < 6) i++
+        }
+        return x
+      }
+      function brD(d) {
+        return (
+          String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
+        )
+      }
+      function isoD(d) {
+        return (
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(d.getDate()).padStart(2, '0')
+        )
+      }
+      // segunda-feira da semana "S39 · 21.09-25.09" (label do botão)
+      function semanaSegunda(label) {
+        const m = String(label || '').match(/(\d{2})\.(\d{2})-(\d{2})\.(\d{2})/)
+        if (!m) return null
+        const y = new Date().getFullYear()
+        return y + '-' + m[2] + '-' + m[1]
+      }
+
+      function sugestoesSemana() {
+        const hoje = new Date()
+        hoje.setHours(0, 0, 0, 0)
+        const seg = new Date(hoje)
+        const dw = hoje.getDay() === 0 ? 7 : hoje.getDay()
+        seg.setDate(hoje.getDate() - (dw - 1)) // segunda desta semana
+        const sex = new Date(seg)
+        sex.setDate(seg.getDate() + 4)
+        const out = []
+        DATA.rows.forEach(function (r) {
+          if (!r.iso || r.frete) return
+          const cid = cidadeDe(r.cliente)
+          if (!cid) return
+          const tdu = TRANSITO[cid][0]
+          const alvoIso = r.rig && r.rig.iso ? r.rig.iso : r.iso // data rígida manda quando existe
+          const ent = new Date(alvoIso + 'T12:00:00')
+          const coleta = subDU(ent, tdu) // coleta máxima para chegar no dia
+          if (coleta < seg || coleta > sex) return
+          out.push({
+            row: r,
+            cid: cid,
+            tdu: tdu,
+            km: TRANSITO[cid][1],
+            coleta: coleta,
+            prod: subDU(coleta, 1),
+            alvoIso: alvoIso,
+          })
+        })
+        out.sort(function (a, b) {
+          return a.row.iso.localeCompare(b.row.iso)
+        })
+        return out
+      }
+
+      // ==================== EXECUTADO / REALOCAÇÃO (localStorage) ====================
+      function execKey(r) {
+        return 'exec|' + r.pv + '|' + r.codigo + '|' + r.empresa + '|' + r.iso
+      }
+      function getExec(r) {
+        try {
+          return JSON.parse(localStorage.getItem(execKey(r)) || 'null')
+        } catch (e) {
+          return null
+        }
+      }
+      function setExec(r, v) {
+        if (v && (v.ok || v.qtd || v.rl)) localStorage.setItem(execKey(r), JSON.stringify(v))
+        else localStorage.removeItem(execKey(r))
+      }
+      // execução da programação diária (por código + dia)
+      function progKey(cod, dia) {
+        return 'prog|' + cod + '|' + dia
+      }
+      function getProgExec(cod, dia) {
+        try {
+          return JSON.parse(localStorage.getItem(progKey(cod, dia)) || 'null')
+        } catch (e) {
+          return null
+        }
+      }
+      function setProgExec(cod, dia, v) {
+        if (v && (v.ok || v.qtd || v.rl || v.pvNovo || v.smkt))
+          localStorage.setItem(progKey(cod, dia), JSON.stringify(v))
+        else localStorage.removeItem(progKey(cod, dia))
+      }
+
+      // ==================== SUPERMERCADO (SMKT) — produtos acabados ====================
+      // entradas: [{cod, qtd, origem: 'manual'|'prog:<dia>', data}] · alocações: [{cod, pv, qtd, data}]
+      function smktEntradas() {
+        try {
+          return JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
+        } catch (e) {
+          return []
+        }
+      }
+      function smktAlocs() {
+        try {
+          return JSON.parse(localStorage.getItem('smkt|alocs') || '[]')
+        } catch (e) {
+          return []
+        }
+      }
+      function smktSave(ent, alc) {
+        localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
+        localStorage.setItem('smkt|alocs', JSON.stringify(alc || []))
+      }
+      function smktSaldo(cod) {
+        // disponível = entradas − alocações
+        const e = smktEntradas()
+          .filter(function (x) {
+            return x.cod === cod
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+        const a = smktAlocs()
+          .filter(function (x) {
+            return x.cod === cod
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+        return e - a
+      }
+      function smktCodigos() {
+        // códigos com entrada > 0
+        const m = {}
+        smktEntradas().forEach(function (x) {
+          m[x.cod] = (m[x.cod] || 0) + x.qtd
+        })
+        return Object.keys(m)
+      }
+      function descDe(cod) {
+        const r = DATA.rows.find(function (r) {
+          return r.codigo === cod
+        })
+        return r ? r.desc : cod
+      }
+      function vuDe(cod) {
+        const r = DATA.rows.find(function (r) {
+          return r.codigo === cod
+        })
+        return r ? r.vtot / (r.qtd || 1) : 0
+      }
+
+      function renderSmkt() {
+        // select de produtos: os do SMKT + os da programação do dia (para entrada rápida)
+        const sel = document.getElementById('smProd')
+        const cods = new Set(smktCodigos())
+        ;(DATA.progSemana ? DATA.progSemana.dias : []).forEach(function (a) {
+          cods.add(a.cod)
+        })
+        const atual = sel.value
+        sel.innerHTML =
+          '<option value="">— escolha o produto —</option>' +
+          Array.from(cods)
+            .sort()
+            .map(function (c) {
+              const s = smktSaldo(c)
+              return (
+                '<option value="' +
+                c +
+                '">' +
+                c +
+                ' · ' +
+                descDe(c).slice(0, 34) +
+                (s > 0 ? ' — saldo ' + NF.format(s) + ' un' : '') +
+                '</option>'
+              )
+            })
+            .join('')
+        if (atual && cods.has(atual)) sel.value = atual
+        const alocs = smktAlocs(),
+          ents = smktEntradas()
+        document.getElementById('trhM').innerHTML =
+          '<th>Produto</th><th>Entradas</th><th>Alocado em PVs</th><th>Saldo no SMKT</th><th>Alocar em PV</th><th></th>'
+        const codsAll = Array.from(
+          new Set(
+            ents
+              .map(function (x) {
+                return x.cod
+              })
+              .concat(
+                alocs.map(function (x) {
+                  return x.cod
+                }),
+              ),
+          ),
+        )
+        document.getElementById('tbbM').innerHTML = codsAll.length
+          ? codsAll
+              .map(function (cod, ix) {
+                const ent = ents
+                  .filter(function (x) {
+                    return x.cod === cod
+                  })
+                  .reduce(function (a, x) {
+                    return a + x.qtd
+                  }, 0)
+                const alc = alocs.filter(function (x) {
+                  return x.cod === cod
+                })
+                const alq = alc.reduce(function (a, x) {
+                  return a + x.qtd
+                }, 0)
+                const saldo = ent - alq
+                const det = alc
+                  .map(function (x, i2) {
+                    return (
+                      '<tr><td class="pvtag">' +
+                      x.pv +
+                      '</td><td class="num">' +
+                      NF.format(x.qtd) +
+                      '</td><td>' +
+                      x.data +
+                      '</td><td style="color:#16a34a">' +
+                      (x.obs || '') +
+                      '</td></tr>'
+                    )
+                  })
+                  .join('')
+                // PVs possíveis: carteira do produto com saldo (exclui os já alocados integralmente)
+                const pvsLivres = {}
+                DATA.rows.forEach(function (r) {
+                  if (r.codigo === cod)
+                    pvsLivres[r.pv + '|' + r.cliente] =
+                      (pvsLivres[r.pv + '|' + r.cliente] || 0) + r.qtd
+                })
+                const opts =
+                  '<option value="">— PV destino —</option>' +
+                  Object.entries(pvsLivres)
+                    .sort(function (a, b) {
+                      return b[1] - a[1]
+                    })
+                    .slice(0, 40)
+                    .map(function (kv) {
+                      return (
+                        '<option value="' +
+                        kv[0] +
+                        '">' +
+                        kv[0].split('|')[0] +
+                        ' · ' +
+                        kv[0].split('|')[1].slice(0, 22) +
+                        ' (' +
+                        NF.format(kv[1]) +
+                        ' un)</option>'
+                      )
+                    })
+                    .join('')
+                return (
+                  '<tr data-cod="' +
+                  cod +
+                  '"><td><div class="cod">' +
+                  cod +
+                  '</div><div class="dsc">' +
+                  descDe(cod).slice(0, 44) +
+                  '</div></td>' +
+                  '<td class="num">' +
+                  NF.format(ent) +
+                  '</td><td class="num">' +
+                  NF.format(alq) +
+                  '</td>' +
+                  '<td class="num" style="font-weight:800;color:' +
+                  (saldo > 0 ? '#16a34a' : '#64748b') +
+                  '">' +
+                  NF.format(saldo) +
+                  '</td>' +
+                  '<td class="exec"><input type="number" min="1" max="' +
+                  saldo +
+                  '" placeholder="Qtd" style="width:70px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px" data-m="qtd"> ' +
+                  '<select data-m="pv" style="width:180px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+                  opts +
+                  '</select></td>' +
+                  '<td class="exec"><button class="exRl" data-m="alc" ' +
+                  (saldo > 0 ? '' : 'disabled') +
+                  ' style="background:#eff6ff;color:#1e3a8a;border-color:#93c5fd">Alocar →</button></td></tr>' +
+                  (det
+                    ? '<tr class="detrow" style="display:none"><td colspan="6"><table class="mini"><tr><th>PV</th><th>Qtd</th><th>Dia</th><th></th></tr>' +
+                      det +
+                      '</table></td></tr>'
+                    : '')
+                )
+              })
+              .join('')
+          : '<tr><td colspan="6">Nenhuma entrada ainda — produziu e não alocou? Use "+ Entrada no SMKT" acima.</td></tr>'
+        document.getElementById('trfM').innerHTML =
+          '<td>' +
+          codsAll.length +
+          ' produtos</td>' +
+          '<td class="num">' +
+          NF.format(
+            ents.reduce(function (a, x) {
+              return a + x.qtd
+            }, 0),
+          ) +
+          '</td>' +
+          '<td class="num">' +
+          NF.format(
+            alocs.reduce(function (a, x) {
+              return a + x.qtd
+            }, 0),
+          ) +
+          '</td>' +
+          '<td colspan="3"></td>'
+        document.getElementById('smInfo').textContent =
+          'Alocações consomem o saldo do produto na carteira (pendente cai nos outros cards).'
+        // eventos (delegação)
+        const tb = document.getElementById('tbbM')
+        if (!tb._bound) {
+          tb._bound = true
+          tb.addEventListener('click', function (e) {
+            const btn = e.target.closest('button[data-m=alc]')
+            if (!btn) return
+            const tr = btn.closest('tr')
+            const cod = tr.getAttribute('data-cod')
+            const qtd = parseFloat(tr.querySelector('input[data-m=qtd]').value) || 0
+            const pv = tr.querySelector('select[data-m=pv]').value
+            if (!pv) {
+              alert('Escolha o PV de destino.')
+              return
+            }
+            if (qtd <= 0 || qtd > smktSaldo(cod)) {
+              alert('Qtd inválida — saldo disponível: ' + smktSaldo(cod) + ' un.')
+              return
+            }
+            const a = smktAlocs()
+            const ent = smktEntradas()
+            a.push({
+              cod: cod,
+              pv: pv.split('|')[0],
+              cli: pv.split('|')[1] || '',
+              qtd: qtd,
+              data: new Date().toLocaleDateString('pt-BR'),
+              obs: 'do SMKT',
+            })
+            smktSave(ent, a)
+            renderSmkt()
+            renderSemana()
+            renderProgTabela()
+            renderKpis() // consumo do saldo em todos os cards
+          })
+        }
+      }
+      document.getElementById('smAdd').addEventListener('click', function () {
+        const cod = document.getElementById('smProd').value
+        const qtd = parseFloat(document.getElementById('smQtd').value) || 0
+        if (!cod || qtd <= 0) {
+          alert('Escolha o produto e a quantidade.')
+          return
+        }
+        const e = smktEntradas()
+        e.push({
+          cod: cod,
+          qtd: qtd,
+          origem: 'manual',
+          data: new Date().toLocaleDateString('pt-BR'),
+        })
+        smktSave(e, smktAlocs())
+        document.getElementById('smQtd').value = ''
+        renderSmkt()
+        renderKpis()
+      })
+      renderSmkt()
+
+      // ==================== CARD NFs EMITIDAS (método Compass) ====================
+      function renderNF() {
+        const nb = DATA.nfBaixadas
+        const card = document.getElementById('cardNF')
+        if (!nb || !nb.nfs || !nb.nfs.length) {
+          card.style.display = 'none'
+          return
+        }
+        card.style.display = ''
+        document.getElementById('trhN').innerHTML =
+          '<th>NF</th><th>Emissão</th><th>Empresa</th><th>Itens baixados (PV · produto · qtd)</th>'
+        document.getElementById('tbbN').innerHTML = nb.nfs
+          .sort(function (a, b) {
+            return (b.data || '').localeCompare(a.data || '')
+          })
+          .map(function (n) {
+            const itens = n.itens
+              .map(function (i) {
+                return (
+                  '<span style="white-space:nowrap;margin:2px 6px 2px 0;display:inline-block"><b class="pvtag">' +
+                  i.pv +
+                  '</b> ' +
+                  i.cod +
+                  ' ×' +
+                  NF.format(i.qtd) +
+                  '</span>'
+                )
+              })
+              .join('')
+            return (
+              '<tr><td><b>' +
+              n.nf +
+              '</b></td><td>' +
+              dtBR(n.data) +
+              '</td><td>' +
+              n.emp +
+              '</td><td>' +
+              itens +
+              '</td></tr>'
+            )
+          })
+          .join('')
+      }
+      renderNF()
+
+      function renderSug() {
+        const card = document.getElementById('cardSug')
+        const sug = sugestoesSemana()
+        if (!sug.length) {
+          card.style.display = 'none'
+          return
+        }
+        card.style.display = ''
+        document.getElementById('trhG').innerHTML =
+          '<th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Coleta máx.</th><th>Produzir até</th><th>Entrega cliente</th><th>Alocação (se aceitar)</th><th>Executado?</th><th>Qtd executada</th><th></th>'
+        let tq = 0,
+          te = 0
+        const diasSem = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+        const rowsHtml = sug
+          .map(function (s, ix) {
+            const r = s.row
+            const ex = getExec(r) || { ok: false, qtd: 0 }
+            tq += r.qtd
+            te += ex.qtd || 0
+            const rig = r.rig ? ' <span class="tagR">RÍGIDA ' + r.rig.data + '</span>' : ''
+            const divData = r.rig && r.rig.iso !== r.iso ? dtBR(r.iso) + ' → ' : ''
+            // alocação sugerida: produzir até s.prod → aloco no dia s.prod (ou hoje se já passou)
+            const hoje0 = new Date()
+            hoje0.setHours(0, 0, 0, 0)
+            const prodD = new Date(s.prod)
+            prodD.setHours(12, 0, 0, 0)
+            const diaAloc = prodD < hoje0 ? hoje0 : prodD
+            const dw = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+              diaAloc.getDay()
+            ]
+            const aloc = ex.rl
+              ? '→ ' + ex.rl.slice(8, 10) + '/' + ex.rl.slice(5, 7)
+              : dw + ' · ' + brD(diaAloc)
+            return (
+              '<tr class="exrow ' +
+              (ex.ok ? 'exOK' : '') +
+              '" data-ix="' +
+              ix +
+              '">' +
+              '<td><div class="cod">' +
+              r.codigo +
+              '</div><div class="dsc">' +
+              r.desc.slice(0, 40) +
+              '</div></td>' +
+              '<td><b>' +
+              r.pv +
+              '</b> ' +
+              r.cliente.slice(0, 24) +
+              '</td>' +
+              '<td class="num"><b>' +
+              NF.format(r.qtd) +
+              '</b></td>' +
+              '<td>' +
+              brD(s.coleta) +
+              '</td>' +
+              '<td>' +
+              brD(s.prod) +
+              '</td>' +
+              '<td>' +
+              divData +
+              dtBR(s.alvoIso) +
+              rig +
+              '</td>' +
+              '<td><span class="tagS">' +
+              aloc +
+              '</span></td>' +
+              '<td class="exec"><input type="checkbox" data-x="ok" ' +
+              (ex.ok ? 'checked' : '') +
+              '></td>' +
+              '<td class="exec"><input type="number" min="0" max="' +
+              r.qtd +
+              '" value="' +
+              (ex.qtd || '') +
+              '" placeholder="0" data-x="qtd"></td>' +
+              '<td class="exec"><button class="exRl" data-x="rl" title="Realocar saldo (qtd − executada) para o próximo dia útil">Realocar ↦</button>' +
+              (ex.rl
+                ? '<div style="font-size:10px;color:#92400e;font-weight:700;margin-top:3px">→ ' +
+                  ex.rl.slice(8, 10) +
+                  '/' +
+                  ex.rl.slice(5, 7) +
+                  ' (' +
+                  NF.format(ex.saldo) +
+                  ' un)</div>'
+                : '') +
+              '</td></tr>'
+            )
+          })
+          .join('')
+        document.getElementById('tbbG').innerHTML = rowsHtml
+        document.getElementById('trfG').innerHTML =
+          '<td>' +
+          sug.length +
+          ' itens</td><td></td><td class="num">' +
+          NF.format(tq) +
+          '</td><td colspan="4"></td><td></td><td class="num">' +
+          NF.format(te) +
+          '</td><td></td>'
+        document.getElementById('tbbG').addEventListener('change', function (e) {
+          const inp = e.target
+          if (!inp.matches || !inp.matches('input[data-x]')) return
+          const tr = inp.closest('tr')
+          const ix = parseInt(tr.getAttribute('data-ix'), 10)
+          const s = sug[ix]
+          const r = s.row
+          const ok = tr.querySelector('input[data-x=ok]').checked
+          const qtd = parseFloat(tr.querySelector('input[data-x=qtd]').value) || 0
+          const prev = getExec(r) || {}
+          setExec(r, {
+            ok: ok,
+            qtd: qtd,
+            rl: prev.rl,
+            saldo: prev.saldo,
+            quando: new Date().toISOString(),
+          })
+          renderSug()
+        })
+        document.getElementById('tbbG').addEventListener('click', function (e) {
+          const btn = e.target
+          if (!btn.matches || !btn.matches('.exRl')) return
+          const tr = btn.closest('tr')
+          const ix = parseInt(tr.getAttribute('data-ix'), 10)
+          const s = sug[ix]
+          const r = s.row
+          const ex = getExec(r) || { ok: false, qtd: 0 }
+          const saldo = Math.max(0, r.qtd - (ex.qtd || 0))
+          if (saldo <= 0) {
+            alert('Nada a realocar — a qtd executada cobre o planejado.')
+            return
+          }
+          const nova = addDU(new Date(r.iso + 'T12:00:00'), 1)
+          setExec(r, { ok: ex.ok, qtd: ex.qtd, rl: isoD(nova), saldo: saldo })
+          renderSug()
+        })
+      }
+      renderSug()
 
       // KPIs
       function renderKpis() {
@@ -5897,14 +8129,16 @@
         let tot = 0,
           atr = 0,
           sem1 = 0,
-          prox4 = 0
+          prox4 = 0,
+          vprod = 0
         const pvs = new Set()
         rs.forEach(function (r) {
           const si = siOf(r)
           tot += r.vtot
-          if (si === 0) atr += r.vtot
-          if (si === 1) sem1 += r.vtot
-          if (si >= 1 && si <= 4) prox4 += r.vtot
+          vprod += vProd(r)
+          if (si === 0) atr += vPend(r)
+          if (si === 1) sem1 += vPend(r)
+          if (si >= 1 && si <= 4) prox4 += vPend(r)
           pvs.add(String(r.pv) + '|' + r.empresa)
         })
         const lblAtr = cenario === 'plano' ? 'Atrasado remanescente (fora do plano)' : 'Atrasado'
@@ -5915,8 +8149,14 @@
             rs.length + ' linhas · ' + pvs.size + ' PVs',
             '',
           ) +
+          k(
+            'Produzido (declarado)',
+            FMT.format(vprod),
+            'coberto pela produção da semana',
+            'green',
+          ) +
           k(lblAtr, FMT.format(atr), Math.round((atr / tot) * 100) + '% da carteira', 'red') +
-          k('Semana atual (' + SEM[1] + ')', FMT.format(sem1), 'entregas previstas', '') +
+          k('Semana atual (' + SEM[1] + ')', FMT.format(sem1), 'pendente de produção', '') +
           k('Próximas 4 semanas', FMT.format(prox4), SEM[1] + ' → ' + SEM[4], '')
         document.getElementById('fonte').textContent = 'planilha ' + DATA.gerado
         document.getElementById('badgeRows').textContent = rs.length + ' itens'
@@ -5978,6 +8218,44 @@
             '</button>'
           )
         }).join('')
+        window.renderDias = function () {
+          const diasU = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+          const db = document.getElementById('dbtns')
+          db.innerHTML =
+            visaoSemana === 'dia'
+              ? diasU
+                  .map(function (d) {
+                    const n = (function () {
+                      return visiveis(DATA.rows, 'chkFreteS').filter(function (r) {
+                        return siOf(r) === semSel && diaNomeDe(r.iso) === d
+                      }).length
+                    })()
+                    return (
+                      '<button data-d="' +
+                      d +
+                      '" class="' +
+                      (d === diaSel ? 'on' : '') +
+                      '" style="font-size:11.5px;padding:4px 10px">' +
+                      d +
+                      ' <small style="opacity:.7">(' +
+                      n +
+                      ')</small></button>'
+                    )
+                  })
+                  .join('')
+              : ''
+          Array.prototype.forEach.call(db.children, function (b) {
+            b.addEventListener('click', function () {
+              diaSel = b.getAttribute('data-d')
+              Array.prototype.forEach.call(db.children, function (x) {
+                x.classList.remove('on')
+              })
+              b.classList.add('on')
+              renderSemana()
+            })
+          })
+        }
+        renderDias()
         Array.prototype.forEach.call(box.children, function (b) {
           b.addEventListener('click', function () {
             semSel = parseInt(b.getAttribute('data-i'), 10)
@@ -5991,10 +8269,16 @@
       })()
 
       function renderSemana() {
-        const rs = visiveis(DATA.rows, 'chkFreteS').filter(function (r) {
+        let rs = visiveis(DATA.rows, 'chkFreteS').filter(function (r) {
           return siOf(r) === semSel
         })
-        // agrega produtos iguais na mesma semana
+        // visão diária: filtra pelo dia útil selecionado (botões de dia substituem o título)
+        if (visaoSemana === 'dia') {
+          rs = rs.filter(function (r) {
+            return diaNomeDe(r.iso) === diaSel
+          })
+        }
+        // agrega produtos iguais na mesma semana (separando pendente × produzido)
         const map = {}
         rs.forEach(function (r) {
           let p = map[r.codigo]
@@ -6005,6 +8289,9 @@
               frete: r.frete,
               qtd: 0,
               vtot: 0,
+              qtdP: 0,
+              vP: 0,
+              vPr: 0,
               pvs: {},
               dmin: null,
               dmax: null,
@@ -6016,6 +8303,9 @@
           if (r.siPlano != null) p.plano = true
           p.qtd += r.qtd
           p.vtot += r.vtot
+          p.qtdP += qtdPend(r)
+          p.vP += vPend(r)
+          p.vPr += vProd(r)
           const kpv = String(r.pv) + '|' + r.empresa
           if (!p.pvs[kpv])
             p.pvs[kpv] = {
@@ -6025,6 +8315,8 @@
               qtd: 0,
               vtot: 0,
               data: r.data,
+              prod: r.prod,
+              rig: r.rig,
             }
           p.pvs[kpv].qtd += r.qtd
           p.pvs[kpv].vtot += r.vtot
@@ -6038,28 +8330,90 @@
           }
         })
         const prods = Object.values(map).sort(function (a, b) {
-          return b.vtot - a.vtot
+          return b.vP - a.vP
         })
         document.getElementById('trhS').innerHTML =
-          '<th>Código / Produto</th><th>Qtd</th><th>Valor total</th><th>Entrega original</th><th>PVs</th><th>Tipo</th>'
+          '<th>Código / Produto</th><th>Qtd pendente</th><th>Produzido</th><th>Valor pendente</th><th>Entrega original</th><th>PVs</th><th>Tipo</th>'
         let tq = 0,
-          tv = 0
+          tv = 0,
+          tpr = 0
         const pvsAll = new Set()
         document.getElementById('tbbS').innerHTML = prods
           .map(function (p, ix) {
-            tq += p.qtd
-            tv += p.vtot
+            tq += p.qtdP
+            tv += p.vP
+            tpr += p.vPr
             const pvList = Object.values(p.pvs)
             pvList.forEach(function (v) {
               pvsAll.add(String(v.pv) + '|' + v.empresa)
             })
             const dspan = p.dminD === p.dmaxD ? p.dminD : p.dminD + '–' + p.dmaxD
             const noPlano = cenario === 'plano' && p.plano
+            const temRig = pvList.some(function (v) {
+              return v.rig
+            })
+            const seg = semanaSegunda(SEM[semSel])
+            // visão por dia útil: distribui os PVs do produto pelos dias úteis da semana conforme a data de coleta (entrega − trânsito)
+            const diasSem = [
+              [1, 'Seg'],
+              [2, 'Ter'],
+              [3, 'Qua'],
+              [4, 'Qui'],
+              [5, 'Sex'],
+            ]
+            const porDia = {}
+            pvList.forEach(function (v) {
+              const cid = cidadeDe(v.cliente)
+              const tdu = cid ? TRANSITO[cid][0] : null
+              const isoAlvo = v.rig && v.rig.iso ? v.rig.iso : v.data
+              let dColeta = null
+              if (tdu && isoAlvo && isoAlvo.length === 10) {
+                const ent = new Date(isoAlvo + 'T12:00:00')
+                dColeta = subDU(ent, tdu)
+              }
+              const seg = semanaSegunda(SEM[semSel])
+              let alvo = dColeta ? isoD(dColeta) : null
+              if (alvo && seg) {
+                if (alvo < seg || alvo > isoD(addDU(new Date(seg + 'T12:00:00'), 4))) alvo = null // coleta fora desta semana
+              }
+              const k = alvo || 'sem'
+              porDia[k] = porDia[k] || { qtd: 0, vt: 0, n: 0 }
+              porDia[k].qtd += v.qtd
+              porDia[k].vt += v.vtot
+              porDia[k].n++
+            })
+            const diaRows = diasSem
+              .map(function (dd) {
+                const k = seg
+                  ? isoD(new Date(new Date(seg + 'T12:00:00').getTime() + (dd[0] - 1) * 86400000))
+                  : null
+                const o = k ? porDia[k] : null
+                return (
+                  '<tr><td style="font-weight:700">' +
+                  dd[1] +
+                  '</td><td class="num">' +
+                  (o ? NF.format(Math.round(o.qtd)) + ' un' : '—') +
+                  '</td><td class="num">' +
+                  (o ? FMT.format(o.vt) : '') +
+                  '</td></tr>'
+                )
+              })
+              .join('')
+            const semK = porDia['sem']
+            const diaRowsF = semK
+              ? diaRows +
+                '<tr><td style="font-weight:700; color:#92400e">fora</td><td class="num">' +
+                NF.format(Math.round(semK.qtd)) +
+                ' un</td><td class="num">' +
+                FMT.format(semK.vt) +
+                '</td></tr>'
+              : diaRows
             const pvRows = pvList
               .sort(function (a, b) {
                 return a.pv - b.pv
               })
               .map(function (v) {
+                const rig = v.rig ? ' <span class="tagR">RÍGIDA ' + v.rig.data + '</span>' : ''
                 return (
                   '<tr><td class="pvtag">' +
                   v.pv +
@@ -6069,11 +8423,15 @@
                   v.empresa +
                   '</td><td>' +
                   v.data +
+                  rig +
                   '</td>' +
                   '<td class="num">' +
                   NF.format(Math.round(v.qtd)) +
                   '</td><td class="num">' +
                   FMT.format(v.vtot) +
+                  '</td>' +
+                  '<td>' +
+                  (v.prod ? '<span class="tagP">PRODUZIDO ' + v.prod.dd + '</span>' : '') +
                   '</td></tr>'
                 )
               })
@@ -6081,12 +8439,19 @@
             const det =
               '<tr class="detrow" data-det="' +
               ix +
-              '"><td colspan="6"><table class="mini">' +
-              '<tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Data original</th><th>Qtd</th><th>Valor</th></tr>' +
+              '"><td colspan="7"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">' +
+              '<div style="min-width:210px;flex:0 0 auto"><div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px">Visão por dia útil (coleta)</div>' +
+              '<table class="mini" style="width:auto">' +
+              diaRowsF +
+              '</table></div>' +
+              '<div style="flex:1;min-width:420px"><table class="mini" style="width:100%">' +
+              '<tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Data original</th><th>Qtd</th><th>Valor</th><th>Produção</th></tr>' +
               pvRows +
-              '</table></td></tr>'
+              '</table></div></div></td></tr>'
             return (
-              '<tr class="prow" data-ix="' +
+              '<tr class="prow' +
+              (temRig ? ' rig' : '') +
+              '" data-ix="' +
               ix +
               '"><td><div class="cod">' +
               p.codigo +
@@ -6095,10 +8460,13 @@
               p.desc +
               '</div></td>' +
               '<td class="num">' +
-              NF.format(Math.round(p.qtd)) +
+              NF.format(Math.round(p.qtdP)) +
+              '</td>' +
+              '<td class="num" style="color:#16a34a;font-weight:700">' +
+              (p.vPr > 0 ? '✓ ' + NF.format(Math.round(p.qtd - p.qtdP)) : '—') +
               '</td>' +
               '<td class="num">' +
-              FMT.format(p.vtot) +
+              FMT.format(p.vP) +
               '</td>' +
               '<td>' +
               dspan +
@@ -6122,37 +8490,37 @@
           prods.length +
           ' produtos</td>' +
           '<td class="num">' +
+          FMT.format(tpr) +
+          '</td><td class="num">' +
           FMT.format(tv) +
           '</td><td colspan="2">' +
           pvsAll.size +
           ' PVs</td><td></td>'
-        document.getElementById('semInfo').textContent =
-          prods.length + ' produtos · ' + pvsAll.size + ' PVs'
-        // toggle: clique no produto abre/fecha a caixa com os PVs
-        Array.prototype.forEach.call(document.querySelectorAll('#tbbS tr.prow'), function (tr) {
-          tr.addEventListener('click', function () {
-            const ix = tr.getAttribute('data-ix')
-            let open = tr.classList.contains('sel')
-            Array.prototype.forEach.call(
-              document.querySelectorAll('#tbbS tr.detrow'),
-              function (d) {
-                if (d.getAttribute('data-det') === ix) {
-                  d.style.display = open ? 'none' : ''
-                } else {
-                  d.style.display = 'none'
-                }
-              },
-            )
-            Array.prototype.forEach.call(document.querySelectorAll('#tbbS tr.prow'), function (x) {
-              x.classList.remove('sel')
-            })
-            if (!open) tr.classList.add('sel')
-          })
-        })
-        // detalhes começam fechados
-        Array.prototype.forEach.call(document.querySelectorAll('#tbbS tr.detrow'), function (d) {
+        // toggle por delegação: clique no produto abre SOMENTE a caixa dele; clicar de novo fecha
+        const tbS = document.getElementById('tbbS')
+        Array.prototype.forEach.call(tbS.querySelectorAll('tr.detrow'), function (d) {
           d.style.display = 'none'
         })
+        if (!tbS._toggleBound) {
+          tbS._toggleBound = true
+          tbS.addEventListener('click', function (e) {
+            const tr = e.target.closest('tr.prow')
+            if (!tr) return
+            const ix = tr.getAttribute('data-ix')
+            const det = tbS.querySelector('tr.detrow[data-det="' + ix + '"]')
+            const open = tr.classList.contains('sel')
+            Array.prototype.forEach.call(tbS.querySelectorAll('tr.detrow'), function (d) {
+              d.style.display = 'none'
+            })
+            Array.prototype.forEach.call(tbS.querySelectorAll('tr.prow'), function (x) {
+              x.classList.remove('sel')
+            })
+            if (det && !open) {
+              det.style.display = ''
+              tr.classList.add('sel')
+            }
+          })
+        }
       }
 
       // ---- Gantt produto x semana ----
@@ -6187,9 +8555,9 @@
               total: 0,
             }
           }
-          p.cel[si].qtd += r.qtd
-          p.cel[si].vtot += r.vtot
-          p.total += r.vtot
+          p.cel[si].qtd += qtdPend(r)
+          p.cel[si].vtot += vPend(r)
+          p.total += vPend(r)
         })
         return Object.values(map).sort(function (a, b) {
           return b.total - a.total
@@ -6357,6 +8725,9 @@
           return (
             (inc || !p.frete) && (!q || (p.codigo + ' ' + p.desc).toLowerCase().indexOf(q) >= 0)
           )
+        })
+        ps = ps.filter(function (p) {
+          return p.total > 0.005
         })
         ps.sort(function (a, b) {
           let va, vb
@@ -6534,6 +8905,368 @@
       renderGantt()
       renderTimeline()
       renderTabela()
+
+      // ==================== ABAS: Entregas × Carteira a Faturar ====================
+      function showView(v) {
+        document.getElementById('viewEnt').classList.toggle('on', v === 'ent')
+        document.getElementById('viewFat').classList.toggle('on', v === 'fat')
+        document.getElementById('tabEnt').classList.toggle('on', v === 'ent')
+        document.getElementById('tabFat').classList.toggle('on', v === 'fat')
+        if (v === 'fat' && !window._fatInit) {
+          renderFat()
+          window._fatInit = true
+        }
+        if (v === 'ent' && (gChart || tChart)) {
+          setTimeout(function () {
+            if (gChart) gChart.resize()
+            if (tChart) tChart.resize()
+          }, 50)
+        }
+      }
+      window.showView = showView
+
+      // ==================== VIEW CARTEIRA A FATURAR ====================
+      const MES_N = {
+        '01': 'Janeiro',
+        '02': 'Fevereiro',
+        '03': 'Março',
+        '04': 'Abril',
+        '05': 'Maio',
+        '06': 'Junho',
+        '07': 'Julho',
+        '08': 'Agosto',
+        '09': 'Setembro',
+        10: 'Outubro',
+        11: 'Novembro',
+        12: 'Dezembro',
+      }
+      function mesLabel(m) {
+        return m === 'ATRASADO' ? 'Atrasado' : (MES_N[m.slice(5, 7)] || '') + ' / ' + m.slice(0, 4)
+      }
+      function dtBR(iso) {
+        return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : '—'
+      }
+      function qtdPendF(r) {
+        return r.prod ? Math.max(0, r.qtd - r.prod.qtd) : r.qtd
+      }
+      function vPendF(r) {
+        return r.vtot * (r.qtd ? qtdPendF(r) / r.qtd : 0)
+      }
+      function vProdF(r) {
+        return r.vtot - vPendF(r)
+      }
+
+      function renderFat() {
+        const rs = DATA.rows
+        const TOT = rs.reduce((a, r) => a + r.vtot, 0)
+        const ATR = rs.filter((r) => r.semana === 'ATRASADO').reduce((a, r) => a + r.vtot, 0)
+        const VPROD = rs.filter((r) => r.prod).reduce((a, r) => a + vProdF(r), 0)
+        const PVS = new Set(rs.map((r) => r.pv + '|' + r.empresa)).size
+        document.getElementById('fKpis').innerHTML =
+          '<div class="kpi"><div class="v">' +
+          FMT.format(TOT) +
+          '</div><div class="l">Carteira total a faturar (' +
+          rs.length +
+          ' itens)</div></div>' +
+          '<div class="kpi"><div class="v">' +
+          PVS +
+          '</div><div class="l">PVs com saldo a faturar</div></div>' +
+          '<div class="kpi red"><div class="v">' +
+          FMT.format(ATR) +
+          '</div><div class="l">Atrasado (' +
+          ((100 * ATR) / TOT).toFixed(0) +
+          '% da carteira)</div></div>' +
+          '<div class="kpi green"><div class="v">' +
+          FMT.format(VPROD) +
+          '</div><div class="l">Já em produção (declarado)</div></div>'
+
+        // por empresa
+        const emp = {}
+        rs.forEach(function (r) {
+          const o = (emp[r.empresa] = emp[r.empresa] || { vt: 0, qtd: 0, atr: 0, pvs: new Set() })
+          o.vt += r.vtot
+          o.qtd += r.qtd
+          if (r.semana === 'ATRASADO') o.atr += r.vtot
+          o.pvs.add(r.pv)
+        })
+        document.getElementById('fEmp').innerHTML = Object.entries(emp)
+          .sort((a, b) => b[1].vt - a[1].vt)
+          .map(function (e) {
+            const [nome, o] = e
+            return (
+              '<div class="card" style="padding:12px 14px"><div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px"><span>' +
+              nome +
+              '</span><b>' +
+              FMT.format(o.vt) +
+              '</b></div>' +
+              '<div class="bar"><i style="width:' +
+              ((100 * o.atr) / o.vt).toFixed(0) +
+              '%"></i></div>' +
+              '<small style="color:var(--mut)">' +
+              o.pvs.size +
+              ' PVs · ' +
+              NF.format(o.qtd) +
+              ' un · atrasado ' +
+              FMT.format(o.atr) +
+              ' (' +
+              ((100 * o.atr) / o.vt).toFixed(0) +
+              '%)</small></div>'
+            )
+          })
+          .join('')
+
+        // por mês
+        const mes = {}
+        rs.forEach(function (r) {
+          const k = r.semana === 'ATRASADO' ? 'ATRASADO' : r.iso.slice(0, 7)
+          const o = (mes[k] = mes[k] || { vt: 0, qtd: 0, pvs: new Set(), n: 0 })
+          o.vt += r.vtot
+          o.qtd += r.qtd
+          o.n++
+          o.pvs.add(r.pv + '|' + r.empresa)
+        })
+        document.getElementById('fMes').innerHTML = Object.entries(mes)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(function (m) {
+            const [k, o] = m
+            return (
+              '<tr><td>' +
+              mesLabel(k) +
+              '</td><td class="num">' +
+              NF.format(o.qtd) +
+              '</td><td class="num"><b>' +
+              FMT.format(o.vt) +
+              '</b></td><td class="num">' +
+              o.pvs.size +
+              '</td><td class="num">' +
+              o.n +
+              '</td></tr>'
+            )
+          })
+          .join('')
+
+        renderFatProds()
+        renderFatAll()
+      }
+
+      // por produto com drill PV
+      let fatQ = ''
+      function renderFatProds() {
+        const q = fatQ.toUpperCase()
+        const map = {}
+        DATA.rows.forEach(function (r) {
+          if (
+            q &&
+            !(r.codigo + ' ' + r.desc + ' ' + r.cliente + ' ' + r.pv + ' ' + r.empresa)
+              .toUpperCase()
+              .includes(q)
+          )
+            return
+          const o = (map[r.codigo] = map[r.codigo] || {
+            desc: r.desc,
+            frete: r.frete,
+            qtd: 0,
+            vt: 0,
+            atr: 0,
+            pvs: {},
+          })
+          o.qtd += r.qtd
+          o.vt += r.vtot
+          if (r.semana === 'ATRASADO') o.atr += r.vtot
+          const k = r.pv + '|' + r.empresa
+          o.pvs[k] = o.pvs[k] || {
+            pv: r.pv,
+            cli: r.cliente,
+            emp: r.empresa,
+            qtd: 0,
+            vt: 0,
+            data: r.iso,
+            atr: r.semana === 'ATRASADO',
+            prod: r.prod,
+          }
+          o.pvs[k].qtd += r.qtd
+          o.pvs[k].vt += r.vtot
+        })
+        const arr = Object.entries(map).sort((a, b) => b[1].vt - a[1].vt)
+        document.getElementById('fProd').innerHTML =
+          arr
+            .map(function (p, ix) {
+              const [cod, o] = p
+              const pvRows = Object.values(o.pvs)
+                .sort((a, b) => a.pv - b.pv)
+                .map(function (v) {
+                  return (
+                    '<tr><td><b>' +
+                    v.pv +
+                    '</b></td><td>' +
+                    v.cli +
+                    '</td><td>' +
+                    v.emp +
+                    '</td><td>' +
+                    dtBR(v.data) +
+                    (v.atr ? ' <span class="tagF">ATRASADO</span>' : '') +
+                    '</td><td class="num">' +
+                    NF.format(v.qtd) +
+                    '</td><td class="num">' +
+                    FMT.format(v.vt) +
+                    '</td>' +
+                    (v.prod
+                      ? '<td><span class="tagP">PRODUZIDO ' +
+                        dtBR(v.prod.dmax || v.prod.dd || '') +
+                        '</span></td>'
+                      : '<td></td>') +
+                    '</tr>'
+                  )
+                })
+                .join('')
+              const det =
+                '<tr class="detrow" data-det="' +
+                ix +
+                '" style="display:none"><td colspan="5"><table class="mini"><tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Entrega</th><th>Qtd</th><th>Valor</th><th>Produção</th></tr>' +
+                pvRows +
+                '</table></td></tr>'
+              return (
+                '<tr class="prow" data-ix="' +
+                ix +
+                '"><td><div class="cod">' +
+                cod +
+                (o.frete ? ' <span class="tagF">FRETE</span>' : '') +
+                '</div><div class="dsc">' +
+                o.desc.slice(0, 52) +
+                '</div></td>' +
+                '<td class="num">' +
+                NF.format(o.qtd) +
+                '</td><td class="num"><b>' +
+                FMT.format(o.vt) +
+                '</b></td>' +
+                '<td class="num">' +
+                Object.keys(o.pvs).length +
+                '</td><td class="num ' +
+                (o.atr ? 'neg' : '') +
+                '">' +
+                (o.atr ? FMT.format(o.atr) : '—') +
+                '</td></tr>' +
+                det
+              )
+            })
+            .join('') || '<tr><td colspan="5">Nada encontrado.</td></tr>'
+      }
+      document.getElementById('fQ').addEventListener('input', function (e) {
+        fatQ = e.target.value
+        renderFatProds()
+      })
+      document.getElementById('fProd').addEventListener('click', function (e) {
+        const tr = e.target.closest('tr.prow')
+        if (!tr) return
+        const det = tr.nextElementSibling
+        if (det && det.classList.contains('detrow'))
+          det.style.display = det.style.display === 'none' ? '' : 'none'
+      })
+
+      // carteira completa: busca + ordenação
+      let fatAllQ = '',
+        fatSort = { k: 'vtot', dir: -1 }
+      function renderFatAll() {
+        const q = fatAllQ.toUpperCase()
+        let rs = DATA.rows.filter(
+          (r) =>
+            !q ||
+            (r.codigo + ' ' + r.desc + ' ' + r.cliente + ' ' + r.pv + ' ' + r.empresa + ' ' + r.iso)
+              .toUpperCase()
+              .includes(q),
+        )
+        const k = fatSort.k,
+          dir = fatSort.dir
+        rs.sort(function (a, b) {
+          let x = a[k],
+            y = b[k]
+          if (typeof x === 'string') {
+            return x.localeCompare(y) * dir
+          }
+          return ((x || 0) - (y || 0)) * dir
+        })
+        document.getElementById('fAll').innerHTML = rs
+          .map(function (r) {
+            return (
+              '<tr><td>' +
+              dtBR(r.iso) +
+              (r.semana === 'ATRASADO' ? ' <span class="tagF">ATRASADO</span>' : '') +
+              '</td>' +
+              '<td><div class="cod">' +
+              r.codigo +
+              '</div><div class="dsc">' +
+              r.desc.slice(0, 60) +
+              '</div></td>' +
+              '<td><b>' +
+              r.pv +
+              '</b></td><td>' +
+              r.cliente +
+              '</td><td>' +
+              r.empresa +
+              '</td>' +
+              '<td class="num">' +
+              NF.format(r.qtd) +
+              '</td><td class="num">' +
+              FMT.format(r.vtot / (r.qtd || 1)) +
+              '</td><td class="num"><b>' +
+              FMT.format(r.vtot) +
+              '</b>' +
+              (r.prod ? ' <span class="tagP">P</span>' : '') +
+              '</td></tr>'
+            )
+          })
+          .join('')
+      }
+      document.getElementById('fQ2').addEventListener('input', function (e) {
+        fatAllQ = e.target.value
+        renderFatAll()
+      })
+      document.querySelectorAll('#fAllH th').forEach(function (th, ix) {
+        th.addEventListener('click', function () {
+          const keys = ['iso', 'codigo', 'pv', 'cliente', 'empresa', 'qtd', 'vtot', 'vtot']
+          const k = keys[ix]
+          fatSort = { k: k, dir: fatSort.k === k ? -fatSort.dir : ix >= 5 ? -1 : 1 }
+          renderFatAll()
+        })
+      })
+      // download Excel da carteira completa
+      document.getElementById('btnDlFat').addEventListener('click', function () {
+        const rows = [
+          [
+            'Data entrega',
+            'Atrasado',
+            'Código',
+            'Produto',
+            'PV',
+            'Cliente',
+            'Empresa',
+            'Qtd a faturar',
+            'Valor unit.',
+            'Valor total',
+          ],
+        ]
+        DATA.rows.forEach(function (r) {
+          rows.push([
+            r.iso,
+            r.semana === 'ATRASADO' ? 'SIM' : '',
+            r.codigo,
+            r.desc,
+            r.pv,
+            r.cliente,
+            r.empresa,
+            r.qtd,
+            Math.round((r.vtot / (r.qtd || 1)) * 100) / 100,
+            r.vtot,
+          ])
+        })
+        const wb = XLSX.utils.aoa_to_sheet(rows)
+        const wbk = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wbk, wb, 'Carteira')
+        XLSX.writeFile(
+          wbk,
+          'carteira_faturar_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx',
+        )
+      })
     </script>
   </body>
 </html>

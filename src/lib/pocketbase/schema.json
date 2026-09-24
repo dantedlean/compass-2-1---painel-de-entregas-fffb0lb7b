@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T02:33:43.418Z",
+  "generatedAt": "2026-09-24T02:13:57.591Z",
   "collections": [
     {
       "name": "users",
@@ -29,19 +29,608 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
         "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "planning_cycles",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "draft",
+            "open",
+            "closed",
+            "archived"
+          ]
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "manual",
+            "maxiprod",
+            "import",
+            "pulso"
+          ]
+        },
+        {
+          "name": "source_version",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_planning_cycles_status_dates ON planning_cycles (status, start_date, end_date)"
+      ]
+    },
+    {
+      "name": "planning_items",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "cycle_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "planning_cycles"
+        },
+        {
+          "name": "external_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "product_code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "product_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "pv_number",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "delivery_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "planned_week",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "quantity",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "produced_quantity",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "unit_value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "pending",
+            "producing",
+            "produced",
+            "fulfilled",
+            "cancelled"
+          ]
+        },
+        {
+          "name": "source_system",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "maxiprod",
+            "manual",
+            "pulso",
+            "import"
+          ]
+        },
+        {
+          "name": "source_record_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_freight",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rigid_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_planning_items_cycle_external ON planning_items (cycle_id, external_key)",
+        "CREATE INDEX idx_planning_items_week ON planning_items (cycle_id, planned_week)",
+        "CREATE INDEX idx_planning_items_product ON planning_items (cycle_id, product_code)",
+        "CREATE INDEX idx_planning_items_delivery ON planning_items (cycle_id, delivery_date)",
+        "CREATE INDEX idx_planning_items_status ON planning_items (cycle_id, status)"
+      ]
+    },
+    {
+      "name": "production_declarations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "cycle_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "planning_cycles"
+        },
+        {
+          "name": "production_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "product_code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "product_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "quantity",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "allocation",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "source",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "manual",
+            "pulso",
+            "maxiprod",
+            "import"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "draft",
+            "confirmed",
+            "cancelled"
+          ]
+        },
+        {
+          "name": "declared_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_production_declarations_cycle_date ON production_declarations (cycle_id, production_date)",
+        "CREATE INDEX idx_production_declarations_product ON production_declarations (cycle_id, product_code)"
+      ]
+    },
+    {
+      "name": "reprogramming_events",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "cycle_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "planning_cycles"
+        },
+        {
+          "name": "event_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "scenario",
+            "actual",
+            "import",
+            "system"
+          ]
+        },
+        {
+          "name": "occurred_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "changes",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "before_snapshot",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_reprogramming_events_cycle_date ON reprogramming_events (cycle_id, occurred_at DESC)"
+      ]
+    },
+    {
+      "name": "sync_runs",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "cycle_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "planning_cycles"
+        },
+        {
+          "name": "source",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "maxiprod",
+            "pulso",
+            "manual"
+          ]
+        },
+        {
+          "name": "started_at",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "finished_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "running",
+            "succeeded",
+            "partial",
+            "failed"
+          ]
+        },
+        {
+          "name": "rows_read",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rows_created",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rows_updated",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "rows_removed",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "parameters",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_sync_runs_status_started ON sync_runs (status, started_at DESC)",
+        "CREATE INDEX idx_sync_runs_cycle ON sync_runs (cycle_id, started_at DESC)"
       ]
     }
   ]
