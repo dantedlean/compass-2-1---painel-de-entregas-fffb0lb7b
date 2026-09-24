@@ -7018,6 +7018,27 @@
             return a + x.qtd
           }, 0)
       }
+      // Entradas originadas da programação já estão refletidas em r.prod (produção declarada).
+      // Entradas manuais/ajustes representam produto pronto adicional e reduzem a demanda restante.
+      function smktManualTotal(cod) {
+        return smktEntradas()
+          .filter(function (x) {
+            return x.cod === cod && String(x.origem || '').indexOf('prog:') !== 0
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+      }
+      function smktManualUnallocated(cod) {
+        const al = smktAlocs()
+          .filter(function (x) {
+            return x.cod === cod
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+        return Math.max(0, smktManualTotal(cod) - al)
+      }
       function qtdPend(r) {
         const base = r.prod ? Math.max(0, r.qtd - r.prod.qtd) : r.qtd
         return Math.max(0, base - smktAlocadoEm(r.pv, r.codigo))
@@ -7030,6 +7051,14 @@
       }
       function vProd(r) {
         return r.vtot * (r.qtd ? qtdProd(r) / r.qtd : 0)
+      }
+      function subtractSmktFromProduct(p) {
+        let extra = smktManualUnallocated(p.codigo)
+        if (extra <= 0 || p.qtdP <= 0) return
+        const unit = p.qtd ? p.vtot / p.qtd : 0
+        const used = Math.min(extra, p.qtdP)
+        p.qtdP = Math.max(0, p.qtdP - used)
+        p.vP = Math.max(0, p.vP - used * unit)
       }
       function renderCenario() {
         const on = cenario === 'plano'
@@ -7983,7 +8012,7 @@
           '</td>' +
           '<td colspan="3"></td>'
         document.getElementById('smInfo').textContent =
-          'Alocações consomem o saldo do produto na carteira (pendente cai nos outros cards).'
+          'Entradas no SMKT e alocações consomem o saldo do produto na carteira; ajuste a quantidade física quando necessário.'
         // eventos (delegação)
         const tb = document.getElementById('tbbM')
         if (!tb._bound) {
@@ -8491,9 +8520,14 @@
             p.dmaxD = r.data
           }
         })
-        const prods = Object.values(map).sort(function (a, b) {
-          return b.vP - a.vP
-        })
+        Object.values(map).forEach(subtractSmktFromProduct)
+        const prods = Object.values(map)
+          .filter(function (p) {
+            return p.qtdP > 0.005
+          })
+          .sort(function (a, b) {
+            return b.vP - a.vP
+          })
         document.getElementById('trhS').innerHTML =
           '<th>Código / Produto</th><th>Qtd pendente</th><th>Produzido</th><th>Valor pendente</th><th>Entrega original</th><th>PVs</th><th>Tipo</th>'
         let tq = 0,
@@ -8721,9 +8755,53 @@
           p.cel[si].vtot += vPend(r)
           p.total += vPend(r)
         })
-        return Object.values(map).sort(function (a, b) {
-          return b.total - a.total
+        Object.values(map).forEach(function (p) {
+          let extra = smktManualUnallocated(p.codigo)
+          const unit =
+            p.total &&
+            p.cel.reduce(function (a, c) {
+              return a + c.qtd
+            }, 0)
+              ? p.total /
+                p.cel.reduce(function (a, c) {
+                  return a + c.qtd
+                }, 0)
+              : 0
+          for (let i = 0; i < p.cel.length && extra > 0; i++) {
+            const used = Math.min(extra, p.cel[i].qtd)
+            p.cel[i].qtd -= used
+            p.cel[i].vtot = Math.max(0, p.cel[i].vtot - used * unit)
+            p.total = Math.max(0, p.total - used * unit)
+            extra -= used
+          }
         })
+        Object.values(map).forEach(function (p) {
+          let extra = smktManualUnallocated(p.codigo)
+          const unit =
+            p.total &&
+            p.cel.reduce(function (a, c) {
+              return a + c.qtd
+            }, 0)
+              ? p.total /
+                p.cel.reduce(function (a, c) {
+                  return a + c.qtd
+                }, 0)
+              : 0
+          for (let i = 0; i < p.cel.length && extra > 0; i++) {
+            const used = Math.min(extra, p.cel[i].qtd)
+            p.cel[i].qtd -= used
+            p.cel[i].vtot = Math.max(0, p.cel[i].vtot - used * unit)
+            p.total = Math.max(0, p.total - used * unit)
+            extra -= used
+          }
+        })
+        return Object.values(map)
+          .filter(function (p) {
+            return p.total > 0.005
+          })
+          .sort(function (a, b) {
+            return b.total - a.total
+          })
       }
       function renderGantt() {
         const ps = aggProdutos()
