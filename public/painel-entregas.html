@@ -498,7 +498,8 @@
             Modelo WARD: o que foi fabricado e <b>não alocado em nenhum PV</b> fica aqui como
             produto pronto. Depois você
             <b>seleciona produto + quantidade e aloca em PVs</b> (destino conforme transporte).
-            Alocar aqui <b>consome o saldo</b> do produto nos outros cards.
+            Alocar aqui <b>consome o saldo</b> do produto nos outros cards. Use
+            <b>Ajustar qtd</b> para corrigir a quantidade física registrada.
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
             <select
@@ -7105,9 +7106,25 @@
         renderProgTabela()
       }
       function renderProgTabela() {
-        const rs = DATA.progSemana.dias.filter(function (a) {
+        const rsBase = DATA.progSemana.dias.filter(function (a) {
           return a.dia === progDia
         })
+        // Entrada no SMKT já está em produto pronto: não continua como demanda no card principal.
+        const rs = rsBase
+          .map(function (a) {
+            const realizado = smktEntradas()
+              .filter(function (x) {
+                return x.cod === a.cod && String(x.origem || '').indexOf('prog:') === 0
+              })
+              .reduce(function (t, x) {
+                return t + x.qtd
+              }, 0)
+            const saldo = Math.max(0, a.qtd - realizado)
+            return Object.assign({}, a, { qtd: saldo, vtot: a.qtd ? (a.vtot * saldo) / a.qtd : 0 })
+          })
+          .filter(function (a) {
+            return a.qtd > 0
+          })
         document.getElementById('trhP').innerHTML =
           '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada no cliente</th><th>Situação</th><th>Executado</th><th>Qtd realizada</th><th>Realocar / PV destino</th>'
         // agrega produtos iguais no mesmo dia (mesmo modelo da tabela semanal)
@@ -7128,9 +7145,12 @@
           p.pvs[kpv].vtot += a.vtot
           if (atr) p.pvs[kpv].atr = true
         })
-        const prods = Object.values(map).sort(function (x, y) {
-          return y.vtot - x.vtot
-        })
+        const prods = aplicarSmktNaProgramacao(
+          Object.values(map).sort(function (x, y) {
+            return y.vtot - x.vtot
+          }),
+          progDia,
+        )
         let tq = 0,
           tv = 0,
           tex = 0
@@ -7352,13 +7372,7 @@
                 return
               }
               const ents = smktEntradas()
-              ents.push({
-                cod: p.cod,
-                qtd: qSm,
-                origem: 'prog:' + progDia,
-                data: new Date().toLocaleDateString('pt-BR'),
-              })
-              smktSave(ents, smktAlocs())
+              smktUpsertProgramado(p.cod, progDia, qSm)
               setProgExec(p.cod, progDia, {
                 ok: ok,
                 qtd: qtd,
@@ -7368,6 +7382,8 @@
                 smkt: qSm,
               })
               renderSmkt()
+              renderProgTabela()
+              renderSemana()
               renderKpis()
               alert(
                 '🛒 ' +
@@ -7419,9 +7435,24 @@
       const _origRPT = renderProgTabela
       renderProgTabela = function () {
         // cache dos produtos agregados do dia para os handlers
-        const rs = DATA.progSemana.dias.filter(function (a) {
+        const rsBase = DATA.progSemana.dias.filter(function (a) {
           return a.dia === progDia
         })
+        const rs = rsBase
+          .map(function (a) {
+            const realizado = smktEntradas()
+              .filter(function (x) {
+                return x.cod === a.cod && String(x.origem || '').indexOf('prog:') === 0
+              })
+              .reduce(function (t, x) {
+                return t + x.qtd
+              }, 0)
+            const saldo = Math.max(0, a.qtd - realizado)
+            return Object.assign({}, a, { qtd: saldo, vtot: a.qtd ? (a.vtot * saldo) / a.qtd : 0 })
+          })
+          .filter(function (a) {
+            return a.qtd > 0
+          })
         const map = {}
         rs.forEach(function (a) {
           let p = map[a.cod]
@@ -7431,9 +7462,12 @@
           p.qtd += a.qtd
           p.vtot += a.vtot
         })
-        progProdsCache = Object.values(map).sort(function (x, y) {
-          return y.vtot - x.vtot
-        })
+        progProdsCache = aplicarSmktNaProgramacao(
+          Object.values(map).sort(function (x, y) {
+            return y.vtot - x.vtot
+          }),
+          progDia,
+        )
         _origRPT()
       }
 
@@ -7668,7 +7702,31 @@
       // entradas: [{cod, qtd, origem: 'manual'|'prog:<dia>', data}] · alocações: [{cod, pv, qtd, data}]
       function smktEntradas() {
         try {
-          return JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
+          const raw = JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
+          if (!Array.isArray(raw)) return []
+          const out = [],
+            pos = {}
+          raw.forEach(function (x) {
+            if (!x || !x.cod) return
+            const q = Number(x.qtd) || 0
+            if (q <= 0) return
+            const origem = String(x.origem || 'manual')
+            // Corrige legado: a versão anterior podia registrar a mesma entrada
+            // várias vezes ao selecionar SMKT; para a mesma programação usamos a
+            // maior quantidade registrada, não a soma das repetições.
+            if (origem.indexOf('prog:') === 0) {
+              const k = String(x.cod) + '|' + origem
+              if (pos[k] === undefined) {
+                pos[k] = out.length
+                out.push(Object.assign({}, x, { qtd: q, origem: origem }))
+              } else {
+                out[pos[k]].qtd = Math.max(Number(out[pos[k]].qtd) || 0, q)
+              }
+            } else out.push(x)
+          })
+          if (JSON.stringify(out) !== JSON.stringify(raw))
+            localStorage.setItem('smkt|entradas', JSON.stringify(out))
+          return out
         } catch (e) {
           return []
         }
@@ -7679,6 +7737,48 @@
         } catch (e) {
           return []
         }
+      }
+      // Produção enviada ao SMKT fica vinculada ao produto + dia da programação.
+      // Essa quantidade deixa de ser pendência do card de produção, mas continua
+      // disponível no estoque de prontos até ser alocada em um PV.
+      function smktProgramadoEm(cod, dia) {
+        const origem = 'prog:' + dia
+        return smktEntradas()
+          .filter(function (x) {
+            return x.cod === cod && x.origem === origem
+          })
+          .reduce(function (a, x) {
+            return a + (Number(x.qtd) || 0)
+          }, 0)
+      }
+      function smktUpsertProgramado(cod, dia, qtd) {
+        const origem = 'prog:' + dia
+        const ent = smktEntradas().filter(function (x) {
+          return !(x.cod === cod && x.origem === origem)
+        })
+        if ((Number(qtd) || 0) > 0)
+          ent.push({
+            cod: cod,
+            qtd: Number(qtd),
+            origem: origem,
+            data: new Date().toLocaleDateString('pt-BR'),
+          })
+        smktSave(ent, smktAlocs())
+      }
+      function aplicarSmktNaProgramacao(prods, dia) {
+        return prods
+          .map(function (p) {
+            const originalQtd = p.qtd
+            const originalValor = p.vtot
+            const enviado = Math.min(originalQtd, smktProgramadoEm(p.cod, dia))
+            p.smktQtd = enviado
+            p.qtd = Math.max(0, originalQtd - enviado)
+            p.vtot = originalQtd ? (originalValor * p.qtd) / originalQtd : 0
+            return p
+          })
+          .filter(function (p) {
+            return p.qtd > 0
+          })
       }
       function smktSave(ent, alc) {
         localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
@@ -7853,7 +7953,7 @@
                   '</select></td>' +
                   '<td class="exec"><button class="exRl" data-m="alc" ' +
                   (saldo > 0 ? '' : 'disabled') +
-                  ' style="background:#eff6ff;color:#1e3a8a;border-color:#93c5fd">Alocar →</button></td></tr>' +
+                  ' style="background:#eff6ff;color:#1e3a8a;border-color:#93c5fd">Alocar →</button><button class="exRl" data-m="aj" title="Ajustar a quantidade total registrada no SMKT" style="margin-left:5px">Ajustar qtd</button></td></tr>' +
                   (det
                     ? '<tr class="detrow" style="display:none"><td colspan="6"><table class="mini"><tr><th>PV</th><th>Qtd</th><th>Dia</th><th></th></tr>' +
                       det +
@@ -7889,10 +7989,72 @@
         if (!tb._bound) {
           tb._bound = true
           tb.addEventListener('click', function (e) {
-            const btn = e.target.closest('button[data-m=alc]')
+            const btn = e.target.closest('button[data-m]')
             if (!btn) return
             const tr = btn.closest('tr')
             const cod = tr.getAttribute('data-cod')
+            if (btn.getAttribute('data-m') === 'aj') {
+              const ent = smktEntradas()
+                .filter(function (x) {
+                  return x.cod === cod
+                })
+                .reduce(function (a, x) {
+                  return a + x.qtd
+                }, 0)
+              const alq = smktAlocs()
+                .filter(function (x) {
+                  return x.cod === cod
+                })
+                .reduce(function (a, x) {
+                  return a + x.qtd
+                }, 0)
+              const v = prompt(
+                'Nova quantidade total registrada no SMKT para ' +
+                  cod +
+                  ' (já alocado: ' +
+                  NF.format(alq) +
+                  ' un):',
+                String(ent),
+              )
+              if (v === null) return
+              const novo = parseFloat(String(v).replace(',', '.'))
+              if (!Number.isFinite(novo) || novo < alq) {
+                alert(
+                  'Quantidade inválida. O total não pode ser menor que o já alocado (' +
+                    NF.format(alq) +
+                    ' un).',
+                )
+                return
+              }
+              const ents = smktEntradas()
+              let restante = novo
+              for (let i = 0; i < ents.length; i++) {
+                if (ents[i].cod !== cod) continue
+                const usar = Math.min(restante, ents[i].qtd)
+                ents[i].qtd = usar
+                restante -= usar
+              }
+              if (restante > 0)
+                ents.push({
+                  cod: cod,
+                  qtd: restante,
+                  origem: 'ajuste',
+                  data: new Date().toLocaleDateString('pt-BR'),
+                  obs: 'ajuste manual do SMKT',
+                })
+              smktSave(
+                ents.filter(function (x) {
+                  return x.cod !== cod || x.qtd > 0
+                }),
+                smktAlocs(),
+              )
+              renderSmkt()
+              renderSemana()
+              renderProgTabela()
+              renderKpis()
+              return
+            }
+            if (btn.getAttribute('data-m') !== 'alc') return
             const qtd = parseFloat(tr.querySelector('input[data-m=qtd]').value) || 0
             const pv = tr.querySelector('select[data-m=pv]').value
             if (!pv) {
