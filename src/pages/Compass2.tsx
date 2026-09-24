@@ -60,6 +60,7 @@ export default function Compass2() {
   const [cycleId, setCycleId] = useState('')
   const [items, setItems] = useState<PlanningItem[]>([])
   const [declarations, setDeclarations] = useState<ProductionDeclaration[]>([])
+  const [events, setEvents] = useState<ReprogrammingEvent[]>([])
   const [cycleForm, setCycleForm] = useState(emptyCycle)
   const [declarationForm, setDeclarationForm] = useState(emptyDeclaration)
   const [itemForm, setItemForm] = useState(emptyItem)
