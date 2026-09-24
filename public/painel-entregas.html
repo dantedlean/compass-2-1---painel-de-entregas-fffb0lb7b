@@ -8098,8 +8098,11 @@
               )
               renderSmkt()
               renderSemana()
-              renderProgTabela()
+              if (DATA.progSemana && DATA.progSemana.dias.length) renderProgTabela()
               renderKpis()
+              renderGantt()
+              renderTimeline()
+              renderTabela()
               return
             }
             if (btn.getAttribute('data-m') !== 'alc') return
@@ -8126,8 +8129,11 @@
             smktSave(ent, a)
             renderSmkt()
             renderSemana()
-            renderProgTabela()
-            renderKpis() // consumo do saldo em todos os cards
+            if (DATA.progSemana && DATA.progSemana.dias.length) renderProgTabela()
+            renderKpis()
+            renderGantt()
+            renderTimeline()
+            renderTabela() // consumo do saldo em todos os cards
           })
         }
       }
@@ -8148,7 +8154,12 @@
         smktSave(e, smktAlocs())
         document.getElementById('smQtd').value = ''
         renderSmkt()
+        renderSemana()
+        if (DATA.progSemana && DATA.progSemana.dias.length) renderProgTabela()
         renderKpis()
+        renderGantt()
+        renderTimeline()
+        renderTabela()
       })
       renderSmkt()
 
