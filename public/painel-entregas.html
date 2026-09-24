@@ -2979,9 +2979,9 @@
             qtd: 7.0,
             vtot: 78721.72,
             frete: false,
-            semanaErp: '2026-W40',
-            isoErp: '2026-10-02',
-            dataErp: '02/10',
+            semanaErp: 'ATRASADO',
+            isoErp: '2026-09-13',
+            dataErp: '13/09',
             rig: {
               iso: '2026-10-02',
               data: '02/10',
@@ -3005,9 +3005,9 @@
             qtd: 57.0,
             vtot: 377419.23,
             frete: false,
-            semanaErp: '2026-W40',
-            isoErp: '2026-10-02',
-            dataErp: '02/10',
+            semanaErp: 'ATRASADO',
+            isoErp: '2026-09-13',
+            dataErp: '13/09',
             rig: {
               iso: '2026-10-02',
               data: '02/10',
@@ -3031,9 +3031,9 @@
             qtd: 34.0,
             vtot: 300255.02,
             frete: false,
-            semanaErp: '2026-W40',
-            isoErp: '2026-10-02',
-            dataErp: '02/10',
+            semanaErp: 'ATRASADO',
+            isoErp: '2026-09-13',
+            dataErp: '13/09',
             rig: {
               iso: '2026-10-02',
               data: '02/10',
@@ -3057,9 +3057,9 @@
             qtd: 10.0,
             vtot: 135000.0,
             frete: true,
-            semanaErp: '2026-W40',
-            isoErp: '2026-10-02',
-            dataErp: '02/10',
+            semanaErp: 'ATRASADO',
+            isoErp: '2026-09-13',
+            dataErp: '13/09',
             rig: {
               iso: '2026-10-02',
               data: '02/10',
@@ -9151,7 +9151,7 @@
               FMT.format(p.vP) +
               '</td>' +
               '<td>' +
-              (cenario === 'plano'
+              (cenario === 'plano' && dspanErp !== dspan
                 ? dspanErp + ' <span class="tagR">' + dspan + '</span>'
                 : dspan) +
               '</td>' +
