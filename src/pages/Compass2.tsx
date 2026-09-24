@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import pb from '@/lib/pocketbase/client'
 import {
   createPlanningCycle,
+  createPlanningItem,
   createProductionDeclaration,
   listPlanningCycles,
   listPlanningItems,
   listProductionDeclarations,
+  listReprogrammingEvents,
+  recordReprogrammingEvent,
   type PlanningCycle,
   type PlanningItem,
   type ProductionDeclaration,
+  type ReprogrammingEvent,
 } from '@/services/compass2'
 
 const emptyCycle = { name: '', start_date: '', end_date: '', notes: '' }
@@ -19,6 +23,20 @@ const emptyDeclaration = {
   quantity: '1',
   notes: '',
 }
+const emptyItem = {
+  external_key: '',
+  product_code: '',
+  product_name: '',
+  pv_number: '',
+  client_name: '',
+  company_name: '',
+  delivery_date: '',
+  planned_week: '',
+  quantity: '1',
+  unit_value: '0',
+  notes: '',
+}
+const emptyEvent = { reason: '', field: 'delivery_date', before: '', after: '' }
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Não foi possível concluir a operação.'
@@ -44,6 +62,8 @@ export default function Compass2() {
   const [declarations, setDeclarations] = useState<ProductionDeclaration[]>([])
   const [cycleForm, setCycleForm] = useState(emptyCycle)
   const [declarationForm, setDeclarationForm] = useState(emptyDeclaration)
+  const [itemForm, setItemForm] = useState(emptyItem)
+  const [eventForm, setEventForm] = useState(emptyEvent)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -72,14 +92,17 @@ export default function Compass2() {
     if (!nextCycleId) {
       setItems([])
       setDeclarations([])
+      setEvents([])
       return
     }
-    const [nextItems, nextDeclarations] = await Promise.all([
+    const [nextItems, nextDeclarations, nextEvents] = await Promise.all([
       listPlanningItems(nextCycleId),
       listProductionDeclarations(nextCycleId),
+      listReprogrammingEvents(nextCycleId),
     ])
     setItems(nextItems)
     setDeclarations(nextDeclarations)
+    setEvents(nextEvents)
   }
 
   async function loadWorkspace(preferredCycleId?: string) {
@@ -118,6 +141,7 @@ export default function Compass2() {
     setCycleId('')
     setItems([])
     setDeclarations([])
+    setEvents([])
   }
 
   async function createCycle(event: FormEvent<HTMLFormElement>) {
@@ -130,6 +154,73 @@ export default function Compass2() {
       setCycleForm(emptyCycle)
       setNotice('Ciclo persistido no backend.')
       await loadWorkspace(created.id)
+    } catch (createError) {
+      setError(errorMessage(createError))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function createItem(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!cycleId) return
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      await createPlanningItem({
+        cycle_id: cycleId,
+        external_key: itemForm.external_key,
+        product_code: itemForm.product_code,
+        product_name: itemForm.product_name,
+        pv_number: itemForm.pv_number,
+        client_name: itemForm.client_name,
+        company_name: itemForm.company_name,
+        delivery_date: itemForm.delivery_date,
+        planned_week: itemForm.planned_week,
+        quantity: Number(itemForm.quantity),
+        unit_value: Number(itemForm.unit_value),
+        notes: itemForm.notes,
+      })
+      setItemForm(emptyItem)
+      setNotice('Item de planejamento persistido no ciclo.')
+      await loadCycle(cycleId)
+    } catch (createError) {
+      setError(errorMessage(createError))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function createEvent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!cycleId) return
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      await recordReprogrammingEvent({
+        cycle_id: cycleId,
+        event_type: 'scenario',
+        occurred_at: new Date().toISOString(),
+        reason: eventForm.reason,
+        changes: {
+          external_key: eventForm.external_key,
+          field: eventForm.field,
+          before: eventForm.before,
+          after: eventForm.after,
+        },
+        before_snapshot: {
+          external_key: eventForm.external_key,
+          field: eventForm.field,
+          value: eventForm.before,
+        },
+      })
+      setEventForm(emptyEvent)
+      setNotice(
+        'Reprogramação registrada no histórico auditável. Nenhuma data foi alterada no MaxiProd.',
+      )
+      await loadCycle(cycleId)
     } catch (createError) {
       setError(errorMessage(createError))
     } finally {
@@ -446,9 +537,256 @@ export default function Compass2() {
             </table>
           </div>
         </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <SectionTitle
+              eyebrow="Camada 3"
+              title="Itens do ciclo"
+              tag="manual / importação futura"
+            />
+            {!cycleId ? (
+              <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                Selecione um ciclo para cadastrar um item.
+              </p>
+            ) : (
+              <form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={createItem}>
+                <TextInput
+                  label="Chave externa"
+                  value={itemForm.external_key}
+                  placeholder="ex.: PV554|404-0001|DLEAN"
+                  onChange={(value) => setItemForm({ ...itemForm, external_key: value })}
+                  required
+                />
+                <TextInput
+                  label="Código"
+                  value={itemForm.product_code}
+                  placeholder="ex.: 404-0001"
+                  onChange={(value) => setItemForm({ ...itemForm, product_code: value })}
+                  required
+                />
+                <TextInput
+                  label="Produto"
+                  value={itemForm.product_name}
+                  placeholder="Nome do produto"
+                  onChange={(value) => setItemForm({ ...itemForm, product_name: value })}
+                  required
+                />
+                <TextInput
+                  label="PV"
+                  value={itemForm.pv_number}
+                  placeholder="ex.: 554"
+                  onChange={(value) => setItemForm({ ...itemForm, pv_number: value })}
+                />
+                <TextInput
+                  label="Cliente"
+                  value={itemForm.client_name}
+                  placeholder="Cliente / destino"
+                  onChange={(value) => setItemForm({ ...itemForm, client_name: value })}
+                />
+                <TextInput
+                  label="Empresa"
+                  value={itemForm.company_name}
+                  placeholder="DLEAN / VINHEDO / ..."
+                  onChange={(value) => setItemForm({ ...itemForm, company_name: value })}
+                />
+                <DateInput
+                  label="Entrega"
+                  value={itemForm.delivery_date}
+                  onChange={(value) => setItemForm({ ...itemForm, delivery_date: value })}
+                />
+                <TextInput
+                  label="Semana planejada"
+                  value={itemForm.planned_week}
+                  placeholder="ex.: 2026-W39"
+                  onChange={(value) => setItemForm({ ...itemForm, planned_week: value })}
+                  required
+                />
+                <NumberInput
+                  label="Quantidade"
+                  value={itemForm.quantity}
+                  onChange={(value) => setItemForm({ ...itemForm, quantity: value })}
+                />
+                <label className="text-xs font-medium text-slate-600">
+                  Valor unitário
+                  <input
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={itemForm.unit_value}
+                    onChange={(event) =>
+                      setItemForm({ ...itemForm, unit_value: event.target.value })
+                    }
+                  />
+                </label>
+                <textarea
+                  className="min-h-16 rounded-lg border border-slate-300 px-3 py-2.5 text-sm sm:col-span-2"
+                  placeholder="Observação / origem do dado"
+                  value={itemForm.notes}
+                  onChange={(event) => setItemForm({ ...itemForm, notes: event.target.value })}
+                />
+                <button
+                  className="rounded-lg bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60 sm:col-span-2"
+                  disabled={busy}
+                  type="submit"
+                >
+                  Adicionar item ao ciclo
+                </button>
+              </form>
+            )}
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full min-w-[620px] text-left text-xs">
+                <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-2 py-2">Produto</th>
+                    <th className="px-2 py-2">PV</th>
+                    <th className="px-2 py-2">Entrega</th>
+                    <th className="px-2 py-2">Semana</th>
+                    <th className="px-2 py-2">Qtd.</th>
+                    <th className="px-2 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr className="border-b border-slate-100" key={item.id}>
+                      <td className="px-2 py-2">
+                        <strong>{item.product_code}</strong>
+                        <br />
+                        <span className="text-slate-500">{item.product_name}</span>
+                      </td>
+                      <td className="px-2 py-2">{item.pv_number || '—'}</td>
+                      <td className="px-2 py-2">{dateLabel(item.delivery_date)}</td>
+                      <td className="px-2 py-2">{item.planned_week}</td>
+                      <td className="px-2 py-2">{item.quantity}</td>
+                      <td className="px-2 py-2">{item.status}</td>
+                    </tr>
+                  ))}
+                  {items.length === 0 && (
+                    <tr>
+                      <td className="px-2 py-5 text-center text-slate-500" colSpan={6}>
+                        Nenhum item persistido neste ciclo.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <SectionTitle
+              eyebrow="Camada 4"
+              title="Reprogramação auditável"
+              tag="cenário · sem ERP"
+            />
+            {!cycleId ? (
+              <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                Selecione um ciclo para registrar um cenário.
+              </p>
+            ) : (
+              <form className="mt-5 space-y-3" onSubmit={createEvent}>
+                <TextInput
+                  label="Chave do item"
+                  value={eventForm.external_key}
+                  placeholder="ex.: PV554|404-0001|DLEAN"
+                  onChange={(value) => setEventForm({ ...eventForm, external_key: value })}
+                  required
+                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs font-medium text-slate-600">
+                    Campo alterado
+                    <select
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      value={eventForm.field}
+                      onChange={(event) =>
+                        setEventForm({ ...eventForm, field: event.target.value })
+                      }
+                    >
+                      <option value="delivery_date">Data de entrega</option>
+                      <option value="planned_week">Semana planejada</option>
+                      <option value="quantity">Quantidade</option>
+                      <option value="status">Status</option>
+                    </select>
+                  </label>
+                  <TextInput
+                    label="Valor anterior"
+                    value={eventForm.before}
+                    placeholder="Valor atual"
+                    onChange={(value) => setEventForm({ ...eventForm, before: value })}
+                    required
+                  />
+                </div>
+                <TextInput
+                  label="Novo valor"
+                  value={eventForm.after}
+                  placeholder="Valor do cenário"
+                  onChange={(value) => setEventForm({ ...eventForm, after: value })}
+                  required
+                />
+                <textarea
+                  className="min-h-20 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+                  placeholder="Motivo da reprogramação"
+                  value={eventForm.reason}
+                  onChange={(event) => setEventForm({ ...eventForm, reason: event.target.value })}
+                  required
+                />
+                <button
+                  className="w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+                  disabled={busy}
+                  type="submit"
+                >
+                  Registrar cenário de reprogramação
+                </button>
+              </form>
+            )}
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left text-xs">
+                <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-2 py-2">Quando</th>
+                    <th className="px-2 py-2">Item</th>
+                    <th className="px-2 py-2">Alteração</th>
+                    <th className="px-2 py-2">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map((event) => {
+                    const change = event.changes as {
+                      external_key?: string
+                      field?: string
+                      before?: string
+                      after?: string
+                    }
+                    return (
+                      <tr className="border-b border-slate-100" key={event.id}>
+                        <td className="px-2 py-2">{dateLabel(event.occurred_at)}</td>
+                        <td className="px-2 py-2 font-mono">{change.external_key || '—'}</td>
+                        <td className="px-2 py-2">
+                          {change.field}: {change.before || '—'} → {change.after || '—'}
+                        </td>
+                        <td className="max-w-[220px] truncate px-2 py-2 text-slate-500">
+                          {event.reason}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {events.length === 0 && (
+                    <tr>
+                      <td className="px-2 py-5 text-center text-slate-500" colSpan={4}>
+                        Nenhum evento registrado neste ciclo.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <footer className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-          <strong>Limite desta etapa:</strong> o workspace persiste planejamento e declaração. Não
-          altera o MaxiProd, não cria OP e ainda não baixa materiais no Pulso.
+          <strong>Limite desta etapa:</strong> o workspace persiste planejamento, itens, declarações
+          e cenários. Não altera o MaxiProd, não cria OP e ainda não baixa materiais no Pulso.
         </footer>
       </div>
     </main>

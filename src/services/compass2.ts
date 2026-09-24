@@ -85,6 +85,28 @@ export interface CreateProductionDeclarationInput {
   notes?: string
 }
 
+export interface CreatePlanningItemInput {
+  cycle_id: string
+  external_key: string
+  product_code: string
+  product_name: string
+  pv_number?: string
+  client_name?: string
+  company_name?: string
+  delivery_date: string
+  planned_week: string
+  quantity: number
+  produced_quantity?: number
+  unit_value?: number
+  total_value?: number
+  status?: PlanningItemStatus
+  source_system?: PlanningSource
+  source_record_id?: string
+  is_freight?: boolean
+  rigid_date?: string
+  notes?: string
+}
+
 function requireAuth() {
   if (!pb.authStore.isValid) {
     throw new Error('É necessário entrar no Compass 2.0 para acessar os dados.')
@@ -115,6 +137,26 @@ export async function listPlanningItems(cycleId: string): Promise<PlanningItem[]
   return pb.collection('planning_items').getFullList<PlanningItem>({
     filter: pb.filter('cycle_id = {:cycleId}', { cycleId }),
     sort: 'delivery_date,product_name,pv_number',
+  })
+}
+
+export async function createPlanningItem(input: CreatePlanningItemInput): Promise<PlanningItem> {
+  requireAuth()
+  const unitValue = input.unit_value ?? 0
+  return pb.collection('planning_items').create<PlanningItem>({
+    ...input,
+    pv_number: input.pv_number ?? '',
+    client_name: input.client_name ?? '',
+    company_name: input.company_name ?? '',
+    produced_quantity: input.produced_quantity ?? 0,
+    unit_value: unitValue,
+    total_value: input.total_value ?? input.quantity * unitValue,
+    status: input.status ?? 'pending',
+    source_system: input.source_system ?? 'manual',
+    source_record_id: input.source_record_id ?? '',
+    is_freight: input.is_freight ?? false,
+    rigid_date: input.rigid_date ?? '',
+    notes: input.notes ?? '',
   })
 }
 
