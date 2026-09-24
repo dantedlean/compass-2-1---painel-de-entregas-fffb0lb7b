@@ -5,6 +5,7 @@ export type PlanningCycleStatus = 'draft' | 'open' | 'closed' | 'archived'
 export type PlanningSource = 'manual' | 'maxiprod' | 'import' | 'pulso'
 export type PlanningItemStatus = 'pending' | 'producing' | 'produced' | 'fulfilled' | 'cancelled'
 export type ProductionDeclarationStatus = 'draft' | 'confirmed' | 'cancelled'
+export type SyncRunStatus = 'running' | 'succeeded' | 'partial' | 'failed'
 
 export interface PlanningCycle extends RecordModel {
   name: string
@@ -50,6 +51,20 @@ export interface ProductionDeclaration extends RecordModel {
   status: ProductionDeclarationStatus
   declared_by?: string
   notes?: string
+}
+
+export interface SyncRun extends RecordModel {
+  cycle_id?: string
+  source: PlanningSource
+  started_at: string
+  finished_at?: string
+  status: SyncRunStatus
+  rows_read?: number
+  rows_created?: number
+  rows_updated?: number
+  rows_removed?: number
+  error_message?: string
+  parameters?: Record<string, unknown>
 }
 
 export interface ReprogrammingEvent extends RecordModel {
@@ -157,6 +172,37 @@ export async function createPlanningItem(input: CreatePlanningItemInput): Promis
     is_freight: input.is_freight ?? false,
     rigid_date: input.rigid_date ?? '',
     notes: input.notes ?? '',
+  })
+}
+
+export async function listSyncRuns(cycleId: string): Promise<SyncRun[]> {
+  requireAuth()
+  return pb.collection('sync_runs').getFullList<SyncRun>({
+    filter: pb.filter('cycle_id = {:cycleId}', { cycleId }),
+    sort: '-started_at,-created',
+  })
+}
+
+export interface SyncMaxiProdResult {
+  ok: boolean
+  sync_run_id?: string
+  rows_read?: number
+  rows_created?: number
+  rows_updated?: number
+  rows_removed?: number
+  skipped_zero_balance?: number
+  skipped_without_delivery_date?: number
+  read_only?: boolean
+  code?: string
+  message?: string
+}
+
+export async function syncMaxiProd(cycleId: string): Promise<SyncMaxiProdResult> {
+  requireAuth()
+  return pb.send<SyncMaxiProdResult>('/backend/v1/compass2/sync-maxiprod', {
+    method: 'POST',
+    body: JSON.stringify({ cycle_id: cycleId }),
+    headers: { 'Content-Type': 'application/json' },
   })
 }
 
