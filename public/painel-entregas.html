@@ -6,7 +6,33 @@
     <title>Entregas por Semana — Dlean</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+      // Fallback de CDN: se o jsdelivr não carregar (rede bloqueada/instável),
+      // tenta o unpkg antes de o painel quebrar em branco.
+      ;(function () {
+        var need = []
+        if (!window.XLSX) need.push('https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js')
+        if (!window.echarts) need.push('https://unpkg.com/echarts@5.5.0/dist/echarts.min.js')
+        need.forEach(function (u) {
+          document.write('<script src="' + u + '"><\/script>')
+        })
+      })()
+      // Banner visível se qualquer erro impedir o painel de renderizar
+      window.addEventListener('error', function (e) {
+        var b = document.getElementById('bootErr')
+        if (!b) {
+          b = document.createElement('div')
+          b.id = 'bootErr'
+          b.style.cssText =
+            'margin:14px 24px;padding:12px 16px;background:#fee2e2;color:#991b1b;border-radius:10px;font:600 13px system-ui'
+          b.textContent =
+            'Erro ao carregar o painel: ' +
+            (e.message || e.error || 'desconhecido') +
+            ' — tente atualizar com Ctrl+F5. Se persistir, avise a FRIDA.'
+          document.body.insertBefore(b, document.body.firstChild)
+        }
+      })
+    </script>
     <style>
       :root {
         --bg: #f1f5f9;
@@ -9381,6 +9407,12 @@
       function renderGantt() {
         const ps = aggProdutos()
         const el = document.getElementById('gantt')
+        if (!window.echarts) {
+          el.style.height = '80px'
+          el.innerHTML =
+            '<div style="padding:18px;color:#64748b">Gráfico indisponível nesta rede (CDN de gráficos não carregou). Tabelas, KPIs e SMKT seguem funcionando.</div>'
+          return
+        }
         el.style.height = Math.max(500, ps.length * 26 + 170) + 'px'
         if (gChart) gChart.dispose()
         gChart = echarts.init(el)
@@ -9456,6 +9488,11 @@
       }
       function renderTimeline() {
         const el = document.getElementById('timeline')
+        if (!window.echarts) {
+          el.innerHTML =
+            '<div style="padding:14px 18px;color:#64748b">Linha do tempo indisponível nesta rede (CDN de gráficos não carregou).</div>'
+          return
+        }
         if (tChart) tChart.dispose()
         tChart = echarts.init(el)
         const ps = aggProdutos()
