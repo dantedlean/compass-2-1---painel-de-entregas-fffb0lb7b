@@ -8,13 +8,16 @@ import {
   listPlanningItems,
   listProductionDeclarations,
   listReprogrammingEvents,
+  listSmktAllocations,
   listSyncRuns,
+  createSmktAllocation,
   recordReprogrammingEvent,
   syncMaxiProd,
   type PlanningCycle,
   type PlanningItem,
   type ProductionDeclaration,
   type ReprogrammingEvent,
+  type SmktAllocation,
   type SyncRun,
 } from '@/services/compass2'
 
@@ -65,6 +68,15 @@ export default function Compass2() {
   const [declarations, setDeclarations] = useState<ProductionDeclaration[]>([])
   const [events, setEvents] = useState<ReprogrammingEvent[]>([])
   const [syncRuns, setSyncRuns] = useState<SyncRun[]>([])
+  const [smktAllocs, setSmktAllocs] = useState<SmktAllocation[]>([])
+  const [smktForm, setSmktForm] = useState({
+    product_code: '',
+    pv_number: '',
+    quantity: '1',
+    nf_number: '',
+    notes: '',
+  })
+  const [pvQuery, setPvQuery] = useState('')
   const [cycleForm, setCycleForm] = useState(emptyCycle)
   const [declarationForm, setDeclarationForm] = useState(emptyDeclaration)
   const [itemForm, setItemForm] = useState(emptyItem)
@@ -99,18 +111,21 @@ export default function Compass2() {
       setDeclarations([])
       setEvents([])
       setSyncRuns([])
+      setSmktAllocs([])
       return
     }
-    const [nextItems, nextDeclarations, nextEvents, nextSyncRuns] = await Promise.all([
+    const [nextItems, nextDeclarations, nextEvents, nextSyncRuns, nextAllocs] = await Promise.all([
       listPlanningItems(nextCycleId),
       listProductionDeclarations(nextCycleId),
       listReprogrammingEvents(nextCycleId),
       listSyncRuns(nextCycleId),
+      listSmktAllocations(nextCycleId),
     ])
     setItems(nextItems)
     setDeclarations(nextDeclarations)
     setEvents(nextEvents)
     setSyncRuns(nextSyncRuns)
+    setSmktAllocs(nextAllocs)
   }
 
   async function loadWorkspace(preferredCycleId?: string) {
@@ -151,6 +166,7 @@ export default function Compass2() {
     setDeclarations([])
     setEvents([])
     setSyncRuns([])
+    setSmktAllocs([])
   }
 
   async function createCycle(event: FormEvent<HTMLFormElement>) {
@@ -285,16 +301,45 @@ export default function Compass2() {
     }
   }
 
+  async function createAlloc(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!cycleId) return
+    const item = items.find((row) => row.product_code === smktForm.product_code)
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      await createSmktAllocation({
+        cycle_id: cycleId,
+        product_code: smktForm.product_code,
+        product_name: item?.product_name || smktForm.product_code,
+        pv_number: smktForm.pv_number,
+        client_name: item?.client_name || '',
+        quantity: Number(smktForm.quantity),
+        nf_number: smktForm.nf_number,
+        notes: smktForm.notes,
+      })
+      setSmktForm({ product_code: '', pv_number: '', quantity: '1', nf_number: '', notes: '' })
+      setNotice('Baixa do Supermercado persistida: PV + NF registrados no histórico auditável.')
+      await loadCycle(cycleId)
+    } catch (allocError) {
+      setError(errorMessage(allocError))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (!authenticated) {
     return (
       <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
         <div className="mx-auto max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-400">
-            Dlean · Compass 2.0
+            Dlean · Compass 2.1
           </p>
           <h1 className="mt-3 text-3xl font-bold">Entrar no workspace</h1>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            O painel público continua no link original. Esta rota é o primeiro workspace persistido.
+            O Andon (painel provisório) continua no link original. Esta rota é o workspace
+            definitivo de planejamento.
           </p>
           <form className="mt-8 space-y-4" onSubmit={login}>
             <label className="block text-sm text-slate-300">
@@ -341,7 +386,7 @@ export default function Compass2() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-400">
-              Dlean · Compass 2.0
+              Dlean · Compass 2.1
             </p>
             <h1 className="mt-1 text-2xl font-bold">Planejamento operacional</h1>
             <p className="mt-1 text-sm text-slate-400">
@@ -541,22 +586,20 @@ export default function Compass2() {
             tag="manual → Pulso depois"
           />
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
-              <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+            <table className="w-full min-w-[680px] text-left text-xs">
+              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-3 py-3">Data</th>
-                  <th className="px-3 py-3">Produto</th>
-                  <th className="px-3 py-3">Código</th>
-                  <th className="px-3 py-3">Qtd.</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Observação</th>
+                  <th className="px-3 py-2">Data</th>
+                  <th className="px-3 py-2">Produto</th>
+                  <th className="px-3 py-2">Qtd.</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Observação</th>
                 </tr>
               </thead>
               <tbody>
                 {declarations.map((row) => (
                   <tr className="border-b border-slate-100" key={row.id}>
                     <td className="px-3 py-3">{dateLabel(row.production_date)}</td>
-                    <td className="px-3 py-3 font-medium">{row.product_name || '—'}</td>
                     <td className="px-3 py-3 font-mono text-xs">{row.product_code}</td>
                     <td className="px-3 py-3">{row.quantity}</td>
                     <td className="px-3 py-3">
@@ -579,6 +622,221 @@ export default function Compass2() {
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Camada 2.1"
+            title="Supermercado — baixa de produto pronto"
+            tag="PV + NF registrados"
+          />
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Registra a saída do produto pronto do Supermercado para um PV. A baixa fica no histórico
+            auditável com o nº da NF — a baixa no MaxiProd continua sendo o fluxo próprio de NF.
+          </p>
+          {!cycleId ? (
+            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              Selecione um ciclo para registrar a baixa.
+            </p>
+          ) : (
+            <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={createAlloc}>
+              <label className="text-xs font-medium text-slate-600">
+                Produto (catálogo do ciclo)
+                <select
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  value={smktForm.product_code}
+                  onChange={(event) =>
+                    setSmktForm({ ...smktForm, product_code: event.target.value })
+                  }
+                  required
+                >
+                  <option value="">— escolha o produto —</option>
+                  {Array.from(new Set(items.map((row) => row.product_code)))
+                    .sort()
+                    .map((code) => {
+                      const sample = items.find((row) => row.product_code === code)
+                      return (
+                        <option key={code} value={code}>
+                          {code} · {(sample?.product_name || '').slice(0, 40)}
+                        </option>
+                      )
+                    })}
+                </select>
+              </label>
+              <TextInput
+                label="PV de destino"
+                value={smktForm.pv_number}
+                placeholder="ex.: 549"
+                onChange={(value) => setSmktForm({ ...smktForm, pv_number: value })}
+                required
+              />
+              <NumberInput
+                label="Quantidade"
+                value={smktForm.quantity}
+                onChange={(value) => setSmktForm({ ...smktForm, quantity: value })}
+              />
+              <TextInput
+                label="Nº da NF (opcional)"
+                value={smktForm.nf_number}
+                placeholder="ex.: 2451"
+                onChange={(value) => setSmktForm({ ...smktForm, nf_number: value })}
+              />
+              <textarea
+                className="min-h-16 rounded-lg border border-slate-300 px-3 py-2.5 text-sm sm:col-span-2"
+                placeholder="Observação (opcional)"
+                value={smktForm.notes}
+                onChange={(event) => setSmktForm({ ...smktForm, notes: event.target.value })}
+              />
+              <button
+                className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:col-span-2"
+                disabled={busy}
+                type="submit"
+              >
+                Registrar baixa do Supermercado
+              </button>
+            </form>
+          )}
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-xs">
+              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-2 py-2">Quando</th>
+                  <th className="px-2 py-2">Produto</th>
+                  <th className="px-2 py-2">PV</th>
+                  <th className="px-2 py-2">Qtd.</th>
+                  <th className="px-2 py-2">NF</th>
+                  <th className="px-2 py-2">Observação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {smktAllocs.map((alloc) => (
+                  <tr className="border-b border-slate-100" key={alloc.id}>
+                    <td className="px-2 py-2">{dateLabel(alloc.allocated_at)}</td>
+                    <td className="px-2 py-2">
+                      <strong className="font-mono">{alloc.product_code}</strong>
+                      <br />
+                      <span className="text-slate-500">{alloc.product_name}</span>
+                    </td>
+                    <td className="px-2 py-2 font-semibold">{alloc.pv_number || '—'}</td>
+                    <td className="px-2 py-2">{alloc.quantity}</td>
+                    <td className="px-2 py-2">
+                      {alloc.nf_number ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 font-semibold text-emerald-800">
+                          NF {alloc.nf_number}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="max-w-[220px] truncate px-2 py-2 text-slate-500">
+                      {alloc.reason}
+                    </td>
+                  </tr>
+                ))}
+                {smktAllocs.length === 0 && (
+                  <tr>
+                    <td className="px-2 py-5 text-center text-slate-500" colSpan={6}>
+                      Nenhuma baixa do Supermercado registrada neste ciclo.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Camada 2.2"
+            title="Produtos a Faturar — pesquisa por PV"
+            tag="somente leitura"
+          />
+          <div className="mt-4">
+            <input
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+              placeholder="Digite o nº do PV (ou parte do cliente/produto)… ex.: 549, SHOPEE, BERENICE"
+              value={pvQuery}
+              onChange={(event) => setPvQuery(event.target.value)}
+            />
+          </div>
+          {pvQuery.trim() && (
+            <div className="mt-4 space-y-3">
+              {(() => {
+                const q = pvQuery.trim().toUpperCase()
+                const hits = items.filter((row) =>
+                  `${row.pv_number} ${row.client_name} ${row.product_code} ${row.product_name} ${row.company_name}`
+                    .toUpperCase()
+                    .includes(q),
+                )
+                if (!hits.length)
+                  return (
+                    <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                      Nenhum item encontrado para “{pvQuery}”.
+                    </p>
+                  )
+                const byPv = new Map<string, typeof hits>()
+                for (const row of hits) {
+                  const key = `${row.pv_number}|${row.company_name}`
+                  const list = byPv.get(key) || []
+                  list.push(row)
+                  byPv.set(key, list)
+                }
+                return Array.from(byPv.values()).map((rows) => {
+                  const total = rows.reduce((sum, row) => sum + (row.total_value || 0), 0)
+                  const qty = rows.reduce((sum, row) => sum + row.quantity, 0)
+                  return (
+                    <div key={rows[0].id} className="rounded-xl border border-slate-200 p-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <div>
+                          <strong className="text-sm">PV {rows[0].pv_number || '—'}</strong>{' '}
+                          <span className="text-xs text-slate-500">
+                            · {rows[0].client_name} · {rows[0].company_name}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <strong>{money(total)}</strong>{' '}
+                          <span className="text-xs text-slate-500">
+                            · {qty} un · {rows.length} item(ns)
+                          </span>
+                        </div>
+                      </div>
+                      <table className="mt-3 w-full text-left text-xs">
+                        <thead className="border-b border-slate-100 uppercase tracking-wide text-slate-500">
+                          <tr>
+                            <th className="py-1.5">Produto</th>
+                            <th className="py-1.5">Entrega</th>
+                            <th className="py-1.5">Semana</th>
+                            <th className="py-1.5">Qtd.</th>
+                            <th className="py-1.5">Valor</th>
+                            <th className="py-1.5">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((row) => (
+                            <tr className="border-b border-slate-50" key={row.id}>
+                              <td className="py-1.5">
+                                <strong className="font-mono">{row.product_code}</strong>{' '}
+                                <span className="text-slate-500">{row.product_name}</span>
+                              </td>
+                              <td className="py-1.5">{dateLabel(row.delivery_date)}</td>
+                              <td className="py-1.5">{row.planned_week}</td>
+                              <td className="py-1.5">{row.quantity}</td>
+                              <td className="py-1.5">{money(row.total_value || 0)}</td>
+                              <td className="py-1.5">
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                                  {row.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          )}
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
@@ -873,8 +1131,9 @@ export default function Compass2() {
         </section>
 
         <footer className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-          <strong>Limite desta etapa:</strong> o workspace persiste planejamento, itens, declarações
-          e cenários. Não altera o MaxiProd, não cria OP e ainda não baixa materiais no Pulso.
+          <strong>Limite desta etapa:</strong> o workspace persiste planejamento, itens,
+          declarações, cenários e baixas do Supermercado (PV + NF). Não altera o MaxiProd, não cria
+          OP e ainda não baixa materiais no Pulso.
         </footer>
       </div>
     </main>
@@ -968,8 +1227,7 @@ function NumberInput({
       <input
         className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
         type="number"
-        min="1"
-        step="1"
+        min="0"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required

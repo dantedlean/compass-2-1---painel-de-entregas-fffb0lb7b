@@ -254,3 +254,78 @@ export async function listReprogrammingEvents(cycleId: string): Promise<Reprogra
     sort: '-occurred_at,-created',
   })
 }
+
+/* ==================== Supermercado (SMKT) — produtos prontos ==================== */
+/* Alocação = baixa do produto pronto do SMKT para um PV, registrando a NF de saída.
+   Persistida como reprogramming_events (event_type 'actual') — histórico auditável. */
+
+export interface SmktAllocation {
+  id: string
+  cycle_id: string
+  product_code: string
+  product_name: string
+  pv_number: string
+  client_name: string
+  quantity: number
+  nf_number: string
+  allocated_at: string
+  reason: string
+}
+
+export async function listSmktAllocations(cycleId: string): Promise<SmktAllocation[]> {
+  requireAuth()
+  const rows = await pb.collection('reprogramming_events').getFullList<ReprogrammingEvent>({
+    filter: pb.filter("cycle_id = {:cycleId} && event_type = 'actual' && source = 'smkt'", {
+      cycleId,
+    }),
+    sort: '-created',
+    batch: 200,
+  })
+  return rows.map((row) => {
+    const c = (row.changes || {}) as Record<string, string>
+    return {
+      id: row.id,
+      cycle_id: row.cycle_id,
+      product_code: String(c.product_code || ''),
+      product_name: String(c.product_name || ''),
+      pv_number: String(c.pv_number || ''),
+      client_name: String(c.client_name || ''),
+      quantity: Number(c.quantity || 0),
+      nf_number: String(c.nf_number || ''),
+      allocated_at: row.occurred_at,
+      reason: row.reason || '',
+    }
+  })
+}
+
+export async function createSmktAllocation(input: {
+  cycle_id: string
+  product_code: string
+  product_name: string
+  pv_number: string
+  client_name: string
+  quantity: number
+  nf_number: string
+  notes?: string
+}): Promise<ReprogrammingEvent> {
+  requireAuth()
+  return pb.collection('reprogramming_events').create<ReprogrammingEvent>({
+    cycle_id: input.cycle_id,
+    event_type: 'actual',
+    occurred_at: new Date().toISOString(),
+    source: 'smkt',
+    reason:
+      input.notes ||
+      `Baixa SMKT → PV ${input.pv_number}${input.nf_number ? ` · NF ${input.nf_number}` : ''}`,
+    changes: {
+      product_code: input.product_code,
+      product_name: input.product_name,
+      pv_number: input.pv_number,
+      client_name: input.client_name,
+      quantity: input.quantity,
+      nf_number: input.nf_number,
+    },
+    before_snapshot: { field: 'smkt_balance', value: input.quantity },
+    created_by: pb.authStore.record?.id,
+  })
+}
