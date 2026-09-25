@@ -463,12 +463,12 @@
           <span class="note" style="margin: 0" id="hojeRel"></span>
         </div>
         <div class="card" id="cardProg">
-          <h2>Programação de produção desta semana <span class="tagP">DECLARADA</span></h2>
+          <h2>Programação de produção <span class="tagP">AGENDA EDITÁVEL</span></h2>
           <div class="note">
-            Produção declarada por dia × PVs atendidos (atrasados priorizados). Marque ✓
-            <b>Executado</b>, ajuste a <b>qtd realizada</b>, <b>Realocar</b> o saldo para o próximo
-            dia útil ou <b>troque o PV</b> de destino (supermercado: quem espera o produto acabado).
-            <b>Clique no produto</b> para ver os PVs.
+            Agenda por dia × PVs atendidos (atrasados priorizados). Status Planejado/Realizado
+            explícito. Marque ✓ <b>Executado</b>, ajuste a <b>qtd realizada</b>, <b>Realocar</b> o
+            saldo para o próximo dia útil ou <b>troque o PV</b> de destino (supermercado: quem
+            espera o produto acabado). <b>Clique no produto</b> para ver os PVs.
           </div>
           <div class="wbtns" id="pbtns"></div>
           <div style="margin: -6px 0 8px">
@@ -487,15 +487,46 @@
               </tfoot>
             </table>
           </div>
+          <details style="margin-top: 12px" id="progManage">
+            <summary style="cursor: pointer; font-weight: 800; color: #1e3a8a">
+              ✏️ Editar programação declarada (datas, qtd, produto, PV, local; adicionar/remover)
+            </summary>
+            <div class="note" style="margin: 8px 0">
+              As alterações ficam neste navegador até baixar o Excel e aplicar pela skill. Não
+              alteram o MaxiProd. Status Planejado não é produção realizada. Para replanejar os
+              demais entregáveis, usar a devolutiva exportada com <code>--programacao</code>.
+            </div>
+            <div class="toolbar">
+              <button id="btnAddDecl" class="dlbtn">+ Adicionar linha</button
+              ><button id="btnDlDecl" class="dlbtn">⬇ Baixar programação editada (.xlsx)</button
+              ><span class="note" id="declStatus"></span>
+            </div>
+            <div class="tblwrap" style="max-height: 340px">
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Data produção</th>
+                    <th>Código</th>
+                    <th>Qtd</th>
+                    <th>Local</th>
+                    <th>PV (opcional)</th>
+                    <th>Observação</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="declRows"></tbody>
+              </table>
+            </div>
+          </details>
         </div>
         <div class="card" id="cardSmkt">
           <h2>🛒 Supermercado — produtos acabados <span class="tagS">ESTOQUE DE PRONTOS</span></h2>
           <div class="note">
-            Modelo WARD: o que foi fabricado e <b>não alocado em nenhum PV</b> fica aqui como
-            produto pronto. Depois você
-            <b>seleciona produto + quantidade e aloca em PVs</b> (destino conforme transporte).
-            Alocar aqui <b>consome o saldo</b> do produto nos outros cards. Use
-            <b>Ajustar qtd</b> para corrigir a quantidade física registrada.
+            Somente entradas manuais registradas aparecem como saldo. Alocar em PV remove as
+            unidades do estoque ativo e registra o evento em Histórico; retirada sem PV também é
+            permitida e exige motivo. NFs sem entrada manual de produto pronto não criam saldo no
+            SMKT.
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
             <select
@@ -539,6 +570,27 @@
               <tfoot>
                 <tr id="trfM"></tr>
               </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="card" id="cardSmktHist">
+          <h2>📚 Histórico do SMKT <span class="tagS">ALOCADO / RETIRADO / NF</span></h2>
+          <div class="note">
+            Eventos concluídos ou consumidos saem do saldo ativo e ficam registrados aqui.
+          </div>
+          <div class="tblwrap" style="max-height: 300px">
+            <table id="tbSmktHist">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Produto</th>
+                  <th>Evento</th>
+                  <th>Qtd</th>
+                  <th>PV</th>
+                  <th>NF / Motivo</th>
+                </tr>
+              </thead>
+              <tbody id="tbbSmktHist"></tbody>
             </table>
           </div>
         </div>
@@ -900,7 +952,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 3,
+            siPlano: null,
             prod: { qtd: 3.0, dias: ['Quarta', 'Terça'], dd: '23/09' },
           },
           {
@@ -968,7 +1020,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1002,7 +1054,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1019,7 +1071,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1036,7 +1088,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1053,7 +1105,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1172,7 +1224,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1206,8 +1258,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 7,
-            prod: { qtd: 2.0, dias: ['Terça'], dd: '29/09' },
+            siPlano: 5,
+            prod: null,
           },
           {
             data: '22/08',
@@ -1240,8 +1292,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 7,
-            prod: { qtd: 2.0, dias: ['Terça'], dd: '29/09' },
+            siPlano: 5,
+            prod: null,
           },
           {
             data: '22/08',
@@ -1274,8 +1326,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 7,
-            prod: { qtd: 2.0, dias: ['Terça'], dd: '29/09' },
+            siPlano: 5,
+            prod: null,
           },
           {
             data: '22/08',
@@ -1308,7 +1360,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1376,7 +1428,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1410,7 +1462,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1444,7 +1496,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1478,7 +1530,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1512,7 +1564,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1563,7 +1615,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1597,7 +1649,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1631,7 +1683,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1699,7 +1751,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1733,7 +1785,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1767,7 +1819,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1801,7 +1853,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -1835,7 +1887,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -1869,8 +1921,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 7,
-            prod: { qtd: 4.0, dias: ['Terça'], dd: '29/09' },
+            siPlano: 5,
+            prod: null,
           },
           {
             data: '27/08',
@@ -1903,8 +1955,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 7,
-            prod: { qtd: 4.0, dias: ['Terça'], dd: '29/09' },
+            siPlano: 5,
+            prod: null,
           },
           {
             data: '27/08',
@@ -1938,7 +1990,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 4,
-            prod: { qtd: 3.0, dias: ['Sexta'], dd: '25/09' },
+            prod: null,
           },
           {
             data: '27/08',
@@ -1972,7 +2024,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: { qtd: 2.0, dias: ['Sexta'], dd: '25/09' },
+            prod: null,
           },
           {
             data: '28/08',
@@ -2039,7 +2091,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -2073,7 +2125,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2141,7 +2193,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2175,7 +2227,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 3,
+            siPlano: 2,
             prod: null,
           },
           {
@@ -2209,7 +2261,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -2243,7 +2295,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2277,7 +2329,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2311,7 +2363,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2345,7 +2397,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -2379,7 +2431,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2413,7 +2465,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2447,7 +2499,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2481,7 +2533,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2515,7 +2567,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2583,7 +2635,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2617,7 +2669,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2651,7 +2703,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 6,
+            siPlano: 7,
             prod: null,
           },
           {
@@ -2753,7 +2805,7 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 5,
+            siPlano: 6,
             prod: null,
           },
           {
@@ -3043,7 +3095,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: { qtd: 20.0, dias: ['Quinta', 'Terça'], dd: '29/09' },
+            prod: { qtd: 1.0, dias: ['Quinta'], dd: '24/09' },
           },
           {
             data: '06/09',
@@ -3093,7 +3145,7 @@
             frete: false,
             local: 'Vinhedo',
             si: 0,
-            siPlano: 3,
+            siPlano: 2,
             prod: null,
           },
           {
@@ -3111,7 +3163,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: { qtd: 25.0, dias: ['Quarta', 'Terça'], dd: '30/09' },
+            prod: null,
           },
           {
             data: '10/09',
@@ -3144,8 +3196,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 3,
-            prod: { qtd: 53.0, dias: ['Quarta'], dd: '30/09' },
+            siPlano: 2,
+            prod: null,
           },
           {
             data: '14/09',
@@ -3162,7 +3214,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: { qtd: 20.0, dias: ['Quarta', 'Quinta'], dd: '01/10' },
+            prod: null,
           },
           {
             data: '14/09',
@@ -3195,7 +3247,7 @@
             frete: false,
             local: 'Vinhedo',
             si: 0,
-            siPlano: 2,
+            siPlano: 3,
             prod: null,
           },
           {
@@ -3230,7 +3282,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: { qtd: 20.0, dias: ['Quinta', 'Sexta'], dd: '02/10' },
+            prod: null,
           },
           {
             data: '15/09',
@@ -3263,7 +3315,7 @@
             frete: false,
             local: 'Vinhedo',
             si: 0,
-            siPlano: 2,
+            siPlano: 3,
             prod: null,
           },
           {
@@ -3281,7 +3333,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: { qtd: 1.0, dias: ['Sexta'], dd: '02/10' },
+            prod: null,
           },
           {
             data: '17/09',
@@ -3315,7 +3367,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: { qtd: 1.0, dias: ['Sexta'], dd: '02/10' },
+            prod: null,
           },
           {
             data: '17/09',
@@ -3416,8 +3468,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: 7,
-            prod: { qtd: 1.0, dias: ['Terça'], dd: '29/09' },
+            siPlano: 5,
+            prod: null,
           },
           {
             data: '18/09',
@@ -3433,8 +3485,8 @@
             frete: false,
             local: 'Curitiba',
             si: 0,
-            siPlano: null,
-            prod: { qtd: 6.0, dias: ['Sexta'], dd: '25/09' },
+            siPlano: 3,
+            prod: null,
           },
           {
             data: '24/09',
@@ -3625,7 +3677,7 @@
             rig: { iso: '2026-09-25', data: '25/09', cli: '', proj: 'SÃO PAULO/SP', local: '' },
             si: 1,
             siPlano: null,
-            prod: { qtd: 20.0, dias: ['Quinta'], dd: '01/10' },
+            prod: null,
           },
           {
             data: '25/09',
@@ -3652,7 +3704,7 @@
             },
             si: 1,
             siPlano: null,
-            prod: { qtd: 20.0, dias: ['Sexta'], dd: '25/09' },
+            prod: null,
           },
           {
             data: '25/09',
@@ -3747,7 +3799,7 @@
             local: 'Curitiba',
             si: 1,
             siPlano: null,
-            prod: { qtd: 9.0, dias: ['Sexta'], dd: '02/10' },
+            prod: null,
           },
           {
             data: '26/09',
@@ -3791,7 +3843,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: { qtd: 20.0, dias: ['Segunda'], dd: '28/09' },
+            prod: null,
           },
           {
             data: '28/09',
@@ -3818,7 +3870,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: { qtd: 1.0, dias: ['Segunda'], dd: '28/09' },
+            prod: null,
           },
           {
             data: '28/09',
@@ -3903,7 +3955,7 @@
             local: 'Vinhedo',
             si: 2,
             siPlano: null,
-            prod: { qtd: 2.0, dias: ['Segunda'], dd: '28/09' },
+            prod: null,
           },
           {
             data: '29/09',
@@ -3924,7 +3976,7 @@
             rig: { iso: '2026-09-29', data: '29/09', cli: '', proj: 'GUARULHOS/SP', local: '' },
             si: 2,
             siPlano: null,
-            prod: { qtd: 26.0, dias: ['Segunda'], dd: '28/09' },
+            prod: null,
           },
           {
             data: '18/09',
@@ -4095,7 +4147,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: { qtd: 54.0, dias: ['Segunda', 'Sexta', 'Sábado'], dd: '28/09' },
+            prod: null,
           },
           {
             data: '02/10',
@@ -4122,7 +4174,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: { qtd: 19.0, dias: ['Quarta'], dd: '30/09' },
+            prod: null,
           },
           {
             data: '02/10',
@@ -4170,7 +4222,7 @@
             rig: { iso: '2026-10-06', data: '06/10', cli: '', proj: 'GUARULHOS/SP', local: '' },
             si: 3,
             siPlano: null,
-            prod: { qtd: 40.0, dias: ['Quinta'], dd: '01/10' },
+            prod: null,
           },
           {
             data: '06/10',
@@ -4267,7 +4319,7 @@
             rig: { iso: '2026-10-08', data: '08/10', cli: '', proj: 'HIDROLÂNDIA/GO', local: '' },
             si: 3,
             siPlano: null,
-            prod: { qtd: 7.0, dias: ['Quarta'], dd: '30/09' },
+            prod: null,
           },
           {
             data: '08/10',
@@ -6723,20 +6775,6 @@
             {
               dia: 'Sexta',
               data: '25/09',
-              cod: 'ID01598',
-              desc: 'FLOW RACK DINÂMICO 1000x2000mm - BLUE',
-              qtd: 20.0,
-              pv: '122',
-              cli: 'SHOPEE FRANCO DA ROCHA SP20',
-              emp: 'SLEAN',
-              vtot: 70222.2,
-              sit: 'em dia (2026-W39)',
-              cheg: 'consultar transportadora',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Sexta',
-              data: '25/09',
               cod: 'OUCP-0030',
               desc: 'CARRINHO OUCP-0030',
               qtd: 6.0,
@@ -6753,25 +6791,11 @@
               data: '25/09',
               cod: '401-0007',
               desc: 'ML FLOW RACK 2X2 - V2',
-              qtd: 3.0,
-              pv: '526',
-              cli: 'EBAZAR BAURU',
-              emp: 'DTEKT',
-              vtot: 19864.17,
-              sit: 'ATRASADO (recuperação)',
-              cheg: 'consultar transportadora',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Sexta',
-              data: '25/09',
-              cod: '401-0007',
-              desc: 'ML FLOW RACK 2X2 - V2',
-              qtd: 12.0,
+              qtd: 15.0,
               pv: '549',
               cli: 'EBAZAR CONTAGEM XMG1',
               emp: 'DTEKT',
-              vtot: 79456.68000000001,
+              vtot: 99320.85,
               sit: 'em dia (2026-W40)',
               cheg: 'consultar transportadora',
               local: 'Curitiba',
@@ -6851,82 +6875,12 @@
               data: '29/09',
               cod: '401-0014',
               desc: 'FLOW RACK 3X2',
-              qtd: 2.0,
-              pv: '477',
-              cli: 'EBAZAR SÃO CARLOS SP',
+              qtd: 15.0,
+              pv: '549',
+              cli: 'EBAZAR CONTAGEM XMG1',
               emp: 'DTEKT',
-              vtot: 16662.06,
-              sit: 'ATRASADO (recuperação)',
-              cheg: '02/10',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Terça',
-              data: '29/09',
-              cod: '401-0014',
-              desc: 'FLOW RACK 3X2',
-              qtd: 2.0,
-              pv: '494',
-              cli: 'EBAZAR PRESIDENTE PRUDENTE',
-              emp: 'DTEKT',
-              vtot: 17662.06,
-              sit: 'ATRASADO (recuperação)',
-              cheg: 'consultar transportadora',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Terça',
-              data: '29/09',
-              cod: '401-0014',
-              desc: 'FLOW RACK 3X2',
-              qtd: 2.0,
-              pv: '502',
-              cli: 'EBAZAR JUNDIAI',
-              emp: 'DTEKT',
-              vtot: 17662.06,
-              sit: 'ATRASADO (recuperação)',
-              cheg: 'consultar transportadora',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Terça',
-              data: '29/09',
-              cod: '401-0014',
-              desc: 'FLOW RACK 3X2',
-              qtd: 4.0,
-              pv: '524',
-              cli: 'EBAZAR CAÇAPAVA',
-              emp: 'DTEKT',
-              vtot: 35324.12,
-              sit: 'ATRASADO (recuperação)',
-              cheg: '01/10',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Terça',
-              data: '29/09',
-              cod: '401-0014',
-              desc: 'FLOW RACK 3X2',
-              qtd: 4.0,
-              pv: '525',
-              cli: 'EBAZAR ITUPEVA',
-              emp: 'DTEKT',
-              vtot: 35324.12,
-              sit: 'ATRASADO (recuperação)',
-              cheg: 'consultar transportadora',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Terça',
-              data: '29/09',
-              cod: '401-0014',
-              desc: 'FLOW RACK 3X2',
-              qtd: 1.0,
-              pv: '552',
-              cli: 'EBAZAR GOV CELSO RAMOS BRXSC2',
-              emp: 'DTEKT',
-              vtot: 55547.6,
-              sit: 'ATRASADO (recuperação)',
+              vtot: 132465.45,
+              sit: 'em dia (2026-W40)',
               cheg: 'consultar transportadora',
               local: 'Curitiba',
             },
@@ -6956,20 +6910,6 @@
               vtot: 62958.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'consultar transportadora',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Quarta',
-              data: '30/09',
-              cod: 'ID01598',
-              desc: 'FLOW RACK DINÂMICO 1000x2000mm - BLUE',
-              qtd: 7.0,
-              pv: '125',
-              cli: 'SHOPEE GOIANIA',
-              emp: 'SLEAN',
-              vtot: 31122.77,
-              sit: 'em dia (2026-W41)',
-              cheg: '06/10',
               local: 'Curitiba',
             },
             {
@@ -7101,34 +7041,6 @@
             {
               dia: 'Segunda',
               data: '28/09',
-              cod: 'QD0001',
-              desc: 'QUADRO DE GESTÃO',
-              qtd: 1.0,
-              pv: '85',
-              cli: 'TECUMSEH',
-              emp: 'DLEAN FILIAL VINHEDO',
-              vtot: 2582.0,
-              sit: 'em dia (2026-W40)',
-              cheg: 'consultar transportadora',
-              local: 'Vinhedo',
-            },
-            {
-              dia: 'Segunda',
-              data: '28/09',
-              cod: 'QD0001',
-              desc: 'QUADRO DE GESTÃO',
-              qtd: 1.0,
-              pv: '85',
-              cli: 'TECUMSEH',
-              emp: 'DLEAN FILIAL VINHEDO',
-              vtot: 2582.0,
-              sit: 'em dia (2026-W40)',
-              cheg: 'consultar transportadora',
-              local: 'Vinhedo',
-            },
-            {
-              dia: 'Segunda',
-              data: '28/09',
               cod: 'ID01386',
               desc: 'ESCORREGADOR SOLDADO SHOPEE - 1800x800x2000mm',
               qtd: 26.0,
@@ -7159,30 +7071,327 @@
               data: '01/10',
               cod: 'ID02730',
               desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
-              qtd: 20.0,
-              pv: '121',
-              cli: 'SHOPEE F DA ROCHA SP09',
-              emp: 'SLEAN',
-              vtot: 16359.4,
-              sit: 'em dia (2026-W39)',
-              cheg: 'consultar transportadora',
-              local: 'Vinhedo',
-            },
-            {
-              dia: 'Quinta',
-              data: '01/10',
-              cod: 'ID02730',
-              desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
-              qtd: 40.0,
+              qtd: 60.0,
               pv: '126',
               cli: 'SHOPEE GUARULHOS SP22',
               emp: 'SLEAN',
-              vtot: 32718.8,
+              vtot: 49078.2,
               sit: 'em dia (2026-W41)',
               cheg: 'consultar transportadora',
               local: 'Vinhedo',
             },
           ],
+          declaracoes: [
+            {
+              dia: 'Terça',
+              data: '2026-09-22',
+              cod: '404-0001',
+              qtd: 38.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0001',
+              obs: 'Histórico prévio',
+              status: 'Realizado',
+            },
+            {
+              dia: 'Terça',
+              data: '2026-09-22',
+              cod: '404-0002',
+              qtd: 1.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0002',
+              obs: 'Histórico prévio',
+              status: 'Realizado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-09-23',
+              cod: '404-0001',
+              qtd: 38.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0003',
+              obs: 'Histórico prévio',
+              status: 'Realizado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-09-23',
+              cod: '404-0002',
+              qtd: 3.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0004',
+              obs: 'Histórico prévio',
+              status: 'Realizado',
+            },
+            {
+              dia: 'Quinta',
+              data: '2026-09-24',
+              cod: '401-0006',
+              qtd: 7.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0005',
+              obs: 'Histórico prévio',
+              status: 'Realizado',
+            },
+            {
+              dia: 'Quinta',
+              data: '2026-09-24',
+              cod: '404-0001',
+              qtd: 38.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0006',
+              obs: 'Histórico prévio',
+              status: 'Realizado',
+            },
+            {
+              dia: 'Sexta',
+              data: '2026-09-25',
+              cod: 'OUCP-0030',
+              qtd: 6.0,
+              local: 'C',
+              pv: '567',
+              id: 'PR-0007',
+              obs: 'OUCP 567; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Sexta',
+              data: '2026-09-25',
+              cod: '401-0007',
+              qtd: 15.0,
+              local: 'C',
+              pv: '549',
+              id: 'PR-0008',
+              obs: 'Flow Rack 2x2; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Sexta',
+              data: '2026-09-25',
+              cod: '403-0016',
+              qtd: 2.0,
+              local: 'C',
+              pv: '2095',
+              id: 'PR-0009',
+              obs: 'Britânia; split explicit 2/2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Sexta',
+              data: '2026-09-25',
+              cod: '403-0016',
+              qtd: 2.0,
+              local: 'C',
+              pv: '2113',
+              id: 'PR-0010',
+              obs: 'Britânia; split explicit 2/2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Sábado',
+              data: '2026-09-26',
+              cod: '401-0007',
+              qtd: 25.0,
+              local: 'C',
+              pv: '549',
+              id: 'PR-0011',
+              obs: 'Flow Rack 2x2; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Segunda',
+              data: '2026-09-28',
+              cod: 'ID01598',
+              qtd: 20.0,
+              local: 'C',
+              pv: '120',
+              id: 'PR-0012',
+              obs: 'Flow Rack Blue; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Segunda',
+              data: '2026-09-28',
+              cod: 'ID01778',
+              qtd: 1.0,
+              local: 'C',
+              pv: '120',
+              id: 'PR-0013',
+              obs: 'Packing multi PTW; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Segunda',
+              data: '2026-09-28',
+              cod: '401-0007',
+              qtd: 17.0,
+              local: 'C',
+              pv: '549',
+              id: 'PR-0014',
+              obs: 'Flow Rack 2x2; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Terça',
+              data: '2026-09-29',
+              cod: '401-0014',
+              qtd: 15.0,
+              local: 'C',
+              pv: '549',
+              id: 'PR-0015',
+              obs: 'Flow Rack 3x2; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Terça',
+              data: '2026-09-29',
+              cod: '404-0001',
+              qtd: 40.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0016',
+              obs: 'Berenices; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-09-30',
+              cod: 'ID01598',
+              qtd: 20.0,
+              local: 'C',
+              pv: '120',
+              id: 'PR-0017',
+              obs: 'Flow Rack Blue; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-09-30',
+              cod: '401-0014',
+              qtd: 19.0,
+              local: 'C',
+              pv: '549',
+              id: 'PR-0018',
+              obs: 'Flow Rack 3x2; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-09-30',
+              cod: '404-0001',
+              qtd: 15.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0019',
+              obs: 'Berenices; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quinta',
+              data: '2026-10-01',
+              cod: '401-0014',
+              qtd: 0.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0020',
+              obs: 'Flow Rack 3x2; r2 — quantidade não informada na planilha; confirmar antes de programar',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quinta',
+              data: '2026-10-01',
+              cod: '404-0001',
+              qtd: 15.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0021',
+              obs: 'Berenices; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Sexta',
+              data: '2026-10-02',
+              cod: '404-0002',
+              qtd: 2.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0022',
+              obs: 'Matilde; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Sexta',
+              data: '2026-10-02',
+              cod: '404-0001',
+              qtd: 23.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-0023',
+              obs: 'Berenices; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Segunda',
+              data: '2026-09-28',
+              cod: 'QD0001',
+              qtd: 1.0,
+              local: 'V',
+              pv: '80',
+              id: 'PR-0024',
+              obs: 'Vinhedo — Quadro de Gestão; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Segunda',
+              data: '2026-09-28',
+              cod: 'QD0001',
+              qtd: 1.0,
+              local: 'V',
+              pv: '81',
+              id: 'PR-0025',
+              obs: 'Vinhedo — Quadro de Gestão; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Segunda',
+              data: '2026-09-28',
+              cod: 'ID01386',
+              qtd: 26.0,
+              local: 'V',
+              pv: '',
+              id: 'PR-0026',
+              obs: 'Vinhedo — Escorregador 1800x800x2000; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-09-30',
+              cod: '406-0001',
+              qtd: 53.0,
+              local: 'V',
+              pv: '',
+              id: 'PR-0027',
+              obs: 'Vinhedo — Escorregador Soldado MELI; r2',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quinta',
+              data: '2026-10-01',
+              cod: 'ID02730',
+              qtd: 60.0,
+              local: 'V',
+              pv: '126',
+              id: 'PR-0028',
+              obs: 'Vinhedo — Suporte Carrinho Tote; r2',
+              status: 'Planejado',
+            },
+          ],
+          declHash: '7ddc7d87c1dd',
         },
         rigidas: [
           {
@@ -7687,7 +7896,7 @@
           },
         ],
         nfBaixadas: {
-          gerado: '2026-09-25T18:04:34.780351',
+          gerado: '2026-09-25T18:49:30.873917',
           janela: ['2026-09-15', '2026-09-25'],
           nfs: [
             {
@@ -8184,6 +8393,7 @@
               ],
             },
           ],
+          nfCount: 33,
         },
       }
       const SEM = DATA.semanas
@@ -8349,8 +8559,81 @@
           (nAtr ? ' · ' + nAtr + ' atrasados remapeados pelo plano de recuperação' : '')
       })()
 
+      function aplicarSmktNaProgramacao(prods, dia) {
+        return prods
+      }
+      function progBuildFromDecls() {
+        if (!DATA.progSemana) return
+        const avail = {}
+        DATA.rows.forEach(function (r) {
+          const k = r.codigo + '|' + r.pv + '|' + r.empresa
+          avail[k] = (avail[k] || 0) + Number(r.qtd || 0)
+        })
+        const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const out = []
+        declDraft.forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+          const dt = new Date(d.data + 'T12:00:00'),
+            day = dias[dt.getDay()],
+            date = d.data.slice(8, 10) + '/' + d.data.slice(5, 7)
+          let left = Number(d.qtd)
+          let cand = DATA.rows
+            .filter(function (r) {
+              return r.codigo === d.cod && (!d.pv || String(r.pv) === String(d.pv))
+            })
+            .sort(function (a, b) {
+              return a.iso.localeCompare(b.iso)
+            })
+          cand.forEach(function (r) {
+            const k = r.codigo + '|' + r.pv + '|' + r.empresa,
+              q = Math.min(left, avail[k] || 0)
+            if (q <= 0) return
+            const tr = trDe(r.local, r.cliente, r.iso)
+            out.push({
+              dia: day,
+              data: date,
+              cod: d.cod,
+              desc: r.desc,
+              qtd: q,
+              pv: String(r.pv),
+              cli: r.cliente,
+              emp: r.empresa,
+              vtot: r.qtd ? (r.vtot * q) / r.qtd : 0,
+              sit: r.semana === 'ATRASADO' ? 'ATRASADO' : 'em dia',
+              cheg: tr ? tr.cheg : 'consultar transportadora',
+              local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+              prog_id: d.id || '',
+              obs: d.obs || '',
+              status: d.status || 'Planejado',
+            })
+            avail[k] -= q
+            left -= q
+          })
+          if (left > 0)
+            out.push({
+              dia: day,
+              data: date,
+              cod: d.cod,
+              desc: descDe(d.cod),
+              qtd: left,
+              pv: d.pv || '—',
+              cli: '',
+              emp: '',
+              vtot: 0,
+              sit: 'Sem PV associado',
+              cheg: '—',
+              local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+              prog_id: d.id || '',
+              obs: d.obs || '',
+              status: d.status || 'Planejado',
+            })
+        })
+        DATA.progSemana.dias = out
+      }
+
       // ---- programação de produção da semana corrente ----
-      let progDia = null
+      let progDia = null,
+        progDate = null
       function renderProg() {
         const card = document.getElementById('cardProg')
         if (!DATA.progSemana || !DATA.progSemana.dias.length) {
@@ -8358,44 +8641,38 @@
           return
         }
         card.style.display = ''
-        const diasOrdem = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
         const dias = [
-          ...new Set(
+          ...new Map(
             DATA.progSemana.dias.map(function (a) {
-              return a.dia
+              return [a.data + '|' + a.dia, a]
             }),
-          ),
+          ).values(),
         ].sort(function (a, b) {
-          return diasOrdem.indexOf(a) - diasOrdem.indexOf(b)
+          return a.data.localeCompare(b.data)
         })
         const box = document.getElementById('pbtns')
         if (!progDia) {
           // dia atual se estiver na semana declarada; senão o primeiro dia
-          const nomes = {
-            Monday: 'Segunda',
-            Tuesday: 'Terça',
-            Wednesday: 'Quarta',
-            Thursday: 'Quinta',
-            Friday: 'Sexta',
-          }
-          const hojeN =
-            nomes[new Date().toLocaleDateString('en-US', { weekday: 'long' })] || 'Segunda'
-          progDia = dias.indexOf(hojeN) >= 0 ? hojeN : dias[0]
+          const chosen =
+            dias.find(function (x) {
+              return x.data === '25/09'
+            }) || dias[0]
+          progDia = chosen.dia
+          progDate = chosen.data
         }
         box.innerHTML = dias
-          .map(function (d, i) {
-            const dt = DATA.progSemana.dias.find(function (a) {
-              return a.dia === d
-            }).data
+          .map(function (o) {
             return (
               '<button data-d="' +
-              d +
+              o.dia +
+              '" data-date="' +
+              o.data +
               '" class="' +
-              (d === progDia ? 'on' : '') +
+              (o.data === progDate ? 'on' : '') +
               '">' +
-              d +
+              o.dia +
               ' · ' +
-              dt +
+              o.data +
               '</button>'
             )
           })
@@ -8403,6 +8680,7 @@
         Array.prototype.forEach.call(box.children, function (b) {
           b.addEventListener('click', function () {
             progDia = b.getAttribute('data-d')
+            progDate = b.getAttribute('data-date')
             Array.prototype.forEach.call(box.children, function (x) {
               x.classList.remove('on')
             })
@@ -8414,20 +8692,12 @@
       }
       function renderProgTabela() {
         const rsBase = DATA.progSemana.dias.filter(function (a) {
-          return a.dia === progDia
+          return a.dia === progDia && a.data === progDate
         })
         // Entrada no SMKT já está em produto pronto: não continua como demanda no card principal.
         const rs = rsBase
           .map(function (a) {
-            const realizado = smktEntradas()
-              .filter(function (x) {
-                return x.cod === a.cod && String(x.origem || '').indexOf('prog:') === 0
-              })
-              .reduce(function (t, x) {
-                return t + x.qtd
-              }, 0)
-            const saldo = Math.max(0, a.qtd - realizado)
-            return Object.assign({}, a, { qtd: saldo, vtot: a.qtd ? (a.vtot * saldo) / a.qtd : 0 })
+            return Object.assign({}, a)
           })
           .filter(function (a) {
             return a.qtd > 0
@@ -8464,7 +8734,7 @@
           Object.values(map).sort(function (x, y) {
             return y.vtot - x.vtot
           }),
-          progDia,
+          progDate,
         )
         let tq = 0,
           tv = 0,
@@ -8473,7 +8743,7 @@
           .map(function (p, ix) {
             tq += p.qtd
             tv += p.vtot
-            const ex = getProgExec(p.cod, progDia) || { ok: false, qtd: 0 }
+            const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
             tex += ex.qtd || 0
             const pvList = Object.values(p.pvs).sort(function (x, y) {
               return parseFloat(x.pv) - parseFloat(y.pv)
@@ -8680,14 +8950,14 @@
             const ix = parseInt(tr.getAttribute('data-ix'), 10)
             const p = progProdsCache[ix]
             if (!p) return
-            const prev = getProgExec(p.cod, progDia) || {}
+            const prev = getProgExec(p.cod, progDate) || {}
             const ok = tr.querySelector('input[data-p=ok]').checked
             const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0
             const pvSel = tr.querySelector('select[data-p=pv]').value
             // ENTRADA NO SMKT É MANUAL (decisão Dante 25/09): escolher destino não cria entrada.
             // A opção Supermercado serve apenas para marcar a intenção de destino da produção.
             if (pvSel === '__SMKT__') {
-              setProgExec(p.cod, progDia, {
+              setProgExec(p.cod, progDate, {
                 ok: ok,
                 qtd: qtd,
                 rl: prev.rl,
@@ -8701,7 +8971,7 @@
               )
               return
             }
-            setProgExec(p.cod, progDia, {
+            setProgExec(p.cod, progDate, {
               ok: ok,
               qtd: qtd,
               rl: prev.rl,
@@ -8718,7 +8988,7 @@
             const ix = parseInt(tr.getAttribute('data-ix'), 10)
             const p = progProdsCache[ix]
             if (!p) return
-            const ex = getProgExec(p.cod, progDia) || { ok: false, qtd: 0 }
+            const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
             const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
             if (saldo <= 0) {
               alert('Nada a realocar — a qtd realizada cobre o planejado.')
@@ -8727,7 +8997,7 @@
             const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
             const idx = dias.indexOf(progDia)
             const nova = idx >= 0 && idx < 4 ? dias[idx + 1] : 'Segunda' // próximo dia útil da semana
-            setProgExec(p.cod, progDia, {
+            setProgExec(p.cod, progDate, {
               ok: ex.ok,
               qtd: ex.qtd,
               rl: nova,
@@ -8743,19 +9013,11 @@
       renderProgTabela = function () {
         // cache dos produtos agregados do dia para os handlers
         const rsBase = DATA.progSemana.dias.filter(function (a) {
-          return a.dia === progDia
+          return a.dia === progDia && a.data === progDate
         })
         const rs = rsBase
           .map(function (a) {
-            const realizado = smktEntradas()
-              .filter(function (x) {
-                return x.cod === a.cod && String(x.origem || '').indexOf('prog:') === 0
-              })
-              .reduce(function (t, x) {
-                return t + x.qtd
-              }, 0)
-            const saldo = Math.max(0, a.qtd - realizado)
-            return Object.assign({}, a, { qtd: saldo, vtot: a.qtd ? (a.vtot * saldo) / a.qtd : 0 })
+            return Object.assign({}, a)
           })
           .filter(function (a) {
             return a.qtd > 0
@@ -8773,7 +9035,7 @@
           Object.values(map).sort(function (x, y) {
             return y.vtot - x.vtot
           }),
-          progDia,
+          progDate,
         )
         _origRPT()
       }
@@ -9017,177 +9279,180 @@
         else localStorage.removeItem(progKey(cod, dia))
       }
 
-      // ==================== SUPERMERCADO (SMKT) — produtos acabados ====================
-      // entradas: [{cod, qtd, origem: 'manual'|'prog:<dia>', data}] · alocações: [{cod, pv, qtd, data}]
-      function smktEntradas() {
-        try {
-          const raw = JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
-          if (!Array.isArray(raw)) return []
-          const out = [],
-            pos = {}
-          raw.forEach(function (x) {
-            if (!x || !x.cod) return
-            const q = Number(x.qtd) || 0
-            if (q <= 0) return
-            const origem = String(x.origem || 'manual')
-            // Corrige legado: a versão anterior podia registrar a mesma entrada
-            // várias vezes ao selecionar SMKT; para a mesma programação usamos a
-            // maior quantidade registrada, não a soma das repetições.
-            if (origem.indexOf('prog:') === 0) {
-              const k = String(x.cod) + '|' + origem
-              if (pos[k] === undefined) {
-                pos[k] = out.length
-                out.push(Object.assign({}, x, { qtd: q, origem: origem }))
-              } else {
-                out[pos[k]].qtd = Math.max(Number(out[pos[k]].qtd) || 0, q)
-              }
-            } else out.push(x)
+      function nfLista() {
+        const nb = DATA.nfBaixadas || {}
+        if (Array.isArray(nb.nfs)) return nb.nfs
+        const map = {}
+        ;(Array.isArray(nb.baixas) ? nb.baixas : []).forEach(function (b) {
+          const k = String(b.nf || '')
+          const n = (map[k] = map[k] || { nf: k, data: b.data || '', emp: b.emp || '', itens: [] })
+          n.itens.push({
+            pv: String(b.pv || '?'),
+            cod: String(b.cod || ''),
+            qtd: Number(b.qtd) || 0,
           })
-          if (JSON.stringify(out) !== JSON.stringify(raw))
-            localStorage.setItem('smkt|entradas', JSON.stringify(out))
-          return out
-        } catch (e) {
-          return []
-        }
-      }
-      function smktAlocs() {
-        try {
-          return JSON.parse(localStorage.getItem('smkt|alocs') || '[]')
-        } catch (e) {
-          return []
-        }
-      }
-      // Produção enviada ao SMKT fica vinculada ao produto + dia da programação.
-      // Essa quantidade deixa de ser pendência do card de produção, mas continua
-      // disponível no estoque de prontos até ser alocada em um PV.
-      function smktProgramadoEm(cod, dia) {
-        const origem = 'prog:' + dia
-        return smktEntradas()
-          .filter(function (x) {
-            return x.cod === cod && x.origem === origem
-          })
-          .reduce(function (a, x) {
-            return a + (Number(x.qtd) || 0)
-          }, 0)
-      }
-      function smktUpsertProgramado(cod, dia, qtd) {
-        const origem = 'prog:' + dia
-        const ent = smktEntradas().filter(function (x) {
-          return !(x.cod === cod && x.origem === origem)
         })
-        if ((Number(qtd) || 0) > 0)
-          ent.push({
-            cod: cod,
-            qtd: Number(qtd),
-            origem: origem,
-            data: new Date().toLocaleDateString('pt-BR'),
-          })
-        smktSave(ent, smktAlocs())
+        return Object.keys(map).map(function (k) {
+          return map[k]
+        })
       }
-      function aplicarSmktNaProgramacao(prods, dia) {
-        return prods
-          .map(function (p) {
-            const originalQtd = p.qtd
-            const originalValor = p.vtot
-            const enviado = Math.min(originalQtd, smktProgramadoEm(p.cod, dia))
-            p.smktQtd = enviado
-            p.qtd = Math.max(0, originalQtd - enviado)
-            p.vtot = originalQtd ? (originalValor * p.qtd) / originalQtd : 0
-            return p
-          })
-          .filter(function (p) {
-            return p.qtd > 0
-          })
-      }
-      function smktSave(ent, alc) {
-        localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
-        localStorage.setItem('smkt|alocs', JSON.stringify(alc || []))
-      }
-      // ---- Saída automática via NF emitida (método Compass): NF baixa (PV+produto) consome o SMKT ----
       function nfSaidas(cod) {
-        const nb = DATA.nfBaixadas
-        if (!nb || !nb.nfs) return []
         const out = []
-        nb.nfs.forEach(function (n) {
-          ;(n.itens || []).forEach(function (i) {
-            if (i.cod === cod && i.qtd > 0)
-              out.push({ pv: String(i.pv), qtd: i.qtd, nf: n.nf, data: n.data || '' })
+        nfLista().forEach(function (n) {
+          ;(Array.isArray(n.itens) ? n.itens : []).forEach(function (i) {
+            if (String(i.cod) === String(cod) && Number(i.qtd) > 0)
+              out.push({ pv: String(i.pv), qtd: Number(i.qtd), nf: n.nf, data: n.data || '' })
           })
         })
         return out.sort(function (a, b) {
           return (a.data || '').localeCompare(b.data || '')
         })
       }
-      // A NF cumpre primeiro a alocação manual do mesmo PV; o restante sai direto do estoque de prontos.
-      // Nunca sai mais do que entrou (FIFO por data de emissão).
+
+      // ==================== SUPERMERCADO (SMKT) — estoque manual e histórico ====================
+      // Entradas só por ação explícita do usuário. Saídas saem do saldo ativo e vão ao histórico.
+      function smktHistory() {
+        try {
+          const h = JSON.parse(localStorage.getItem('smkt|historico') || '[]')
+          return Array.isArray(h) ? h : []
+        } catch (e) {
+          return []
+        }
+      }
+      function smktHistorySave(h) {
+        localStorage.setItem('smkt|historico', JSON.stringify(h || []))
+      }
+      function smktEntradas() {
+        try {
+          const a = JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
+          return Array.isArray(a)
+            ? a.filter(function (x) {
+                return (
+                  x &&
+                  x.cod &&
+                  Number(x.qtd) > 0 &&
+                  String(x.origem || 'manual').indexOf('prog:') !== 0
+                )
+              })
+            : []
+        } catch (e) {
+          return []
+        }
+      }
+      function smktAlocs() {
+        return []
+      }
+      function smktSave(ent, alc) {
+        localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
+        localStorage.setItem('smkt|alocs', '[]')
+      }
+      function smktConsume(cod, q, evento, meta) {
+        q = Math.max(0, Number(q) || 0)
+        const ents = smktEntradas()
+        let need = q
+        for (let i = 0; i < ents.length && need > 0; i++)
+          if (String(ents[i].cod) === String(cod)) {
+            const take = Math.min(need, Number(ents[i].qtd) || 0)
+            ents[i].qtd -= take
+            need -= take
+          }
+        smktSave(
+          ents.filter(function (x) {
+            return Number(x.qtd) > 0.0001
+          }),
+          [],
+        )
+        if (q > 0) {
+          const h = smktHistory()
+          h.unshift(
+            Object.assign(
+              {
+                data: new Date().toLocaleDateString('pt-BR'),
+                cod: String(cod),
+                qtd: q,
+                event: evento,
+              },
+              meta || {},
+            ),
+          )
+          smktHistorySave(h)
+        }
+        return need <= 0.0001
+      }
+      function smktEnsureMigrated() {
+        if (localStorage.getItem('smkt|v3-migrated') === '1') return
+        let ents = []
+        try {
+          ents = JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
+        } catch (e) {}
+        let alcs = []
+        try {
+          alcs = JSON.parse(localStorage.getItem('smkt|alocs') || '[]')
+        } catch (e) {}
+        const h = smktHistory()
+        let keep = []
+        ;(Array.isArray(ents) ? ents : []).forEach(function (x) {
+          if (!x || !x.cod || !(Number(x.qtd) > 0)) return
+          h.unshift({
+            data: x.data || new Date().toLocaleDateString('pt-BR'),
+            cod: String(x.cod),
+            qtd: Number(x.qtd),
+            event: 'Saldo legado arquivado — origem não confirmada',
+            motivo: 'Não foi entrada manual confirmada por Dante; removido do saldo ativo.',
+          })
+        })
+        ;(Array.isArray(alcs) ? alcs : []).forEach(function (a) {
+          if (a && a.cod && Number(a.qtd) > 0)
+            h.unshift({
+              data: a.data || new Date().toLocaleDateString('pt-BR'),
+              cod: String(a.cod),
+              qtd: Number(a.qtd),
+              event: 'Alocação legada — histórico',
+              pv: String(a.pv || ''),
+              nf: a.nf || '',
+              motivo: a.obs || '',
+            })
+        })
+        smktSave([], [])
+        smktHistorySave(h)
+        localStorage.setItem('smkt|v3-migrated', '1')
+      }
       function smktNFStatus(cod) {
         const ent = smktEntradas()
           .filter(function (x) {
-            return x.cod === cod
+            return String(x.cod) === String(cod)
           })
           .reduce(function (a, x) {
-            return a + x.qtd
+            return a + (Number(x.qtd) || 0)
           }, 0)
-        const alocs = smktAlocs()
-          .filter(function (x) {
-            return x.cod === cod
-          })
-          .map(function (x) {
-            return Object.assign({}, x, { restante: x.qtd, nfAtend: [] })
-          })
-        let saiu = 0
-        const detNF = []
-        nfSaidas(cod).forEach(function (n) {
-          let q = n.qtd,
-            usado = 0
-          for (let i = 0; i < alocs.length && q > 0; i++) {
-            const a = alocs[i]
-            if (String(a.pv) === String(n.pv) && a.restante > 0) {
-              const use = Math.min(q, a.restante)
-              a.restante -= use
-              a.nfAtend.push({ nf: n.nf, qtd: use, data: n.data })
-              q -= use
-              usado += use
-              saiu += use
-            }
-          }
-          if (q > 0) {
-            const disp =
-              ent -
-              saiu -
-              alocs.reduce(function (t, a) {
-                return t + a.restante
-              }, 0)
-            const use = Math.max(0, Math.min(q, disp))
-            if (use > 0) {
-              usado += use
-              saiu += use
-            }
-          }
-          detNF.push({ pv: n.pv, qtd: n.qtd, nf: n.nf, data: n.data, usado: usado })
+        const outs = nfSaidas(cod)
+        let saiu = 0,
+          det = []
+        outs.forEach(function (n) {
+          const use = Math.min(Number(n.qtd) || 0, Math.max(0, ent - saiu))
+          saiu += use
+          if (use > 0) det.push(Object.assign({}, n, { qtd: use, usado: use }))
         })
-        const alocado = alocs.reduce(function (a, x) {
-          return a + x.restante
-        }, 0)
         return {
           ent: ent,
           saiuNF: saiu,
-          detNF: detNF,
-          alocado: alocado,
-          saldo: Math.max(0, ent - saiu - alocado),
-          alocs: alocs,
+          detNF: det,
+          alocado: 0,
+          saldo: Math.max(0, ent - saiu),
+          alocs: [],
         }
       }
       function smktSaldo(cod) {
         return smktNFStatus(cod).saldo
-      } // disponível = entradas − saído via NF − alocações pendentes
+      }
       function smktCodigos() {
-        // códigos com entrada > 0
         const m = {}
         smktEntradas().forEach(function (x) {
-          m[x.cod] = (m[x.cod] || 0) + x.qtd
+          m[x.cod] = (m[x.cod] || 0) + (Number(x.qtd) || 0)
         })
-        return Object.keys(m)
+        return Object.keys(m).filter(function (c) {
+          return smktSaldo(c) > 0.0001
+        })
       }
       function descDe(cod) {
         const r = DATA.rows.find(function (r) {
@@ -9201,11 +9466,10 @@
         })
         return r ? r.vtot / (r.qtd || 1) : 0
       }
-
       function renderSmkt() {
-        // select de produtos: TODA a carteira (qualquer produto cadastrado) + os do SMKT
-        const sel = document.getElementById('smProd')
-        const cods = new Set(smktCodigos())
+        smktEnsureMigrated()
+        const sel = document.getElementById('smProd'),
+          cods = new Set(smktCodigos())
         DATA.rows.forEach(function (r) {
           cods.add(r.codigo)
         })
@@ -9215,7 +9479,7 @@
           Array.from(cods)
             .sort()
             .map(function (c) {
-              const s = smktSaldo(c)
+              const z = smktSaldo(c)
               return (
                 '<option value="' +
                 c +
@@ -9223,105 +9487,84 @@
                 c +
                 ' · ' +
                 descDe(c).slice(0, 34) +
-                (s > 0 ? ' — saldo ' + NF.format(s) + ' un' : '') +
+                (z > 0 ? ' — saldo ' + NF.format(z) + ' un' : '') +
                 '</option>'
               )
             })
             .join('')
         if (atual && cods.has(atual)) sel.value = atual
-        const alocs = smktAlocs(),
-          ents = smktEntradas()
-        document.getElementById('trhM').innerHTML =
-          '<th>Produto</th><th>Entradas</th><th>Saído via NF (PVs)</th><th>Alocado em PVs</th><th>Saldo no SMKT</th><th>Alocar em PV + NF</th><th></th>'
-        const codsAll = Array.from(
+        let ents = smktEntradas(),
+          hist = smktHistory(),
+          active = smktCodigos()
+        const seenNF = new Set(
+          hist
+            .filter(function (x) {
+              return x.event === 'Consumo via NF'
+            })
+            .map(function (x) {
+              return String(x.key || '')
+            }),
+        )
+        Array.from(
           new Set(
             ents
               .map(function (x) {
                 return x.cod
               })
               .concat(
-                alocs.map(function (x) {
-                  return x.cod
-                }),
-              )
-              .concat(
-                ((DATA.nfBaixadas && DATA.nfBaixadas.nfs) || []).flatMap(function (n) {
+                nfLista().flatMap(function (n) {
                   return (n.itens || []).map(function (i) {
                     return i.cod
                   })
                 }),
               ),
           ),
-        )
-        document.getElementById('tbbM').innerHTML = codsAll.length
-          ? codsAll
-              .map(function (cod, ix) {
-                const st = smktNFStatus(cod)
-                const ent = st.ent,
-                  alq = st.alocado,
-                  saldo = st.saldo
-                // detalhe: saídas via NF (com PV) + alocações pendentes
-                const detNF = st.detNF
-                  .map(function (x) {
-                    return (
-                      '<tr><td class="pvtag">' +
-                      x.pv +
-                      '</td><td class="num">' +
-                      NF.format(x.qtd) +
-                      '</td><td>' +
-                      dtBR(x.data || '') +
-                      '</td><td style="color:#16a34a">saída NF</td><td><b>NF ' +
-                      x.nf +
-                      '</b></td></tr>'
-                    )
-                  })
-                  .join('')
-                const detAl = st.alocs
-                  .filter(function (x) {
-                    return x.restante > 0
-                  })
-                  .map(function (x) {
-                    return (
-                      '<tr><td class="pvtag">' +
-                      x.pv +
-                      '</td><td class="num">' +
-                      NF.format(x.qtd) +
-                      '</td><td>' +
-                      x.data +
-                      '</td><td style="color:#1e3a8a">' +
-                      (x.obs || 'alocação manual') +
-                      '</td><td>' +
-                      (x.nf ? '<b>NF ' + x.nf + '</b>' : '—') +
-                      '</td></tr>'
-                    )
-                  })
-                  .join('')
-                const det = detNF + detAl
-                // PVs possíveis: carteira do produto com saldo (exclui os já alocados integralmente)
-                const pvsLivres = {}
+        ).forEach(function (c) {
+          smktNFStatus(c).detNF.forEach(function (n) {
+            const key = String(n.nf) + '|' + String(n.pv) + '|' + String(c)
+            if (n.usado > 0 && !seenNF.has(key)) {
+              hist.unshift({
+                key: key,
+                data: n.data || new Date().toLocaleDateString('pt-BR'),
+                cod: String(c),
+                qtd: n.usado,
+                event: 'Consumo via NF',
+                pv: n.pv,
+                nf: n.nf,
+                motivo: 'Consumo sobre saldo manual confirmado',
+              })
+              seenNF.add(key)
+            }
+          })
+        })
+        smktHistorySave(hist)
+        document.getElementById('trhM').innerHTML =
+          '<th>Produto</th><th>Saldo disponível</th><th>Saída via NF</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
+        document.getElementById('tbbM').innerHTML = active.length
+          ? active
+              .map(function (cod) {
+                const st = smktNFStatus(cod),
+                  pvs = {}
                 DATA.rows.forEach(function (r) {
                   if (r.codigo === cod)
-                    pvsLivres[r.pv + '|' + r.cliente] =
-                      (pvsLivres[r.pv + '|' + r.cliente] || 0) + r.qtd
+                    pvs[r.pv + '|' + r.cliente] = (pvs[r.pv + '|' + r.cliente] || 0) + r.qtd
                 })
                 const opts =
                   '<option value="">— PV destino —</option>' +
-                  Object.entries(pvsLivres)
+                  Object.entries(pvs)
                     .sort(function (a, b) {
                       return b[1] - a[1]
                     })
                     .slice(0, 40)
-                    .map(function (kv) {
+                    .map(function (x) {
                       return (
                         '<option value="' +
-                        kv[0] +
+                        x[0] +
                         '">' +
-                        kv[0].split('|')[0] +
+                        x[0].split('|')[0] +
                         ' · ' +
-                        kv[0].split('|')[1].slice(0, 22) +
-                        ' (' +
-                        NF.format(kv[1]) +
-                        ' un)</option>'
+                        x[0].split('|')[1].slice(0, 20) +
+                        '</option>'
                       )
                     })
                     .join('')
@@ -9332,210 +9575,138 @@
                   cod +
                   '</div><div class="dsc">' +
                   descDe(cod).slice(0, 44) +
-                  '</div></td>' +
-                  '<td class="num">' +
-                  NF.format(ent) +
-                  '</td>' +
-                  '<td class="num" style="font-weight:800;color:#b45309">' +
+                  '</div></td><td class="num"><b>' +
+                  NF.format(st.saldo) +
+                  '</b></td><td class="num">' +
                   NF.format(st.saiuNF) +
-                  (st.saiuNF
-                    ? ' <span style="font-weight:400;font-size:10px">(' +
-                      Array.from(
-                        new Set(
-                          st.detNF
-                            .filter(function (x) {
-                              return x.usado > 0
-                            })
-                            .map(function (x) {
-                              return x.pv
-                            }),
-                        ),
-                      ).join(', ') +
-                      ')</span>'
-                    : '') +
-                  '</td>' +
-                  '<td class="num">' +
-                  NF.format(alq) +
-                  '</td>' +
-                  '<td class="num" style="font-weight:800;color:' +
-                  (saldo > 0 ? '#16a34a' : '#64748b') +
-                  '">' +
-                  NF.format(saldo) +
-                  '</td>' +
-                  '<td class="exec"><input type="number" min="1" max="' +
-                  saldo +
-                  '" placeholder="Qtd" style="width:70px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px" data-m="qtd"> ' +
-                  '<select data-m="pv" style="width:180px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+                  '</td><td class="exec"><input type="number" min="1" max="' +
+                  st.saldo +
+                  '" placeholder="Qtd" data-m="retq" style="width:65px"><input type="text" placeholder="Motivo obrigatório" data-m="mot" style="width:130px"><button data-m="ret">Retirar</button></td><td class="exec"><input type="number" min="1" max="' +
+                  st.saldo +
+                  '" placeholder="Qtd" data-m="qtd" style="width:60px"><select data-m="pv" style="width:140px">' +
                   opts +
-                  '</select>' +
-                  '<input type="text" data-m="nf" placeholder="Nº NF (opcional)" style="width:110px;margin-top:4px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:11px"></td>' +
-                  '<td class="exec"><button class="exRl" data-m="alc" ' +
-                  (saldo > 0 ? '' : 'disabled') +
-                  ' style="background:#eff6ff;color:#1e3a8a;border-color:#93c5fd">Alocar →</button><button class="exRl" data-m="aj" title="Ajustar a quantidade total registrada no SMKT" style="margin-left:5px">Ajustar qtd</button></td></tr>' +
-                  (det
-                    ? '<tr class="detrow" style="display:none"><td colspan="7"><table class="mini"><tr><th>PV</th><th>Qtd</th><th>Data</th><th>Origem</th><th>NF</th><th></th></tr>' +
-                      det +
-                      '</table></td></tr>'
-                    : '')
+                  '</select><input type="text" data-m="nf" placeholder="NF opcional" style="width:85px"><button data-m="alc" ' +
+                  (st.saldo > 0 ? '' : 'disabled') +
+                  '>Alocar →</button></td></tr>'
                 )
               })
               .join('')
-          : '<tr><td colspan="7">Nenhuma entrada ainda — produziu e não alocou? Use "+ Entrada no SMKT" acima.</td></tr>'
+          : '<tr><td colspan="5">SMKT sem saldo ativo. Somente entradas manuais aparecem aqui.</td></tr>'
         document.getElementById('trfM').innerHTML =
           '<td>' +
-          codsAll.length +
-          ' produtos</td>' +
-          '<td class="num">' +
+          active.length +
+          ' produtos ativos</td><td class="num">' +
           NF.format(
             ents.reduce(function (a, x) {
-              return a + x.qtd
+              return a + (Number(x.qtd) || 0)
             }, 0),
           ) +
-          '</td>' +
-          '<td class="num">' +
-          NF.format(
-            alocs.reduce(function (a, x) {
-              return a + x.qtd
-            }, 0),
-          ) +
-          '</td>' +
-          '<td colspan="4"></td>'
+          '</td><td colspan="3"></td>'
+        document.getElementById('tbbSmktHist').innerHTML =
+          hist
+            .map(function (x) {
+              return (
+                '<tr><td>' +
+                x.data +
+                '</td><td>' +
+                x.cod +
+                ' · ' +
+                descDe(x.cod).slice(0, 30) +
+                '</td><td>' +
+                x.event +
+                '</td><td class="num">' +
+                NF.format(x.qtd) +
+                '</td><td>' +
+                ((x.pv || '') + ' ' + (x.cli || '')) +
+                '</td><td>' +
+                ((x.nf ? 'NF ' + x.nf + ' ' : '') + (x.motivo || '')) +
+                '</td></tr>'
+              )
+            })
+            .join('') || '<tr><td colspan="6">Sem eventos no histórico.</td></tr>'
         document.getElementById('smInfo').textContent =
-          'Entradas no SMKT e alocações consomem o saldo do produto na carteira; ajuste a quantidade física quando necessário.'
-        // eventos (delegação)
+          'Entrada manual explícita; alocação/retirada reduz o saldo e registra histórico.'
         const tb = document.getElementById('tbbM')
         if (!tb._bound) {
           tb._bound = true
           tb.addEventListener('click', function (e) {
-            // expandir/recolher detalhe: clique na linha do produto (fora de inputs/botões)
-            const trProd = e.target.closest('tr[data-cod]')
-            if (trProd && !e.target.closest('button, input, select')) {
-              const det = trProd.nextElementSibling
-              if (det && det.classList.contains('detrow'))
-                det.style.display = det.style.display === 'none' ? '' : 'none'
-              return
-            }
-            const btn = e.target.closest('button[data-m]')
-            if (!btn) return
-            const tr = btn.closest('tr')
-            const cod = tr.getAttribute('data-cod')
-            if (btn.getAttribute('data-m') === 'aj') {
-              const ent = smktEntradas()
-                .filter(function (x) {
-                  return x.cod === cod
-                })
-                .reduce(function (a, x) {
-                  return a + x.qtd
-                }, 0)
-              const alq = smktAlocs()
-                .filter(function (x) {
-                  return x.cod === cod
-                })
-                .reduce(function (a, x) {
-                  return a + x.qtd
-                }, 0)
-              const v = prompt(
-                'Nova quantidade total registrada no SMKT para ' +
-                  cod +
-                  ' (já alocado: ' +
-                  NF.format(alq) +
-                  ' un):',
-                String(ent),
-              )
-              if (v === null) return
-              const novo = parseFloat(String(v).replace(',', '.'))
-              if (!Number.isFinite(novo) || novo < alq) {
-                alert(
-                  'Quantidade inválida. O total não pode ser menor que o já alocado (' +
-                    NF.format(alq) +
-                    ' un).',
-                )
+            const b = e.target.closest('button[data-m]')
+            if (!b) return
+            const tr = b.closest('tr[data-cod]'),
+              cod = tr.getAttribute('data-cod')
+            if (b.dataset.m === 'ret') {
+              const q = Number(tr.querySelector('[data-m=retq]').value) || 0,
+                mot = tr.querySelector('[data-m=mot]').value.trim()
+              if (q <= 0 || q > smktSaldo(cod)) {
+                alert('Quantidade inválida. Saldo: ' + NF.format(smktSaldo(cod)))
                 return
               }
-              const ents = smktEntradas()
-              let restante = novo
-              for (let i = 0; i < ents.length; i++) {
-                if (ents[i].cod !== cod) continue
-                const usar = Math.min(restante, ents[i].qtd)
-                ents[i].qtd = usar
-                restante -= usar
+              if (!mot) {
+                alert('Informe motivo.')
+                return
               }
-              if (restante > 0)
-                ents.push({
-                  cod: cod,
-                  qtd: restante,
-                  origem: 'ajuste',
-                  data: new Date().toLocaleDateString('pt-BR'),
-                  obs: 'ajuste manual do SMKT',
-                })
-              smktSave(
-                ents.filter(function (x) {
-                  return x.cod !== cod || x.qtd > 0
-                }),
-                smktAlocs(),
-              )
+              if (confirm('Retirar ' + NF.format(q) + ' un de ' + cod + '?')) {
+                smktConsume(cod, q, 'Retirada manual', { motivo: mot })
+                renderSmkt()
+                renderSemana()
+                renderKpis()
+                renderGantt()
+                renderTimeline()
+                renderTabela()
+              }
+              return
+            }
+            if (b.dataset.m === 'alc') {
+              const q = Number(tr.querySelector('[data-m=qtd]').value) || 0,
+                pv = tr.querySelector('[data-m=pv]').value,
+                nf = tr.querySelector('[data-m=nf]').value.trim()
+              if (!pv) {
+                alert('Escolha PV.')
+                return
+              }
+              if (q <= 0 || q > smktSaldo(cod)) {
+                alert('Quantidade inválida. Saldo: ' + NF.format(smktSaldo(cod)))
+                return
+              }
+              const z = pv.split('|')
+              smktConsume(cod, q, 'Alocado em PV', {
+                pv: z[0],
+                cli: z[1] || '',
+                nf: nf,
+                motivo: 'Alocação manual',
+              })
               renderSmkt()
               renderSemana()
-              if (DATA.progSemana && DATA.progSemana.dias.length) renderProgTabela()
               renderKpis()
               renderGantt()
               renderTimeline()
               renderTabela()
-              return
             }
-            if (btn.getAttribute('data-m') !== 'alc') return
-            const qtd = parseFloat(tr.querySelector('input[data-m=qtd]').value) || 0
-            const pv = tr.querySelector('select[data-m=pv]').value
-            const nf = (tr.querySelector('input[data-m=nf]') || {}).value || ''
-            if (!pv) {
-              alert('Escolha o PV de destino.')
-              return
-            }
-            if (qtd <= 0 || qtd > smktSaldo(cod)) {
-              alert('Qtd inválida — saldo disponível: ' + smktSaldo(cod) + ' un.')
-              return
-            }
-            const a = smktAlocs()
-            const ent = smktEntradas()
-            a.push({
-              cod: cod,
-              pv: pv.split('|')[0],
-              cli: pv.split('|')[1] || '',
-              qtd: qtd,
-              data: new Date().toLocaleDateString('pt-BR'),
-              obs: 'do SMKT',
-              nf: nf.trim(),
-            })
-            smktSave(ent, a)
-            renderSmkt()
-            renderSemana()
-            if (DATA.progSemana && DATA.progSemana.dias.length) renderProgTabela()
-            renderKpis()
-            renderGantt()
-            renderTimeline()
-            renderTabela() // consumo do saldo em todos os cards
           })
         }
       }
       document.getElementById('smAdd').addEventListener('click', function () {
-        const cod = document.getElementById('smProd').value
-        const qtd = parseFloat(document.getElementById('smQtd').value) || 0
-        if (!cod || qtd <= 0) {
-          alert('Escolha o produto e a quantidade.')
+        smktEnsureMigrated()
+        const cod = document.getElementById('smProd').value,
+          q = Number(document.getElementById('smQtd').value) || 0
+        if (!cod || q <= 0) {
+          alert('Escolha produto e quantidade.')
           return
         }
         const e = smktEntradas()
-        e.push({
+        e.push({ cod: cod, qtd: q, origem: 'manual', data: new Date().toLocaleDateString('pt-BR') })
+        smktSave(e, [])
+        const h = smktHistory()
+        h.unshift({
           cod: cod,
-          qtd: qtd,
-          origem: 'manual',
+          qtd: q,
           data: new Date().toLocaleDateString('pt-BR'),
+          event: 'Entrada manual',
         })
-        smktSave(e, smktAlocs())
+        smktHistorySave(h)
         document.getElementById('smQtd').value = ''
         renderSmkt()
         renderSemana()
-        if (DATA.progSemana && DATA.progSemana.dias.length) renderProgTabela()
         renderKpis()
         renderGantt()
         renderTimeline()
@@ -9547,19 +9718,19 @@
       function renderNF() {
         const nb = DATA.nfBaixadas
         const card = document.getElementById('cardNF')
-        if (!nb || !nb.nfs || !nb.nfs.length) {
+        if (!nb || !nfLista().length) {
           card.style.display = 'none'
           return
         }
         card.style.display = ''
         document.getElementById('trhN').innerHTML =
           '<th>NF</th><th>Emissão</th><th>Empresa</th><th>Itens baixados (PV · produto · qtd)</th>'
-        document.getElementById('tbbN').innerHTML = nb.nfs
+        document.getElementById('tbbN').innerHTML = nfLista()
           .sort(function (a, b) {
             return (b.data || '').localeCompare(a.data || '')
           })
           .map(function (n) {
-            const itens = n.itens
+            const itens = (Array.isArray(n.itens) ? n.itens : [])
               .map(function (i) {
                 return (
                   '<span style="white-space:nowrap;margin:2px 6px 2px 0;display:inline-block"><b class="pvtag">' +
@@ -10502,6 +10673,172 @@
         if (gChart) gChart.resize()
         if (tChart) tChart.resize()
       })
+      // ---- Edição livre da programação (rascunho local; exportável para a skill) ----
+      const DECL_KEY = 'andon|programacao|draft|v041'
+      let declDraft = null
+      function declLoad() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(DECL_KEY) || 'null')
+          if (Array.isArray(saved)) return saved
+        } catch (e) {}
+        return ((DATA.progSemana && DATA.progSemana.declaracoes) || []).map(function (d, i) {
+          return Object.assign({}, d, {
+            id: d.id || 'PR-' + String(i + 1).padStart(4, '0'),
+            status: d.status || 'Planejado',
+          })
+        })
+      }
+      function declSave() {
+        try {
+          localStorage.setItem(DECL_KEY, JSON.stringify(declDraft))
+        } catch (e) {}
+        if (typeof progBuildFromDecls === 'function') progBuildFromDecls()
+      }
+      function escH(v) {
+        return String(v || '').replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        })
+      }
+      function renderDeclEditor() {
+        const tb = document.getElementById('declRows')
+        if (!tb) return
+        tb.innerHTML = declDraft
+          .map(function (d, i) {
+            return (
+              '<tr data-di="' +
+              i +
+              '"><td><button class="exRl" data-decl="del">Apagar</button></td>' +
+              '<td><input type="date" data-decl="data" value="' +
+              escH(d.data) +
+              '"></td>' +
+              '<td><input data-decl="cod" value="' +
+              escH(d.cod) +
+              '" style="width:105px"></td>' +
+              '<td><input type="number" min="0.01" step="0.01" data-decl="qtd" value="' +
+              escH(d.qtd) +
+              '" style="width:72px"></td>' +
+              '<td><select data-decl="local"><option value="C" ' +
+              (d.local !== 'V' ? 'selected' : '') +
+              '>Curitiba</option><option value="V" ' +
+              (d.local === 'V' ? 'selected' : '') +
+              '>Vinhedo</option></select></td>' +
+              '<td><input data-decl="pv" value="' +
+              escH(d.pv) +
+              '" placeholder="opcional" style="width:82px"></td>' +
+              '<td><input data-decl="obs" value="' +
+              escH(d.obs) +
+              '" style="min-width:150px"></td>' +
+              '<td><select data-decl="status"><option ' +
+              (d.status === 'Realizado' ? '' : 'selected') +
+              ' value="Planejado">Planejado</option><option ' +
+              (d.status === 'Realizado' ? 'selected' : '') +
+              ' value="Realizado">Realizado</option></select></td></tr>'
+            )
+          })
+          .join('')
+        const st = document.getElementById('declStatus')
+        if (st) st.textContent = declDraft.length + ' linhas no rascunho · nada gravado no MaxiProd'
+        if (!tb._bound) {
+          tb._bound = true
+          tb.addEventListener('input', function (e) {
+            const x = e.target.closest('[data-decl]')
+            if (!x || x.dataset.decl === 'del') return
+            const tr = x.closest('tr'),
+              i = +tr.dataset.di
+            declDraft[i][x.dataset.decl] = x.value
+            if (x.dataset.decl === 'qtd') declDraft[i].qtd = Number(x.value) || 0
+            declSave()
+            progBuildFromDecls()
+            renderProgTabela()
+          })
+          tb.addEventListener('change', function (e) {
+            const x = e.target.closest('[data-decl]')
+            if (!x || x.dataset.decl === 'del') return
+            const tr = x.closest('tr'),
+              i = +tr.dataset.di
+            declDraft[i][x.dataset.decl] = x.value
+            if (x.dataset.decl === 'qtd') declDraft[i].qtd = Number(x.value) || 0
+            declSave()
+            progDia = null
+            progDate = null
+            renderProg()
+          })
+          tb.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-decl="del"]')
+            if (!b) return
+            const tr = b.closest('tr')
+            if (!confirm('Remover esta declaração? A carteira MaxiProd não será alterada.')) return
+            declDraft.splice(+tr.dataset.di, 1)
+            declSave()
+            progBuildFromDecls()
+            progDia = null
+            progDate = null
+            renderProg()
+          })
+        }
+      }
+      if (document.getElementById('declRows')) {
+        declDraft = declLoad()
+        progBuildFromDecls()
+        renderDeclEditor()
+        document.getElementById('btnAddDecl').addEventListener('click', function () {
+          const dt =
+            (
+              (DATA.progSemana &&
+                DATA.progSemana.dias.find(function (a) {
+                  return a.dia === progDia
+                })) ||
+              {}
+            ).data || new Date().toISOString().slice(0, 10)
+          const iso =
+            dt.length === 5
+              ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
+              : dt
+          declDraft.push({
+            dia: progDia || 'Segunda',
+            data: iso,
+            cod: '',
+            qtd: 0,
+            local: 'C',
+            pv: '',
+            id: 'PR-EDIT-' + Date.now(),
+            obs: '',
+            status: 'Planejado',
+          })
+          declSave()
+          progBuildFromDecls()
+          renderDeclEditor()
+          renderProg()
+        })
+        document.getElementById('btnDlDecl').addEventListener('click', function () {
+          const cols = ['Dia', 'Data', 'Codigo', 'Qtd', 'Local', 'PV', 'ID', 'Observacao', 'Status']
+          const rows = declDraft.map(function (d) {
+            const dt = new Date(d.data + 'T12:00:00')
+            const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+            return [
+              dias[dt.getDay()],
+              d.data,
+              d.cod,
+              Number(d.qtd) || 0,
+              d.local === 'V' ? 'V' : 'C',
+              d.pv || '',
+              d.id || '',
+              d.obs || '',
+              d.status || 'Planejado',
+            ]
+          })
+          const sh = XLSX.utils.aoa_to_sheet([cols].concat(rows))
+          const wb = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(wb, sh, 'Declaracao')
+          XLSX.writeFile(
+            wb,
+            'DEVOLUTIVA_PROGRAMACAO_' +
+              new Date().toISOString().slice(0, 10).replace(/-/g, '') +
+              '.xlsx',
+          )
+        })
+      }
+
       renderProg()
       renderKpis()
       renderSemana()
