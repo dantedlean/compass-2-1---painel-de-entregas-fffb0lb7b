@@ -8591,12 +8591,14 @@
                     ? ' <span style="font-weight:400;font-size:10px">(' +
                       Array.from(
                         new Set(
-                          st.detNF.filter(function (x) {
-                            return x.usado > 0
-                          }),
-                        ).map(function (x) {
-                          return x.pv
-                        }),
+                          st.detNF
+                            .filter(function (x) {
+                              return x.usado > 0
+                            })
+                            .map(function (x) {
+                              return x.pv
+                            }),
+                        ),
                       ).join(', ') +
                       ')</span>'
                     : '') +
