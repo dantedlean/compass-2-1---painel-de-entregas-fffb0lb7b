@@ -6,33 +6,7 @@
     <title>Entregas por Semana — Dlean</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <script>
-      // Fallback de CDN: se o jsdelivr não carregar (rede bloqueada/instável),
-      // tenta o unpkg antes de o painel quebrar em branco.
-      ;(function () {
-        var need = []
-        if (!window.XLSX) need.push('https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js')
-        if (!window.echarts) need.push('https://unpkg.com/echarts@5.5.0/dist/echarts.min.js')
-        need.forEach(function (u) {
-          document.write('<script src="' + u + '"><\/script>')
-        })
-      })()
-      // Banner visível se qualquer erro impedir o painel de renderizar
-      window.addEventListener('error', function (e) {
-        var b = document.getElementById('bootErr')
-        if (!b) {
-          b = document.createElement('div')
-          b.id = 'bootErr'
-          b.style.cssText =
-            'margin:14px 24px;padding:12px 16px;background:#fee2e2;color:#991b1b;border-radius:10px;font:600 13px system-ui'
-          b.textContent =
-            'Erro ao carregar o painel: ' +
-            (e.message || e.error || 'desconhecido') +
-            ' — tente atualizar com Ctrl+F5. Se persistir, avise a FRIDA.'
-          document.body.insertBefore(b, document.body.firstChild)
-        }
-      })
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
       :root {
         --bg: #f1f5f9;
@@ -807,6 +781,8 @@
                   <th>PV</th>
                   <th>Cliente</th>
                   <th>Empresa</th>
+                  <th>Local</th>
+                  <th>Chegada prevista</th>
                   <th>Qtd</th>
                   <th>Valor unit.</th>
                   <th>Valor total</th>
@@ -854,6 +830,7 @@
             qtd: 1.0,
             vtot: 5402.28,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
             prod: null,
@@ -870,6 +847,7 @@
             qtd: 5.0,
             vtot: 175322.35,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -886,6 +864,7 @@
             qtd: 55.0,
             vtot: 186035.85,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
             prod: null,
@@ -902,6 +881,7 @@
             qtd: 71.0,
             vtot: 143965.28,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
             prod: null,
@@ -918,6 +898,7 @@
             qtd: 3.0,
             vtot: 20766.39,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: { qtd: 3.0, dias: ['Quarta', 'Terça'], dd: '23/09' },
@@ -934,6 +915,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -950,6 +932,7 @@
             qtd: 19.0,
             vtot: 56962.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 19.0, dias: ['Terça'], dd: '22/09' },
@@ -966,6 +949,7 @@
             qtd: 1.0,
             vtot: 14250.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -982,6 +966,7 @@
             qtd: 1.0,
             vtot: 650.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -998,6 +983,7 @@
             qtd: 1.0,
             vtot: 1560.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1014,6 +1000,7 @@
             qtd: 6.0,
             vtot: 3042.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1030,6 +1017,7 @@
             qtd: 1.0,
             vtot: 22836.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1046,6 +1034,7 @@
             qtd: 3.0,
             vtot: 12105.15,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1062,6 +1051,7 @@
             qtd: 4.0,
             vtot: 10850.2,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1078,6 +1068,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 2.0, dias: ['Quinta'], dd: '24/09' },
@@ -1094,6 +1085,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1110,6 +1102,7 @@
             qtd: 3.0,
             vtot: 33737.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 3.0, dias: ['Quinta'], dd: '24/09' },
@@ -1126,6 +1119,7 @@
             qtd: 1.0,
             vtot: 5700.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1142,6 +1136,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 2.0, dias: ['Quinta'], dd: '24/09' },
@@ -1158,6 +1153,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1174,6 +1170,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1190,6 +1187,7 @@
             qtd: 1.0,
             vtot: 9300.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1206,9 +1204,10 @@
             qtd: 2.0,
             vtot: 16662.06,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
-            prod: null,
+            prod: { qtd: 2.0, dias: ['Terça'], dd: '29/09' },
           },
           {
             data: '22/08',
@@ -1222,6 +1221,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1238,9 +1238,10 @@
             qtd: 2.0,
             vtot: 17662.06,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
-            prod: null,
+            prod: { qtd: 2.0, dias: ['Terça'], dd: '29/09' },
           },
           {
             data: '22/08',
@@ -1254,6 +1255,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1270,9 +1272,10 @@
             qtd: 2.0,
             vtot: 17662.06,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
-            prod: null,
+            prod: { qtd: 2.0, dias: ['Terça'], dd: '29/09' },
           },
           {
             data: '22/08',
@@ -1286,6 +1289,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1302,6 +1306,7 @@
             qtd: 5.0,
             vtot: 56229.8,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1318,6 +1323,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1334,6 +1340,7 @@
             qtd: 3.0,
             vtot: 33737.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1350,6 +1357,7 @@
             qtd: 1.0,
             vtot: 5700.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1366,6 +1374,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1382,6 +1391,7 @@
             qtd: 1.0,
             vtot: 9300.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1398,6 +1408,7 @@
             qtd: 5.0,
             vtot: 56229.8,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1414,6 +1425,7 @@
             qtd: 1.0,
             vtot: 11250.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1430,6 +1442,7 @@
             qtd: 1.0,
             vtot: 11245.96,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1446,6 +1459,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1462,6 +1476,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1478,6 +1493,7 @@
             qtd: 1.0,
             vtot: 5700.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1494,6 +1510,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1510,6 +1527,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1526,6 +1544,7 @@
             qtd: 1.0,
             vtot: 2972.52,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 4,
             prod: null,
@@ -1542,6 +1561,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1558,6 +1578,7 @@
             qtd: 1.0,
             vtot: 13500.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1574,6 +1595,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1590,6 +1612,7 @@
             qtd: 1.0,
             vtot: 9300.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1606,6 +1629,7 @@
             qtd: 3.0,
             vtot: 33737.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1622,6 +1646,7 @@
             qtd: 1.0,
             vtot: 13500.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1638,6 +1663,7 @@
             qtd: 4.0,
             vtot: 5807.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 4,
             prod: null,
@@ -1654,6 +1680,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1670,6 +1697,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1686,6 +1714,7 @@
             qtd: 1.0,
             vtot: 20250.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1702,6 +1731,7 @@
             qtd: 5.0,
             vtot: 56229.8,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1718,6 +1748,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1734,6 +1765,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1750,6 +1782,7 @@
             qtd: 1.0,
             vtot: 9750.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1766,6 +1799,7 @@
             qtd: 1.0,
             vtot: 11245.96,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -1782,6 +1816,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1798,6 +1833,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -1814,6 +1850,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1830,9 +1867,10 @@
             qtd: 4.0,
             vtot: 35324.12,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
-            prod: null,
+            prod: { qtd: 4.0, dias: ['Terça'], dd: '29/09' },
           },
           {
             data: '27/08',
@@ -1846,6 +1884,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1862,9 +1901,10 @@
             qtd: 4.0,
             vtot: 35324.12,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
-            prod: null,
+            prod: { qtd: 4.0, dias: ['Terça'], dd: '29/09' },
           },
           {
             data: '27/08',
@@ -1878,6 +1918,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1894,9 +1935,10 @@
             qtd: 3.0,
             vtot: 19864.17,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 4,
-            prod: null,
+            prod: { qtd: 3.0, dias: ['Sexta'], dd: '25/09' },
           },
           {
             data: '27/08',
@@ -1910,6 +1952,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -1926,9 +1969,10 @@
             qtd: 2.0,
             vtot: 2745.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: null,
+            prod: { qtd: 2.0, dias: ['Sexta'], dd: '25/09' },
           },
           {
             data: '28/08',
@@ -1942,6 +1986,7 @@
             qtd: 1.0,
             vtot: 3195.18,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -1958,6 +2003,7 @@
             qtd: 1.0,
             vtot: 3195.18,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -1974,6 +2020,7 @@
             qtd: 1.0,
             vtot: 3195.18,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -1990,6 +2037,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -2006,6 +2054,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2022,6 +2071,7 @@
             qtd: 3.0,
             vtot: 33737.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2038,6 +2088,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2054,6 +2105,7 @@
             qtd: 1.0,
             vtot: 6922.13,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 1.0, dias: ['Quarta'], dd: '23/09' },
@@ -2070,6 +2122,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2086,6 +2139,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2102,6 +2156,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2118,6 +2173,7 @@
             qtd: 8.0,
             vtot: 22948.72,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -2134,6 +2190,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2150,6 +2207,7 @@
             qtd: 5.0,
             vtot: 56229.8,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -2166,6 +2224,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2182,6 +2241,7 @@
             qtd: 3.0,
             vtot: 33737.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2198,6 +2258,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2214,6 +2275,7 @@
             qtd: 1.0,
             vtot: 11245.96,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2230,6 +2292,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2246,6 +2309,7 @@
             qtd: 3.0,
             vtot: 33737.88,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2262,6 +2326,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2278,6 +2343,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -2294,6 +2360,7 @@
             qtd: 1.0,
             vtot: 13500.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2310,6 +2377,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2326,6 +2394,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2342,6 +2411,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2358,6 +2428,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2374,6 +2445,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2390,6 +2462,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2406,6 +2479,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2422,6 +2496,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2438,6 +2513,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2454,6 +2530,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2470,6 +2547,7 @@
             qtd: 10.0,
             vtot: 29980.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 10.0, dias: ['Terça'], dd: '22/09' },
@@ -2486,6 +2564,7 @@
             qtd: 1.0,
             vtot: 9750.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2502,6 +2581,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2518,6 +2598,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2534,6 +2615,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2550,6 +2632,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2566,6 +2649,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
             prod: null,
@@ -2582,6 +2666,7 @@
             qtd: 1.0,
             vtot: 8550.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2598,6 +2683,7 @@
             qtd: 15.0,
             vtot: 44970.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 15.0, dias: ['Quarta', 'Terça'], dd: '23/09' },
@@ -2614,6 +2700,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2630,6 +2717,7 @@
             qtd: 12.0,
             vtot: 35976.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 12.0, dias: ['Quarta'], dd: '23/09' },
@@ -2646,6 +2734,7 @@
             qtd: 1.0,
             vtot: 5700.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2662,6 +2751,7 @@
             qtd: 5.0,
             vtot: 56229.8,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 5,
             prod: null,
@@ -2678,6 +2768,7 @@
             qtd: 1.0,
             vtot: 14250.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2694,6 +2785,7 @@
             qtd: 7.0,
             vtot: 20986.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 7.0, dias: ['Quarta'], dd: '23/09' },
@@ -2710,6 +2802,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2726,6 +2819,7 @@
             qtd: 6.0,
             vtot: 17988.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 6.0, dias: ['Quarta'], dd: '23/09' },
@@ -2742,6 +2836,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2758,6 +2853,7 @@
             qtd: 2.0,
             vtot: 6700.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -2774,6 +2870,7 @@
             qtd: 4.0,
             vtot: 7232.72,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -2790,6 +2887,7 @@
             qtd: 1.0,
             vtot: 9750.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2806,6 +2904,7 @@
             qtd: 10.0,
             vtot: 29980.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 10.0, dias: ['Quarta', 'Quinta'], dd: '24/09' },
@@ -2822,6 +2921,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2838,6 +2938,7 @@
             qtd: 2.0,
             vtot: 5996.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 2.0, dias: ['Quinta'], dd: '24/09' },
@@ -2854,6 +2955,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2870,6 +2972,7 @@
             qtd: 17.0,
             vtot: 50966.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 17.0, dias: ['Quinta'], dd: '24/09' },
@@ -2886,6 +2989,7 @@
             qtd: 1.0,
             vtot: 10830.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2902,6 +3006,7 @@
             qtd: 15.0,
             vtot: 44970.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 15.0, dias: ['Quinta'], dd: '24/09' },
@@ -2918,6 +3023,7 @@
             qtd: 1.0,
             vtot: 17700.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2934,9 +3040,10 @@
             qtd: 20.0,
             vtot: 59960.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: { qtd: 1.0, dias: ['Quinta'], dd: '24/09' },
+            prod: { qtd: 20.0, dias: ['Quinta', 'Terça'], dd: '29/09' },
           },
           {
             data: '06/09',
@@ -2950,6 +3057,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -2966,6 +3074,7 @@
             qtd: 2.0,
             vtot: 2731.44,
             frete: false,
+            local: 'Vinhedo',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -2982,6 +3091,7 @@
             qtd: 2.0,
             vtot: 5116.92,
             frete: false,
+            local: 'Vinhedo',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -2998,9 +3108,10 @@
             qtd: 25.0,
             vtot: 74950.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: null,
+            prod: { qtd: 25.0, dias: ['Quarta', 'Terça'], dd: '30/09' },
           },
           {
             data: '10/09',
@@ -3014,6 +3125,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3030,9 +3142,10 @@
             qtd: 53.0,
             vtot: 149156.84,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: null,
+            prod: { qtd: 53.0, dias: ['Quarta'], dd: '30/09' },
           },
           {
             data: '14/09',
@@ -3046,9 +3159,10 @@
             qtd: 20.0,
             vtot: 59960.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: null,
+            prod: { qtd: 20.0, dias: ['Quarta', 'Quinta'], dd: '01/10' },
           },
           {
             data: '14/09',
@@ -3062,6 +3176,7 @@
             qtd: 1.0,
             vtot: 14250.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3078,6 +3193,7 @@
             qtd: 1.0,
             vtot: 3314.61,
             frete: false,
+            local: 'Vinhedo',
             si: 0,
             siPlano: 2,
             prod: null,
@@ -3094,6 +3210,7 @@
             qtd: 1.0,
             vtot: 304.0,
             frete: false,
+            local: 'Vinhedo',
             si: 0,
             siPlano: 7,
             prod: null,
@@ -3110,9 +3227,10 @@
             qtd: 20.0,
             vtot: 59960.0,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 6,
-            prod: null,
+            prod: { qtd: 20.0, dias: ['Quinta', 'Sexta'], dd: '02/10' },
           },
           {
             data: '15/09',
@@ -3126,6 +3244,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3142,6 +3261,7 @@
             qtd: 23.0,
             vtot: 71001.0,
             frete: false,
+            local: 'Vinhedo',
             si: 0,
             siPlano: 2,
             prod: null,
@@ -3158,9 +3278,10 @@
             qtd: 1.0,
             vtot: 6922.12,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: null,
+            prod: { qtd: 1.0, dias: ['Sexta'], dd: '02/10' },
           },
           {
             data: '17/09',
@@ -3174,6 +3295,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3190,9 +3312,10 @@
             qtd: 1.0,
             vtot: 6922.13,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
-            prod: null,
+            prod: { qtd: 1.0, dias: ['Sexta'], dd: '02/10' },
           },
           {
             data: '17/09',
@@ -3206,6 +3329,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3222,6 +3346,7 @@
             qtd: 2.0,
             vtot: 13844.26,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -3238,6 +3363,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3254,6 +3380,7 @@
             qtd: 1.0,
             vtot: 6922.13,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 3,
             prod: null,
@@ -3270,6 +3397,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: null,
@@ -3286,9 +3414,10 @@
             qtd: 1.0,
             vtot: 55547.6,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: 7,
-            prod: null,
+            prod: { qtd: 1.0, dias: ['Terça'], dd: '29/09' },
           },
           {
             data: '18/09',
@@ -3302,6 +3431,7 @@
             qtd: 6.0,
             vtot: 23899.14,
             frete: false,
+            local: 'Curitiba',
             si: 0,
             siPlano: null,
             prod: { qtd: 6.0, dias: ['Sexta'], dd: '25/09' },
@@ -3318,6 +3448,7 @@
             qtd: 5.0,
             vtot: 8165.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3334,6 +3465,7 @@
             qtd: 1.0,
             vtot: 1633.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3350,6 +3482,7 @@
             qtd: 2.0,
             vtot: 3266.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3366,6 +3499,7 @@
             qtd: 1.0,
             vtot: 1633.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3382,6 +3516,7 @@
             qtd: 1.0,
             vtot: 1633.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3398,6 +3533,7 @@
             qtd: 1.0,
             vtot: 1633.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3414,6 +3550,7 @@
             qtd: 2.0,
             vtot: 3266.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3430,6 +3567,7 @@
             qtd: 4.0,
             vtot: 6532.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3446,6 +3584,7 @@
             qtd: 50.0,
             vtot: 180.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3462,6 +3601,7 @@
             qtd: 50.0,
             vtot: 207.5,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3478,13 +3618,14 @@
             qtd: 20.0,
             vtot: 16359.4,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W39',
             isoErp: '2026-09-25',
             dataErp: '25/09',
             rig: { iso: '2026-09-25', data: '25/09', cli: '', proj: 'SÃO PAULO/SP', local: '' },
             si: 1,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 20.0, dias: ['Quinta'], dd: '01/10' },
           },
           {
             data: '25/09',
@@ -3498,6 +3639,7 @@
             qtd: 20.0,
             vtot: 70222.2,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W39',
             isoErp: '2026-09-25',
             dataErp: '25/09',
@@ -3524,6 +3666,7 @@
             qtd: 15.0,
             vtot: 40078.64999999999,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W39',
             isoErp: '2026-09-25',
             dataErp: '25/09',
@@ -3550,6 +3693,7 @@
             qtd: 3.0,
             vtot: 4899.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3566,6 +3710,7 @@
             qtd: 6.0,
             vtot: 67475.76,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3582,6 +3727,7 @@
             qtd: 10.0,
             vtot: 8180.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3598,9 +3744,10 @@
             qtd: 10.0,
             vtot: 29980.0,
             frete: false,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 9.0, dias: ['Sexta'], dd: '02/10' },
           },
           {
             data: '26/09',
@@ -3614,6 +3761,7 @@
             qtd: 2.0,
             vtot: 27000.0,
             frete: true,
+            local: 'Curitiba',
             si: 1,
             siPlano: null,
             prod: null,
@@ -3630,6 +3778,7 @@
             qtd: 20.0,
             vtot: 104060.2,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-09-28',
             dataErp: '28/09',
@@ -3642,7 +3791,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 20.0, dias: ['Segunda'], dd: '28/09' },
           },
           {
             data: '28/09',
@@ -3656,6 +3805,7 @@
             qtd: 1.0,
             vtot: 4592.76,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-09-28',
             dataErp: '28/09',
@@ -3668,7 +3818,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 1.0, dias: ['Segunda'], dd: '28/09' },
           },
           {
             data: '28/09',
@@ -3682,6 +3832,7 @@
             qtd: 3.0,
             vtot: 8605.77,
             frete: false,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3698,6 +3849,7 @@
             qtd: 3.0,
             vtot: 8605.77,
             frete: false,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3714,6 +3866,7 @@
             qtd: 1.0,
             vtot: 9262.5,
             frete: true,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3730,6 +3883,7 @@
             qtd: 19.0,
             vtot: 58653.0,
             frete: false,
+            local: 'Vinhedo',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3746,9 +3900,10 @@
             qtd: 3.0,
             vtot: 7746.0,
             frete: false,
+            local: 'Vinhedo',
             si: 2,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 2.0, dias: ['Segunda'], dd: '28/09' },
           },
           {
             data: '29/09',
@@ -3762,13 +3917,14 @@
             qtd: 26.0,
             vtot: 88153.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-09-29',
             dataErp: '29/09',
             rig: { iso: '2026-09-29', data: '29/09', cli: '', proj: 'GUARULHOS/SP', local: '' },
             si: 2,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 26.0, dias: ['Segunda'], dd: '28/09' },
           },
           {
             data: '18/09',
@@ -3782,6 +3938,7 @@
             qtd: 128.0,
             vtot: 118033.92,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-09-30',
             dataErp: '30/09',
@@ -3802,6 +3959,7 @@
             qtd: 96.0,
             vtot: 222336.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-09-30',
             dataErp: '30/09',
@@ -3822,6 +3980,7 @@
             qtd: 1.0,
             vtot: 3860.0,
             frete: false,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3838,6 +3997,7 @@
             qtd: 8.0,
             vtot: 8108.72,
             frete: false,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3854,6 +4014,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3870,6 +4031,7 @@
             qtd: 8.0,
             vtot: 8108.72,
             frete: false,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3886,6 +4048,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3902,6 +4065,7 @@
             qtd: 1.0,
             vtot: 1072.88,
             frete: false,
+            local: 'Curitiba',
             si: 2,
             siPlano: null,
             prod: null,
@@ -3918,6 +4082,7 @@
             qtd: 57.0,
             vtot: 377419.23,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-10-02',
             dataErp: '02/10',
@@ -3930,7 +4095,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 54.0, dias: ['Segunda', 'Sexta', 'Sábado'], dd: '28/09' },
           },
           {
             data: '02/10',
@@ -3944,6 +4109,7 @@
             qtd: 34.0,
             vtot: 300255.02,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-10-02',
             dataErp: '02/10',
@@ -3956,7 +4122,7 @@
             },
             si: 2,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 19.0, dias: ['Quarta'], dd: '30/09' },
           },
           {
             data: '02/10',
@@ -3970,6 +4136,7 @@
             qtd: 9.0,
             vtot: 121500.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W40',
             isoErp: '2026-10-02',
             dataErp: '02/10',
@@ -3996,13 +4163,14 @@
             qtd: 60.0,
             vtot: 49078.2,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-06',
             dataErp: '06/10',
             rig: { iso: '2026-10-06', data: '06/10', cli: '', proj: 'GUARULHOS/SP', local: '' },
             si: 3,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 40.0, dias: ['Quinta'], dd: '01/10' },
           },
           {
             data: '06/10',
@@ -4016,6 +4184,7 @@
             qtd: 4.0,
             vtot: 1884.8,
             frete: false,
+            local: 'Curitiba',
             si: 3,
             siPlano: null,
             prod: null,
@@ -4032,6 +4201,7 @@
             qtd: 1.0,
             vtot: 1082.33,
             frete: false,
+            local: 'Curitiba',
             si: 3,
             siPlano: null,
             prod: null,
@@ -4048,6 +4218,7 @@
             qtd: 9.0,
             vtot: 29571.21,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4068,6 +4239,7 @@
             qtd: 1.0,
             vtot: 3228.86,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4088,13 +4260,14 @@
             qtd: 7.0,
             vtot: 31122.77,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
             rig: { iso: '2026-10-08', data: '08/10', cli: '', proj: 'HIDROLÂNDIA/GO', local: '' },
             si: 3,
             siPlano: null,
-            prod: null,
+            prod: { qtd: 7.0, dias: ['Quarta'], dd: '30/09' },
           },
           {
             data: '08/10',
@@ -4108,6 +4281,7 @@
             qtd: 9.0,
             vtot: 22675.32,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4128,6 +4302,7 @@
             qtd: 3.0,
             vtot: 11507.58,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4148,6 +4323,7 @@
             qtd: 2.0,
             vtot: 7213.82,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4168,6 +4344,7 @@
             qtd: 20.0,
             vtot: 27143.4,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4188,6 +4365,7 @@
             qtd: 9.0,
             vtot: 9441.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4208,6 +4386,7 @@
             qtd: 10.0,
             vtot: 18114.8,
             frete: false,
+            local: 'Curitiba',
             si: 3,
             siPlano: null,
             prod: null,
@@ -4224,6 +4403,7 @@
             qtd: 10.0,
             vtot: 10823.3,
             frete: false,
+            local: 'Curitiba',
             si: 3,
             siPlano: null,
             prod: null,
@@ -4240,6 +4420,7 @@
             qtd: 12.0,
             vtot: 9816.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4260,6 +4441,7 @@
             qtd: 38.0,
             vtot: 113924.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4280,6 +4462,7 @@
             qtd: 1.0,
             vtot: 6922.13,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4300,6 +4483,7 @@
             qtd: 2.0,
             vtot: 75000.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4320,6 +4504,7 @@
             qtd: 15.0,
             vtot: 12270.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4346,6 +4531,7 @@
             qtd: 38.0,
             vtot: 113924.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4372,6 +4558,7 @@
             qtd: 2.0,
             vtot: 13844.26,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4398,6 +4585,7 @@
             qtd: 3.0,
             vtot: 42750.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-08',
             dataErp: '08/10',
@@ -4424,6 +4612,7 @@
             qtd: 13.0,
             vtot: 36810.15,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4444,6 +4633,7 @@
             qtd: 2.0,
             vtot: 5549.44,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4464,6 +4654,7 @@
             qtd: 14.0,
             vtot: 28914.76,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4484,6 +4675,7 @@
             qtd: 2.0,
             vtot: 6763.44,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4504,6 +4696,7 @@
             qtd: 4.0,
             vtot: 12611.08,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4524,6 +4717,7 @@
             qtd: 10.0,
             vtot: 9030.3,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4544,6 +4738,7 @@
             qtd: 25.0,
             vtot: 14871.5,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W41',
             isoErp: '2026-10-09',
             dataErp: '09/10',
@@ -4564,6 +4759,7 @@
             qtd: 2.0,
             vtot: 3585.28,
             frete: false,
+            local: 'Curitiba',
             si: 4,
             siPlano: null,
             prod: null,
@@ -4580,6 +4776,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-15',
             dataErp: '15/10',
@@ -4606,6 +4803,7 @@
             qtd: 5.0,
             vtot: 4090.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-15',
             dataErp: '15/10',
@@ -4632,6 +4830,7 @@
             qtd: 1.0,
             vtot: 2998.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-15',
             dataErp: '15/10',
@@ -4658,6 +4857,7 @@
             qtd: 8.0,
             vtot: 55377.04,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-15',
             dataErp: '15/10',
@@ -4684,6 +4884,7 @@
             qtd: 3.0,
             vtot: 23400.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-15',
             dataErp: '15/10',
@@ -4710,6 +4911,7 @@
             qtd: 1.0,
             vtot: 11250.0,
             frete: true,
+            local: 'Curitiba',
             si: 4,
             siPlano: null,
             prod: null,
@@ -4726,6 +4928,7 @@
             qtd: 2.0,
             vtot: 1954.1,
             frete: false,
+            local: 'Vinhedo',
             si: 4,
             siPlano: null,
             prod: null,
@@ -4742,6 +4945,7 @@
             qtd: 4.0,
             vtot: 44983.84,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-18',
             dataErp: '18/10',
@@ -4768,6 +4972,7 @@
             qtd: 6.0,
             vtot: 4908.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-18',
             dataErp: '18/10',
@@ -4794,6 +4999,7 @@
             qtd: 88.0,
             vtot: 263824.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-18',
             dataErp: '18/10',
@@ -4820,6 +5026,7 @@
             qtd: 1.0,
             vtot: 6922.13,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-18',
             dataErp: '18/10',
@@ -4846,6 +5053,7 @@
             qtd: 5.0,
             vtot: 238500.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W42',
             isoErp: '2026-10-18',
             dataErp: '18/10',
@@ -4872,6 +5080,7 @@
             qtd: 2.0,
             vtot: 22491.92,
             frete: false,
+            local: 'Curitiba',
             si: 5,
             siPlano: null,
             prod: null,
@@ -4888,6 +5097,7 @@
             qtd: 1.0,
             vtot: 7350.0,
             frete: true,
+            local: 'Curitiba',
             si: 5,
             siPlano: null,
             prod: null,
@@ -4904,6 +5114,7 @@
             qtd: 10.0,
             vtot: 8180.0,
             frete: false,
+            local: 'Curitiba',
             si: 5,
             siPlano: null,
             prod: null,
@@ -4920,6 +5131,7 @@
             qtd: 1.0,
             vtot: 8900.0,
             frete: true,
+            local: 'Curitiba',
             si: 5,
             siPlano: null,
             prod: null,
@@ -4936,6 +5148,7 @@
             qtd: 8.0,
             vtot: 89967.68,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-20',
             dataErp: '20/10',
@@ -4962,6 +5175,7 @@
             qtd: 20.0,
             vtot: 16360.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-20',
             dataErp: '20/10',
@@ -4988,6 +5202,7 @@
             qtd: 35.0,
             vtot: 104580.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-20',
             dataErp: '20/10',
@@ -5014,6 +5229,7 @@
             qtd: 3.0,
             vtot: 60750.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-20',
             dataErp: '20/10',
@@ -5040,6 +5256,7 @@
             qtd: 4.0,
             vtot: 15840.0,
             frete: false,
+            local: 'Vinhedo',
             si: 5,
             siPlano: null,
             prod: null,
@@ -5056,6 +5273,7 @@
             qtd: 1.0,
             vtot: 4100.0,
             frete: false,
+            local: 'Vinhedo',
             si: 5,
             siPlano: null,
             prod: null,
@@ -5072,6 +5290,7 @@
             qtd: 1.0,
             vtot: 4350.0,
             frete: false,
+            local: 'Vinhedo',
             si: 5,
             siPlano: null,
             prod: null,
@@ -5088,6 +5307,7 @@
             qtd: 2.0,
             vtot: 5200.0,
             frete: false,
+            local: 'Vinhedo',
             si: 5,
             siPlano: null,
             prod: null,
@@ -5104,6 +5324,7 @@
             qtd: 2.0,
             vtot: 7024.0,
             frete: false,
+            local: 'Vinhedo',
             si: 5,
             siPlano: null,
             prod: null,
@@ -5120,6 +5341,7 @@
             qtd: 1.0,
             vtot: 5640.0,
             frete: false,
+            local: 'Vinhedo',
             si: 5,
             siPlano: null,
             prod: null,
@@ -5136,6 +5358,7 @@
             qtd: 7.0,
             vtot: 78721.72,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-22',
             dataErp: '22/10',
@@ -5162,6 +5385,7 @@
             qtd: 5.0,
             vtot: 4090.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-22',
             dataErp: '22/10',
@@ -5188,6 +5412,7 @@
             qtd: 12.0,
             vtot: 35976.0,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-22',
             dataErp: '22/10',
@@ -5214,6 +5439,7 @@
             qtd: 1.0,
             vtot: 6922.13,
             frete: false,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-22',
             dataErp: '22/10',
@@ -5240,6 +5466,7 @@
             qtd: 2.0,
             vtot: 6300.0,
             frete: true,
+            local: 'Curitiba',
             semanaErp: '2026-W43',
             isoErp: '2026-10-22',
             dataErp: '22/10',
@@ -5266,6 +5493,7 @@
             qtd: 5.0,
             vtot: 11286.4,
             frete: false,
+            local: 'Vinhedo',
             si: 6,
             siPlano: null,
             prod: null,
@@ -5282,6 +5510,7 @@
             qtd: 3.0,
             vtot: 8442.84,
             frete: false,
+            local: 'Curitiba',
             si: 6,
             siPlano: null,
             prod: null,
@@ -5298,6 +5527,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 6,
             siPlano: null,
             prod: null,
@@ -5314,6 +5544,7 @@
             qtd: 2.0,
             vtot: 13734.64,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5330,6 +5561,7 @@
             qtd: 1.0,
             vtot: 18742.5,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5346,6 +5578,7 @@
             qtd: 3.0,
             vtot: 20601.96,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5362,6 +5595,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5378,6 +5612,7 @@
             qtd: 1.0,
             vtot: 6867.32,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5394,6 +5629,7 @@
             qtd: 1.0,
             vtot: 5100.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5410,6 +5646,7 @@
             qtd: 2.0,
             vtot: 13734.64,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5426,6 +5663,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5442,6 +5680,7 @@
             qtd: 2.0,
             vtot: 13734.64,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5458,6 +5697,7 @@
             qtd: 1.0,
             vtot: 7350.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5474,6 +5714,7 @@
             qtd: 1.0,
             vtot: 6867.32,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5490,6 +5731,7 @@
             qtd: 1.0,
             vtot: 23631.7,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5506,6 +5748,7 @@
             qtd: 2.0,
             vtot: 13734.64,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5522,6 +5765,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5538,6 +5782,7 @@
             qtd: 2.0,
             vtot: 8757.28,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5554,6 +5799,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5570,6 +5816,7 @@
             qtd: 2.0,
             vtot: 8757.28,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5586,6 +5833,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5602,6 +5850,7 @@
             qtd: 2.0,
             vtot: 8757.28,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5618,6 +5867,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5634,6 +5884,7 @@
             qtd: 1.0,
             vtot: 4378.64,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5650,6 +5901,7 @@
             qtd: 1.0,
             vtot: 3900.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5666,6 +5918,7 @@
             qtd: 2.0,
             vtot: 8757.28,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5682,6 +5935,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5698,6 +5952,7 @@
             qtd: 6.0,
             vtot: 26271.84,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5714,6 +5969,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5730,6 +5986,7 @@
             qtd: 8.0,
             vtot: 35029.12,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5746,6 +6003,7 @@
             qtd: 1.0,
             vtot: 2400.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5762,6 +6020,7 @@
             qtd: 10.0,
             vtot: 43786.4,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5778,6 +6037,7 @@
             qtd: 1.0,
             vtot: 14250.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5794,6 +6054,7 @@
             qtd: 2.0,
             vtot: 8757.28,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5810,6 +6071,7 @@
             qtd: 1.0,
             vtot: 4820.76,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5826,6 +6088,7 @@
             qtd: 4.0,
             vtot: 17514.56,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5842,6 +6105,7 @@
             qtd: 1.0,
             vtot: 3964.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5858,6 +6122,7 @@
             qtd: 2.0,
             vtot: 8757.28,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5874,6 +6139,7 @@
             qtd: 1.0,
             vtot: 7350.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5890,6 +6156,7 @@
             qtd: 1.0,
             vtot: 4378.64,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5906,6 +6173,7 @@
             qtd: 1.0,
             vtot: 4881.3,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5922,6 +6190,7 @@
             qtd: 6.0,
             vtot: 26271.84,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5938,6 +6207,7 @@
             qtd: 1.0,
             vtot: 6750.0,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5954,6 +6224,7 @@
             qtd: 4.0,
             vtot: 17514.56,
             frete: false,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5970,6 +6241,7 @@
             qtd: 1.0,
             vtot: 7766.88,
             frete: true,
+            local: 'Curitiba',
             si: 8,
             siPlano: null,
             prod: null,
@@ -5986,6 +6258,7 @@
             qtd: 6.0,
             vtot: 67475.76,
             frete: false,
+            local: 'Curitiba',
             si: 9,
             siPlano: null,
             prod: null,
@@ -6002,6 +6275,7 @@
             qtd: 5.0,
             vtot: 4090.0,
             frete: false,
+            local: 'Curitiba',
             si: 9,
             siPlano: null,
             prod: null,
@@ -6018,6 +6292,7 @@
             qtd: 1.0,
             vtot: 14250.0,
             frete: true,
+            local: 'Curitiba',
             si: 9,
             siPlano: null,
             prod: null,
@@ -6034,6 +6309,7 @@
             qtd: 5.0,
             vtot: 5000.0,
             frete: false,
+            local: 'Curitiba',
             si: 9,
             siPlano: null,
             prod: null,
@@ -6050,6 +6326,7 @@
             qtd: 5.0,
             vtot: 5000.0,
             frete: false,
+            local: 'Curitiba',
             si: 9,
             siPlano: null,
             prod: null,
@@ -6066,6 +6343,7 @@
             qtd: 1.0,
             vtot: 6750.0,
             frete: true,
+            local: 'Curitiba',
             si: 9,
             siPlano: null,
             prod: null,
@@ -6082,6 +6360,7 @@
             qtd: 5.0,
             vtot: 24503.25,
             frete: false,
+            local: 'Curitiba',
             si: 10,
             siPlano: null,
             prod: null,
@@ -6098,6 +6377,7 @@
             qtd: 1.0,
             vtot: 3150.0,
             frete: true,
+            local: 'Curitiba',
             si: 10,
             siPlano: null,
             prod: null,
@@ -6114,6 +6394,7 @@
             qtd: 28.0,
             vtot: 103400.64,
             frete: false,
+            local: 'Curitiba',
             si: 10,
             siPlano: null,
             prod: null,
@@ -6130,6 +6411,7 @@
             qtd: 7.0,
             vtot: 62016.64,
             frete: false,
+            local: 'Curitiba',
             si: 10,
             siPlano: null,
             prod: null,
@@ -6146,6 +6428,7 @@
             qtd: 1.0,
             vtot: 1250.0,
             frete: true,
+            local: 'Curitiba',
             si: 11,
             siPlano: null,
             prod: null,
@@ -6162,6 +6445,7 @@
             qtd: 1.0,
             vtot: 1800.0,
             frete: false,
+            local: 'Curitiba',
             si: 11,
             siPlano: null,
             prod: null,
@@ -6182,6 +6466,7 @@
               vtot: 56962.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Terça',
@@ -6195,6 +6480,7 @@
               vtot: 29980.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Terça',
@@ -6208,6 +6494,7 @@
               vtot: 26982.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Terça',
@@ -6221,6 +6508,7 @@
               vtot: 6922.13,
               sit: 'ATRASADO (recuperação)',
               cheg: '24/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6234,6 +6522,7 @@
               vtot: 17988.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '28/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6247,6 +6536,7 @@
               vtot: 35976.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6260,6 +6550,7 @@
               vtot: 20986.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6273,6 +6564,7 @@
               vtot: 17988.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6286,6 +6578,7 @@
               vtot: 20986.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6299,6 +6592,7 @@
               vtot: 13844.26,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quarta',
@@ -6312,6 +6606,7 @@
               vtot: 6922.13,
               sit: 'ATRASADO (recuperação)',
               cheg: '28/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6325,6 +6620,7 @@
               vtot: 22491.92,
               sit: 'ATRASADO (recuperação)',
               cheg: '28/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6338,6 +6634,7 @@
               vtot: 33737.88,
               sit: 'ATRASADO (recuperação)',
               cheg: '26/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6351,6 +6648,7 @@
               vtot: 22491.92,
               sit: 'ATRASADO (recuperação)',
               cheg: '26/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6364,6 +6662,7 @@
               vtot: 8994.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '26/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6377,6 +6676,7 @@
               vtot: 5996.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '26/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6390,6 +6690,7 @@
               vtot: 50966.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '28/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6403,6 +6704,7 @@
               vtot: 44970.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '29/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Quinta',
@@ -6416,6 +6718,7 @@
               vtot: 2998.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '26/09',
+              local: 'Curitiba',
             },
             {
               dia: 'Sexta',
@@ -6429,6 +6732,7 @@
               vtot: 70222.2,
               sit: 'em dia (2026-W39)',
               cheg: 'consultar transportadora',
+              local: 'Curitiba',
             },
             {
               dia: 'Sexta',
@@ -6442,6 +6746,441 @@
               vtot: 23899.14,
               sit: 'ATRASADO (recuperação)',
               cheg: '29/09',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '25/09',
+              cod: '401-0007',
+              desc: 'ML FLOW RACK 2X2 - V2',
+              qtd: 3.0,
+              pv: '526',
+              cli: 'EBAZAR BAURU',
+              emp: 'DTEKT',
+              vtot: 19864.17,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '25/09',
+              cod: '401-0007',
+              desc: 'ML FLOW RACK 2X2 - V2',
+              qtd: 12.0,
+              pv: '549',
+              cli: 'EBAZAR CONTAGEM XMG1',
+              emp: 'DTEKT',
+              vtot: 79456.68000000001,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '25/09',
+              cod: '403-0016',
+              desc: 'CARRINHO DE TRANSPORTE DIVISORIAS BRITÂNIA',
+              qtd: 2.0,
+              pv: '2113',
+              cli: 'Britânia',
+              emp: 'DLEAN',
+              vtot: 2745.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sábado',
+              data: '26/09',
+              cod: '401-0007',
+              desc: 'ML FLOW RACK 2X2 - V2',
+              qtd: 25.0,
+              pv: '549',
+              cli: 'EBAZAR CONTAGEM XMG1',
+              emp: 'DTEKT',
+              vtot: 165534.75,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Segunda',
+              data: '28/09',
+              cod: 'ID01598',
+              desc: 'FLOW RACK DINÂMICO 1000x2000mm - BLUE',
+              qtd: 20.0,
+              pv: '120',
+              cli: 'SHOPEE NOVA SANTA RITA',
+              emp: 'SLEAN',
+              vtot: 104060.2,
+              sit: 'em dia (2026-W40)',
+              cheg: '01/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Segunda',
+              data: '28/09',
+              cod: 'ID01778',
+              desc: 'ESTEIRA PUT TO WALL - 600x540x3000mm - SHOPEE',
+              qtd: 1.0,
+              pv: '120',
+              cli: 'SHOPEE NOVA SANTA RITA',
+              emp: 'SLEAN',
+              vtot: 4592.76,
+              sit: 'em dia (2026-W40)',
+              cheg: '01/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Segunda',
+              data: '28/09',
+              cod: '401-0007',
+              desc: 'ML FLOW RACK 2X2 - V2',
+              qtd: 17.0,
+              pv: '549',
+              cli: 'EBAZAR CONTAGEM XMG1',
+              emp: 'DTEKT',
+              vtot: 112563.63,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 2.0,
+              pv: '477',
+              cli: 'EBAZAR SÃO CARLOS SP',
+              emp: 'DTEKT',
+              vtot: 16662.06,
+              sit: 'ATRASADO (recuperação)',
+              cheg: '02/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 2.0,
+              pv: '494',
+              cli: 'EBAZAR PRESIDENTE PRUDENTE',
+              emp: 'DTEKT',
+              vtot: 17662.06,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 2.0,
+              pv: '502',
+              cli: 'EBAZAR JUNDIAI',
+              emp: 'DTEKT',
+              vtot: 17662.06,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 4.0,
+              pv: '524',
+              cli: 'EBAZAR CAÇAPAVA',
+              emp: 'DTEKT',
+              vtot: 35324.12,
+              sit: 'ATRASADO (recuperação)',
+              cheg: '01/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 4.0,
+              pv: '525',
+              cli: 'EBAZAR ITUPEVA',
+              emp: 'DTEKT',
+              vtot: 35324.12,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 1.0,
+              pv: '552',
+              cli: 'EBAZAR GOV CELSO RAMOS BRXSC2',
+              emp: 'DTEKT',
+              vtot: 55547.6,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 19.0,
+              pv: '484',
+              cli: 'EBAZAR SBC',
+              emp: 'DTEKT',
+              vtot: 56962.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: '01/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 21.0,
+              pv: '504',
+              cli: 'EBAZAR SUZANO',
+              emp: 'DTEKT',
+              vtot: 62958.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quarta',
+              data: '30/09',
+              cod: 'ID01598',
+              desc: 'FLOW RACK DINÂMICO 1000x2000mm - BLUE',
+              qtd: 7.0,
+              pv: '125',
+              cli: 'SHOPEE GOIANIA',
+              emp: 'SLEAN',
+              vtot: 31122.77,
+              sit: 'em dia (2026-W41)',
+              cheg: '06/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quarta',
+              data: '30/09',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 19.0,
+              pv: '549',
+              cli: 'EBAZAR CONTAGEM XMG1',
+              emp: 'DTEKT',
+              vtot: 167789.57,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quarta',
+              data: '30/09',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 4.0,
+              pv: '504',
+              cli: 'EBAZAR SUZANO',
+              emp: 'DTEKT',
+              vtot: 11992.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quarta',
+              data: '30/09',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 11.0,
+              pv: '509',
+              cli: 'EBAZAR PELOTAS',
+              emp: 'DTEKT',
+              vtot: 32978.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quinta',
+              data: '01/10',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 9.0,
+              pv: '509',
+              cli: 'EBAZAR PELOTAS',
+              emp: 'DTEKT',
+              vtot: 26982.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quinta',
+              data: '01/10',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 6.0,
+              pv: '522',
+              cli: 'EBAZAR BAURU',
+              emp: 'DTEKT',
+              vtot: 17988.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '02/10',
+              cod: '404-0002',
+              desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+              qtd: 1.0,
+              pv: '474',
+              cli: 'EBAZAR ITAQUERA',
+              emp: 'DTEKT',
+              vtot: 6922.12,
+              sit: 'ATRASADO (recuperação)',
+              cheg: '06/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '02/10',
+              cod: '404-0002',
+              desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+              qtd: 1.0,
+              pv: '497',
+              cli: 'EBAZAR GUARAPUAVA',
+              emp: 'DTEKT',
+              vtot: 6922.13,
+              sit: 'ATRASADO (recuperação)',
+              cheg: '06/10',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '02/10',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 14.0,
+              pv: '522',
+              cli: 'EBAZAR BAURU',
+              emp: 'DTEKT',
+              vtot: 41972.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '02/10',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 9.0,
+              pv: '556',
+              cli: 'EBAZAR TEOFILO OTONI',
+              emp: 'DTEKT',
+              vtot: 26982.0,
+              sit: 'em dia (2026-W39)',
+              cheg: 'consultar transportadora',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Segunda',
+              data: '28/09',
+              cod: 'QD0001',
+              desc: 'QUADRO DE GESTÃO',
+              qtd: 1.0,
+              pv: '85',
+              cli: 'TECUMSEH',
+              emp: 'DLEAN FILIAL VINHEDO',
+              vtot: 2582.0,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Vinhedo',
+            },
+            {
+              dia: 'Segunda',
+              data: '28/09',
+              cod: 'QD0001',
+              desc: 'QUADRO DE GESTÃO',
+              qtd: 1.0,
+              pv: '85',
+              cli: 'TECUMSEH',
+              emp: 'DLEAN FILIAL VINHEDO',
+              vtot: 2582.0,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Vinhedo',
+            },
+            {
+              dia: 'Segunda',
+              data: '28/09',
+              cod: 'ID01386',
+              desc: 'ESCORREGADOR SOLDADO SHOPEE - 1800x800x2000mm',
+              qtd: 26.0,
+              pv: '110',
+              cli: 'SHOPEE SOC-SP26',
+              emp: 'SLEAN',
+              vtot: 88153.0,
+              sit: 'em dia (2026-W40)',
+              cheg: 'consultar transportadora',
+              local: 'Vinhedo',
+            },
+            {
+              dia: 'Quarta',
+              data: '30/09',
+              cod: '406-0001',
+              desc: 'ESCORREGADOR SOLDADO MERCADO LIVRE',
+              qtd: 53.0,
+              pv: '534',
+              cli: 'EBAZAR CONTAGEM XMG1',
+              emp: 'DTEKT',
+              vtot: 149156.84,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'consultar transportadora',
+              local: 'Vinhedo',
+            },
+            {
+              dia: 'Quinta',
+              data: '01/10',
+              cod: 'ID02730',
+              desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+              qtd: 20.0,
+              pv: '121',
+              cli: 'SHOPEE F DA ROCHA SP09',
+              emp: 'SLEAN',
+              vtot: 16359.4,
+              sit: 'em dia (2026-W39)',
+              cheg: 'consultar transportadora',
+              local: 'Vinhedo',
+            },
+            {
+              dia: 'Quinta',
+              data: '01/10',
+              cod: 'ID02730',
+              desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+              qtd: 40.0,
+              pv: '126',
+              cli: 'SHOPEE GUARULHOS SP22',
+              emp: 'SLEAN',
+              vtot: 32718.8,
+              sit: 'em dia (2026-W41)',
+              cheg: 'consultar transportadora',
+              local: 'Vinhedo',
             },
           ],
         },
@@ -6948,7 +7687,7 @@
           },
         ],
         nfBaixadas: {
-          gerado: '2026-09-25T16:29:54.228513',
+          gerado: '2026-09-25T18:04:34.780351',
           janela: ['2026-09-15', '2026-09-25'],
           nfs: [
             {
@@ -7708,7 +8447,15 @@
           if (atr) p.atrasado = true
           const kpv = String(a.pv) + '|' + a.cli
           if (!p.pvs[kpv])
-            p.pvs[kpv] = { pv: a.pv, cli: a.cli, qtd: 0, vtot: 0, atr: false, cheg: a.cheg || '' }
+            p.pvs[kpv] = {
+              pv: a.pv,
+              cli: a.cli,
+              qtd: 0,
+              vtot: 0,
+              atr: false,
+              cheg: a.cheg || '',
+              local: a.local || 'Curitiba',
+            }
           p.pvs[kpv].qtd += a.qtd
           p.pvs[kpv].vtot += a.vtot
           if (atr) p.pvs[kpv].atr = true
@@ -7733,8 +8480,11 @@
             })
             const pvRows = pvList
               .map(function (v) {
+                const vin = v.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
                 return (
-                  '<tr><td class="pvtag">' +
+                  '<tr' +
+                  vin +
+                  '><td class="pvtag">' +
                   v.pv +
                   '</td><td>' +
                   v.cli +
@@ -7746,6 +8496,8 @@
                   '</td>' +
                   '<td>' +
                   (v.cheg || '—') +
+                  '</td><td>' +
+                  v.local +
                   '</td>' +
                   '<td>' +
                   (v.atr
@@ -7794,7 +8546,7 @@
               '<tr class="detrow" data-det="' +
               ix +
               '"><td colspan="9"><table class="mini">' +
-              '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Situação</th></tr>' +
+              '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Local</th><th>Situação</th></tr>' +
               pvRows +
               '</table></td></tr>'
             const chegs = [
@@ -7932,33 +8684,20 @@
             const ok = tr.querySelector('input[data-p=ok]').checked
             const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0
             const pvSel = tr.querySelector('select[data-p=pv]').value
-            // destino = SMKT: a qtd realizada entra no supermercado como produto pronto (não vai para PV)
+            // ENTRADA NO SMKT É MANUAL (decisão Dante 25/09): escolher destino não cria entrada.
+            // A opção Supermercado serve apenas para marcar a intenção de destino da produção.
             if (pvSel === '__SMKT__') {
-              const qSm = qtd > 0 ? qtd : prev.qtd || 0
-              if (qSm <= 0) {
-                alert('Informe a qtd realizada antes de alocar para o Supermercado.')
-                return
-              }
-              const ents = smktEntradas()
-              smktUpsertProgramado(p.cod, progDia, qSm)
               setProgExec(p.cod, progDia, {
                 ok: ok,
                 qtd: qtd,
                 rl: prev.rl,
                 saldo: prev.saldo,
                 pvNovo: null,
-                smkt: qSm,
+                smkt: qtd > 0 ? qtd : prev.smkt || null,
               })
-              renderSmkt()
               renderProgTabela()
-              renderSemana()
-              renderKpis()
               alert(
-                '🛒 ' +
-                  NF.format(qSm) +
-                  ' un de ' +
-                  p.cod +
-                  ' entraram no Supermercado (produtos acabados). Aloque em PVs no card Supermercado.',
+                'Destino anotado: Supermercado. A ENTRADA no SMKT continua MANUAL — use o card Supermercado → "+ Entrada no SMKT" quando o produto estiver pronto.',
               )
               return
             }
@@ -8157,6 +8896,18 @@
           if (c.indexOf(k) >= 0) return k
         }
         return null
+      }
+      // trânsito p/ exibição: só sai de Curitiba (Vinhedo => null = consultar transportadora)
+      // fim = 1º dia útil após a coleta (finalização prevista da produção); cheg = chegada no cliente
+      function trDe(local, cli, dataBr) {
+        if (local === 'Vinhedo') return null
+        const cid = cidadeDe(cli)
+        if (!cid || !dataBr || dataBr.length !== 10) return null
+        const ent = new Date(dataBr + 'T12:00:00')
+        const coleta = subDU(ent, TRANSITO[cid][0])
+        const fim = addDU(coleta, 1)
+        const cheg = addDU(fim, TRANSITO[cid][0] - 1)
+        return { fim: dtBR(isoD(fim)), cheg: dtBR(isoD(cheg)), coleta: dtBR(isoD(coleta)) }
       }
       function addDU(d, n) {
         const x = new Date(d)
@@ -9142,6 +9893,7 @@
               dataErp: r.dataErp || r.data,
               prod: r.prod,
               rig: r.rig,
+              local: r.local,
             }
           p.pvs[kpv].qtd += r.qtd
           p.pvs[kpv].vtot += r.vtot
@@ -9202,7 +9954,7 @@
             ]
             const porDia = {}
             pvList.forEach(function (v) {
-              const cid = cidadeDe(v.cliente)
+              const cid = v.local === 'Vinhedo' ? null : cidadeDe(v.cliente)
               const tdu = cid ? TRANSITO[cid][0] : null
               const isoAlvo = v.rig && v.rig.iso ? v.rig.iso : v.data
               let dColeta = null
@@ -9253,8 +10005,11 @@
               })
               .map(function (v) {
                 const rig = v.rig ? ' <span class="tagR">RÍGIDA ' + v.rig.data + '</span>' : ''
+                const vin = v.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
                 return (
-                  '<tr><td class="pvtag">' +
+                  '<tr' +
+                  vin +
+                  '><td class="pvtag">' +
                   v.pv +
                   '</td><td>' +
                   v.cliente +
@@ -9268,6 +10023,11 @@
                   NF.format(Math.round(v.qtd)) +
                   '</td><td class="num">' +
                   FMT.format(v.vtot) +
+                  '</td>' +
+                  '<td' +
+                  (v.local === 'Vinhedo' ? ' style="background:#FFF9C4;font-weight:700"' : '') +
+                  '>' +
+                  v.local +
                   '</td>' +
                   '<td>' +
                   (v.prod ? '<span class="tagP">PRODUZIDO ' + v.prod.dd + '</span>' : '') +
@@ -9284,7 +10044,7 @@
               diaRowsF +
               '</table></div>' +
               '<div style="flex:1;min-width:420px"><table class="mini" style="width:100%">' +
-              '<tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Data original</th><th>Qtd</th><th>Valor</th><th>Produção</th></tr>' +
+              '<tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Data original</th><th>Qtd</th><th>Valor</th><th>Local</th><th>Produção</th></tr>' +
               pvRows +
               '</table></div></div></td></tr>'
             return (
@@ -9409,12 +10169,6 @@
       function renderGantt() {
         const ps = aggProdutos()
         const el = document.getElementById('gantt')
-        if (!window.echarts) {
-          el.style.height = '80px'
-          el.innerHTML =
-            '<div style="padding:18px;color:#64748b">Gráfico indisponível nesta rede (CDN de gráficos não carregou). Tabelas, KPIs e SMKT seguem funcionando.</div>'
-          return
-        }
         el.style.height = Math.max(500, ps.length * 26 + 170) + 'px'
         if (gChart) gChart.dispose()
         gChart = echarts.init(el)
@@ -9490,11 +10244,6 @@
       }
       function renderTimeline() {
         const el = document.getElementById('timeline')
-        if (!window.echarts) {
-          el.innerHTML =
-            '<div style="padding:14px 18px;color:#64748b">Linha do tempo indisponível nesta rede (CDN de gráficos não carregou).</div>'
-          return
-        }
         if (tChart) tChart.dispose()
         tChart = echarts.init(el)
         const ps = aggProdutos()
@@ -9937,6 +10686,7 @@
             data: r.iso,
             atr: r.semana === 'ATRASADO',
             prod: r.prod,
+            local: r.local,
           }
           o.pvs[k].qtd += r.qtd
           o.pvs[k].vt += r.vtot
@@ -9949,8 +10699,12 @@
               const pvRows = Object.values(o.pvs)
                 .sort((a, b) => a.pv - b.pv)
                 .map(function (v) {
+                  const trn = trDe(v.local, v.cli, v.data)
+                  const vin = v.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
                   return (
-                    '<tr><td><b>' +
+                    '<tr' +
+                    vin +
+                    '><td><b>' +
                     v.pv +
                     '</b></td><td>' +
                     v.cli +
@@ -9963,6 +10717,10 @@
                     NF.format(v.qtd) +
                     '</td><td class="num">' +
                     FMT.format(v.vt) +
+                    '</td><td>' +
+                    v.local +
+                    '</td><td>' +
+                    (trn ? trn.cheg : '—') +
                     '</td>' +
                     (v.prod
                       ? '<td><span class="tagP">PRODUZIDO ' +
@@ -9976,7 +10734,7 @@
               const det =
                 '<tr class="detrow" data-det="' +
                 ix +
-                '" style="display:none"><td colspan="5"><table class="mini"><tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Entrega</th><th>Qtd</th><th>Valor</th><th>Produção</th></tr>' +
+                '" style="display:none"><td colspan="5"><table class="mini"><tr><th>PV</th><th>Cliente</th><th>Empresa</th><th>Entrega</th><th>Qtd</th><th>Valor</th><th>Local</th><th>Chegada prevista</th><th>Produção</th></tr>' +
                 pvRows +
                 '</table></td></tr>'
               return (
@@ -10059,10 +10817,20 @@
         box.innerHTML = Object.values(pvs)
           .sort((a, b) => a.pv - b.pv)
           .map(function (o) {
+            let fimMax = '',
+              chegMax = ''
             const rows = o.itens
               .map(function (r) {
+                const trn = trDe(r.local, r.cliente, r.iso)
+                if (trn) {
+                  if (trn.fim > fimMax) fimMax = trn.fim
+                  if (trn.cheg > chegMax) chegMax = trn.cheg
+                }
+                const vin = r.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
                 return (
-                  '<tr><td><div class="cod">' +
+                  '<tr' +
+                  vin +
+                  '><td><div class="cod">' +
                   r.codigo +
                   '</div><div class="dsc">' +
                   r.desc.slice(0, 52) +
@@ -10078,6 +10846,11 @@
                   '</td><td class="num"><b>' +
                   FMT.format(r.vtot) +
                   '</b></td>' +
+                  '<td>' +
+                  (trn ? trn.fim : '—') +
+                  '</td><td>' +
+                  (trn ? trn.cheg : '—') +
+                  '</td>' +
                   (r.prod
                     ? '<td><span class="tagP">PRODUZIDO ' +
                       dtBR(r.prod.dmax || r.prod.dd || '') +
@@ -10106,9 +10879,14 @@
               ' un · ' +
               o.itens.length +
               ' item(ns)</span></div></div>' +
-              '<table class="mini" style="width:100%"><tr><th>Produto</th><th>Entrega</th><th>Qtd</th><th>V.unit</th><th>Total</th><th>Produção</th></tr>' +
+              '<table class="mini" style="width:100%"><tr><th>Produto</th><th>Entrega</th><th>Qtd</th><th>V.unit</th><th>Total</th><th>Finalização prevista</th><th>Chegada no cliente</th><th>Produção</th></tr>' +
               rows +
-              '</table></div>'
+              '</table>' +
+              '<div class="note" style="margin-top:6px">⏱ Finalizar produção até: <b>' +
+              (fimMax || '—') +
+              '</b> &nbsp;·&nbsp; 🚚 Chegada prevista no cliente: <b>' +
+              (chegMax || '—') +
+              '</b></div></div>'
             )
           })
           .join('')
@@ -10140,10 +10918,17 @@
           }
           return ((x || 0) - (y || 0)) * dir
         })
+        rs.forEach(function (r) {
+          const t = trDe(r.local, r.cliente, r.iso)
+          r.cheg = t ? t.cheg : ''
+        })
         document.getElementById('fAll').innerHTML = rs
           .map(function (r) {
+            const vin = r.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
             return (
-              '<tr><td>' +
+              '<tr' +
+              vin +
+              '><td>' +
               dtBR(r.iso) +
               (r.semana === 'ATRASADO' ? ' <span class="tagF">ATRASADO</span>' : '') +
               '</td>' +
@@ -10158,6 +10943,10 @@
               r.cliente +
               '</td><td>' +
               r.empresa +
+              '</td><td>' +
+              r.local +
+              '</td><td>' +
+              (r.cheg || '—') +
               '</td>' +
               '<td class="num">' +
               NF.format(r.qtd) +
@@ -10178,9 +10967,20 @@
       })
       document.querySelectorAll('#fAllH th').forEach(function (th, ix) {
         th.addEventListener('click', function () {
-          const keys = ['iso', 'codigo', 'pv', 'cliente', 'empresa', 'qtd', 'vtot', 'vtot']
+          const keys = [
+            'iso',
+            'codigo',
+            'pv',
+            'cliente',
+            'empresa',
+            'local',
+            'cheg',
+            'qtd',
+            'vtot',
+            'vtot',
+          ]
           const k = keys[ix]
-          fatSort = { k: k, dir: fatSort.k === k ? -fatSort.dir : ix >= 5 ? -1 : 1 }
+          fatSort = { k: k, dir: fatSort.k === k ? -fatSort.dir : ix >= 7 ? -1 : 1 }
           renderFatAll()
         })
       })
@@ -10195,12 +10995,15 @@
             'PV',
             'Cliente',
             'Empresa',
+            'Local',
+            'Chegada prevista',
             'Qtd a faturar',
             'Valor unit.',
             'Valor total',
           ],
         ]
         DATA.rows.forEach(function (r) {
+          const t = trDe(r.local, r.cliente, r.iso)
           rows.push([
             r.iso,
             r.semana === 'ATRASADO' ? 'SIM' : '',
@@ -10209,6 +11012,8 @@
             r.pv,
             r.cliente,
             r.empresa,
+            r.local || '',
+            t ? t.cheg : '',
             r.qtd,
             Math.round((r.vtot / (r.qtd || 1)) * 100) / 100,
             r.vtot,
