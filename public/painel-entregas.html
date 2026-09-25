@@ -525,8 +525,7 @@
           <div class="note">
             Somente entradas manuais registradas aparecem como saldo. Alocar em PV remove as
             unidades do estoque ativo e registra o evento em Histórico; retirada sem PV também é
-            permitida e exige motivo. NFs sem entrada manual de produto pronto não criam saldo no
-            SMKT.
+            permitida e exige motivo. NFs não criam nem consomem saldo do SMKT automaticamente.
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
             <select
@@ -7896,7 +7895,7 @@
           },
         ],
         nfBaixadas: {
-          gerado: '2026-09-25T18:49:30.873917',
+          gerado: '2026-09-25T18:52:23.452989',
           janela: ['2026-09-15', '2026-09-25'],
           nfs: [
             {
@@ -9418,6 +9417,7 @@
         localStorage.setItem('smkt|v3-migrated', '1')
       }
       function smktNFStatus(cod) {
+        // Estoque SMKT só muda por ação manual: entrada, alocação ou retirada. NF não cria nem consome saldo automaticamente.
         const ent = smktEntradas()
           .filter(function (x) {
             return String(x.cod) === String(cod)
@@ -9425,22 +9425,7 @@
           .reduce(function (a, x) {
             return a + (Number(x.qtd) || 0)
           }, 0)
-        const outs = nfSaidas(cod)
-        let saiu = 0,
-          det = []
-        outs.forEach(function (n) {
-          const use = Math.min(Number(n.qtd) || 0, Math.max(0, ent - saiu))
-          saiu += use
-          if (use > 0) det.push(Object.assign({}, n, { qtd: use, usado: use }))
-        })
-        return {
-          ent: ent,
-          saiuNF: saiu,
-          detNF: det,
-          alocado: 0,
-          saldo: Math.max(0, ent - saiu),
-          alocs: [],
-        }
+        return { ent: ent, saiuNF: 0, detNF: [], alocado: 0, saldo: Math.max(0, ent), alocs: [] }
       }
       function smktSaldo(cod) {
         return smktNFStatus(cod).saldo
