@@ -50,7 +50,7 @@ routerAdd(
       const queryBase =
         '{itensDosPedidosDeVendas(take:2000,skip:SKIP,where:{pedidoDeVenda:{estado:{eq:APROVADO},minhaEmpresa:{cnpjOuCpf:{in:[' +
         cnpjFilter +
-        ']}}}}){items{id,quantidade,quantidadeAFaturar,valorUnitario,entregaData,entregaPrevisaoData,descricao,item{codigo,descricao},pedidoDeVenda{numero,cliente{apelido},minhaEmpresa{apelido,cnpjOuCpf}}}}}'
+        ']}}}}){items{id,quantidade,quantidadeAFaturar,quantidadeFaturada,valorUnitario,entregaData,entregaPrevisaoData,descricao,item{codigo,descricao},pedidoDeVenda{numero,cliente{apelido},minhaEmpresa{apelido,cnpjOuCpf}}}}}'
       const maxiprodItems = []
       let skip = 0
       let rowsRead = 0
@@ -141,7 +141,12 @@ routerAdd(
         const product = item.item || {}
         const pv = item.pedidoDeVenda || {}
         const company = pv.minhaEmpresa || {}
-        const rawDate = String(item.entregaData || item.entregaPrevisaoData || '').slice(0, 10)
+        // Regra validada 25/09: item com NF parcial (quantidadeFaturada>0) tem entregaData
+        // travada na data original no ERP -> usa a previsao; item sem NF -> entregaData.
+        const edRaw = String(item.entregaData || '').slice(0, 10)
+        const pdRaw = String(item.entregaPrevisaoData || '').slice(0, 10)
+        const qtdFaturada = Number(item.quantidadeFaturada || 0)
+        const rawDate = qtdFaturada > 0 && pdRaw ? pdRaw : edRaw || pdRaw
         if (!rawDate) {
           skippedNoDate += 1
           continue
