@@ -432,7 +432,7 @@
     </header>
     <nav class="tabnav">
       <button id="tabEnt" class="on" onclick="showView('ent')">📅 Entregas por semana</button>
-      <button id="tabFat" onclick="showView('fat')">💰 Carteira a Faturar</button>
+      <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
     </nav>
     <div id="viewEnt" class="view on">
       <main>
@@ -744,6 +744,18 @@
               <tbody id="fProd"></tbody>
             </table>
           </div>
+        </div>
+
+        <div class="card">
+          <h2>Pesquisa por PV</h2>
+          <div class="note">
+            Digite o nº do PV (ou parte do cliente/produto). Mostra todos os itens do PV, o total a
+            faturar e a produção declarada.
+          </div>
+          <div class="toolbar">
+            <input type="search" id="fQ3" placeholder="Ex.: 520, 549, SHOPEE, BERENICE…" />
+          </div>
+          <div id="fPvResult"></div>
         </div>
 
         <div class="card">
@@ -8374,11 +8386,11 @@
       }
 
       function renderSmkt() {
-        // select de produtos: os do SMKT + os da programação do dia (para entrada rápida)
+        // select de produtos: TODA a carteira (qualquer produto cadastrado) + os do SMKT
         const sel = document.getElementById('smProd')
         const cods = new Set(smktCodigos())
-        ;(DATA.progSemana ? DATA.progSemana.dias : []).forEach(function (a) {
-          cods.add(a.cod)
+        DATA.rows.forEach(function (r) {
+          cods.add(r.codigo)
         })
         const atual = sel.value
         sel.innerHTML =
@@ -8403,7 +8415,7 @@
         const alocs = smktAlocs(),
           ents = smktEntradas()
         document.getElementById('trhM').innerHTML =
-          '<th>Produto</th><th>Entradas</th><th>Alocado em PVs</th><th>Saldo no SMKT</th><th>Alocar em PV</th><th></th>'
+          '<th>Produto</th><th>Entradas</th><th>Alocado em PVs</th><th>Saldo no SMKT</th><th>Alocar em PV + NF</th><th></th>'
         const codsAll = Array.from(
           new Set(
             ents
@@ -8445,6 +8457,8 @@
                       x.data +
                       '</td><td style="color:#16a34a">' +
                       (x.obs || '') +
+                      '</td><td>' +
+                      (x.nf ? '<b>NF ' + x.nf + '</b>' : '—') +
                       '</td></tr>'
                     )
                   })
@@ -8500,19 +8514,20 @@
                   '" placeholder="Qtd" style="width:70px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px" data-m="qtd"> ' +
                   '<select data-m="pv" style="width:180px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
                   opts +
-                  '</select></td>' +
+                  '</select>' +
+                  '<input type="text" data-m="nf" placeholder="Nº NF (opcional)" style="width:110px;margin-top:4px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:11px"></td>' +
                   '<td class="exec"><button class="exRl" data-m="alc" ' +
                   (saldo > 0 ? '' : 'disabled') +
                   ' style="background:#eff6ff;color:#1e3a8a;border-color:#93c5fd">Alocar →</button><button class="exRl" data-m="aj" title="Ajustar a quantidade total registrada no SMKT" style="margin-left:5px">Ajustar qtd</button></td></tr>' +
                   (det
-                    ? '<tr class="detrow" style="display:none"><td colspan="6"><table class="mini"><tr><th>PV</th><th>Qtd</th><th>Dia</th><th></th></tr>' +
+                    ? '<tr class="detrow" style="display:none"><td colspan="7"><table class="mini"><tr><th>PV</th><th>Qtd</th><th>Dia</th><th>NF</th><th></th></tr>' +
                       det +
                       '</table></td></tr>'
                     : '')
                 )
               })
               .join('')
-          : '<tr><td colspan="6">Nenhuma entrada ainda — produziu e não alocou? Use "+ Entrada no SMKT" acima.</td></tr>'
+          : '<tr><td colspan="7">Nenhuma entrada ainda — produziu e não alocou? Use "+ Entrada no SMKT" acima.</td></tr>'
         document.getElementById('trfM').innerHTML =
           '<td>' +
           codsAll.length +
@@ -8531,7 +8546,7 @@
             }, 0),
           ) +
           '</td>' +
-          '<td colspan="3"></td>'
+          '<td colspan="4"></td>'
         document.getElementById('smInfo').textContent =
           'Entradas no SMKT e alocações consomem o saldo do produto na carteira; ajuste a quantidade física quando necessário.'
         // eventos (delegação)
@@ -8610,6 +8625,7 @@
             if (btn.getAttribute('data-m') !== 'alc') return
             const qtd = parseFloat(tr.querySelector('input[data-m=qtd]').value) || 0
             const pv = tr.querySelector('select[data-m=pv]').value
+            const nf = (tr.querySelector('input[data-m=nf]') || {}).value || ''
             if (!pv) {
               alert('Escolha o PV de destino.')
               return
@@ -8627,6 +8643,7 @@
               qtd: qtd,
               data: new Date().toLocaleDateString('pt-BR'),
               obs: 'do SMKT',
+              nf: nf.trim(),
             })
             smktSave(ent, a)
             renderSmkt()
@@ -9877,6 +9894,107 @@
         const det = tr.nextElementSibling
         if (det && det.classList.contains('detrow'))
           det.style.display = det.style.display === 'none' ? '' : 'none'
+      })
+
+      // pesquisa por PV
+      let fatPvQ = ''
+      function renderFatPv() {
+        const box = document.getElementById('fPvResult')
+        const q = fatPvQ.trim().toUpperCase()
+        if (!q) {
+          box.innerHTML = ''
+          return
+        }
+        const rs = DATA.rows.filter((r) =>
+          (String(r.pv) + ' ' + r.cliente + ' ' + r.codigo + ' ' + r.desc + ' ' + r.empresa)
+            .toUpperCase()
+            .includes(q),
+        )
+        if (!rs.length) {
+          box.innerHTML =
+            '<div class="note" style="margin-top:8px">Nenhum item encontrado para "' +
+            q +
+            '".</div>'
+          return
+        }
+        // agrupa por PV+empresa
+        const pvs = {}
+        rs.forEach(function (r) {
+          const k = r.pv + '|' + r.empresa
+          const o = (pvs[k] = pvs[k] || {
+            pv: r.pv,
+            emp: r.empresa,
+            cli: r.cliente,
+            itens: [],
+            vt: 0,
+            qtd: 0,
+            atr: false,
+          })
+          o.itens.push(r)
+          o.vt += r.vtot
+          o.qtd += r.qtd
+          if (r.semana === 'ATRASADO') o.atr = true
+        })
+        box.innerHTML = Object.values(pvs)
+          .sort((a, b) => a.pv - b.pv)
+          .map(function (o) {
+            const rows = o.itens
+              .map(function (r) {
+                return (
+                  '<tr><td><div class="cod">' +
+                  r.codigo +
+                  '</div><div class="dsc">' +
+                  r.desc.slice(0, 52) +
+                  '</div></td>' +
+                  '<td>' +
+                  dtBR(r.iso) +
+                  (r.semana === 'ATRASADO' ? ' <span class="tagF">ATRASADO</span>' : '') +
+                  '</td>' +
+                  '<td class="num">' +
+                  NF.format(r.qtd) +
+                  '</td><td class="num">' +
+                  FMT.format(r.vtot / (r.qtd || 1)) +
+                  '</td><td class="num"><b>' +
+                  FMT.format(r.vtot) +
+                  '</b></td>' +
+                  (r.prod
+                    ? '<td><span class="tagP">PRODUZIDO ' +
+                      dtBR(r.prod.dmax || r.prod.dd || '') +
+                      '</span></td>'
+                    : '<td></td>') +
+                  '</tr>'
+                )
+              })
+              .join('')
+            return (
+              '<div class="card" style="padding:12px 14px;margin-bottom:10px">' +
+              '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;align-items:baseline;margin-bottom:6px">' +
+              '<div><b style="font-size:14px">PV ' +
+              o.pv +
+              '</b> <span class="note">· ' +
+              o.cli +
+              ' · ' +
+              o.emp +
+              '</span>' +
+              (o.atr ? ' <span class="tagF">ATRASADO</span>' : '') +
+              '</div>' +
+              '<div><b style="font-size:14px">' +
+              FMT.format(o.vt) +
+              '</b> <span class="note">· ' +
+              NF.format(o.qtd) +
+              ' un · ' +
+              o.itens.length +
+              ' item(ns)</span></div></div>' +
+              '<table class="mini" style="width:100%"><tr><th>Produto</th><th>Entrega</th><th>Qtd</th><th>V.unit</th><th>Total</th><th>Produção</th></tr>' +
+              rows +
+              '</table></div>'
+            )
+          })
+          .join('')
+      }
+      document.getElementById('fQ3').addEventListener('input', function (e) {
+        fatPvQ = e.target.value
+        renderFatPv()
       })
 
       // carteira completa: busca + ordenação
