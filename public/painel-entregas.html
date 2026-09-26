@@ -523,9 +523,11 @@
         <div class="card" id="cardSmkt">
           <h2>🛒 Supermercado — produtos acabados <span class="tagS">ESTOQUE DE PRONTOS</span></h2>
           <div class="note">
-            Somente entradas manuais registradas aparecem como saldo. Alocar em PV remove as
-            unidades do estoque ativo e registra o evento em Histórico; retirada sem PV também é
-            permitida e exige motivo. NFs não criam nem consomem saldo do SMKT automaticamente.
+            Somente entradas registradas aparecem como saldo. A ENTRADA acontece quando você marca
+            destino 🛒 Supermercado no card de Programação (qtd realizada) ou pelo botão "+ Entrada
+            no SMKT". Alocar em PV remove as unidades do estoque ativo e registra o evento em
+            Histórico; retirada sem PV também é permitida e exige motivo. NFs não criam nem consomem
+            saldo do SMKT automaticamente.
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
             <select
@@ -8494,6 +8496,7 @@
           }, 0)
       }
       function smktProgramTotal(cod) {
+        // entradas com origem 'prog:' = entrada criada pela alocação SMKT no card principal
         return smktEntradas()
           .filter(function (x) {
             return x.cod === cod && String(x.origem || '').indexOf('prog:') === 0
@@ -8953,20 +8956,61 @@
             const ok = tr.querySelector('input[data-p=ok]').checked
             const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0
             const pvSel = tr.querySelector('select[data-p=pv]').value
-            // ENTRADA NO SMKT É MANUAL (decisão Dante 25/09): escolher destino não cria entrada.
-            // A opção Supermercado serve apenas para marcar a intenção de destino da produção.
+            // ENTRADA NO SMKT VIA CARD PRINCIPAL (decisão Dante 25/09 23h45): escolher destino
+            // Supermercado cria a ENTRADA no estoque de prontos (qtd realizada), idempotente por
+            // produto+dia (origem 'prog:' — nunca duplica ao re-marcar ou re-renderizar).
+            // "Manual" = sem automação de NF/produção; a alocação explícita de Dante É a entrada.
             if (pvSel === '__SMKT__') {
+              const qSmkt = qtd > 0 ? qtd : prev.smkt || 0
+              if (qSmkt > 0) {
+                const ents = smktEntradas()
+                const k = String(p.cod) + '|' + progDate
+                const jaTem = ents
+                  .filter(function (x) {
+                    return String(x.origem || '') === 'prog:' + k
+                  })
+                  .reduce(function (a, x) {
+                    return a + (Number(x.qtd) || 0)
+                  }, 0)
+                if (jaTem < qSmkt) {
+                  ents.push({
+                    cod: String(p.cod),
+                    qtd: qSmkt - jaTem,
+                    origem: 'prog:' + k,
+                    data: new Date().toLocaleDateString('pt-BR'),
+                  })
+                  smktSave(ents, [])
+                  const h = smktHistory()
+                  h.unshift({
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    cod: String(p.cod),
+                    qtd: qSmkt - jaTem,
+                    event: 'Entrada via programação (destino SMKT)',
+                    pv: '',
+                    nf: '',
+                    motivo: 'Alocação marcada no card principal — dia ' + progDate,
+                  })
+                  smktHistorySave(h)
+                }
+              }
               setProgExec(p.cod, progDate, {
                 ok: ok,
                 qtd: qtd,
                 rl: prev.rl,
                 saldo: prev.saldo,
                 pvNovo: null,
-                smkt: qtd > 0 ? qtd : prev.smkt || null,
+                smkt: qSmkt > 0 ? qSmkt : null,
               })
+              renderSmkt()
               renderProgTabela()
               alert(
-                'Destino anotado: Supermercado. A ENTRADA no SMKT continua MANUAL — use o card Supermercado → "+ Entrada no SMKT" quando o produto estiver pronto.',
+                'Entrada registrada no estoque SMKT: ' +
+                  p.cod +
+                  ' ×' +
+                  NF.format(qSmkt) +
+                  ' (dia ' +
+                  progDate +
+                  '). Aloque em PV ou retire no card Supermercado.',
               )
               return
             }
@@ -9326,12 +9370,7 @@
           const a = JSON.parse(localStorage.getItem('smkt|entradas') || '[]')
           return Array.isArray(a)
             ? a.filter(function (x) {
-                return (
-                  x &&
-                  x.cod &&
-                  Number(x.qtd) > 0 &&
-                  String(x.origem || 'manual').indexOf('prog:') !== 0
-                )
+                return x && x.cod && Number(x.qtd) > 0
               })
             : []
         } catch (e) {
@@ -9610,7 +9649,7 @@
             })
             .join('') || '<tr><td colspan="6">Sem eventos no histórico.</td></tr>'
         document.getElementById('smInfo').textContent =
-          'Entrada manual explícita; alocação/retirada reduz o saldo e registra histórico.'
+          'Entrada: destino 🛒 no card Programação (qtd realizada) ou botão acima. Alocação/retirada reduz o saldo e registra histórico.'
         const tb = document.getElementById('tbbM')
         if (!tb._bound) {
           tb._bound = true
