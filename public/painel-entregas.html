@@ -579,6 +579,15 @@
           <div class="note">
             Eventos concluídos ou consumidos saem do saldo ativo e ficam registrados aqui.
           </div>
+          <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
+            <button
+              id="smUndo"
+              class="dlbtn"
+              title="Desfazer o último evento ainda não desfeito (entrada, alocação ou retirada)"
+            >
+              ↩ Desfazer último evento</button
+            ><span class="note" id="smUndoInfo" style="margin: 0"></span>
+          </div>
           <div class="tblwrap" style="max-height: 300px">
             <table id="tbSmktHist">
               <thead>
@@ -8788,32 +8797,35 @@
                 return b.vtot - a.vtot
               })
               .slice(0, 40)
-            const opts =
-              '<option value="">PV atual (' +
-              pvList
-                .map(function (v) {
-                  return v.pv
-                })
-                .join('/') +
-              ')</option>' +
-              '<option value="__SMKT__">🛒 Supermercado (produto pronto)</option>' +
-              outrosPVs
-                .map(function (r) {
-                  return (
-                    '<option value="' +
-                    r.pv +
-                    '|' +
-                    r.cliente +
-                    '">' +
-                    r.pv +
-                    ' · ' +
-                    r.cliente.slice(0, 22) +
-                    ' (' +
-                    NF.format(r.qtd) +
-                    ' un)</option>'
-                  )
-                })
-                .join('')
+            // SMKT: alocação por PV acontece só no card Supermercado (NF ou manual) — aqui sem PV.
+            const noSmkt = ex.smkt > 0
+            const opts = noSmkt
+              ? ''
+              : '<option value="">PV atual (' +
+                pvList
+                  .map(function (v) {
+                    return v.pv
+                  })
+                  .join('/') +
+                ')</option>' +
+                '<option value="__SMKT__">🛒 Supermercado (produto pronto)</option>' +
+                outrosPVs
+                  .map(function (r) {
+                    return (
+                      '<option value="' +
+                      r.pv +
+                      '|' +
+                      r.cliente +
+                      '">' +
+                      r.pv +
+                      ' · ' +
+                      r.cliente.slice(0, 22) +
+                      ' (' +
+                      NF.format(r.qtd) +
+                      ' un)</option>'
+                    )
+                  })
+                  .join('')
             const det =
               '<tr class="detrow" data-det="' +
               ix +
@@ -8886,10 +8898,12 @@
               '" placeholder="0" data-p="qtd"></td>' +
               '<td class="exec"><button class="exRl" data-p="rl" title="Realocar saldo (qtd − realizada) para o próximo dia útil">Realocar ↦</button>' +
               exInfo +
-              '<select data-p="pv" style="margin-top:4px;width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
-              opts +
-              '</select>' +
-              pvTrocado +
+              (noSmkt
+                ? '<div style="font-size:10px;color:#166534;font-weight:700;margin-top:3px">🛒 no SMKT — alocação por PV no card Supermercado · desfazer no Histórico</div>'
+                : '<select data-p="pv" style="margin-top:4px;width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+                  opts +
+                  '</select>' +
+                  pvTrocado) +
               '</td></tr>' +
               det
             )
@@ -8956,10 +8970,9 @@
             const ok = tr.querySelector('input[data-p=ok]').checked
             const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0
             const pvSel = tr.querySelector('select[data-p=pv]').value
-            // ENTRADA NO SMKT VIA CARD PRINCIPAL (decisão Dante 25/09 23h45): escolher destino
-            // Supermercado cria a ENTRADA no estoque de prontos (qtd realizada), idempotente por
-            // produto+dia (origem 'prog:' — nunca duplica ao re-marcar ou re-renderizar).
-            // "Manual" = sem automação de NF/produção; a alocação explícita de Dante É a entrada.
+            // DESTINO SMKT (decisão Dante 26/09 00h05): o produto vai para o estoque de prontos e
+            // a alocação por PV acontece LÁ (automática pela NF emitida ou manual no card Supermercado).
+            // O card principal não aloca por PV nesta linha — só o botão Desfazer (no histórico) reverte.
             if (pvSel === '__SMKT__') {
               const qSmkt = qtd > 0 ? qtd : prev.smkt || 0
               if (qSmkt > 0) {
@@ -9010,7 +9023,7 @@
                   NF.format(qSmkt) +
                   ' (dia ' +
                   progDate +
-                  '). Aloque em PV ou retire no card Supermercado.',
+                  '). A alocação por PV acontece no card Supermercado — automática pela NF emitida ou manual.',
               )
               return
             }
@@ -9630,7 +9643,9 @@
           hist
             .map(function (x) {
               return (
-                '<tr><td>' +
+                '<tr' +
+                (x.undone ? ' style="opacity:.5;text-decoration:line-through"' : '') +
+                '><td>' +
                 x.data +
                 '</td><td>' +
                 x.cod +
@@ -9736,6 +9751,156 @@
         renderTimeline()
         renderTabela()
       })
+      // DESFAZER: reverte o último evento ainda não desfeito (entrada, alocação, retirada ou NF).
+      function smktUndo() {
+        smktEnsureMigrated()
+        const h = smktHistory()
+        let i = 0
+        while (i < h.length && h[i].undone) i++
+        if (i >= h.length) {
+          document.getElementById('smUndoInfo').textContent = 'Nada a desfazer.'
+          return
+        }
+        const ev = h[i]
+        const ents = smktEntradas()
+        if (ev.event === 'Entrada via programação (destino SMKT)') {
+          // desfazer a entrada: remove as unidades do saldo SOMANDO as que voltaram por
+          // desfazer de alocação/retirada (ledger consistente — nunca deixa resíduo).
+          const k =
+            'prog:' + String(ev.cod) + '|' + (String(ev.motivo || '').split('dia ')[1] || '')
+          let rest = Number(ev.qtd) || 0
+          for (let j = ents.length - 1; j >= 0 && rest > 0; j--) {
+            if (String(ents[j].origem || '') === k) {
+              const t = Math.min(rest, Number(ents[j].qtd) || 0)
+              ents[j].qtd -= t
+              rest -= t
+            }
+          }
+          for (let j = ents.length - 1; j >= 0 && rest > 0; j--) {
+            if (String(ents[j].origem || '') === 'undo' && String(ents[j].cod) === String(ev.cod)) {
+              const t = Math.min(rest, Number(ents[j].qtd) || 0)
+              ents[j].qtd -= t
+              rest -= t
+            }
+          }
+          for (let j = 0; j < ents.length && rest > 0; j++) {
+            if (String(ents[j].cod) === String(ev.cod)) {
+              const t = Math.min(rest, Number(ents[j].qtd) || 0)
+              ents[j].qtd -= t
+              rest -= t
+            }
+          }
+          const rem = ents.filter(function (x) {
+            return Number(x.qtd) > 0.0001
+          })
+          smktSave(rem, [])
+          if (rest > 0.0001) {
+            document.getElementById('smUndoInfo').textContent =
+              'Parcial: ' +
+              NF.format(Number(ev.qtd) - rest) +
+              ' de ' +
+              NF.format(ev.qtd) +
+              ' un (o resto já saiu por alocação/retirada).'
+          } else {
+            document.getElementById('smUndoInfo').textContent =
+              'Desfeita a entrada de ' + ev.cod + ' ×' + NF.format(ev.qtd) + '.'
+          }
+          ev.undone = true
+          ev.motivo = (ev.motivo || '') + ' [DESFEITO]'
+        } else if (ev.event === 'Entrada manual') {
+          let rest = Number(ev.qtd) || 0
+          for (let j = 0; j < ents.length && rest > 0; j++) {
+            if (String(ents[j].cod) === String(ev.cod)) {
+              const t = Math.min(rest, Number(ents[j].qtd) || 0)
+              ents[j].qtd -= t
+              rest -= t
+            }
+          }
+          smktSave(
+            ents.filter(function (x) {
+              return Number(x.qtd) > 0.0001
+            }),
+            [],
+          )
+          if (rest > 0.0001) {
+            document.getElementById('smUndoInfo').textContent =
+              'Parcial: ' +
+              NF.format(Number(ev.qtd) - rest) +
+              ' de ' +
+              NF.format(ev.qtd) +
+              ' un (o resto já saiu por alocação/retirada).'
+          } else {
+            document.getElementById('smUndoInfo').textContent =
+              'Desfeita a entrada de ' + ev.cod + ' ×' + NF.format(ev.qtd) + '.'
+          }
+          ev.undone = true
+          ev.motivo = (ev.motivo || '') + ' [DESFEITO]'
+        } else if (ev.event === 'Alocado em PV') {
+          // devolve as unidades À ENTRADA ORIGINAL do produto (não cria entrada órfã) —
+          // assim desfazer a entrada depois remove tudo de forma consistente.
+          const e2 = smktEntradas()
+          let devolvido = false
+          for (let j = 0; j < e2.length && !devolvido; j++) {
+            if (String(e2[j].cod) === String(ev.cod)) {
+              e2[j].qtd = (Number(e2[j].qtd) || 0) + (Number(ev.qtd) || 0)
+              devolvido = true
+            }
+          }
+          if (!devolvido)
+            e2.push({
+              cod: String(ev.cod),
+              qtd: Number(ev.qtd) || 0,
+              origem: 'undo',
+              data: new Date().toLocaleDateString('pt-BR'),
+            })
+          smktSave(e2, [])
+          document.getElementById('smUndoInfo').textContent =
+            'Desfeita a alocação: ' +
+            ev.cod +
+            ' ×' +
+            NF.format(ev.qtd) +
+            ' voltou ao saldo (PV ' +
+            ev.pv +
+            ' desalocado).'
+          ev.undone = true
+          ev.motivo = (ev.motivo || '') + ' [DESFEITO]'
+        } else if (ev.event === 'Retirada manual') {
+          const e2 = smktEntradas()
+          let devolvido = false
+          for (let j = 0; j < e2.length && !devolvido; j++) {
+            if (String(e2[j].cod) === String(ev.cod)) {
+              e2[j].qtd = (Number(e2[j].qtd) || 0) + (Number(ev.qtd) || 0)
+              devolvido = true
+            }
+          }
+          if (!devolvido)
+            e2.push({
+              cod: String(ev.cod),
+              qtd: Number(ev.qtd) || 0,
+              origem: 'undo',
+              data: new Date().toLocaleDateString('pt-BR'),
+            })
+          smktSave(e2, [])
+          document.getElementById('smUndoInfo').textContent =
+            'Desfeita a retirada: ' + ev.cod + ' ×' + NF.format(ev.qtd) + ' voltou ao saldo.'
+          ev.undone = true
+          ev.motivo = (ev.motivo || '') + ' [DESFEITO]'
+        } else if (ev.event === 'Consumo via NF') {
+          document.getElementById('smUndoInfo').textContent =
+            'Consumo via NF ' +
+            ev.nf +
+            ' não é reversível aqui — a NF é fato do MaxiProd. Use "Alocar" para devolver ao PV ou "+ Entrada no SMKT" para repor.'
+          return
+        } else {
+          document.getElementById('smUndoInfo').textContent =
+            'Evento "' + ev.event + '" não tem desfazer automático.'
+          return
+        }
+        smktHistorySave(h)
+        renderSmkt()
+        renderProgTabela()
+      }
+      document.getElementById('smUndo').addEventListener('click', smktUndo)
       renderSmkt()
 
       // ==================== CARD NFs EMITIDAS (método Compass) ====================
