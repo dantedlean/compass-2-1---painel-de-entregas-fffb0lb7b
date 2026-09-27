@@ -7069,7 +7069,7 @@
               emp: 'SLEAN',
               vtot: 49078.2,
               sit: 'em dia (2026-W41)',
-              cheg: 'entrega 06/10 · cidade fora da tabela de trânsito',
+              cheg: '03/10',
               local: 'Vinhedo',
             },
           ],
@@ -8506,8 +8506,9 @@
             // chegada prevista = coleta (1º DU após a produção) + trânsito; atrasado quando chega DEPOIS da entrega
             let atrasado = r.semana === 'ATRASADO'
             let chegTxt
-            const cid = cidadeDe(r.cliente)
-            const tdu = d.local !== 'V' && cid ? TRANSITO[cid][0] : null
+            const cid = cidadeDeOrig(r.cliente, d.local)
+            const tab = d.local === 'V' ? TRANSITO_VINHEDO : TRANSITO
+            const tdu = cid ? tab[cid][0] : null
             if (tdu) {
               const p = new Date(prodIso + 'T12:00:00')
               const coleta = addDU(p, 1),
@@ -8516,7 +8517,7 @@
               const de = new Date(r.iso + 'T12:00:00')
               if (cheg > de) atrasado = true
             } else if (d.local === 'V') {
-              chegTxt = 'Vinhedo · sem trânsito calculado'
+              chegTxt = 'Vinhedo · cidade fora da tabela'
             } else {
               chegTxt =
                 'entrega ' +
@@ -9549,6 +9550,28 @@
       marcarRigidas()
 
       // ==================== SUGESTÕES DA SEMANA VIGENTE ====================
+      const TRANSITO_VINHEDO = {
+        GUARULHOS: [1, 92],
+        SOROCABA: [1, 93],
+        'FRANCO DA ROCHA': [1, 464],
+        'F DA ROCHA': [1, 464],
+        SP09: [1, 464],
+        SP22: [1, 92],
+        CONTAGEM: [2, 572],
+        XMG1: [2, 572],
+        CASCAVEL: [3, 905],
+        CURITIBA: [1, 458],
+        ITAQUERA: [1, 100],
+        'SAO PAULO': [1, 100],
+        GRU: [1, 92],
+        SP35: [1, 100],
+        SBC: [1, 110],
+        MAUA: [1, 110],
+        'NOVO MUNDO': [1, 100],
+        CACAPAVA: [1, 150],
+        ATIBAIA: [1, 80],
+        ITAPEVA: [1, 120],
+      }
       const TRANSITO = {
         GUARAPUAVA: [1, 254],
         MARINGA: [1, 425],
@@ -9585,6 +9608,14 @@
       function cidadeDe(cli) {
         const c = normS(cli)
         for (const k in TRANSITO) {
+          if (c.indexOf(k) >= 0) return k
+        }
+        return null
+      }
+      function cidadeDeOrig(cli, orig) {
+        const tab = orig === 'V' ? TRANSITO_VINHEDO : TRANSITO
+        const c = normS(cli)
+        for (const k in tab) {
           if (c.indexOf(k) >= 0) return k
         }
         return null
