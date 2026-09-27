@@ -8607,6 +8607,8 @@
           return
         }
         card.style.display = ''
+        const hj = new Date()
+        const dow = (hj.getDay() + 6) % 7 // hj ANTES de isoOf (era usado antes de existir)
         function isoOf(dt) {
           const p = String(dt).split('/')
           if (p.length === 3) return p[2] + '-' + p[1] + '-' + p[0]
@@ -8623,8 +8625,6 @@
           return isoOf(a.data).localeCompare(isoOf(b.data))
         })
         // semana corrente começa na segunda; dias anteriores viram histórico (card no final, recolhido)
-        const hj = new Date()
-        const dow = (hj.getDay() + 6) % 7
         let segDate = new Date(hj)
         segDate.setDate(segDate.getDate() - dow) // segunda da semana corrente
         if (dow >= 5) {
