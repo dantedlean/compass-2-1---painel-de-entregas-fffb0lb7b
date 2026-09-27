@@ -503,6 +503,19 @@
               ⬇ Baixar programação editada (.xlsx)
             </button>
             <span class="note" id="progPct" style="margin: 0; font-weight: 800"></span>
+            <span
+              id="fosseisWarn"
+              style="
+                display: none;
+                background: #fee2e2;
+                color: #991b1b;
+                font-weight: 800;
+                font-size: 12px;
+                padding: 4px 10px;
+                border-radius: 8px;
+                border: 1px solid #fecaca;
+              "
+            ></span>
           </div>
           <div class="wbtns" id="pbtns"></div>
           <div class="tblwrap" style="max-height: 420px">
@@ -8430,6 +8443,7 @@
         })
         const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
         const out = []
+        window.fosseisCache = []
         declDraft.forEach(function (d) {
           if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
           const dt = new Date(d.data + 'T12:00:00'),
@@ -8443,6 +8457,19 @@
             .sort(function (a, b) {
               return a.iso.localeCompare(b.iso)
             })
+          // POKA-YOKE: declaração sem NENHUM saldo correspondente na carteira = fóssil (PV já faturado ou inexistente) — não vira linha fantasma
+          if (!cand.length) {
+            window.fosseisCache.push({
+              cod: d.cod,
+              qtd: Number(d.qtd),
+              pv: d.pv || '—',
+              data: d.data,
+              motivo: d.pv
+                ? 'PV ' + d.pv + ' faturado/sem saldo — NF já saiu?'
+                : 'código sem saldo na carteira',
+            })
+            return
+          }
           const prodIso = d.data // coleta real parte da PRODUÇÃO declarada (1º DU após), não da entrega
           cand.forEach(function (r) {
             const k = r.codigo + '|' + r.pv + '|' + r.empresa,
@@ -8655,6 +8682,18 @@
             )
           })
           .join('')
+        const fw = document.getElementById('fosseisWarn')
+        if (fw) {
+          const f = window.fosseisCache || []
+          fw.style.display = f.length ? '' : 'none'
+          fw.textContent =
+            '⚠ ' + f.length + ' declaração(ões) sem cobertura (PV faturado?) — não entraram no card'
+          fw.title = f
+            .map(function (x) {
+              return x.cod + ' ×' + x.qtd + ' · ' + x.motivo
+            })
+            .join(' | ')
+        }
         if (typeof renderHistSem === 'function') renderHistSem(diasHist)
         Array.prototype.forEach.call(box.children, function (b) {
           b.addEventListener('click', function () {
