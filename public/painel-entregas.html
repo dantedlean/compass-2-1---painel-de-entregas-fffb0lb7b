@@ -479,12 +479,24 @@
             saldo para o próximo dia útil ou <b>troque o PV</b> de destino (supermercado: quem
             espera o produto acabado). <b>Clique no produto</b> para ver os PVs.
           </div>
-          <div class="wbtns" id="pbtns"></div>
-          <div style="margin: -6px 0 8px">
-            <button id="btnDlProg" class="dlbtn" style="display: none">
-              ⬇ Baixar Excel (devolutiva)
+          <div
+            class="toolbar"
+            style="gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 8px"
+          >
+            <button
+              id="btnProgNew"
+              class="dlbtn"
+              style="background: #1e3a8a; border-color: #1e3a8a; color: #fff"
+              onclick="progAddLine(true)"
+            >
+              + Programar
             </button>
+            <button id="btnDlProg" class="dlbtn" style="display: none">
+              ⬇ Baixar programação editada (.xlsx)
+            </button>
+            <span class="note" id="progPct" style="margin: 0; font-weight: 800"></span>
           </div>
+          <div class="wbtns" id="pbtns"></div>
           <div class="tblwrap" style="max-height: 420px">
             <table id="tbProg">
               <thead>
@@ -583,19 +595,16 @@
             </table>
           </div>
         </div>
-        <div class="card" id="cardSmktHist">
-          <h2>📚 Histórico do SMKT <span class="tagS">ALOCADO / RETIRADO / NF</span></h2>
-          <div class="note">
-            Eventos concluídos ou consumidos saem do saldo ativo e ficam registrados aqui.
+        <details class="card" id="cardSmktHist">
+          <summary style="cursor: pointer; font-size: 15px; font-weight: 800; color: #1e3a8a">
+            📚 Histórico do SMKT <span class="tagS">ALOCADO / RETIRADO / NF</span>
+          </summary>
+          <div class="note" style="margin-top: 8px">
+            Eventos concluídos ou consumidos saem do saldo ativo e ficam registrados aqui. Cada
+            evento tem seu próprio ↩ Desfazer (menos o consumo via NF, que é fato do MaxiProd).
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
-            <button
-              id="smUndo"
-              class="dlbtn"
-              title="Desfazer o último evento ainda não desfeito (entrada, alocação ou retirada)"
-            >
-              ↩ Desfazer último evento</button
-            ><span class="note" id="smUndoInfo" style="margin: 0"></span>
+            <span class="note" id="smUndoInfo" style="margin: 0"></span>
           </div>
           <div class="tblwrap" style="max-height: 300px">
             <table id="tbSmktHist">
@@ -607,12 +616,13 @@
                   <th>Qtd</th>
                   <th>PV</th>
                   <th>NF / Motivo</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="tbbSmktHist"></tbody>
             </table>
           </div>
-        </div>
+        </details>
         <div class="card" id="cardNF" style="display: none">
           <details id="detNF">
             <summary style="cursor: pointer; font-size: 15px; font-weight: 800; color: #1e3a8a">
@@ -8817,6 +8827,23 @@
           NF.format(tex) +
           '</td><td></td>'
         document.getElementById('pbtns').setAttribute('data-prods', prods.length)
+        // % programado × realizado do dia
+        const pctEl = document.getElementById('progPct')
+        if (pctEl) {
+          const base = tq || 0,
+            done = tex || 0
+          const pct = base > 0 ? Math.round((done / base) * 100) : done > 0 ? 100 : 0
+          pctEl.innerHTML =
+            'Programado ' +
+            NF.format(Math.round(base)) +
+            ' un · Realizado ' +
+            NF.format(Math.round(done)) +
+            ' un · <span style="color:' +
+            (pct >= 100 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626') +
+            '">' +
+            pct +
+            '%</span>'
+        }
         // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
         const tb = document.getElementById('tbbP')
         if (!tb._toggleBound) {
@@ -9758,7 +9785,8 @@
           '</td><td colspan="3"></td>'
         document.getElementById('tbbSmktHist').innerHTML =
           hist
-            .map(function (x) {
+            .map(function (x, hi) {
+              const pode = x.event !== 'Consumo via NF'
               return (
                 '<tr' +
                 (x.undone ? ' style="opacity:.5;text-decoration:line-through"' : '') +
@@ -9776,12 +9804,30 @@
                 ((x.pv || '') + ' ' + (x.cli || '')) +
                 '</td><td>' +
                 ((x.nf ? 'NF ' + x.nf + ' ' : '') + (x.motivo || '')) +
+                '</td><td>' +
+                (pode && !x.undone
+                  ? '<button class="exRl" data-undo="' +
+                    hi +
+                    '" title="Desfazer este evento">↩ Desfazer</button>'
+                  : x.undone
+                    ? ''
+                    : '—') +
                 '</td></tr>'
               )
             })
-            .join('') || '<tr><td colspan="6">Sem eventos no histórico.</td></tr>'
+            .join('') || '<tr><td colspan="7">Sem eventos no histórico.</td></tr>'
         document.getElementById('smInfo').textContent =
           'Entrada: destino 🛒 no card Programação (qtd realizada) ou botão acima. Alocação/retirada reduz o saldo e registra histórico.'
+        const tbH = document.getElementById('tbbSmktHist')
+        if (tbH && !tbH._undoBound) {
+          tbH._undoBound = true
+          tbH.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-undo]')
+            if (!b) return
+            if (confirm('Desfazer este evento? O saldo volta como estava antes dele.'))
+              smktUndo(+b.getAttribute('data-undo'))
+          })
+        }
         const tb = document.getElementById('tbbM')
         if (!tb._bound) {
           tb._bound = true
@@ -9868,13 +9914,16 @@
         renderTimeline()
         renderTabela()
       })
-      // DESFAZER: reverte o último evento ainda não desfeito (entrada, alocação, retirada ou NF).
-      function smktUndo() {
+      // DESFAZER: reverte um evento específico do histórico (por índice) — corrige qualquer erro.
+      function smktUndo(evIdx) {
         smktEnsureMigrated()
         const h = smktHistory()
-        let i = 0
-        while (i < h.length && h[i].undone) i++
-        if (i >= h.length) {
+        let i = typeof evIdx === 'number' ? evIdx : 0
+        if (h[i] && h[i].undone) {
+          document.getElementById('smUndoInfo').textContent = 'Este evento já foi desfeito.'
+          return
+        }
+        if (i >= h.length || !h[i]) {
           document.getElementById('smUndoInfo').textContent = 'Nada a desfazer.'
           return
         }
@@ -10017,7 +10066,7 @@
         renderSmkt()
         renderProgTabela()
       }
-      document.getElementById('smUndo').addEventListener('click', smktUndo)
+      // desfazer individual: delegação no tbody do histórico
       renderSmkt()
 
       // ==================== CARD NFs EMITIDAS (método Compass) ====================
@@ -10965,14 +11014,12 @@
         )
       }
       if (window.XLSX) {
-        document.getElementById('btnDlSem').style.display = ''
-        document.getElementById('btnDlSem').addEventListener('click', dlDevolutivaItens)
-        document.getElementById('btnDlTotal').style.display = ''
-        document.getElementById('btnDlTotal').addEventListener('click', dlDevolutivaItens)
-        if (DATA.progSemana && DATA.progSemana.dias.length) {
-          document.getElementById('btnDlProg').style.display = ''
-          document.getElementById('btnDlProg').addEventListener('click', dlDevolutivaProg)
-        }
+        ;['btnDlSem', 'btnDlTotal', 'btnDlProg'].forEach(function (id) {
+          const el = document.getElementById(id)
+          if (!el) return
+          el.style.display = ''
+          el.addEventListener('click', id === 'btnDlProg' ? dlDevolutivaProg : dlDevolutivaItens)
+        })
       }
 
       window.addEventListener('resize', function () {
@@ -11082,38 +11129,64 @@
           })
         }
       }
+      function progAddLineFn(openEditor) {
+        if (!Array.isArray(declDraft)) {
+          try {
+            declDraft = declLoad()
+          } catch (e) {
+            declDraft = []
+          }
+        }
+        if (!Array.isArray(declDraft)) declDraft = []
+        const dt =
+          (
+            (DATA.progSemana &&
+              DATA.progSemana.dias.find(function (a) {
+                return a.dia === progDia
+              })) ||
+            {}
+          ).data || new Date().toISOString().slice(0, 10)
+        const iso =
+          dt.length === 5
+            ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
+            : dt
+        declDraft.push({
+          dia: progDia || 'Segunda',
+          data: iso,
+          cod: '',
+          qtd: 0,
+          local: 'C',
+          pv: '',
+          id: 'PR-EDIT-' + Date.now(),
+          obs: '',
+          status: 'Planejado',
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        renderProg()
+        if (openEditor) {
+          const d = document.getElementById('progManage')
+          if (d) d.open = true
+          const drs = document.querySelectorAll('#declRows tr')
+          const last = drs[drs.length - 1]
+          if (last) {
+            const c = last.querySelector('input[data-decl=cod]')
+            if (c) c.focus()
+          }
+        }
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Nova linha em ' + iso.split('-').reverse().join('/') + ' — preencha código, qtd e PV'
+      }
+      window.progAddLine = progAddLineFn
       if (document.getElementById('declRows')) {
         declDraft = declLoad()
         progBuildFromDecls()
         renderDeclEditor()
         document.getElementById('btnAddDecl').addEventListener('click', function () {
-          const dt =
-            (
-              (DATA.progSemana &&
-                DATA.progSemana.dias.find(function (a) {
-                  return a.dia === progDia
-                })) ||
-              {}
-            ).data || new Date().toISOString().slice(0, 10)
-          const iso =
-            dt.length === 5
-              ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
-              : dt
-          declDraft.push({
-            dia: progDia || 'Segunda',
-            data: iso,
-            cod: '',
-            qtd: 0,
-            local: 'C',
-            pv: '',
-            id: 'PR-EDIT-' + Date.now(),
-            obs: '',
-            status: 'Planejado',
-          })
-          declSave()
-          progBuildFromDecls()
-          renderDeclEditor()
-          renderProg()
+          progAddLineFn(false)
         })
         document.getElementById('btnDlDecl').addEventListener('click', function () {
           const cols = ['Dia', 'Data', 'Codigo', 'Qtd', 'Local', 'PV', 'ID', 'Observacao', 'Status']
