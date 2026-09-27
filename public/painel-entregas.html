@@ -8880,14 +8880,20 @@
               (ex.ok ? ' exOK' : '') +
               '" data-ix="' +
               ix +
+              '" data-cod="' +
+              p.cod +
               '" draggable="true" title="Arraste até um dia acima para reprogramar · Ctrl+C copia · Ctrl+V cola como nova linha"><td><div class="cod">' +
               p.cod +
               '</div><div class="dsc">' +
               p.desc +
-              '</div></td>' +
-              '<td class="num">' +
-              NF.format(Math.round(p.qtd)) +
-              '</td>' +
+              '</div><button class="exRl" data-p="del" data-cod="' +
+              p.cod +
+              '" style="margin-top:4px;background:#fee2e2;border-color:#fecaca;color:#991b1b" title="Excluir TODAS as linhas deste produto neste dia (nada gravado no MaxiProd)">🗑 Excluir linha</button></td>' +
+              '<td class="num"><input type="number" min="0" value="' +
+              Math.round(p.qtd) +
+              '" data-p="editqtd" data-cod="' +
+              p.cod +
+              '" style="width:74px;text-align:right;padding:3px;border:1px solid var(--line);border-radius:6px;font-weight:700" title="Editar qtd a fabricar — ajusta as linhas deste produto no dia"></td>' +
               '<td class="num">' +
               FMT.format(p.vtot) +
               '</td>' +
@@ -8959,6 +8965,106 @@
         }
         // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
         const tb = document.getElementById('tbbP')
+        // editar qtd a fabricar e excluir linha (delegação — opera nas declarações do dia)
+        if (!tb._editBound) {
+          tb._editBound = true
+          tb.addEventListener('change', function (e) {
+            const inp = e.target.closest('input[data-p="editqtd"]')
+            if (!inp) return
+            const cod = inp.getAttribute('data-cod')
+            const nova = Number(inp.value) || 0
+            const pd = String(progDate).split('/')
+            const yy = new Date().getFullYear()
+            const progIso =
+              pd.length === 3
+                ? pd[2] + '-' + pd[1] + '-' + pd[0]
+                : pd.length === 2
+                  ? yy + '-' + pd[1] + '-' + pd[0]
+                  : progDate // dd/mm → ISO
+            const alvo =
+              typeof declDraft !== 'undefined'
+                ? declDraft.filter(function (d) {
+                    return d.cod === cod && d.data === progIso
+                  })
+                : []
+            if (!alvo.length) {
+              alert('Sem declaração editável para ' + cod + ' neste dia.')
+              renderProgTabela()
+              return
+            }
+            const atual = alvo.reduce(function (s, d) {
+              return s + (Number(d.qtd) || 0)
+            }, 0)
+            if (nova === atual) return
+            if (nova <= 0) {
+              if (!confirm('Remover as linhas de ' + cod + ' deste dia?')) {
+                renderProgTabela()
+                return
+              }
+            }
+            // rateio proporcional: mantém os PVs, ajusta as qtds
+            let acc = 0
+            alvo.forEach(function (d, i) {
+              if (nova <= 0) {
+                d.qtd = 0
+                d.status = 'Cancelado'
+                return
+              }
+              const q =
+                i === alvo.length - 1
+                  ? nova - acc
+                  : Math.round((nova * (Number(d.qtd) || 0)) / atual)
+              d.qtd = q
+              acc += q
+            })
+            declSave()
+            progBuildFromDecls()
+            renderProgTabela()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                cod +
+                ': qtd do dia ' +
+                atual +
+                ' → ' +
+                nova +
+                ' (rascunho local · nada gravado no MaxiProd)'
+          })
+          tb.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-p="del"]')
+            if (!b) return
+            const cod = b.getAttribute('data-cod')
+            const pd = String(progDate).split('/')
+            const yy = new Date().getFullYear()
+            const progIso =
+              pd.length === 3
+                ? pd[2] + '-' + pd[1] + '-' + pd[0]
+                : pd.length === 2
+                  ? yy + '-' + pd[1] + '-' + pd[0]
+                  : progDate // dd/mm → ISO
+            if (
+              !confirm(
+                'Excluir TODAS as linhas de ' +
+                  cod +
+                  ' deste dia? A carteira MaxiProd não será alterada.',
+              )
+            )
+              return
+            declDraft.forEach(function (d) {
+              if (d.cod === cod && d.data === progIso) {
+                d.qtd = 0
+                d.status = 'Cancelado'
+              }
+            })
+            declSave()
+            progBuildFromDecls()
+            renderProgTabela()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                cod + ' excluído de ' + progDate + ' (rascunho local · nada gravado no MaxiProd)'
+          })
+        }
         if (!tb._toggleBound) {
           tb._toggleBound = true
           tb.addEventListener('click', function (e) {
