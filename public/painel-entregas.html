@@ -278,6 +278,29 @@
       tr.prow {
         cursor: pointer;
       }
+      tr.drow {
+        cursor: grab;
+      }
+      tr.drow.dragging {
+        opacity: 0.45;
+      }
+      tr.drow.dropTarget td {
+        border-top: 2px solid #1e3a8a !important;
+      }
+      .mvdata {
+        width: 118px;
+        font-size: 11px;
+        padding: 3px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .grip {
+        cursor: grab;
+        display: inline-block;
+        padding: 0 4px;
+        color: #64748b;
+        font-weight: 800;
+      }
       tr.prow.sel td {
         background: #eef4ff;
       }
@@ -501,11 +524,16 @@
               ><button id="btnDlDecl" class="dlbtn">⬇ Baixar programação editada (.xlsx)</button
               ><span class="note" id="declStatus"></span>
             </div>
+            <div class="note" style="margin: 6px 0">
+              Arraste a linha pelo <b>⠿</b> e solte sobre o dia desejado, ou digite a data em "Mover
+              p/ dia". Linhas soltas em dia ocupado são <b>adicionadas</b> àquele dia.
+            </div>
             <div class="tblwrap" style="max-height: 340px">
               <table>
                 <thead>
                   <tr>
                     <th></th>
+                    <th>⠿</th>
                     <th>Data produção</th>
                     <th>Código</th>
                     <th>Qtd</th>
@@ -9443,7 +9471,7 @@
         })
         smktHistorySave(hist)
         document.getElementById('trhM').innerHTML =
-          '<th>Produto</th><th>Saldo disponível</th><th>Saída via NF</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
+          '<th>Produto</th><th>Saldo disponível</th><th>Valor em estoque</th><th>Saída via NF</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
         document.getElementById('tbbM').innerHTML = active.length
           ? active
               .map(function (cod) {
@@ -9482,6 +9510,8 @@
                   '</div></td><td class="num"><b>' +
                   NF.format(st.saldo) +
                   '</b></td><td class="num">' +
+                  FMT.format(st.saldo * vuDe(cod)) +
+                  '</td><td class="num">' +
                   NF.format(st.saiuNF) +
                   '</td><td class="exec"><input type="number" min="1" max="' +
                   st.saldo +
@@ -9495,7 +9525,7 @@
                 )
               })
               .join('')
-          : '<tr><td colspan="5">SMKT sem saldo ativo. Entradas aparecem aqui (destino 🛒 no card Programação ou botão de entrada).</td></tr>'
+          : '<tr><td colspan="6">SMKT sem saldo ativo. Entradas aparecem aqui (destino 🛒 no card Programação ou botão de entrada).</td></tr>'
         document.getElementById('trfM').innerHTML =
           '<td>' +
           active.length +
@@ -9503,6 +9533,12 @@
           NF.format(
             ents.reduce(function (a, x) {
               return a + (Number(x.qtd) || 0)
+            }, 0),
+          ) +
+          '</td><td class="num">' +
+          FMT.format(
+            active.reduce(function (a, c) {
+              return a + smktSaldo(c) * vuDe(c)
             }, 0),
           ) +
           '</td><td colspan="3"></td>'
@@ -10763,7 +10799,8 @@
             return (
               '<tr data-di="' +
               i +
-              '"><td><button class="exRl" data-decl="del">Apagar</button></td>' +
+              '" class="drow" draggable="true"><td><button class="exRl" data-decl="del">Apagar</button></td>' +
+              '<td><span class="grip" title="Arraste para outro dia">⠿</span></td>' +
               '<td><input type="date" data-decl="data" value="' +
               escH(d.data) +
               '"></td>' +
@@ -10788,7 +10825,8 @@
               (d.status === 'Realizado' ? '' : 'selected') +
               ' value="Planejado">Planejado</option><option ' +
               (d.status === 'Realizado' ? 'selected' : '') +
-              ' value="Realizado">Realizado</option></select></td></tr>'
+              ' value="Realizado">Realizado</option></select></td>' +
+              '<td><input type="date" class="mvdata" data-decl="mover" title="Digite a data e a linha inteira move para esse dia" value=""><button class="exRl" data-decl="mvgo" title="Mover esta linha para a data digitada">Mover ↦</button></td></tr>'
             )
           })
           .join('')
@@ -10796,6 +10834,62 @@
         if (st) st.textContent = declDraft.length + ' linhas no rascunho · nada gravado no MaxiProd'
         if (!tb._bound) {
           tb._bound = true
+          // drag & drop: arraste a linha e solte sobre a linha do dia de destino
+          let dragIx = null
+          tb.addEventListener('dragstart', function (e) {
+            const tr = e.target.closest('tr.drow')
+            if (!tr) return
+            dragIx = +tr.dataset.di
+            tr.classList.add('dragging')
+            try {
+              e.dataTransfer.setData('text/plain', String(dragIx))
+            } catch (x) {}
+            e.dataTransfer.effectAllowed = 'move'
+          })
+          tb.addEventListener('dragend', function (e) {
+            const tr = e.target.closest('tr.drow')
+            if (tr) tr.classList.remove('dragging')
+            Array.prototype.forEach.call(tb.querySelectorAll('tr.drow'), function (x) {
+              x.classList.remove('dropTarget')
+            })
+            dragIx = null
+          })
+          tb.addEventListener('dragover', function (e) {
+            e.preventDefault()
+            const tr = e.target.closest('tr.drow')
+            if (!tr || dragIx === null) return
+            e.dataTransfer.dropEffect = 'move'
+            Array.prototype.forEach.call(tb.querySelectorAll('tr.drow'), function (x) {
+              x.classList.remove('dropTarget')
+            })
+            tr.classList.add('dropTarget')
+          })
+          tb.addEventListener('drop', function (e) {
+            e.preventDefault()
+            const tr = e.target.closest('tr.drow')
+            if (!tr || dragIx === null) return
+            const to = +tr.dataset.di
+            if (to === dragIx) return
+            const moved = declDraft.splice(dragIx, 1)[0]
+            const nd = declDraft[to > dragIx ? to - 1 : to] // linha-alvo após a remoção
+            if (nd) {
+              moved.data = nd.data
+              moved.dia = nd.dia
+            }
+            declDraft.splice(to > dragIx ? to : to + 1, 0, moved)
+            declSave()
+            progBuildFromDecls()
+            renderDeclEditor()
+            progDia = null
+            progDate = null
+            renderProg()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                'Linha movida para ' +
+                moved.data.split('-').reverse().join('/') +
+                ' · nada gravado no MaxiProd'
+          })
           tb.addEventListener('input', function (e) {
             const x = e.target.closest('[data-decl]')
             if (!x || x.dataset.decl === 'del') return
@@ -10820,6 +10914,40 @@
             renderProg()
           })
           tb.addEventListener('click', function (e) {
+            const mv = e.target.closest('button[data-decl="mvgo"]')
+            if (mv) {
+              const tr = mv.closest('tr'),
+                i = +tr.dataset.di
+              const inp = tr.querySelector('input[data-decl="mover"]')
+              const nd = inp && inp.value
+              if (!nd) {
+                alert('Digite a data para onde a linha deve ir.')
+                return
+              }
+              declDraft[i].data = nd
+              declDraft[i].dia = [
+                'Domingo',
+                'Segunda',
+                'Terça',
+                'Quarta',
+                'Quinta',
+                'Sexta',
+                'Sábado',
+              ][new Date(nd + 'T12:00:00').getDay()]
+              declSave()
+              progBuildFromDecls()
+              renderDeclEditor()
+              progDia = null
+              progDate = null
+              renderProg()
+              const st = document.getElementById('declStatus')
+              if (st)
+                st.textContent =
+                  'Linha movida para ' +
+                  nd.split('-').reverse().join('/') +
+                  ' · nada gravado no MaxiProd'
+              return
+            }
             const b = e.target.closest('button[data-decl="del"]')
             if (!b) return
             const tr = b.closest('tr')
