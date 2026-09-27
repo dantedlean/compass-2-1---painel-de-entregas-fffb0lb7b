@@ -278,28 +278,14 @@
       tr.prow {
         cursor: pointer;
       }
-      tr.drow {
-        cursor: grab;
-      }
-      tr.drow.dragging {
+      tr.prow.dragging {
         opacity: 0.45;
       }
-      tr.drow.dropTarget td {
-        border-top: 2px solid #1e3a8a !important;
-      }
-      .mvdata {
-        width: 118px;
-        font-size: 11px;
-        padding: 3px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-      }
-      .grip {
-        cursor: grab;
-        display: inline-block;
-        padding: 0 4px;
-        color: #64748b;
-        font-weight: 800;
+      button.dropOn {
+        outline: 2px dashed #1e3a8a;
+        outline-offset: 2px;
+        background: #1e3a8a !important;
+        color: #fff !important;
       }
       tr.prow.sel td {
         background: #eef4ff;
@@ -524,16 +510,11 @@
               ><button id="btnDlDecl" class="dlbtn">⬇ Baixar programação editada (.xlsx)</button
               ><span class="note" id="declStatus"></span>
             </div>
-            <div class="note" style="margin: 6px 0">
-              Arraste a linha pelo <b>⠿</b> e solte sobre o dia desejado, ou digite a data em "Mover
-              p/ dia". Linhas soltas em dia ocupado são <b>adicionadas</b> àquele dia.
-            </div>
             <div class="tblwrap" style="max-height: 340px">
               <table>
                 <thead>
                   <tr>
                     <th></th>
-                    <th>⠿</th>
                     <th>Data produção</th>
                     <th>Código</th>
                     <th>Qtd</th>
@@ -8540,6 +8521,7 @@
       // ---- programação de produção da semana corrente ----
       let progDia = null,
         progDate = null
+      let declDraft = []
       function renderProg() {
         const card = document.getElementById('cardProg')
         if (!DATA.progSemana || !DATA.progSemana.dias.length) {
@@ -8592,6 +8574,22 @@
             })
             b.classList.add('on')
             renderProgTabela()
+          })
+          // soltar a linha arrastada neste dia = reprogramar para ele
+          b.addEventListener('dragover', function (e) {
+            if (!dragP) return
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+            b.classList.add('dropOn')
+          })
+          b.addEventListener('dragleave', function () {
+            b.classList.remove('dropOn')
+          })
+          b.addEventListener('drop', function (e) {
+            if (!dragP) return
+            e.preventDefault()
+            b.classList.remove('dropOn')
+            progMoveTo(b.getAttribute('data-d'), b.getAttribute('data-date'))
           })
         })
         renderProgTabela()
@@ -8759,7 +8757,7 @@
               (ex.ok ? ' exOK' : '') +
               '" data-ix="' +
               ix +
-              '"><td><div class="cod">' +
+              '" draggable="true" title="Arraste até um dia acima para reprogramar · Ctrl+C copia · Ctrl+V cola como nova linha"><td><div class="cod">' +
               p.cod +
               '</div><div class="dsc">' +
               p.desc +
@@ -8791,7 +8789,7 @@
               '" value="' +
               (ex.qtd || '') +
               '" placeholder="0" data-p="qtd"></td>' +
-              '<td class="exec"><button class="exRl" data-p="rl" title="Realocar saldo (qtd − realizada) para o próximo dia útil">Realocar ↦</button>' +
+              '<td class="exec"><button class="exRl" data-p="copy" title="Copiar linha (cole com Ctrl+V na tabela ou em outro dia)">Copiar</button>' +
               exInfo +
               (noSmkt
                 ? '<div style="font-size:10px;color:#166534;font-weight:700;margin-top:3px">🛒 no SMKT — alocação por PV no card Supermercado · desfazer no Histórico</div>'
@@ -8939,6 +8937,10 @@
             const ix = parseInt(tr.getAttribute('data-ix'), 10)
             const p = progProdsCache[ix]
             if (!p) return
+            if (btn.getAttribute('data-p') === 'copy') {
+              progCopyLine(p)
+              return
+            }
             const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
             const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
             if (saldo <= 0) {
@@ -8957,7 +8959,216 @@
             })
             renderProgTabela()
           })
+          // ARRASTAR A LINHA ATÉ O BOTÃO DO DIA (reprogramar com o mouse) — usa a dragP GLOBAL
+          tb.addEventListener('dragstart', function (e) {
+            const tr = e.target.closest('tr.prow')
+            if (!tr) return
+            const ix = parseInt(tr.getAttribute('data-ix'), 10)
+            const p = progProdsCache[ix]
+            if (!p) return
+            const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+            dragP = { cod: p.cod, desc: p.desc, qtd: p.qtd, vtot: p.vtot, de: progDate, ex: ex }
+            tr.classList.add('dragging')
+            try {
+              e.dataTransfer.setData('text/plain', p.cod)
+            } catch (x) {}
+            e.dataTransfer.effectAllowed = 'move'
+          })
+          tb.addEventListener('dragend', function (e) {
+            const tr = e.target.closest('tr.prow')
+            if (tr) tr.classList.remove('dragging')
+            Array.prototype.forEach.call(document.querySelectorAll('#pbtns button'), function (b) {
+              b.classList.remove('dropOn')
+            })
+            dragP = null
+          })
+          // COLAR LINHA COPIADA (Ctrl+V na tabela) — cria linha nova no dia selecionado
+          tb.addEventListener('paste', function (e) {
+            const t = (e.clipboardData || window.clipboardData).getData('text')
+            const c = progParseCopied(t)
+            if (c) {
+              e.preventDefault()
+              progPasteLine(c, progDate)
+            }
+          })
         }
+        // teclado: Ctrl+C copia a linha selecionada, Ctrl+V cola
+        document.addEventListener('keydown', function (e) {
+          if (!(e.ctrlKey || e.metaKey) || progProdsCache.length === 0) return
+          const sel = document.querySelector('#tbbP tr.prow.sel')
+          if ((e.key === 'c' || e.key === 'C') && sel) {
+            const p = progProdsCache[parseInt(sel.getAttribute('data-ix'), 10)]
+            if (p) {
+              progCopyLine(p)
+              e.preventDefault()
+            }
+          }
+        })
+        document.addEventListener('paste', function (e) {
+          if (
+            progProdsCache.length === 0 ||
+            (e.target.closest &&
+              (e.target.closest('input') ||
+                e.target.closest('textarea') ||
+                e.target.closest('select')))
+          )
+            return
+          const t = (e.clipboardData || window.clipboardData).getData('text')
+          const c = progParseCopied(t)
+          if (c) {
+            e.preventDefault()
+            progPasteLine(c, progDate)
+          }
+        })
+      }
+      // ---- copiar/colar e mover linha (card principal) ----
+      function progIso(d) {
+        // aceita ISO (2026-09-30) ou dd/mm (30/09) — devolve ISO
+        if (!d) return ''
+        if (d.length === 5) {
+          const p = d.split('/')
+          return new Date().getFullYear() + '-' + p[1] + '-' + p[0]
+        }
+        return d
+      }
+      function progCopyLine(p) {
+        const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+        const payload = { __andon: 1, cod: p.cod, desc: p.desc, qtd: p.qtd, de: progDate }
+        const txt = JSON.stringify(payload)
+        const done = function () {
+          progCopied = payload
+          progCopiedTxt = txt
+          const st = document.getElementById('declStatus')
+          if (st)
+            st.textContent =
+              'Copiado: ' +
+              p.cod +
+              ' ×' +
+              p.qtd +
+              ' (' +
+              progDate +
+              ') — Ctrl+V para colar como nova linha ou arraste até outro dia'
+          try {
+            navigator.clipboard.writeText(txt)
+          } catch (x) {}
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(txt).then(done, done)
+        } else done()
+      }
+      function progParseCopied(t) {
+        if (!t) return null
+        try {
+          const o = JSON.parse(t)
+          if (o && o.__andon === 1 && o.cod) return o
+        } catch (x) {}
+        return null
+      }
+      function progPasteLine(c, diaDest) {
+        diaDest = progIso(diaDest)
+        if (!diaDest) {
+          alert('Escolha um dia primeiro.')
+          return
+        }
+        if (
+          !confirm(
+            'Colar ' +
+              c.cod +
+              ' ×' +
+              c.qtd +
+              ' como NOVA linha em ' +
+              diaDest.split('-').reverse().join('/') +
+              '?',
+          )
+        )
+          return
+        declDraft.push({
+          dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+            new Date(diaDest + 'T12:00:00').getDay()
+          ],
+          data: diaDest,
+          cod: c.cod,
+          qtd: c.qtd,
+          local: 'C',
+          pv: '',
+          id: 'PR-COPY-' + Date.now(),
+          obs: 'colado de ' + (c.de || '?'),
+          status: 'Planejado',
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Linha colada em ' +
+            diaDest.split('-').reverse().join('/') +
+            ' · nada gravado no MaxiProd'
+      }
+      // mover a linha arrastada para o dia do botão-alvo
+      function progMoveTo(diaDest, dateDest) {
+        dateDest = progIso(dateDest)
+        if (!dragP) return
+        const p = dragP
+        const ex = p.ex || {}
+        const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+        if (saldo <= 0) {
+          alert('Nada a mover — a qtd realizada cobre o planejado.')
+          return
+        }
+        if (
+          !confirm(
+            'Mover ' +
+              p.cod +
+              ' ×' +
+              saldo +
+              ' un de ' +
+              (p.de || '?').split('-').reverse().join('/') +
+              ' para ' +
+              dateDest.split('-').reverse().join('/') +
+              '?',
+          )
+        )
+          return
+        // origem: marca o saldo como realocado para o dia de destino
+        setProgExec(p.cod, p.de, {
+          ok: ex.ok,
+          qtd: ex.qtd,
+          rl: dateDest,
+          saldo: saldo,
+          pvNovo: ex.pvNovo || null,
+          smkt: ex.smkt || null,
+        })
+        // destino: nova linha Planejado no rascunho
+        declDraft.push({
+          dia: diaDest,
+          data: dateDest,
+          cod: p.cod,
+          qtd: saldo,
+          local: 'C',
+          pv: '',
+          id: 'PR-MOVE-' + Date.now(),
+          obs: 'movido de ' + p.de,
+          status: 'Planejado',
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            p.cod +
+            ' ×' +
+            saldo +
+            ' movido para ' +
+            dateDest.split('-').reverse().join('/') +
+            ' · nada gravado no MaxiProd'
       }
       let progProdsCache = []
       const _origRPT = renderProgTabela
@@ -9199,6 +9410,9 @@
       }
 
       // ==================== EXECUTADO / REALOCAÇÃO (localStorage) ====================
+      let dragP = null,
+        progCopied = null,
+        progCopiedTxt = ''
       function execKey(r) {
         return 'exec|' + r.pv + '|' + r.codigo + '|' + r.empresa + '|' + r.iso
       }
@@ -10767,7 +10981,6 @@
       })
       // ---- Edição livre da programação (rascunho local; exportável para a skill) ----
       const DECL_KEY = 'andon|programacao|draft|v041'
-      let declDraft = null
       function declLoad() {
         try {
           const saved = JSON.parse(localStorage.getItem(DECL_KEY) || 'null')
@@ -10799,8 +11012,7 @@
             return (
               '<tr data-di="' +
               i +
-              '" class="drow" draggable="true"><td><button class="exRl" data-decl="del">Apagar</button></td>' +
-              '<td><span class="grip" title="Arraste para outro dia">⠿</span></td>' +
+              '"><td><button class="exRl" data-decl="del">Apagar</button></td>' +
               '<td><input type="date" data-decl="data" value="' +
               escH(d.data) +
               '"></td>' +
@@ -10825,8 +11037,7 @@
               (d.status === 'Realizado' ? '' : 'selected') +
               ' value="Planejado">Planejado</option><option ' +
               (d.status === 'Realizado' ? 'selected' : '') +
-              ' value="Realizado">Realizado</option></select></td>' +
-              '<td><input type="date" class="mvdata" data-decl="mover" title="Digite a data e a linha inteira move para esse dia" value=""><button class="exRl" data-decl="mvgo" title="Mover esta linha para a data digitada">Mover ↦</button></td></tr>'
+              ' value="Realizado">Realizado</option></select></td></tr>'
             )
           })
           .join('')
@@ -10834,62 +11045,6 @@
         if (st) st.textContent = declDraft.length + ' linhas no rascunho · nada gravado no MaxiProd'
         if (!tb._bound) {
           tb._bound = true
-          // drag & drop: arraste a linha e solte sobre a linha do dia de destino
-          let dragIx = null
-          tb.addEventListener('dragstart', function (e) {
-            const tr = e.target.closest('tr.drow')
-            if (!tr) return
-            dragIx = +tr.dataset.di
-            tr.classList.add('dragging')
-            try {
-              e.dataTransfer.setData('text/plain', String(dragIx))
-            } catch (x) {}
-            e.dataTransfer.effectAllowed = 'move'
-          })
-          tb.addEventListener('dragend', function (e) {
-            const tr = e.target.closest('tr.drow')
-            if (tr) tr.classList.remove('dragging')
-            Array.prototype.forEach.call(tb.querySelectorAll('tr.drow'), function (x) {
-              x.classList.remove('dropTarget')
-            })
-            dragIx = null
-          })
-          tb.addEventListener('dragover', function (e) {
-            e.preventDefault()
-            const tr = e.target.closest('tr.drow')
-            if (!tr || dragIx === null) return
-            e.dataTransfer.dropEffect = 'move'
-            Array.prototype.forEach.call(tb.querySelectorAll('tr.drow'), function (x) {
-              x.classList.remove('dropTarget')
-            })
-            tr.classList.add('dropTarget')
-          })
-          tb.addEventListener('drop', function (e) {
-            e.preventDefault()
-            const tr = e.target.closest('tr.drow')
-            if (!tr || dragIx === null) return
-            const to = +tr.dataset.di
-            if (to === dragIx) return
-            const moved = declDraft.splice(dragIx, 1)[0]
-            const nd = declDraft[to > dragIx ? to - 1 : to] // linha-alvo após a remoção
-            if (nd) {
-              moved.data = nd.data
-              moved.dia = nd.dia
-            }
-            declDraft.splice(to > dragIx ? to : to + 1, 0, moved)
-            declSave()
-            progBuildFromDecls()
-            renderDeclEditor()
-            progDia = null
-            progDate = null
-            renderProg()
-            const st = document.getElementById('declStatus')
-            if (st)
-              st.textContent =
-                'Linha movida para ' +
-                moved.data.split('-').reverse().join('/') +
-                ' · nada gravado no MaxiProd'
-          })
           tb.addEventListener('input', function (e) {
             const x = e.target.closest('[data-decl]')
             if (!x || x.dataset.decl === 'del') return
@@ -10914,40 +11069,6 @@
             renderProg()
           })
           tb.addEventListener('click', function (e) {
-            const mv = e.target.closest('button[data-decl="mvgo"]')
-            if (mv) {
-              const tr = mv.closest('tr'),
-                i = +tr.dataset.di
-              const inp = tr.querySelector('input[data-decl="mover"]')
-              const nd = inp && inp.value
-              if (!nd) {
-                alert('Digite a data para onde a linha deve ir.')
-                return
-              }
-              declDraft[i].data = nd
-              declDraft[i].dia = [
-                'Domingo',
-                'Segunda',
-                'Terça',
-                'Quarta',
-                'Quinta',
-                'Sexta',
-                'Sábado',
-              ][new Date(nd + 'T12:00:00').getDay()]
-              declSave()
-              progBuildFromDecls()
-              renderDeclEditor()
-              progDia = null
-              progDate = null
-              renderProg()
-              const st = document.getElementById('declStatus')
-              if (st)
-                st.textContent =
-                  'Linha movida para ' +
-                  nd.split('-').reverse().join('/') +
-                  ' · nada gravado no MaxiProd'
-              return
-            }
             const b = e.target.closest('button[data-decl="del"]')
             if (!b) return
             const tr = b.closest('tr')
