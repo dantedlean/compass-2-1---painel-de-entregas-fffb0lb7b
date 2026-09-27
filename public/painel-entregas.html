@@ -491,6 +491,14 @@
             >
               + Programar
             </button>
+            <button
+              id="btnUndoTop"
+              class="dlbtn"
+              onclick="smktUndo()"
+              title="Desfazer a última ação no SMKT (entrada, alocação ou retirada)"
+            >
+              ↩ Desfazer última ação
+            </button>
             <button id="btnDlProg" class="dlbtn" style="display: none">
               ⬇ Baixar programação editada (.xlsx)
             </button>
@@ -620,6 +628,26 @@
                 </tr>
               </thead>
               <tbody id="tbbSmktHist"></tbody>
+            </table>
+          </div>
+        </details>
+        <details class="card" id="cardHistSem" style="margin-top: 14px">
+          <summary style="cursor: pointer; font-size: 15px; font-weight: 800; color: #64748b">
+            🗓 Semana anterior — histórico (recolhido)
+          </summary>
+          <div class="tblwrap" style="max-height: 300px; margin-top: 8px">
+            <table id="tbHistSem">
+              <thead>
+                <tr>
+                  <th>Dia</th>
+                  <th>Produto</th>
+                  <th>Qtd</th>
+                  <th>PV</th>
+                  <th>Cliente</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody id="tbbHistSem"></tbody>
             </table>
           </div>
         </details>
@@ -7140,17 +7168,6 @@
               cod: '403-0016',
               qtd: 2.0,
               local: 'C',
-              pv: '2095',
-              id: 'PR-0009',
-              obs: 'Britânia; split explicit 2/2',
-              status: 'Planejado',
-            },
-            {
-              dia: 'Sexta',
-              data: '2026-09-25',
-              cod: '403-0016',
-              qtd: 2.0,
-              local: 'C',
               pv: '2113',
               id: 'PR-0010',
               obs: 'Britânia; split explicit 2/2',
@@ -7355,7 +7372,7 @@
               status: 'Planejado',
             },
           ],
-          declHash: '7ddc7d87c1dd',
+          declHash: 'c5d47633623b',
         },
         rigidas: [
           {
@@ -8532,6 +8549,57 @@
       let progDia = null,
         progDate = null
       let declDraft = []
+      function renderHistSem(diasHist) {
+        const card = document.getElementById('cardHistSem')
+        if (!card) return
+        if (!diasHist || !diasHist.length) {
+          card.style.display = 'none'
+          return
+        }
+        card.style.display = ''
+        const byDate = {}
+        diasHist.forEach(function (x) {
+          ;(byDate[x.data] = byDate[x.data] || []).push(x)
+        })
+        const datas = Object.keys(byDate).sort()
+        let html = ''
+        datas.forEach(function (dt) {
+          const linhas = byDate[dt]
+          const tot = linhas.reduce(function (s, x) {
+            return s + (x.qtd || 0)
+          }, 0)
+          html +=
+            '<tr style="background:#f1f5f9"><td colspan="6" style="font-weight:800">' +
+            dt +
+            ' · ' +
+            linhas[0].dia +
+            ' — ' +
+            linhas.length +
+            ' linha(s), ' +
+            Math.round(tot) +
+            ' un</td></tr>'
+          linhas.forEach(function (a) {
+            html +=
+              '<tr><td>' +
+              a.dia +
+              '</td><td>' +
+              a.cod +
+              ' · ' +
+              String(a.desc || '').slice(0, 35) +
+              '</td><td class="num">' +
+              NF.format(Math.round(a.qtd || 0)) +
+              '</td><td>' +
+              (a.pv || '—') +
+              '</td><td>' +
+              (a.cli || '—') +
+              '</td><td>' +
+              (a.sit || '') +
+              '</td></tr>'
+          })
+        })
+        document.getElementById('tbbHistSem').innerHTML =
+          html || '<tr><td colspan="6">Sem histórico.</td></tr>'
+      }
       function renderProg() {
         const card = document.getElementById('cardProg')
         if (!DATA.progSemana || !DATA.progSemana.dias.length) {
@@ -8539,6 +8607,12 @@
           return
         }
         card.style.display = ''
+        function isoOf(dt) {
+          const p = String(dt).split('/')
+          if (p.length === 3) return p[2] + '-' + p[1] + '-' + p[0]
+          if (p.length === 2) return String(hj.getFullYear()) + '-' + p[1] + '-' + p[0]
+          return dt
+        }
         const dias = [
           ...new Map(
             DATA.progSemana.dias.map(function (a) {
@@ -8546,8 +8620,33 @@
             }),
           ).values(),
         ].sort(function (a, b) {
-          return a.data.localeCompare(b.data)
+          return isoOf(a.data).localeCompare(isoOf(b.data))
         })
+        // semana corrente começa na segunda; dias anteriores viram histórico (card no final, recolhido)
+        const hj = new Date()
+        const dow = (hj.getDay() + 6) % 7
+        let segDate = new Date(hj)
+        segDate.setDate(segDate.getDate() - dow) // segunda da semana corrente
+        if (dow >= 5) {
+          segDate = new Date(hj)
+          segDate.setDate(segDate.getDate() + (7 - dow))
+        } // sáb/dom: próxima segunda
+        const segIso =
+          segDate.getFullYear() +
+          '-' +
+          String(segDate.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(segDate.getDate()).padStart(2, '0')
+        let diasHist = dias.filter(function (x) {
+          return isoOf(x.data) < segIso
+        })
+        let diasMain = dias.filter(function (x) {
+          return isoOf(x.data) >= segIso
+        })
+        if (!diasMain.length) {
+          diasMain = dias
+          diasHist = []
+        } // fallback: nunca deixar o card vazio
         const box = document.getElementById('pbtns')
         if (!progDia) {
           // dia atual se estiver na semana declarada; senão o primeiro dia
@@ -8558,7 +8657,20 @@
           progDia = chosen.dia
           progDate = chosen.data
         }
-        box.innerHTML = dias
+        if (
+          progDate &&
+          !diasMain.some(function (x) {
+            return x.data === progDate
+          })
+        ) {
+          progDia = null
+          progDate = null
+        }
+        if (!progDate && diasMain.length) {
+          progDia = diasMain[0].dia
+          progDate = diasMain[0].data
+        }
+        box.innerHTML = diasMain
           .map(function (o) {
             return (
               '<button data-d="' +
@@ -8575,6 +8687,7 @@
             )
           })
           .join('')
+        if (typeof renderHistSem === 'function') renderHistSem(diasHist)
         Array.prototype.forEach.call(box.children, function (b) {
           b.addEventListener('click', function () {
             progDia = b.getAttribute('data-d')
@@ -11027,7 +11140,7 @@
         if (tChart) tChart.resize()
       })
       // ---- Edição livre da programação (rascunho local; exportável para a skill) ----
-      const DECL_KEY = 'andon|programacao|draft|v041'
+      const DECL_KEY = 'andon|programacao|draft|v049'
       function declLoad() {
         try {
           const saved = JSON.parse(localStorage.getItem(DECL_KEY) || 'null')
