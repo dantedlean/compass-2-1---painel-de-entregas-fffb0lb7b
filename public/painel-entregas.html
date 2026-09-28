@@ -883,10 +883,17 @@
           <h2>Pesquisa por PV</h2>
           <div class="note">
             Digite o nº do PV (ou parte do cliente/produto). Mostra todos os itens do PV, o total a
-            faturar e a produção declarada.
+            faturar e a produção declarada. <b>No card Programação</b>, o campo "PV destino" aceita
+            digitar o nº — traz cliente, produto, saldo e entrega do PV.
           </div>
           <div class="toolbar">
-            <input type="search" id="fQ3" placeholder="Ex.: 520, 549, SHOPEE, BERENICE…" />
+            <input
+              type="search"
+              id="fQ3"
+              placeholder="Ex.: 520, 549, SHOPEE, BERENICE…"
+              list="pvList3"
+            />
+            <datalist id="pvList3"></datalist>
           </div>
           <div id="fPvResult"></div>
         </div>
@@ -3691,7 +3698,7 @@
           {
             data: '25/09',
             iso: '2026-09-25',
-            semana: '2026-W39',
+            semana: 'ATRASADO',
             codigo: 'ID02730',
             desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
             pv: '121',
@@ -3705,14 +3712,14 @@
             isoErp: '2026-09-25',
             dataErp: '25/09',
             rig: { iso: '2026-09-25', data: '25/09', cli: '', proj: 'SÃO PAULO/SP', local: '' },
-            si: 1,
+            si: 0,
             siPlano: null,
             prod: null,
           },
           {
             data: '25/09',
             iso: '2026-09-25',
-            semana: '2026-W39',
+            semana: 'ATRASADO',
             codigo: 'ID01598',
             desc: 'FLOW RACK DINÂMICO 1000x2000mm - BLUE',
             pv: '122',
@@ -3732,14 +3739,14 @@
               proj: 'FRANCO DA ROCHA/SP',
               local: '',
             },
-            si: 1,
+            si: 0,
             siPlano: null,
             prod: null,
           },
           {
             data: '25/09',
             iso: '2026-09-25',
-            semana: '2026-W39',
+            semana: 'ATRASADO',
             codigo: 'ID01779',
             desc: 'BANCADA PACKING VOLUMOSO - SHOPEE',
             pv: '122',
@@ -3759,7 +3766,7 @@
               proj: 'FRANCO DA ROCHA/SP',
               local: '',
             },
-            si: 1,
+            si: 0,
             siPlano: null,
             prod: null,
           },
@@ -8741,6 +8748,16 @@
             b.classList.remove('dropOn')
           })
           b.addEventListener('drop', function (e) {
+            // recorte (Ctrl+X / botão Recortar) tem prioridade sobre o arrasto
+            const cutP =
+              typeof window.andonCut === 'object' && window.andonCut ? window.andonCut : null
+            if (cutP) {
+              e.preventDefault()
+              b.classList.remove('dropOn')
+              window.andonCut = null
+              progDropCutTo(cutP, b.getAttribute('data-date'))
+              return
+            }
             if (!dragP) return
             e.preventDefault()
             b.classList.remove('dropOn')
@@ -8950,13 +8967,15 @@
               '" value="' +
               (ex.qtd || '') +
               '" placeholder="0" data-p="qtd"></td>' +
-              '<td class="exec"><button class="exRl" data-p="copy" title="Copiar linha (cole com Ctrl+V na tabela ou em outro dia)">Copiar</button>' +
+              '<td class="exec"><button class="exRl" data-p="copy" title="Copiar linha (Ctrl+V cola como nova linha no dia selecionado ou em outro dia)">Copiar</button> <button class="exRl" data-p="cut" title="Recortar: move a qtd deste dia para onde colar (Ctrl+V). Se houver executado, transfere só o saldo">Recortar</button>' +
               exInfo +
               (noSmkt
                 ? '<div style="font-size:10px;color:#166534;font-weight:700;margin-top:3px">🛒 no SMKT — alocação por PV no card Supermercado · desfazer no Histórico</div>'
-                : '<select data-p="pv" style="margin-top:4px;width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+                : '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px"><select data-p="pv" style="width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
                   opts +
                   '</select>' +
+                  '<input type="text" data-p="pvdig" inputmode="numeric" placeholder="ou digite o nº do PV…" list="pvDigList" style="width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px" title="Digite o nº do PV — o Andon traz cliente, produto, saldo e entrega">' +
+                  '<div data-p="pvdiginfo" style="font-size:10px;color:#1e3a8a;display:none"></div></div>' +
                   pvTrocado) +
               '</td></tr>' +
               det
@@ -9220,6 +9239,10 @@
               progCopyLine(p)
               return
             }
+            if (btn.getAttribute('data-p') === 'cut') {
+              progCutLine(p)
+              return
+            }
             const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
             const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
             if (saldo <= 0) {
@@ -9261,13 +9284,17 @@
             })
             dragP = null
           })
-          // COLAR LINHA COPIADA (Ctrl+V na tabela) — cria linha nova no dia selecionado
+          // COLAR LINHA COPIADA (Ctrl+V na tabela) — cópia cria linha nova; recorte transfere e zera a origem
           tb.addEventListener('paste', function (e) {
             const t = (e.clipboardData || window.clipboardData).getData('text')
             const c = progParseCopied(t)
             if (c) {
               e.preventDefault()
-              progPasteLine(c, progDate)
+              if (c.cut) {
+                progDropCutTo(c, progDate)
+              } else {
+                progPasteLine(c, progDate)
+              }
             }
           })
         }
@@ -9296,7 +9323,11 @@
           const c = progParseCopied(t)
           if (c) {
             e.preventDefault()
-            progPasteLine(c, progDate)
+            if (c.cut) {
+              progDropCutTo(c, progDate)
+            } else {
+              progPasteLine(c, progDate)
+            }
           }
         })
       }
@@ -9312,28 +9343,73 @@
       }
       function progCopyLine(p) {
         const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
-        const payload = { __andon: 1, cod: p.cod, desc: p.desc, qtd: p.qtd, de: progDate }
-        const txt = JSON.stringify(payload)
-        const done = function () {
-          progCopied = payload
-          progCopiedTxt = txt
-          const st = document.getElementById('declStatus')
-          if (st)
-            st.textContent =
-              'Copiado: ' +
-              p.cod +
-              ' ×' +
-              p.qtd +
-              ' (' +
-              progDate +
-              ') — Ctrl+V para colar como nova linha ou arraste até outro dia'
-          try {
-            navigator.clipboard.writeText(txt)
-          } catch (x) {}
+        const payload = {
+          __andon: 1,
+          cod: p.cod,
+          desc: p.desc,
+          qtd: p.qtd,
+          de: progDate,
+          cut: false,
+          exQtd: ex.qtd || 0,
         }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(txt).then(done, done)
-        } else done()
+        const txt = JSON.stringify(payload)
+        // estado setado SINCRONAMENTE (não depende da promise do clipboard)
+        progCopied = payload
+        progCopiedTxt = txt
+        window.andonCut = null
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Copiado: ' +
+            p.cod +
+            ' ×' +
+            p.qtd +
+            ' (' +
+            progDate +
+            ') — Ctrl+V para colar como nova linha ou arraste até outro dia'
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText)
+            navigator.clipboard.writeText(txt).catch(function () {})
+        } catch (x) {}
+      }
+      // RECORTE: move a qtd do dia para onde colar. Com executado, transfere SÓ O SALDO (regra Dante 28/09).
+      function progCutLine(p) {
+        const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+        const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+        if (saldo <= 0) {
+          alert('Nada a recortar — a qtd realizada cobre o planejado deste dia.')
+          return
+        }
+        const payload = {
+          __andon: 1,
+          cod: p.cod,
+          desc: p.desc,
+          qtd: saldo,
+          de: progDate,
+          cut: true,
+          exQtd: ex.qtd || 0,
+          exOk: !!ex.ok,
+        }
+        const txt = JSON.stringify(payload)
+        // estado setado SINCRONAMENTE (não depende da promise do clipboard)
+        progCopied = payload
+        progCopiedTxt = txt
+        window.andonCut = payload
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Recortado: ' +
+            p.cod +
+            ' ×' +
+            saldo +
+            ' de ' +
+            progDate +
+            (ex.qtd ? ' (executado ' + ex.qtd + ' fica no dia)' : '') +
+            ' — Ctrl+V no dia destino'
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText)
+            navigator.clipboard.writeText(txt).catch(function () {})
+        } catch (x) {}
       }
       function progParseCopied(t) {
         if (!t) return null
@@ -9349,18 +9425,59 @@
           alert('Escolha um dia primeiro.')
           return
         }
-        if (
-          !confirm(
-            'Colar ' +
+        const destinoBR = diaDest.split('-').reverse().join('/')
+        if (String(diaDest) === String(progIso(c.de))) {
+          alert('Origem e destino são o mesmo dia.')
+          return
+        }
+        if (c.cut) {
+          // RECORTE: transfere a qtd (já líquida do executado) e zera a origem.
+          declDraft.push({
+            dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+              new Date(diaDest + 'T12:00:00').getDay()
+            ],
+            data: diaDest,
+            cod: c.cod,
+            qtd: c.qtd,
+            local: 'C',
+            pv: '',
+            id: 'PR-CUT-' + Date.now(),
+            obs: 'recortado de ' + (c.de || '?'),
+            status: 'Planejado',
+          })
+          declDraft.forEach(function (d) {
+            const isoD0 = progIso(d.data)
+            if (d.cod === c.cod && isoD0 === String(progIso(c.de)) && d.status !== 'Cancelado') {
+              if (c.exQtd > 0) {
+                d.qtd = Math.min(Number(d.qtd) || 0, c.exQtd)
+              } // mantém só o executado na origem
+              else {
+                d.qtd = 0
+                d.status = 'Cancelado'
+              }
+            }
+          })
+          declSave()
+          progBuildFromDecls()
+          renderDeclEditor()
+          progDia = null
+          progDate = null
+          renderProg()
+          const st = document.getElementById('declStatus')
+          if (st)
+            st.textContent =
               c.cod +
               ' ×' +
               c.qtd +
-              ' como NOVA linha em ' +
-              diaDest.split('-').reverse().join('/') +
-              '?',
-          )
-        )
+              ' RECORTADO de ' +
+              (c.de || '?').split('-').reverse().join('/') +
+              ' → ' +
+              destinoBR +
+              (c.exQtd ? ' · executado (' + c.exQtd + ') permanece na origem' : '') +
+              ' · nada gravado no MaxiProd'
           return
+        }
+        // CÓPIA: cola como nova linha (mantém a origem intacta)
         declDraft.push({
           dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
             new Date(diaDest + 'T12:00:00').getDay()
@@ -9381,11 +9498,7 @@
         progDate = null
         renderProg()
         const st = document.getElementById('declStatus')
-        if (st)
-          st.textContent =
-            'Linha colada em ' +
-            diaDest.split('-').reverse().join('/') +
-            ' · nada gravado no MaxiProd'
+        if (st) st.textContent = 'Linha colada em ' + destinoBR + ' · nada gravado no MaxiProd'
       }
       // mover a linha arrastada para o dia do botão-alvo
       function progMoveTo(diaDest, dateDest) {
@@ -9447,6 +9560,59 @@
             saldo +
             ' movido para ' +
             dateDest.split('-').reverse().join('/') +
+            ' · nada gravado no MaxiProd'
+      }
+      // colar vindo do botão do dia (drop de recorte) — transfere saldo e zera origem
+      function progDropCutTo(c, dateDest) {
+        dateDest = progIso(dateDest)
+        const destinoBR = dateDest.split('-').reverse().join('/')
+        if (String(dateDest) === String(progIso(c.de))) {
+          alert('Origem e destino são o mesmo dia.')
+          return
+        }
+        declDraft.push({
+          dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+            new Date(dateDest + 'T12:00:00').getDay()
+          ],
+          data: dateDest,
+          cod: c.cod,
+          qtd: c.qtd,
+          local: 'C',
+          pv: '',
+          id: 'PR-CUT-' + Date.now(),
+          obs: 'recortado de ' + (c.de || '?'),
+          status: 'Planejado',
+        })
+        declDraft.forEach(function (d) {
+          if (
+            d.cod === c.cod &&
+            progIso(d.data) === String(progIso(c.de)) &&
+            d.status !== 'Cancelado'
+          ) {
+            if (c.exQtd > 0) {
+              d.qtd = Math.min(Number(d.qtd) || 0, c.exQtd)
+            } else {
+              d.qtd = 0
+              d.status = 'Cancelado'
+            }
+          }
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            c.cod +
+            ' ×' +
+            c.qtd +
+            ' RECORTADO de ' +
+            (c.de || '?').split('-').reverse().join('/') +
+            ' → ' +
+            destinoBR +
             ' · nada gravado no MaxiProd'
       }
       let progProdsCache = []
@@ -11935,6 +12101,57 @@
         fatPvQ = e.target.value
         renderFatPv()
       })
+      // autocomplete: datalist com todos os PVs da carteira (PV · cliente)
+      ;(function () {
+        const dl = document.getElementById('pvList3')
+        if (!dl) return
+        const seen = {}
+        const opts = []
+        DATA.rows.forEach(function (r) {
+          const k = String(r.pv) + '|' + r.empresa
+          if (seen[k]) return
+          seen[k] = 1
+          opts.push(
+            '<option value="' +
+              r.pv +
+              '">' +
+              r.pv +
+              ' · ' +
+              String(r.cliente || '').slice(0, 32) +
+              ' · ' +
+              r.empresa +
+              '</option>',
+          )
+        })
+        dl.innerHTML = opts.sort().join('')
+      })()
+      // lookup de PV na carteira — usado pelo campo "PV destino" do card Programação
+      function pvLookup(q) {
+        const s = String(q || '')
+          .trim()
+          .toUpperCase()
+        if (!s) return null
+        const rs = DATA.rows.filter(function (r) {
+          return String(r.pv) === s
+        })
+        if (!rs.length) return null
+        const o = {
+          pv: rs[0].pv,
+          cli: rs[0].cliente,
+          emp: rs[0].empresa,
+          itens: [],
+          qtd: 0,
+          vt: 0,
+          atr: false,
+        }
+        rs.forEach(function (r) {
+          o.itens.push(r)
+          o.qtd += Number(r.qtd) || 0
+          o.vt += Number(r.vtot) || 0
+          if (r.semana === 'ATRASADO') o.atr = true
+        })
+        return o
+      }
 
       // carteira completa: busca + ordenação
       let fatAllQ = '',
@@ -12066,6 +12283,131 @@
           wbk,
           'carteira_faturar_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx',
         )
+      })
+      // datalist global de PVs para o campo "PV destino" digitável (card Programação)
+      ;(function () {
+        const dl = document.createElement('datalist')
+        dl.id = 'pvDigList'
+        const seen = {}
+        const opts = []
+        DATA.rows.forEach(function (r) {
+          const k = String(r.pv) + '|' + r.empresa
+          if (seen[k]) return
+          seen[k] = 1
+          opts.push(
+            '<option value="' +
+              r.pv +
+              '">' +
+              r.pv +
+              ' · ' +
+              String(r.cliente || '').slice(0, 32) +
+              ' · ' +
+              r.empresa +
+              '</option>',
+          )
+        })
+        dl.innerHTML = opts.sort().join('')
+        document.body.appendChild(dl)
+      })()
+      // campo "PV destino" digitável: ao digitar o nº, o Andon traz as informações do PV
+      document.addEventListener('input', function (e) {
+        const inp = e.target.closest ? e.target.closest('#tbbP input[data-p="pvdig"]') : null
+        if (!inp) return
+        const tr = inp.closest('tr')
+        const ix = parseInt(tr.getAttribute('data-ix'), 10)
+        const p = progProdsCache[ix]
+        if (!p) return
+        const info = tr.querySelector('[data-p="pvdiginfo"]')
+        const q = inp.value.trim()
+        if (!q) {
+          if (info) {
+            info.style.display = 'none'
+            info.textContent = ''
+          }
+          return
+        }
+        const o = pvLookup(q)
+        if (info) {
+          if (o) {
+            const itens = o.itens
+              .map(function (r) {
+                return r.desc ? r.desc.slice(0, 28) : r.codigo
+              })
+              .slice(0, 2)
+              .join(', ')
+            info.innerHTML =
+              '<b>PV ' +
+              o.pv +
+              '</b> · ' +
+              o.cli +
+              ' · ' +
+              o.emp +
+              '<br>' +
+              o.itens.length +
+              ' item(ns): ' +
+              itens +
+              '<br>Saldo: <b>' +
+              NF.format(o.qtd) +
+              ' un</b> · ' +
+              FMT.format(o.vt) +
+              '<br>Entrega: ' +
+              o.itens
+                .map(function (r) {
+                  return dtBR(r.iso)
+                })
+                .slice(0, 2)
+                .join(', ') +
+              (o.atr ? ' · <span style="color:#dc2626;font-weight:700">ATRASADO</span>' : '')
+            info.style.display = ''
+          } else {
+            info.innerHTML =
+              '<span style="color:#dc2626">PV ' + q + ' não encontrado na carteira</span>'
+            info.style.display = ''
+          }
+        }
+      })
+      // Enter no campo digitável = seleciona o PV (mesma ação do select)
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return
+        const inp = e.target.closest ? e.target.closest('#tbbP input[data-p="pvdig"]') : null
+        if (!inp) return
+        e.preventDefault()
+        const tr = inp.closest('tr')
+        const ix = parseInt(tr.getAttribute('data-ix'), 10)
+        const p = progProdsCache[ix]
+        if (!p) return
+        const q = inp.value.trim()
+        const o = pvLookup(q)
+        if (!o) {
+          alert('PV ' + q + ' não encontrado na carteira.')
+          return
+        }
+        const sel = tr.querySelector('select[data-p="pv"]')
+        if (sel) {
+          // adiciona a opção se o PV não estiver na lista e seleciona
+          let opt =
+            Array.prototype.find.call(sel.options, function (x) {
+              return x.value === o.pv + '|' + o.cli
+            }) ||
+            Array.prototype.find.call(sel.options, function (x) {
+              return x.value === String(o.pv)
+            })
+          if (!opt) {
+            opt = document.createElement('option')
+            opt.value = o.pv + '|' + o.cli
+            opt.textContent = o.pv + ' · ' + String(o.cli || '').slice(0, 22)
+            sel.appendChild(opt)
+          }
+          opt.selected = true
+          sel.dispatchEvent(new Event('change', { bubbles: true }))
+        }
+        const info = tr.querySelector('[data-p="pvdiginfo"]')
+        if (info) {
+          info.innerHTML =
+            '<b>PV ' + o.pv + '</b> selecionado — confirme a qtd realizada para registrar a saída'
+          info.style.display = ''
+        }
+        inp.value = ''
       })
     </script>
   </body>
