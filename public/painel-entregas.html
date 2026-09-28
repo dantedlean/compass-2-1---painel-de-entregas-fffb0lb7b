@@ -9360,7 +9360,17 @@
             const p = progProdsCache[ix]
             if (!p) return
             const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
-            dragP = { cod: p.cod, desc: p.desc, qtd: p.qtd, vtot: p.vtot, de: progDate, ex: ex }
+            const pvKeys = Object.keys(p.pvs || {})
+            const pvHerda = pvKeys.length === 1 ? pvKeys[0].split('|')[0] : ''
+            dragP = {
+              cod: p.cod,
+              desc: p.desc,
+              qtd: p.qtd,
+              vtot: p.vtot,
+              de: progDate,
+              ex: ex,
+              pv: pvHerda,
+            }
             tr.classList.add('dragging')
             try {
               e.dataTransfer.setData('text/plain', p.cod)
@@ -9631,12 +9641,22 @@
           pvNovo: ex.pvNovo || null,
           smkt: ex.smkt || null,
         })
-        // herda local e pv da declaração de origem correspondente se existir
-        const origDecl = declDraft.find(function (d) {
-          return d.cod === p.cod && progIso(d.data) === origemIso && d.status !== 'Cancelado'
-        })
+        // herda local e pv da declaração de origem correspondente se existir (prioriza pv do dragP se houver)
+        const origDecl =
+          declDraft.find(function (d) {
+            const mesmoPV = !p.pv || String(d.pv) === String(p.pv)
+            return (
+              d.cod === p.cod &&
+              progIso(d.data) === origemIso &&
+              mesmoPV &&
+              d.status !== 'Cancelado'
+            )
+          }) ||
+          declDraft.find(function (d) {
+            return d.cod === p.cod && progIso(d.data) === origemIso && d.status !== 'Cancelado'
+          })
         const locHerda = (origDecl && origDecl.local) || 'C'
-        const pvHerda = (origDecl && origDecl.pv) || ''
+        const pvHerda = p.pv || (origDecl && origDecl.pv) || ''
         // destino: nova linha Planejado no rascunho com o saldo a mover
         declDraft.push({
           dia: diaDest,
@@ -9649,11 +9669,14 @@
           obs: 'movido de ' + p.de,
           status: 'Planejado',
         })
-        // Atualiza a origem nas declarações ativas (declDraft) conforme as regras:
+        // Atualiza a origem nas declarações ativas (declDraft) com escopo de CÓDIGO + DIA + PV:
         // - Regra 1 (lote inteiro / sem fabricação): cancela na origem (qtd = 0, status = 'Cancelado')
         // - Regra 2 (fabricado parcial): reduz a origem ao que já foi fabricado
         declDraft.forEach(function (d) {
-          if (d.cod === p.cod && progIso(d.data) === origemIso && d.status !== 'Cancelado') {
+          const mesmoCod = d.cod === p.cod
+          const mesmoDia = progIso(d.data) === origemIso
+          const mesmoPV = !pvHerda || !d.pv || String(d.pv) === String(pvHerda)
+          if (mesmoCod && mesmoDia && mesmoPV && d.status !== 'Cancelado') {
             if (exQtd > 0) {
               d.qtd = Math.min(Number(d.qtd) || 0, exQtd)
             } else {
@@ -10219,6 +10242,39 @@
         smktHistorySave(h)
         localStorage.setItem('smkt|v3-migrated', '1')
       }
+      function smktSelfHeal() {
+        if (localStorage.getItem('smkt|v3-selfheal') === '1') return
+        const h = smktHistory()
+        if (!h || !h.length) {
+          localStorage.setItem('smkt|v3-selfheal', '1')
+          return
+        }
+        let ents = smktEntradas()
+        let restaurados = 0
+        h.forEach(function (x) {
+          const isArquivado =
+            x &&
+            (x.event === 'Saldo legado arquivado — origem não confirmada' ||
+              String(x.event || '').indexOf('Saldo legado arquivado') >= 0)
+          if (isArquivado && x.cod && Number(x.qtd) > 0 && !x.restaurado) {
+            ents.push({
+              cod: String(x.cod),
+              qtd: Number(x.qtd),
+              origem: 'self-heal',
+              data: x.data || new Date().toLocaleDateString('pt-BR'),
+            })
+            x.restaurado = true
+            x.event = 'Saldo legado restaurado — autocura'
+            x.motivo = 'Restaurado para saldo ativo pela autocura (v0.0.68).'
+            restaurados++
+          }
+        })
+        if (restaurados > 0) {
+          smktSave(ents, [])
+          smktHistorySave(h)
+        }
+        localStorage.setItem('smkt|v3-selfheal', '1')
+      }
       function smktNFStatus(cod) {
         // Estoque SMKT só muda por ação manual: entrada, alocação ou retirada. NF não cria nem consome saldo automaticamente.
         const ent = smktEntradas()
@@ -10256,6 +10312,7 @@
       }
       function renderSmkt() {
         smktEnsureMigrated()
+        smktSelfHeal()
         const sel = document.getElementById('smProd'),
           cods = new Set(smktCodigos())
         DATA.rows.forEach(function (r) {
@@ -11940,8 +11997,10 @@
               ' evitando duplicação?'
             if (!confirm(aviso)) return
 
-            // Aplica as regras de movimentação na origem:
+            // Aplica as regras de movimentação na origem (escopo código + dia + PV):
             declEmOutroDia.forEach(function (d) {
+              const mesmoPV = !pvStr || !d.pv || String(d.pv) === pvStr
+              if (!mesmoPV) return
               const dIso = progIso(d.data)
               const dBR = dIso.slice(8, 10) + '/' + dIso.slice(5, 7)
               const ex = getProgExec(d.cod, dBR) || getProgExec(d.cod, dIso) || {}
@@ -12186,6 +12245,7 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
+        // v0.0.68: autocura SMKT (restaura saldo legado indevidamente arquivado) e cancelamento com escopo de PV
         // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
         async pushSmkt(ent, hist) {
           if (!this.connected()) return false
