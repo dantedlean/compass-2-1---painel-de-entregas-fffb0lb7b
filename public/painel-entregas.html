@@ -9597,9 +9597,15 @@
         if (!dragP) return
         const p = dragP
         const ex = p.ex || {}
-        const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+        const exQtd = Number(ex.qtd) || 0
+        const saldo = Math.max(0, p.qtd - exQtd)
         if (saldo <= 0) {
           alert('Nada a mover — a qtd realizada cobre o planejado.')
+          return
+        }
+        const origemIso = String(progIso(p.de))
+        if (origemIso === String(dateDest)) {
+          alert('Origem e destino são o mesmo dia.')
           return
         }
         if (
@@ -9625,17 +9631,36 @@
           pvNovo: ex.pvNovo || null,
           smkt: ex.smkt || null,
         })
-        // destino: nova linha Planejado no rascunho
+        // herda local e pv da declaração de origem correspondente se existir
+        const origDecl = declDraft.find(function (d) {
+          return d.cod === p.cod && progIso(d.data) === origemIso && d.status !== 'Cancelado'
+        })
+        const locHerda = (origDecl && origDecl.local) || 'C'
+        const pvHerda = (origDecl && origDecl.pv) || ''
+        // destino: nova linha Planejado no rascunho com o saldo a mover
         declDraft.push({
           dia: diaDest,
           data: dateDest,
           cod: p.cod,
           qtd: saldo,
-          local: 'C',
-          pv: '',
+          local: locHerda,
+          pv: pvHerda,
           id: 'PR-MOVE-' + Date.now(),
           obs: 'movido de ' + p.de,
           status: 'Planejado',
+        })
+        // Atualiza a origem nas declarações ativas (declDraft) conforme as regras:
+        // - Regra 1 (lote inteiro / sem fabricação): cancela na origem (qtd = 0, status = 'Cancelado')
+        // - Regra 2 (fabricado parcial): reduz a origem ao que já foi fabricado
+        declDraft.forEach(function (d) {
+          if (d.cod === p.cod && progIso(d.data) === origemIso && d.status !== 'Cancelado') {
+            if (exQtd > 0) {
+              d.qtd = Math.min(Number(d.qtd) || 0, exQtd)
+            } else {
+              d.qtd = 0
+              d.status = 'Cancelado'
+            }
+          }
         })
         declSave()
         progBuildFromDecls()
@@ -11850,10 +11875,130 @@
             dt.length === 5
               ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
               : dt
+          const codItem = pvSel.itens[0].codigo
+          const pvStr = String(pvSel.pv)
+
+          // Verifica se este PV/código já possui declaração ativa em outro dia da semana
+          const declsAtivas = declDraft.filter(function (d) {
+            if (d.status === 'Cancelado' || Number(d.qtd) <= 0) return false
+            const mesmoCod = d.cod === codItem
+            const mesmoPV = !d.pv || !pvStr || String(d.pv) === pvStr
+            return mesmoCod && mesmoPV
+          })
+
+          const declEmOutroDia = declsAtivas.filter(function (d) {
+            return progIso(d.data) !== String(progIso(iso))
+          })
+
+          if (declEmOutroDia.length > 0) {
+            const diasOrigem = Array.from(
+              new Set(
+                declEmOutroDia.map(function (d) {
+                  return dtBR(progIso(d.data))
+                }),
+              ),
+            ).join(', ')
+
+            // Calcula total planejado e total já fabricado nos dias de origem
+            let totOrigPlanejado = 0
+            let totOrigFabricado = 0
+            declEmOutroDia.forEach(function (d) {
+              totOrigPlanejado += Number(d.qtd) || 0
+              const dIso = progIso(d.data)
+              const dBR = dIso.slice(8, 10) + '/' + dIso.slice(5, 7)
+              const ex = getProgExec(d.cod, dBR) || getProgExec(d.cod, dIso) || {}
+              totOrigFabricado += Number(ex.qtd) || 0
+            })
+
+            const saldoOrig = Math.max(0, totOrigPlanejado - totOrigFabricado)
+            if (saldoOrig <= 0) {
+              alert(
+                'Nada a mover — o item ' +
+                  codItem +
+                  ' (PV ' +
+                  pvStr +
+                  ') já está alocado em ' +
+                  diasOrigem +
+                  ' e a quantidade realizada cobre o planejado.',
+              )
+              return
+            }
+
+            const qtdMover = Math.min(q, saldoOrig)
+            const aviso =
+              'O item ' +
+              codItem +
+              ' (PV ' +
+              pvStr +
+              ') já possui declaração em ' +
+              diasOrigem +
+              (totOrigFabricado > 0 ? ' (fabricado: ' + totOrigFabricado + ' un)' : '') +
+              '.\n\nDeseja movimentar o saldo (' +
+              qtdMover +
+              ' un) para ' +
+              dtBR(iso) +
+              ' evitando duplicação?'
+            if (!confirm(aviso)) return
+
+            // Aplica as regras de movimentação na origem:
+            declEmOutroDia.forEach(function (d) {
+              const dIso = progIso(d.data)
+              const dBR = dIso.slice(8, 10) + '/' + dIso.slice(5, 7)
+              const ex = getProgExec(d.cod, dBR) || getProgExec(d.cod, dIso) || {}
+              const exQtd = Number(ex.qtd) || 0
+              if (exQtd > 0) {
+                d.qtd = Math.min(Number(d.qtd) || 0, exQtd)
+              } else {
+                d.qtd = 0
+                d.status = 'Cancelado'
+              }
+              // Atualiza o registro de execução na origem
+              setProgExec(d.cod, dBR, {
+                ok: ex.ok,
+                qtd: ex.qtd,
+                rl: iso,
+                saldo: qtdMover,
+                pvNovo: ex.pvNovo || null,
+                smkt: ex.smkt || null,
+              })
+            })
+
+            // Aloca no destino com a quantidade a mover
+            declDraft.push({
+              dia: progDia || 'Segunda',
+              data: iso,
+              cod: codItem,
+              qtd: qtdMover,
+              local: document.getElementById('addLocal').value,
+              pv: pvSel.pv,
+              id: 'PR-ADD-' + Date.now(),
+              obs: 'movido de ' + diasOrigem + ' via PV ' + pvSel.pv,
+              status: 'Planejado',
+            })
+            declSave()
+            progBuildFromDecls()
+            renderProg()
+            inp.value = ''
+            qtd.value = ''
+            pvSel = null
+            info.innerHTML =
+              '<span style="color:#16a34a">✔ ' +
+              codItem +
+              ' movido de ' +
+              diasOrigem +
+              ' para ' +
+              iso.split('-').reverse().join('/') +
+              ' (' +
+              qtdMover +
+              ' un) — nada duplicado</span>'
+            return
+          }
+
+          // Se não havia declaração em outro dia, inclui normalmente
           declDraft.push({
             dia: progDia || 'Segunda',
             data: iso,
-            cod: pvSel.itens[0].codigo,
+            cod: codItem,
             qtd: q,
             local: document.getElementById('addLocal').value,
             pv: pvSel.pv,

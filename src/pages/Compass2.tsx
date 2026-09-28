@@ -42,7 +42,7 @@ const emptyItem = {
   unit_value: '0',
   notes: '',
 }
-const emptyEvent = { reason: '', field: 'delivery_date', before: '', after: '' }
+const emptyEvent = { external_key: '', reason: '', field: 'delivery_date', before: '', after: '' }
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Não foi possível concluir a operação.'
