@@ -10095,6 +10095,10 @@
       }
       function smktHistorySave(h) {
         localStorage.setItem('smkt|historico', JSON.stringify(h || []))
+        if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
+          localStorage.setItem('andon|smkt-rev', String(Date.now()))
+          window.ANDON_SYNC.pushSmkt(smktEntradas(), h || []).catch(function () {})
+        }
       }
       function smktEntradas() {
         try {
@@ -10114,6 +10118,10 @@
       function smktSave(ent, alc) {
         localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
         localStorage.setItem('smkt|alocs', '[]')
+        if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
+          localStorage.setItem('andon|smkt-rev', String(Date.now()))
+          window.ANDON_SYNC.pushSmkt(ent || [], smktHistory()).catch(function () {})
+        }
       }
       function smktConsume(cod, q, evento, meta) {
         q = Math.max(0, Number(q) || 0)
@@ -12033,6 +12041,51 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
+        // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
+        async pushSmkt(ent, hist) {
+          if (!this.connected()) return false
+          const body = {
+            cycle_id: 'flrv0lcbha5hh5v',
+            event_type: 'system',
+            occurred_at: new Date().toISOString(),
+            reason: 'SMKT Andon — entradas + histórico',
+            source: 'andon-smkt',
+            changes: { entradas: ent || [], historico: hist || [], rev: Date.now() },
+            before_snapshot: { field: 'andon_smkt', value: 'v' + Date.now() },
+          }
+          const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(body),
+          })
+          if (!r.ok) {
+            throw new Error('push smkt falhou (' + r.status + ')')
+          }
+          return true
+        },
+        async syncSmktFromServer() {
+          if (!this.connected()) return false
+          const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-smkt')"
+          const url =
+            this.api +
+            '/api/collections/reprogramming_events/records?filter=' +
+            encodeURIComponent(f) +
+            '&sort=-created&perPage=1'
+          const r = await fetch(url, { headers: this.headers() })
+          if (!r.ok) return false
+          const d = await r.json()
+          if (!d.items || !d.items.length) return false
+          const ch = d.items[0].changes || {}
+          if (!Array.isArray(ch.entradas)) return false
+          const locRev = Number(localStorage.getItem('andon|smkt-rev') || 0)
+          const srvRev = Number(ch.rev || 0)
+          if (locRev > srvRev) return false // local mais novo — push prevalece
+          localStorage.setItem('smkt|entradas', JSON.stringify(ch.entradas))
+          if (Array.isArray(ch.historico))
+            localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
+          localStorage.setItem('andon|smkt-rev', String(srvRev))
+          return true
+        },
       }
       window.ANDON_SYNC = ANDON_SYNC
       function andonToggleConn() {
@@ -12112,6 +12165,16 @@
                 renderProg()
                 const st = document.getElementById('declStatus')
                 if (st) st.textContent = 'Rascunho carregado do servidor (Compass 2.1)'
+              }
+            })
+            .catch(function () {})
+          ANDON_SYNC.syncSmktFromServer()
+            .then(function (pulled) {
+              if (pulled && typeof renderSmkt === 'function') {
+                renderSmkt()
+                renderSemana()
+                renderKpis()
+                renderTabela()
               }
             })
             .catch(function () {})
