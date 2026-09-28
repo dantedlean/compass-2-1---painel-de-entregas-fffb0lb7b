@@ -481,6 +481,48 @@
             "
             id="hojeProg"
           ></span>
+          <button id="btnConn" class="dlbtn" style="display: none" onclick="andonToggleConn()">
+            🔗 Conectar servidor
+          </button>
+          <span class="note" style="margin: 0; color: #cbd5e1" id="connInfo"></span>
+          <div id="connBox" style="display: none; gap: 6px; align-items: center; flex-wrap: wrap">
+            <input
+              id="connEmail"
+              type="email"
+              placeholder="e-mail"
+              style="
+                padding: 5px 8px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                background: rgba(255, 255, 255, 0.12);
+                color: #fff;
+                border-radius: 8px;
+                font-size: 12px;
+              "
+            />
+            <input
+              id="connPass"
+              type="password"
+              placeholder="senha"
+              style="
+                padding: 5px 8px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                background: rgba(255, 255, 255, 0.12);
+                color: #fff;
+                border-radius: 8px;
+                font-size: 12px;
+              "
+            />
+            <button
+              id="btnConnGo"
+              class="dlbtn"
+              style="background: #16a34a; border-color: #16a34a; color: #fff"
+            >
+              Entrar
+            </button>
+            <span class="note" style="margin: 0; color: #cbd5e1"
+              >conectando, o rascunho fica salvo no servidor — funciona em qualquer máquina</span
+            >
+          </div>
         </div>
         <div class="card" id="cardProg">
           <h2>Programação de produção <span class="tagP">AGENDA EDITÁVEL</span></h2>
@@ -11895,6 +11937,186 @@
       // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
       declDraft = declLoad()
       progBuildFromDecls()
+
+      // ==================== SINCRONIZAÇÃO DO RASCUNHO COM O SERVIDOR (Compass 2.1 / PocketBase) ====================
+      // Dante 28/09: movimentos precisam FIXAR — rascunho migra do localStorage para o backend do Compass 2.1.
+      // Estratégia: localStorage continua sendo cache local; cada alteração grava um snapshot do rascunho
+      // completo em reprogramming_events (event_type 'system', source 'andon-draft'). Último snapshot vence.
+      const ANDON_SYNC = {
+        api: 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev',
+        token: localStorage.getItem('andon|token') || '',
+        user: null,
+        pending: null,
+        connected: function () {
+          return !!this.token
+        },
+        headers: function () {
+          return { Authorization: this.token, 'Content-Type': 'application/json' }
+        },
+        async login(email, pass) {
+          const r = await fetch(this.api + '/api/collections/users/auth-with-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: email, password: pass }),
+          })
+          if (!r.ok) throw new Error('login falhou (' + r.status + ')')
+          const d = await r.json()
+          this.token = d.token
+          this.user = d.record
+          localStorage.setItem('andon|token', d.token)
+          localStorage.setItem(
+            'andon|user',
+            JSON.stringify({
+              id: d.record.id,
+              email: d.record.email,
+              name: d.record.name || d.record.email,
+            }),
+          )
+          return d
+        },
+        async push(draft, motivo) {
+          if (!this.connected()) return false
+          const body = {
+            cycle_id: 'flrv0lcbha5hh5v',
+            event_type: 'system',
+            occurred_at: new Date().toISOString(),
+            reason: motivo || 'Rascunho do Andon salvo no servidor',
+            source: 'andon-draft',
+            changes: { draft: draft, rev: Date.now(), browser: navigator.userAgent.slice(0, 80) },
+            before_snapshot: { field: 'andon_draft', value: 'v' + Date.now() },
+          }
+          const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(body),
+          })
+          if (!r.ok) {
+            const t = await r.text()
+            throw new Error('push falhou (' + r.status + '): ' + t.slice(0, 120))
+          }
+          return true
+        },
+        async pull() {
+          if (!this.connected()) return null
+          const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-draft')"
+          const url =
+            this.api +
+            '/api/collections/reprogramming_events/records' +
+            '?filter=' +
+            encodeURIComponent(f) +
+            '&sort=-created&perPage=1'
+          const r = await fetch(url, { headers: this.headers() })
+          if (!r.ok) return null
+          const d = await r.json()
+          if (!d.items || !d.items.length) return null
+          return d.items[0]
+        },
+        async syncFromServer() {
+          const ev = await this.pull()
+          if (!ev) return false
+          const srv = ev.changes && ev.changes.draft
+          if (!Array.isArray(srv)) return false
+          const loc = JSON.stringify(declDraft || [])
+          const srvS = JSON.stringify(srv)
+          if (loc === srvS) return false // já está igual
+          // conflito: prevalece o mais recente (rev = epoch no push)
+          const locRev = Number(localStorage.getItem('andon|rev') || 0)
+          const srvRev = Number((ev.changes && ev.changes.rev) || 0)
+          if (locRev > srvRev) {
+            this.push(declDraft, 'Rascunho local mais novo — reenviado ao servidor').catch(
+              function () {},
+            )
+            return false
+          }
+          declDraft = srv
+          declSave()
+          localStorage.setItem('andon|rev', String(srvRev))
+          return true
+        },
+      }
+      window.ANDON_SYNC = ANDON_SYNC
+      function andonToggleConn() {
+        const box = document.getElementById('connBox')
+        box.style.display = box.style.display === 'none' ? 'flex' : 'none'
+        if (box.style.display === 'flex') {
+          const e = document.getElementById('connEmail')
+          if (e && !e.value) e.focus()
+        }
+      }
+      window.andonToggleConn = andonToggleConn
+      ;(function () {
+        const btn = document.getElementById('btnConn')
+        if (!btn) return
+        const info = document.getElementById('connInfo')
+        function paint() {
+          if (ANDON_SYNC.connected()) {
+            const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
+            btn.style.display = ''
+            btn.textContent = '🔗 ' + String(u.name || u.email || 'conectado').slice(0, 18)
+            info.textContent = 'rascunho salvo no servidor'
+          } else {
+            btn.style.display = ''
+            btn.textContent = '🔗 Conectar servidor'
+            info.textContent = 'rascunho só neste navegador'
+          }
+        }
+        paint()
+        const go = document.getElementById('btnConnGo')
+        go.addEventListener('click', async function () {
+          const email = document.getElementById('connEmail').value.trim()
+          const pass = document.getElementById('connPass').value
+          if (!email || !pass) {
+            alert('Informe e-mail e senha.')
+            return
+          }
+          go.disabled = true
+          go.textContent = 'Entrando…'
+          try {
+            await ANDON_SYNC.login(email, pass)
+            paint()
+            const st = document.getElementById('declStatus')
+            if (st) st.textContent = 'Conectado ao servidor — rascunho sincronizado entre máquinas'
+            document.getElementById('connBox').style.display = 'none'
+            // puxa o último snapshot do servidor e depois envia o estado atual se for mais novo
+            try {
+              const pulled = await ANDON_SYNC.syncFromServer()
+              if (pulled) {
+                renderProg()
+                if (st) st.textContent = 'Rascunho do servidor carregado'
+              }
+            } catch (e) {}
+            try {
+              await ANDON_SYNC.push(declDraft, 'Sessão conectada — estado atual salvo')
+            } catch (e) {}
+          } catch (e) {
+            alert('Falha ao conectar: ' + e.message)
+          } finally {
+            go.disabled = false
+            go.textContent = 'Entrar'
+          }
+        })
+        // hook global: toda declSave() empurra o rascunho ao servidor (fire-and-forget)
+        const _origDeclSave = declSave
+        declSave = function () {
+          _origDeclSave()
+          if (ANDON_SYNC.connected()) {
+            localStorage.setItem('andon|rev', String(Date.now()))
+            ANDON_SYNC.push(declDraft).catch(function () {})
+          }
+        }
+        // ao abrir: se conectado, puxa o snapshot do servidor (servidor vence a menos que o local seja mais novo)
+        if (ANDON_SYNC.connected()) {
+          ANDON_SYNC.syncFromServer()
+            .then(function (pulled) {
+              if (pulled) {
+                renderProg()
+                const st = document.getElementById('declStatus')
+                if (st) st.textContent = 'Rascunho carregado do servidor (Compass 2.1)'
+              }
+            })
+            .catch(function () {})
+        }
+      })()
       renderProg()
       renderKpis()
       renderSemana()
