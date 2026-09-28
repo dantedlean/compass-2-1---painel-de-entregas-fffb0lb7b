@@ -11892,6 +11892,9 @@
         })
       }
 
+      // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
+      declDraft = declLoad()
+      progBuildFromDecls()
       renderProg()
       renderKpis()
       renderSemana()
