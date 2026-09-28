@@ -529,6 +529,75 @@
             ></span>
           </div>
           <div class="wbtns" id="pbtns"></div>
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              align-items: center;
+              flex-wrap: wrap;
+              margin: 10px 0 4px;
+              padding: 10px;
+              background: #f8fafc;
+              border: 1px solid var(--line);
+              border-radius: 10px;
+            "
+            id="progAddBar"
+          >
+            <b style="font-size: 12.5px">+ Incluir item:</b>
+            <input
+              id="addPv"
+              placeholder="Nº do PV"
+              list="pvDigList"
+              inputmode="numeric"
+              style="
+                width: 100px;
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-weight: 700;
+              "
+            />
+            <span id="addInfo" class="note" style="flex: 1; min-width: 240px; margin: 0"
+              >digite o PV — produto, cliente, saldo e entrega aparecem aqui</span
+            >
+            <label class="note" style="margin: 0">Qtd</label>
+            <input
+              id="addQtd"
+              type="number"
+              min="1"
+              placeholder="0"
+              style="
+                width: 80px;
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                text-align: right;
+              "
+            />
+            <select
+              id="addLocal"
+              style="padding: 6px; border: 1px solid var(--line); border-radius: 8px"
+            >
+              <option value="C">Curitiba</option>
+              <option value="V">Vinhedo</option>
+            </select>
+            <button
+              id="btnAddProg"
+              class="dlbtn"
+              style="background: #16a34a; border-color: #16a34a; color: #fff"
+            >
+              + Incluir no dia selecionado
+            </button>
+            <button
+              id="btnCleanFoss"
+              class="dlbtn"
+              style="display: none; background: #fee2e2; border-color: #fecaca; color: #991b1b"
+              title="Remove linhas do rascunho que não têm saldo na carteira (PV já faturado ou inexistente)"
+            >
+              🧹 Remover inválidas
+            </button>
+            <span class="note" id="declStatus" style="margin: 0"></span>
+          </div>
           <div class="tblwrap" style="max-height: 420px">
             <table id="tbProg">
               <thead>
@@ -540,38 +609,6 @@
               </tfoot>
             </table>
           </div>
-          <details style="margin-top: 12px" id="progManage">
-            <summary style="cursor: pointer; font-weight: 800; color: #1e3a8a">
-              ✏️ Editar programação declarada (datas, qtd, produto, PV, local; adicionar/remover)
-            </summary>
-            <div class="note" style="margin: 8px 0">
-              As alterações ficam neste navegador até baixar o Excel e aplicar pela skill. Não
-              alteram o MaxiProd. Status Planejado não é produção realizada. Para replanejar os
-              demais entregáveis, usar a devolutiva exportada com <code>--programacao</code>.
-            </div>
-            <div class="toolbar">
-              <button id="btnAddDecl" class="dlbtn">+ Adicionar linha</button
-              ><button id="btnDlDecl" class="dlbtn">⬇ Baixar programação editada (.xlsx)</button
-              ><span class="note" id="declStatus"></span>
-            </div>
-            <div class="tblwrap" style="max-height: 340px">
-              <table>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Data produção</th>
-                    <th>Código</th>
-                    <th>Qtd</th>
-                    <th>Local</th>
-                    <th>PV (opcional)</th>
-                    <th>Observação</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="declRows"></tbody>
-              </table>
-            </div>
-          </details>
         </div>
         <div class="card" id="cardSmkt">
           <h2>🛒 Supermercado — produtos acabados <span class="tagS">ESTOQUE DE PRONTOS</span></h2>
@@ -11544,7 +11581,8 @@
       }
       function renderDeclEditor() {
         const tb = document.getElementById('declRows')
-        if (!tb) return
+        if (!tb) return // editor desativado 28/09 — inclusão pela barra do card principal
+        return
         tb.innerHTML = declDraft
           .map(function (d, i) {
             return (
@@ -11654,31 +11692,145 @@
         })
         declSave()
         progBuildFromDecls()
-        renderDeclEditor()
         renderProg()
-        if (openEditor) {
-          const d = document.getElementById('progManage')
-          if (d) d.open = true
-          const drs = document.querySelectorAll('#declRows tr')
-          const last = drs[drs.length - 1]
-          if (last) {
-            const c = last.querySelector('input[data-decl=cod]')
-            if (c) c.focus()
-          }
-        }
         const st = document.getElementById('declStatus')
         if (st)
           st.textContent =
             'Nova linha em ' + iso.split('-').reverse().join('/') + ' — preencha código, qtd e PV'
       }
       window.progAddLine = progAddLineFn
-      if (document.getElementById('declRows')) {
-        declDraft = declLoad()
-        progBuildFromDecls()
-        renderDeclEditor()
-        document.getElementById('btnAddDecl').addEventListener('click', function () {
-          progAddLineFn(false)
+      // ===== BARRA DE INCLUSÃO SIMPLES (card principal) — editor de linhas desativado 28/09 =====
+      ;(function () {
+        const inp = document.getElementById('addPv')
+        if (!inp) return
+        const info = document.getElementById('addInfo'),
+          qtd = document.getElementById('addQtd'),
+          btn = document.getElementById('btnAddProg')
+        let pvSel = null
+        function showInfo() {
+          const o = pvLookup(inp.value)
+          if (!o) {
+            pvSel = null
+            info.innerHTML = inp.value.trim()
+              ? '<span style="color:#dc2626">PV ' +
+                inp.value.trim() +
+                ' não encontrado na carteira</span>'
+              : 'digite o PV — produto, cliente, saldo e entrega aparecem aqui'
+            return
+          }
+          pvSel = o
+          const itens = o.itens
+            .map(function (r) {
+              return '<b>' + r.codigo + '</b> ' + (r.desc || '').slice(0, 40)
+            })
+            .join(' · ')
+          info.innerHTML =
+            '<b style="color:#16a34a">PV ' +
+            o.pv +
+            ' · ' +
+            o.cli +
+            ' · ' +
+            o.emp +
+            '</b> — ' +
+            itens +
+            ' · saldo <b>' +
+            NF.format(o.qtd) +
+            ' un</b> · entrega ' +
+            o.itens
+              .map(function (r) {
+                return dtBR(r.iso)
+              })
+              .join(', ') +
+            (o.atr ? ' <span class="tagF">ATRASADO</span>' : '')
+          if (!qtd.value) qtd.value = o.qtd
+        }
+        inp.addEventListener('input', showInfo)
+        inp.addEventListener('change', showInfo)
+        btn.addEventListener('click', function () {
+          if (!pvSel) {
+            alert('Digite um PV válido primeiro — o Andon traz os dados do item.')
+            return
+          }
+          const q = Number(qtd.value) || 0
+          if (q <= 0) {
+            alert('Informe a quantidade.')
+            return
+          }
+          const dt =
+            (
+              (DATA.progSemana &&
+                DATA.progSemana.dias.find(function (a) {
+                  return a.dia === progDia
+                })) ||
+              {}
+            ).data || progDate
+          const iso =
+            dt.length === 5
+              ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
+              : dt
+          declDraft.push({
+            dia: progDia || 'Segunda',
+            data: iso,
+            cod: pvSel.itens[0].codigo,
+            qtd: q,
+            local: document.getElementById('addLocal').value,
+            pv: pvSel.pv,
+            id: 'PR-ADD-' + Date.now(),
+            obs: 'incluído via PV ' + pvSel.pv,
+            status: 'Planejado',
+          })
+          declSave()
+          progBuildFromDecls()
+          renderProg()
+          inp.value = ''
+          qtd.value = ''
+          pvSel = null
+          info.innerHTML =
+            '<span style="color:#16a34a">✔ Incluído em ' +
+            iso.split('-').reverse().join('/') +
+            ' — nada gravado no MaxiProd</span>'
         })
+        // limpar declarações inválidas (fósseis do aviso vermelho)
+        const btnF = document.getElementById('btnCleanFoss')
+        btnF.addEventListener('click', function () {
+          const f = window.fosseisCache || []
+          if (!f.length) {
+            alert('Nenhuma linha inválida agora.')
+            return
+          }
+          if (
+            !confirm(
+              'Remover ' +
+                f.length +
+                ' declaração(ões) sem cobertura (PV faturado/inexistente)? Nada é gravado no MaxiProd.',
+            )
+          )
+            return
+          const chave = {}
+          f.forEach(function (x) {
+            chave[x.cod + '|' + x.pv + '|' + x.data] = 1
+          })
+          declDraft = declDraft.filter(function (d) {
+            return !chave[d.cod + '|' + (d.pv || '—') + '|' + d.data]
+          })
+          declSave()
+          progBuildFromDecls()
+          renderProg()
+          const st = document.getElementById('declStatus')
+          if (st) st.textContent = f.length + ' linha(s) inválida(s) removida(s) do rascunho'
+        })
+        // botão aparece quando há fósseis
+        const updF = function () {
+          const f = window.fosseisCache || []
+          btnF.style.display = f.length ? '' : 'none'
+        }
+        const _origRPT2 = renderProgTabela
+        renderProgTabela = function () {
+          _origRPT2()
+          updF()
+        }
+      })()
+      if (document.getElementById('btnDlDecl')) {
         document.getElementById('btnDlDecl').addEventListener('click', function () {
           const cols = ['Dia', 'Data', 'Codigo', 'Qtd', 'Local', 'PV', 'ID', 'Observacao', 'Status']
           const rows = declDraft.map(function (d) {
