@@ -470,6 +470,17 @@
           ></span>
           <span style="font-size: 14px; font-weight: 700" id="hojeDia"></span>
           <span class="note" style="margin: 0" id="hojeRel"></span>
+          <span
+            class="badge"
+            style="
+              background: #16a34a;
+              color: #fff;
+              border: none;
+              font-size: 13px;
+              font-weight: 800;
+            "
+            id="hojeProg"
+          ></span>
         </div>
         <div class="card" id="cardProg">
           <h2>Programação de produção <span class="tagP">AGENDA EDITÁVEL</span></h2>
@@ -8984,6 +8995,7 @@
             pct +
             '%</span>'
         }
+        if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
         const tb = document.getElementById('tbbP')
         // editar qtd a fabricar e excluir linha (delegação — opera nas declarações do dia)
@@ -9488,6 +9500,47 @@
           '/' +
           String(agora.getMonth() + 1).padStart(2, '0')
         document.getElementById('hojeDia').textContent = ISO_W[agora.getDay()]
+        // programado × realizado de HOJE (atualiza junto com o card principal)
+        window.updHojeProg = function () {
+          const el = document.getElementById('hojeProg')
+          if (!el) return
+          const hjBR =
+            String(agora.getDate()).padStart(2, '0') +
+            '/' +
+            String(agora.getMonth() + 1).padStart(2, '0')
+          const dias = DATA.progSemana
+            ? DATA.progSemana.dias.filter(function (a) {
+                return a.data === hjBR
+              })
+            : []
+          let prog = 0,
+            done = 0
+          dias.forEach(function (a) {
+            prog += a.qtd || 0
+          })
+          dias.forEach(function (a) {
+            const ex = getProgExec(a.cod, hjBR)
+            done += (ex && ex.qtd) || 0
+          })
+          // dedup: getProgExec é por produto+dia — somar uma vez por produto
+          const vistos = {}
+          done = 0
+          dias.forEach(function (a) {
+            if (vistos[a.cod]) return
+            vistos[a.cod] = 1
+            const ex = getProgExec(a.cod, hjBR)
+            done += (ex && ex.qtd) || 0
+          })
+          const pct = prog > 0 ? Math.round((done / prog) * 100) : done > 0 ? 100 : 0
+          el.textContent =
+            'Hoje: ' +
+            NF.format(Math.round(prog)) +
+            ' un programadas · ' +
+            NF.format(Math.round(done)) +
+            ' un realizadas · ' +
+            pct +
+            '%'
+        }
         const diff0 = Date.now()
         function tick() {
           const n = new Date()
