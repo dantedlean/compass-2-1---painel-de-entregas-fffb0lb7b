@@ -10265,7 +10265,7 @@
             })
             x.restaurado = true
             x.event = 'Saldo legado restaurado — autocura'
-            x.motivo = 'Restaurado para saldo ativo pela autocura (v0.0.68).'
+            x.motivo = 'Restaurado para saldo ativo pela autocura (v0.0.69).'
             restaurados++
           }
         })
@@ -12245,6 +12245,7 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
+        // v0.0.69: autocura SMKT com pull por maior rev, reset de flag e cura pós-pull
         // v0.0.68: autocura SMKT (restaura saldo legado indevidamente arquivado) e cancelamento com escopo de PV
         // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
         async pushSmkt(ent, hist) {
@@ -12275,13 +12276,20 @@
             this.api +
             '/api/collections/reprogramming_events/records?filter=' +
             encodeURIComponent(f) +
-            '&sort=-created&perPage=1'
+            '&sort=-created&perPage=5'
           const r = await fetch(url, { headers: this.headers() })
           if (!r.ok) return false
           const d = await r.json()
           if (!d.items || !d.items.length) return false
-          const ch = d.items[0].changes || {}
-          if (!Array.isArray(ch.entradas)) return false
+          const validItems = d.items.filter(function (it) {
+            return it && it.changes && Array.isArray(it.changes.entradas)
+          })
+          if (!validItems.length) return false
+          validItems.sort(function (a, b) {
+            return Number(b.changes.rev || 0) - Number(a.changes.rev || 0)
+          })
+          const best = validItems[0]
+          const ch = best.changes || {}
           const locRev = Number(localStorage.getItem('andon|smkt-rev') || 0)
           const srvRev = Number(ch.rev || 0)
           if (locRev > srvRev) return false // local mais novo — push prevalece
@@ -12289,6 +12297,7 @@
           if (Array.isArray(ch.historico))
             localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
           localStorage.setItem('andon|smkt-rev', String(srvRev))
+          localStorage.removeItem('smkt|v3-selfheal')
           return true
         },
       }
@@ -12373,10 +12382,12 @@
               }
             })
             .catch(function () {})
+          if (typeof smktSelfHeal === 'function') smktSelfHeal()
           ANDON_SYNC.syncSmktFromServer()
             .then(function (pulled) {
-              if (pulled && typeof renderSmkt === 'function') {
-                renderSmkt()
+              if (pulled) {
+                if (typeof smktSelfHeal === 'function') smktSelfHeal()
+                if (typeof renderSmkt === 'function') renderSmkt()
                 renderSemana()
                 renderKpis()
                 renderTabela()
