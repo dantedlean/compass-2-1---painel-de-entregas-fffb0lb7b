@@ -10163,13 +10163,123 @@
       function smktAlocs() {
         return []
       }
-      function smktSave(ent, alc) {
-        localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
+
+      window.smktLegitConsumoAtiva = false
+
+      function smktGuardZero(nextEnts, ctx) {
+        ctx = ctx || {}
+        const current = smktEntradas()
+        const curQtd = current.reduce(function (acc, x) {
+          return acc + (Number(x && x.qtd) || 0)
+        }, 0)
+        const nextArr = Array.isArray(nextEnts)
+          ? nextEnts.filter(function (x) {
+              return x && x.cod && Number(x.qtd) > 0.0001
+            })
+          : []
+        const nextQtd = nextArr.reduce(function (acc, x) {
+          return acc + (Number(x && x.qtd) || 0)
+        }, 0)
+        const legit = ctx.legit === true || window.smktLegitConsumoAtiva === true
+        if (curQtd > 0.0001 && nextQtd <= 0.0001 && !legit) {
+          // tentativa de zeramento automático BLOQUEADA
+          try {
+            smktHistorySave({
+              ts: new Date().toISOString(),
+              tipo: 'guard-bloqueio',
+              origem: ctx.origem || 'desconhecida',
+              msg:
+                'Zeramento automático do SMKT bloqueado pelo poka-yoke (qtd local ' + curQtd + ')',
+            })
+          } catch (e) {}
+          try {
+            if (typeof toast === 'function')
+              toast('Poka-yoke: zeramento automático do SMKT bloqueado — saldo preservado.')
+          } catch (e) {}
+          console.warn('[smktGuardZero] zeramento bloqueado', {
+            origem: ctx.origem,
+            curQtd: curQtd,
+            nextQtd: nextQtd,
+          })
+          return false
+        }
+        return true
+      }
+
+      // Guarda geral Poka-yoke antes de operações destrutivas no saldo do SMKT (v0.0.70)
+      function smktGuardBeforeDestructive(newEnts, context) {
+        const current = smktEntradas()
+        const curQtd = current.reduce(function (a, x) {
+          return a + (Number(x && x.qtd) || 0)
+        }, 0)
+        const newArr = Array.isArray(newEnts)
+          ? newEnts.filter(function (x) {
+              return x && x.cod && Number(x.qtd) > 0.0001
+            })
+          : []
+        const newQtd = newArr.reduce(function (a, x) {
+          return a + (Number(x && x.qtd) || 0)
+        }, 0)
+
+        // Se o saldo atual já está vazio, ou o novo saldo não reduz quantidade total nem produtos, liberação normal
+        if (curQtd <= 0.0001) return true
+        if (newQtd >= curQtd - 0.0001 && newArr.length >= current.length) return true
+
+        const ctx = context || {}
+        // Ações explícitas permitidas: consumo manual confirmado (retirada/alocação), desfazer de entrada, ou confirmação explícita
+        if (
+          ctx.explicitUserAction === true ||
+          ctx.source === 'consume' ||
+          ctx.source === 'undo-entry' ||
+          ctx.source === 'confirmed-dialog'
+        ) {
+          return true
+        }
+
+        // Redução acidental ou automática bloqueada
+        const msg =
+          'Poka-yoke SMKT: gravação destrutiva/redução de saldo bloqueada (' +
+          (ctx.source || 'ação não explicitamente autorizada') +
+          '). Saldo atual: ' +
+          curQtd.toFixed(0) +
+          ' un (' +
+          current.length +
+          ' itens) → Proposta: ' +
+          newQtd.toFixed(0) +
+          ' un (' +
+          newArr.length +
+          ' itens).'
+        console.warn(msg)
+        try {
+          const h = smktHistory()
+          h.unshift({
+            data: new Date().toLocaleDateString('pt-BR'),
+            cod: 'SISTEMA',
+            qtd: 0,
+            event: 'Poka-yoke: Gravação destrutiva bloqueada',
+            motivo: msg,
+          })
+          localStorage.setItem('smkt|historico', JSON.stringify(h))
+        } catch (e) {}
+        return false
+      }
+
+      function smktSave(ent, alc, context) {
+        const nextEnt = ent || []
+        // Guarda poka-yoke: bloqueia zeramentos indevidos e reduções não explicitadas
+        if (!smktGuardZero(nextEnt, context)) {
+          return false
+        }
+        if (!smktGuardBeforeDestructive(nextEnt, context)) {
+          return false
+        }
+        localStorage.setItem('smkt|entradas', JSON.stringify(nextEnt))
         localStorage.setItem('smkt|alocs', '[]')
         if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
           localStorage.setItem('andon|smkt-rev', String(Date.now()))
-          window.ANDON_SYNC.pushSmkt(ent || [], smktHistory()).catch(function () {})
+          window.ANDON_SYNC.pushSmkt(nextEnt, smktHistory()).catch(function () {})
         }
+        return true
       }
       function smktConsume(cod, q, evento, meta) {
         q = Math.max(0, Number(q) || 0)
@@ -10181,12 +10291,25 @@
             ents[i].qtd -= take
             need -= take
           }
-        smktSave(
-          ents.filter(function (x) {
-            return Number(x.qtd) > 0.0001
-          }),
-          [],
-        )
+        window.smktLegitConsumoAtiva = true
+        try {
+          smktSave(
+            ents.filter(function (x) {
+              return Number(x.qtd) > 0.0001
+            }),
+            [],
+            {
+              explicitUserAction: true,
+              source: 'consume',
+              cod: cod,
+              qtd: q,
+              evento: evento,
+              legit: true,
+            },
+          )
+        } finally {
+          window.smktLegitConsumoAtiva = false
+        }
         if (q > 0) {
           const h = smktHistory()
           h.unshift(
@@ -10204,6 +10327,8 @@
         }
         return need <= 0.0001
       }
+      // Poka-yoke v0.0.70: smktEnsureMigrated NUNCA mais zera entradas nem arquiva saldo automaticamente.
+      // Se houver saldo existente no localStorage, preserva-o intacto.
       function smktEnsureMigrated() {
         if (localStorage.getItem('smkt|v3-migrated') === '1') return
         let ents = []
@@ -10215,19 +10340,10 @@
           alcs = JSON.parse(localStorage.getItem('smkt|alocs') || '[]')
         } catch (e) {}
         const h = smktHistory()
-        let keep = []
-        ;(Array.isArray(ents) ? ents : []).forEach(function (x) {
-          if (!x || !x.cod || !(Number(x.qtd) > 0)) return
-          h.unshift({
-            data: x.data || new Date().toLocaleDateString('pt-BR'),
-            cod: String(x.cod),
-            qtd: Number(x.qtd),
-            event: 'Saldo legado arquivado — origem não confirmada',
-            motivo: 'Não foi entrada manual confirmada por Dante; removido do saldo ativo.',
-          })
-        })
+        // Registra no histórico apenas alocações legadas já finalizadas para rastreabilidade, sem tocar em entradas
+        let loggedAlcs = 0
         ;(Array.isArray(alcs) ? alcs : []).forEach(function (a) {
-          if (a && a.cod && Number(a.qtd) > 0)
+          if (a && a.cod && Number(a.qtd) > 0) {
             h.unshift({
               data: a.data || new Date().toLocaleDateString('pt-BR'),
               cod: String(a.cod),
@@ -10235,11 +10351,15 @@
               event: 'Alocação legada — histórico',
               pv: String(a.pv || ''),
               nf: a.nf || '',
-              motivo: a.obs || '',
+              motivo: a.obs || 'Migração legada informativa',
             })
+            loggedAlcs++
+          }
         })
-        smktSave([], [])
-        smktHistorySave(h)
+        if (loggedAlcs > 0) {
+          smktHistorySave(h)
+        }
+        // Entradas ativas NÃO são modificadas e smktSave([], []) foi permanentemente eliminado.
         localStorage.setItem('smkt|v3-migrated', '1')
       }
       function smktSelfHeal() {
@@ -10265,7 +10385,7 @@
             })
             x.restaurado = true
             x.event = 'Saldo legado restaurado — autocura'
-            x.motivo = 'Restaurado para saldo ativo pela autocura (v0.0.69).'
+            x.motivo = 'Restaurado para saldo ativo pela autocura (v0.0.70).'
             restaurados++
           }
         })
@@ -12245,6 +12365,7 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
+        // v0.0.70: poka-yoke smktGuardZero anti-zeramento do saldo SMKT (sync pull e gravação local)
         // v0.0.69: autocura SMKT com pull por maior rev, reset de flag e cura pós-pull
         // v0.0.68: autocura SMKT (restaura saldo legado indevidamente arquivado) e cancelamento com escopo de PV
         // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
@@ -12293,6 +12414,19 @@
           const locRev = Number(localStorage.getItem('andon|smkt-rev') || 0)
           const srvRev = Number(ch.rev || 0)
           if (locRev > srvRev) return false // local mais novo — push prevalece
+
+          // Poka-yoke v0.0.70: validação de zeramento antes de sobrescrever entradas locais
+          if (!smktGuardZero(ch.entradas, { origem: 'sync' })) {
+            // Servidor mandou lista vazia mas local tem saldo: NÃO grava entradas vazias,
+            // preserva o saldo local e dispara push local para reidratar o servidor com rev maior.
+            if (Array.isArray(ch.historico))
+              localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
+            const newRev = Math.max(Date.now(), srvRev + 1)
+            localStorage.setItem('andon|smkt-rev', String(newRev))
+            this.pushSmkt(smktEntradas(), smktHistory()).catch(function () {})
+            return false
+          }
+
           localStorage.setItem('smkt|entradas', JSON.stringify(ch.entradas))
           if (Array.isArray(ch.historico))
             localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
