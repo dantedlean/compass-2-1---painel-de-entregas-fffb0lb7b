@@ -769,7 +769,19 @@
           <div class="wbtns" id="dbtns" style="margin-top: -6px"></div>
           <div class="toolbar" style="justify-content: space-between">
             <span class="note" id="semInfo" style="margin: 0"></span>
-            <div style="display: flex; gap: 12px; align-items: center">
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
+              <input
+                type="search"
+                id="fSem"
+                placeholder="🔍 buscar PV, código ou descrição…"
+                style="
+                  padding: 6px 10px;
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  font-size: 12.5px;
+                  min-width: 220px;
+                "
+              />
               <div class="toggle">
                 <button id="vSem" class="on" onclick="setVisaoSemana('sem')">Semana inteira</button
                 ><button id="vDia" onclick="setVisaoSemana('dia')">Dias úteis</button>
@@ -10901,6 +10913,26 @@
         let rs = visiveis(DATA.rows, 'chkFreteS').filter(function (r) {
           return siOf(r) === semSel
         })
+        // busca "contém" na página inicial: PV, código, descrição, cliente (digitou parte → já filtra)
+        const fSemEl = document.getElementById('fSem')
+        if (fSemEl && fSemEl.value.trim()) {
+          const q = fSemEl.value.trim().toUpperCase()
+          rs = rs.filter(function (r) {
+            return (
+              String(r.pv) +
+              ' ' +
+              r.codigo +
+              ' ' +
+              r.desc +
+              ' ' +
+              r.cliente +
+              ' ' +
+              r.empresa
+            )
+              .toUpperCase()
+              .includes(q)
+          })
+        }
         // visão diária: filtra pelo dia útil selecionado (botões de dia substituem o título)
         if (visaoSemana === 'dia') {
           rs = rs.filter(function (r) {
@@ -12253,6 +12285,14 @@
         fatPvQ = e.target.value
         renderFatPv()
       })
+      // busca "contém" na página inicial (Entregas por semana) — mesma técnica da aba Produtos a Faturar
+      ;(function () {
+        const el = document.getElementById('fSem')
+        if (!el) return
+        el.addEventListener('input', function (e) {
+          renderSemana()
+        })
+      })()
       // autocomplete: datalist com todos os PVs da carteira (PV · cliente)
       ;(function () {
         const dl = document.getElementById('pvList3')
