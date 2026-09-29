@@ -419,7 +419,7 @@
     </style>
   </head>
   <body>
-    <!-- Painel de Entregas — Versão v0.0.72 -->
+    <!-- Painel de Entregas — Versão v0.0.73 -->
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -637,6 +637,309 @@
       </div>
     </div>
 
+    <!-- Modal de Histórico de Reprogramações e Trocas de Local -->
+    <div
+      id="reprogModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(4px);
+        z-index: 99998;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      "
+    >
+      <div
+        style="
+          background: #ffffff;
+          border-radius: 14px;
+          max-width: 960px;
+          width: 100%;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          border: 1px solid #cbd5e1;
+          animation: loginFadeIn 0.2s ease-out;
+        "
+      >
+        <div
+          style="
+            background: linear-gradient(135deg, #0f766e, #115e59);
+            padding: 18px 22px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="font-size: 22px">📋</span>
+            <div>
+              <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: #fff">
+                Histórico de Reprogramações e Movimentações
+              </h2>
+              <div style="font-size: 12px; color: #ccfbf1">
+                Auditoria em tempo real: quem moveu, dia de origem, destino e trocas de local
+              </div>
+            </div>
+          </div>
+          <button
+            onclick="reprogCloseModal()"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              border: none;
+              color: #fff;
+              font-size: 18px;
+              width: 32px;
+              height: 32px;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 800;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+            title="Fechar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div
+          style="
+            padding: 12px 18px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px">
+            <span style="font-size: 13px; font-weight: 700; color: #475569">🔍 Buscar:</span>
+            <input
+              id="reprogSearch"
+              type="text"
+              placeholder="Buscar por código, produto, PV ou usuário..."
+              oninput="reprogFilterTable()"
+              style="
+                flex: 1;
+                padding: 6px 10px;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                font-size: 12.5px;
+                outline: none;
+              "
+            />
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button
+              onclick="reprogLoadEvents()"
+              class="dlbtn"
+              style="background: #ffffff; border-color: #cbd5e1; color: #0f766e; font-size: 12px"
+            >
+              🔄 Atualizar
+            </button>
+            <span id="reprogCount" class="note" style="margin: 0; font-weight: 700"></span>
+          </div>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; padding: 14px 18px">
+          <div
+            id="reprogAlert"
+            style="
+              display: none;
+              padding: 12px;
+              border-radius: 8px;
+              font-size: 13px;
+              margin-bottom: 10px;
+            "
+          ></div>
+          <div
+            class="tblwrap"
+            style="max-height: 480px; border: 1px solid #e2e8f0; border-radius: 8px"
+          >
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px">
+              <thead>
+                <tr style="background: #f1f5f9; color: #334155; text-align: left">
+                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Data/Hora</th>
+                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Usuário</th>
+                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Item</th>
+                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Movimentação</th>
+                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">
+                    Qtd / Detalhes
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="reprogTbody">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 24px; color: #64748b">
+                    Carregando histórico...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          style="
+            padding: 10px 18px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+          "
+        >
+          <button
+            onclick="reprogCloseModal()"
+            class="dlbtn"
+            style="background: #64748b; border-color: #64748b; color: #fff; font-size: 12.5px"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Seletor de Local de Fabricação (Curitiba / Vinhedo) com Propagação Global -->
+    <div
+      id="itemLocalModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      "
+    >
+      <div
+        style="
+          background: #ffffff;
+          border-radius: 14px;
+          max-width: 460px;
+          width: 100%;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          border: 1px solid #cbd5e1;
+          animation: loginFadeIn 0.2s ease-out;
+        "
+      >
+        <div
+          style="
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            padding: 18px 20px;
+            color: #fff;
+          "
+        >
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff">
+              Alterar Local de Fabricação
+            </h3>
+            <button
+              onclick="itemLocalCloseModal()"
+              style="
+                background: rgba(255, 255, 255, 0.2);
+                border: none;
+                color: #fff;
+                font-size: 16px;
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 800;
+              "
+            >
+              ✕
+            </button>
+          </div>
+          <div style="font-size: 12px; color: #bfdbfe; margin-top: 4px">
+            A alteração propaga para todas as linhas, programação e faturamento no sistema.
+          </div>
+        </div>
+
+        <div style="padding: 20px">
+          <div
+            style="
+              margin-bottom: 14px;
+              padding: 10px 12px;
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+            "
+          >
+            <div
+              style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase"
+            >
+              Produto
+            </div>
+            <div id="itemLocalCod" style="font-size: 14px; font-weight: 800; color: #1e3a8a"></div>
+            <div id="itemLocalDesc" style="font-size: 12px; color: #334155; margin-top: 2px"></div>
+          </div>
+
+          <div style="margin-bottom: 18px">
+            <label
+              style="
+                display: block;
+                font-size: 12px;
+                font-weight: 700;
+                color: #475569;
+                margin-bottom: 6px;
+              "
+            >
+              Novo local de fabricação:
+            </label>
+            <select
+              id="itemLocalSelect"
+              style="
+                width: 100%;
+                padding: 10px 12px;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                font-size: 13.5px;
+                color: #0f172a;
+                font-weight: 700;
+                background: #fff;
+                outline: none;
+              "
+            >
+              <option value="Curitiba">🏭 Curitiba</option>
+              <option value="Vinhedo">🏭 Vinhedo</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end">
+            <button
+              onclick="itemLocalCloseModal()"
+              class="dlbtn"
+              style="background: #f1f5f9; border-color: #cbd5e1; color: #475569"
+            >
+              Cancelar
+            </button>
+            <button
+              id="itemLocalSaveBtn"
+              onclick="itemLocalSave()"
+              class="dlbtn"
+              style="background: #16a34a; border-color: #16a34a; color: #fff; font-weight: 800"
+            >
+              💾 Salvar em todo o sistema
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Banner de Offline / Erro de Conexão -->
     <div
       id="connOfflineBanner"
@@ -818,6 +1121,15 @@
             </button>
             <button id="btnDlProg" class="dlbtn" style="display: none">
               ⬇ Baixar programação editada (.xlsx)
+            </button>
+            <button
+              id="btnReprogHist"
+              class="dlbtn"
+              style="background: #0f766e; border-color: #0f766e; color: #fff; font-weight: 700"
+              onclick="reprogOpenModal()"
+              title="Visualizar histórico completo de reprogramações e trocas de local gravadas no servidor"
+            >
+              📋 Histórico de Reprogramações
             </button>
             <span class="note" id="progPct" style="margin: 0; font-weight: 800"></span>
             <span
@@ -1175,7 +1487,7 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean — v0.0.72 — gerado a partir de
+        FRIDA · Dlean — v0.0.73 — gerado a partir de
         artifacts/entregas_por_semana_itens_20260927.xlsx · dados: MaxiProd (data de entrega por
         item)
       </footer>
@@ -1290,7 +1602,7 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar · v0.0.72 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
+        Carteira a Faturar · v0.0.73 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
         entrega no nível do item · fretes (50x/00043) marcados · fonte
         artifacts/entregas_por_semana_itens_20260927.xlsx
       </footer>
@@ -12559,6 +12871,7 @@
         })
       }
 
+      // v0.0.73: Histórico de reprogramações auditável + mudança global de local de fabricação (Curitiba/Vinhedo)
       // v0.0.72: PAINEL CONECTADO POR PADRÃO — login obrigatório na abertura para eliminar divergência de dados
       // v0.0.64: rascunho SEMPRE carrega do localStorage (cache local / reidratação rápida)
       declDraft = declLoad()
