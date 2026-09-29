@@ -438,7 +438,7 @@
                 vertical-align: middle;
                 margin-left: 6px;
               "
-              >v0.0.82</span
+              >v0.0.83</span
             >
           </h1>
           <div class="sub">
@@ -732,7 +732,7 @@
       <footer>
         Faturamento · método Compass: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
         valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.82
+        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.83
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -1204,7 +1204,7 @@
       </main>
       <footer>
         FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260927.xlsx ·
-        dados: MaxiProd (data de entrega por item) · v0.0.82
+        dados: MaxiProd (data de entrega por item) · v0.0.83
       </footer>
     </div>
 
@@ -1319,7 +1319,7 @@
       <footer>
         Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
         nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.82
+        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.83
       </footer>
     </div>
 
@@ -8684,7 +8684,7 @@
         nfFat: {
           mesLabel: '09/2026',
           ano: 2026,
-          hoje: '2026-09-28',
+          hoje: '2026-09-29',
           daily: [
             { label: '01/09', qtd: 1, valor: 116221.72 },
             { label: '02/09', qtd: 2, valor: 80843.76 },
@@ -15909,7 +15909,7 @@
           segDate.setDate(segDate.getDate() + (7 - dow))
         } // sáb/dom: próxima segunda
         const segIso =
-          segDate.getFullYear() +
+          cicloAno +
           '-' +
           String(segDate.getMonth() + 1).padStart(2, '0') +
           '-' +
@@ -16278,7 +16278,7 @@
             const cod = inp.getAttribute('data-cod')
             const nova = Number(inp.value) || 0
             const pd = String(progDate).split('/')
-            const yy = new Date().getFullYear()
+            const yy = '2026'
             const progIso =
               pd.length === 3
                 ? pd[2] + '-' + pd[1] + '-' + pd[0]
@@ -16339,7 +16339,7 @@
             if (!b) return
             const cod = b.getAttribute('data-cod')
             const pd = String(progDate).split('/')
-            const yy = new Date().getFullYear()
+            const yy = '2026'
             const progIso =
               pd.length === 3
                 ? pd[2] + '-' + pd[1] + '-' + pd[0]
@@ -16591,7 +16591,7 @@
         if (!d) return ''
         if (d.length === 5) {
           const p = d.split('/')
-          return new Date().getFullYear() + '-' + p[1] + '-' + p[0]
+          return '2026-' + p[1] + '-' + p[0]
         }
         return d
       }
@@ -19705,6 +19705,26 @@
           ' dias úteis</div>' +
           '</div>' +
           '</div>'
+        function calcTrendLine(vals) {
+          var n = vals.length
+          if (n < 2) return vals.slice()
+          var sumX = 0,
+            sumY = 0,
+            sumXY = 0,
+            sumXX = 0
+          for (var i = 0; i < n; i++) {
+            sumX += i
+            sumY += vals[i]
+            sumXY += i * vals[i]
+            sumXX += i * i
+          }
+          var slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
+          var intercept = (sumY - slope * sumX) / n
+          return vals.map(function (_, i) {
+            return Math.max(0, Math.round(slope * i + intercept))
+          })
+        }
+
         const sp = echarts.init(document.getElementById('nfSpark'))
         sp.setOption({
           grid: { left: 2, right: 2, top: 6, bottom: 6 },
@@ -19737,7 +19757,15 @@
               markLine: {
                 silent: true,
                 symbol: 'none',
-                label: { show: true, position: 'end', formatter: 'Média' },
+                label: {
+                  show: true,
+                  position: 'insideEndTop',
+                  fontSize: 10,
+                  color: '#16a34a',
+                  formatter: function (p) {
+                    return 'Média R$ ' + Math.round(p.value).toLocaleString('pt-BR')
+                  },
+                },
                 lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
                 data: [{ type: 'average', name: 'Média' }],
               },
@@ -19751,7 +19779,7 @@
         document.getElementById('nfTblAno').textContent = nf.ano
         const c1 = echarts.init(document.getElementById('chNfDia'))
         c1.setOption({
-          grid: { left: 66, right: 56, top: 26, bottom: 60 },
+          grid: { left: 66, right: 56, top: 26, bottom: 60, containLabel: true },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -19790,29 +19818,37 @@
               markLine: {
                 silent: true,
                 symbol: 'none',
-                label: { show: true, position: 'end', formatter: 'Média R$ {c}' },
+                label: {
+                  show: true,
+                  position: 'insideEndTop',
+                  fontSize: 10,
+                  color: '#16a34a',
+                  formatter: function (p) {
+                    return 'Média R$ ' + Math.round(p.value).toLocaleString('pt-BR')
+                  },
+                },
                 lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
                 data: [{ type: 'average', name: 'Média' }],
               },
             },
             {
-              name: 'NFs',
+              name: 'Tendência',
               type: 'line',
               smooth: false,
-              yAxisIndex: 1,
-              symbol: 'circle',
-              symbolSize: 5,
-              data: nf.daily.map(function (d) {
-                return d.qtd
-              }),
+              symbol: 'none',
+              data: calcTrendLine(
+                nf.daily.map(function (d) {
+                  return d.valor
+                }),
+              ),
               itemStyle: { color: '#16a34a' },
-              lineStyle: { color: '#16a34a', width: 2 },
+              lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
             },
           ],
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
         c2.setOption({
-          grid: { left: 66, right: 56, top: 26, bottom: 40 },
+          grid: { left: 66, right: 56, top: 26, bottom: 40, containLabel: true },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -19850,23 +19886,31 @@
               markLine: {
                 silent: true,
                 symbol: 'none',
-                label: { show: true, position: 'end', formatter: 'Média R$ {c}' },
+                label: {
+                  show: true,
+                  position: 'insideEndTop',
+                  fontSize: 10,
+                  color: '#16a34a',
+                  formatter: function (p) {
+                    return 'Média R$ ' + Math.round(p.value).toLocaleString('pt-BR')
+                  },
+                },
                 lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
                 data: [{ type: 'average', name: 'Média' }],
               },
             },
             {
-              name: 'NFs',
+              name: 'Tendência',
               type: 'line',
               smooth: false,
-              yAxisIndex: 1,
-              symbol: 'circle',
-              symbolSize: 6,
-              data: nf.monthly.map(function (m) {
-                return m.qtd
-              }),
+              symbol: 'none',
+              data: calcTrendLine(
+                nf.monthly.map(function (m) {
+                  return m.valor
+                }),
+              ),
               itemStyle: { color: '#16a34a' },
-              lineStyle: { color: '#16a34a', width: 2 },
+              lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
             },
           ],
         })
