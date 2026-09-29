@@ -16367,6 +16367,8 @@
             if (det && !open) {
               det.style.display = ''
               tr.classList.add('sel')
+            } else if (!det && !open) {
+              tr.classList.add('sel')
             }
           })
         }
@@ -16684,6 +16686,20 @@
             }
           })
           declSave()
+          if (typeof reprogAudit === 'function') {
+            reprogAudit(
+              'scenario',
+              {
+                cod: c.cod,
+                desc: c.desc,
+                qtd: c.qtd,
+                de: c.de,
+                para: destinoBR,
+                tipo: 'recortar_colar',
+              },
+              `Linha recortada de ${c.de} para ${destinoBR}`,
+            )
+          }
           progBuildFromDecls()
           renderDeclEditor()
           progDia = null
@@ -16718,6 +16734,20 @@
           status: 'Planejado',
         })
         declSave()
+        if (typeof reprogAudit === 'function') {
+          reprogAudit(
+            'scenario',
+            {
+              cod: c.cod,
+              desc: c.desc,
+              qtd: c.qtd,
+              de: c.de,
+              para: destinoBR,
+              tipo: 'copiar_colar',
+            },
+            `Linha copiada para ${destinoBR}`,
+          )
+        }
         progBuildFromDecls()
         renderDeclEditor()
         progDia = null
@@ -16773,6 +16803,13 @@
           status: 'Planejado',
         })
         declSave()
+        if (typeof reprogAudit === 'function') {
+          reprogAudit(
+            'scenario',
+            { cod: p.cod, desc: p.desc, qtd: saldo, de: p.de, para: dateDest, tipo: 'arrasto' },
+            `Item arrastado de ${p.de} para ${dateDest}`,
+          )
+        }
         progBuildFromDecls()
         renderDeclEditor()
         progDia = null
@@ -19315,6 +19352,198 @@
             .catch(function () {})
         }
       })()
+
+      // ==================== HISTÓRICO DE REPROGRAMAÇÕES (ANDON AUDIT) ====================
+      const REPROG_CYCLE_DEFAULT = 'flrv0lcbha5hh5v'
+      let reprogEventsCache = []
+
+      function reprogGetCycleId() {
+        if (window.ANDON_SYNC && window.ANDON_SYNC.cycleId) {
+          return window.ANDON_SYNC.cycleId
+        }
+        if (typeof CURRENT_CYCLE_ID !== 'undefined' && CURRENT_CYCLE_ID) {
+          return CURRENT_CYCLE_ID
+        }
+        return REPROG_CYCLE_DEFAULT
+      }
+
+      function reprogOpenModal() {
+        const overlay = document.getElementById('reprogModalOverlay')
+        if (overlay) {
+          overlay.style.display = 'flex'
+        }
+        const searchInput = document.getElementById('reprogSearch')
+        if (searchInput) {
+          searchInput.value = ''
+        }
+        reprogLoadEvents()
+      }
+
+      function reprogCloseModal() {
+        const overlay = document.getElementById('reprogModalOverlay')
+        if (overlay) {
+          overlay.style.display = 'none'
+        }
+      }
+
+      async function reprogLoadEvents() {
+        const tbody = document.getElementById('reprogTbody')
+        const countEl = document.getElementById('reprogCount')
+        const alertEl = document.getElementById('reprogAlert')
+
+        if (alertEl) alertEl.style.display = 'none'
+        if (tbody) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="text-align:center;padding:16px;color:#64748b">Carregando histórico de reprogramações...</td></tr>'
+        }
+
+        const cycleId = reprogGetCycleId()
+        const url = `/api/collections/reprogramming_events/records?filter=(cycle_id='${encodeURIComponent(cycleId)}')&sort=-occurred_at,-created&perPage=100`
+
+        try {
+          const resp = await fetch(url, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization:
+                window.ANDON_SYNC && window.ANDON_SYNC.token
+                  ? `Bearer ${window.ANDON_SYNC.token}`
+                  : '',
+            },
+          })
+
+          if (!resp.ok) {
+            throw new Error(`Falha HTTP ${resp.status}: ${resp.statusText}`)
+          }
+
+          const data = await resp.json()
+          reprogEventsCache = data.items || []
+
+          if (countEl) {
+            countEl.textContent = `${reprogEventsCache.length} evento(s)`
+          }
+
+          reprogRenderTable(reprogEventsCache)
+        } catch (err) {
+          console.warn('[reprogLoadEvents] Erro ao buscar eventos:', err)
+          if (alertEl) {
+            alertEl.textContent =
+              'Não foi possível carregar os eventos remotos de reprogramação. Tente novamente.'
+            alertEl.style.display = 'block'
+          }
+          if (tbody) {
+            tbody.innerHTML =
+              '<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:16px">Erro ao consultar auditoria de reprogramação.</td></tr>'
+          }
+        }
+      }
+
+      function reprogRenderTable(events) {
+        const tbody = document.getElementById('reprogTbody')
+        if (!tbody) return
+
+        if (!events || events.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="text-align:center;padding:16px;color:#64748b">Nenhum evento de reprogramação registrado para este ciclo.</td></tr>'
+          return
+        }
+
+        tbody.innerHTML = events
+          .map(function (ev) {
+            const d = ev.occurred_at ? new Date(ev.occurred_at) : new Date(ev.created)
+            const dtFmt = isNaN(d.getTime()) ? ev.occurred_at || '—' : d.toLocaleString('pt-BR')
+            const ch = typeof ev.changes === 'object' && ev.changes ? ev.changes : {}
+            const user = ev.created_by || ch.user || 'Operador'
+            const item = ch.cod ? `<strong>${ch.cod}</strong> ${ch.desc || ''}` : ev.reason || '—'
+
+            let mov = '—'
+            if (ch.de || ch.para) {
+              mov = `${ch.de || '—'} → <span style="font-weight:700;color:#1e40af">${ch.para || '—'}</span>`
+            }
+
+            let qtdInfo = []
+            if (ch.qtd) qtdInfo.push(`Qtd: <strong>${ch.qtd}</strong>`)
+            if (ch.pv) qtdInfo.push(`PV: ${ch.pv}`)
+            if (ev.reason && !ch.de) qtdInfo.push(ev.reason)
+            const detalhes = qtdInfo.join(' · ') || '—'
+
+            return `<tr>
+            <td style="font-size:12px;white-space:nowrap">${dtFmt}</td>
+            <td style="font-size:12px">${user}</td>
+            <td style="font-size:12px">${item}</td>
+            <td style="font-size:12px">${mov}</td>
+            <td style="font-size:12px">${detalhes}</td>
+          </tr>`
+          })
+          .join('')
+      }
+
+      function reprogFilterTable() {
+        const searchInput = document.getElementById('reprogSearch')
+        const term = (searchInput ? searchInput.value : '').trim().toLowerCase()
+        if (!term) {
+          reprogRenderTable(reprogEventsCache)
+          return
+        }
+
+        const filtered = reprogEventsCache.filter(function (ev) {
+          const ch = ev.changes || {}
+          const fullText = [
+            ev.created_by,
+            ev.reason,
+            ch.cod,
+            ch.desc,
+            ch.pv,
+            ch.de,
+            ch.para,
+            ch.qtd,
+          ]
+            .join(' ')
+            .toLowerCase()
+          return fullText.indexOf(term) >= 0
+        })
+
+        reprogRenderTable(filtered)
+      }
+
+      async function reprogAudit(eventType, changesObj, reason) {
+        const cycleId = reprogGetCycleId()
+        const payload = {
+          cycle_id: cycleId,
+          event_type: eventType || 'scenario',
+          occurred_at: new Date().toISOString(),
+          reason: reason || 'Reprogramação de item via Andon',
+          source: 'andon-reprog',
+          changes: changesObj || {},
+          created_by:
+            (window.ANDON_SYNC && window.ANDON_SYNC.currentUser) ||
+            localStorage.getItem('andon|logged_user') ||
+            'Painel',
+        }
+
+        try {
+          await fetch('/api/collections/reprogramming_events/records', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization:
+                window.ANDON_SYNC && window.ANDON_SYNC.token
+                  ? `Bearer ${window.ANDON_SYNC.token}`
+                  : '',
+            },
+            body: JSON.stringify(payload),
+          })
+        } catch (err) {
+          console.warn('[reprogAudit] Falha silenciosa ao gravar auditoria:', err)
+        }
+      }
+
+      // Exportação global para os onclick do HTML
+      window.reprogOpenModal = reprogOpenModal
+      window.reprogCloseModal = reprogCloseModal
+      window.reprogLoadEvents = reprogLoadEvents
+      window.reprogFilterTable = reprogFilterTable
+      window.reprogAudit = reprogAudit
+
       renderProg()
       renderKpis()
       renderSemana()
