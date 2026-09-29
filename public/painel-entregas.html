@@ -419,6 +419,7 @@
     </style>
   </head>
   <body>
+    <!-- Painel de Entregas — Versão v0.0.72 -->
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -525,13 +526,13 @@
                 margin-bottom: 6px;
               "
             >
-              E-mail de acesso
+              Usuário ou e-mail de acesso
             </label>
             <input
               id="modalConnEmail"
-              type="email"
+              type="text"
               required
-              placeholder="seu.email@empresa.com.br"
+              placeholder="analista_projetos ou seu.email@empresa.com.br"
               style="
                 width: 100%;
                 box-sizing: border-box;
@@ -1174,8 +1175,9 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260927.xlsx ·
-        dados: MaxiProd (data de entrega por item)
+        FRIDA · Dlean — v0.0.72 — gerado a partir de
+        artifacts/entregas_por_semana_itens_20260927.xlsx · dados: MaxiProd (data de entrega por
+        item)
       </footer>
     </div>
 
@@ -1288,8 +1290,8 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
-        nível do item · fretes (50x/00043) marcados · fonte
+        Carteira a Faturar · v0.0.72 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
+        entrega no nível do item · fretes (50x/00043) marcados · fonte
         artifacts/entregas_por_semana_itens_20260927.xlsx
       </footer>
     </div>
@@ -8914,7 +8916,7 @@
               pv: d.pv || '—',
               cli: '',
               emp: '',
-              vtot: 0,
+              vtot: left * vuDe(d.cod),
               sit: 'Sem PV associado',
               cheg: '—',
               local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
@@ -9181,11 +9183,15 @@
             const pvRows = pvList
               .map(function (v) {
                 const vin = v.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
+                const semPV = v.pv === '—' || String(v.pv).trim() === ''
+                const pvCell = semPV
+                  ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
+                  : v.pv
                 return (
                   '<tr' +
                   vin +
                   '><td class="pvtag">' +
-                  v.pv +
+                  pvCell +
                   '</td><td>' +
                   v.cli +
                   '</td>' +
@@ -9200,9 +9206,11 @@
                   v.local +
                   '</td>' +
                   '<td>' +
-                  (v.atr
-                    ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
-                    : '<span class="tagP">em dia</span>') +
+                  (semPV
+                    ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
+                    : v.atr
+                      ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                      : '<span class="tagP">em dia</span>') +
                   '</td></tr>'
                 )
               })
@@ -9278,6 +9286,18 @@
                 ex.pvNovo.split('|')[0] +
                 '</div>'
               : ''
+            const temSemPV = pvList.some(function (v) {
+              return v.pv === '—' || String(v.pv).trim() === ''
+            })
+            const sitBadge = temSemPV
+              ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
+              : p.atrasado
+                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                : '<span class="tagP">em dia</span>'
+            const pvCountDisplay =
+              temSemPV && pvList.length === 1
+                ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
+                : pvList.length + ' PV' + (pvList.length > 1 ? 's' : '')
             return (
               '<tr class="prow' +
               (ex.ok ? ' exOK' : '') +
@@ -9301,17 +9321,13 @@
               FMT.format(p.vtot) +
               '</td>' +
               '<td class="num">' +
-              pvList.length +
-              ' PV' +
-              (pvList.length > 1 ? 's' : '') +
+              pvCountDisplay +
               '</td>' +
               '<td>' +
               chegTxt +
               '</td>' +
               '<td>' +
-              (p.atrasado
-                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
-                : '<span class="tagP">em dia</span>') +
+              sitBadge +
               '</td>' +
               '<td class="exec"><input type="checkbox" data-p="ok" ' +
               (ex.ok ? 'checked' : '') +
@@ -9713,6 +9729,7 @@
           desc: p.desc,
           qtd: p.qtd,
           de: progDate,
+          pv: Object.keys(p.pvs || {})[0]?.split('|')[0] || '',
           cut: false,
           exQtd: ex.qtd || 0,
         }
@@ -9750,6 +9767,7 @@
           desc: p.desc,
           qtd: saldo,
           de: progDate,
+          pv: Object.keys(p.pvs || {})[0]?.split('|')[0] || '',
           cut: true,
           exQtd: ex.qtd || 0,
           exOk: !!ex.ok,
@@ -9794,6 +9812,12 @@
           alert('Origem e destino são o mesmo dia.')
           return
         }
+        const pvHerdado =
+          c.pv ||
+          DATA.rows.find(function (r) {
+            return r.codigo === c.cod && Number(r.qtd || 0) > 0
+          })?.pv ||
+          ''
         if (c.cut) {
           // RECORTE: transfere a qtd (já líquida do executado) e zera a origem.
           declDraft.push({
@@ -9804,7 +9828,7 @@
             cod: c.cod,
             qtd: c.qtd,
             local: 'C',
-            pv: '',
+            pv: pvHerdado,
             id: 'PR-CUT-' + Date.now(),
             obs: 'recortado de ' + (c.de || '?'),
             status: 'Planejado',
@@ -9850,7 +9874,7 @@
           cod: c.cod,
           qtd: c.qtd,
           local: 'C',
-          pv: '',
+          pv: pvHerdado,
           id: 'PR-COPY-' + Date.now(),
           obs: 'colado de ' + (c.de || '?'),
           status: 'Planejado',
@@ -9972,6 +9996,12 @@
           alert('Origem e destino são o mesmo dia.')
           return
         }
+        const pvHerdado =
+          c.pv ||
+          DATA.rows.find(function (r) {
+            return r.codigo === c.cod && Number(r.qtd || 0) > 0
+          })?.pv ||
+          ''
         declDraft.push({
           dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
             new Date(dateDest + 'T12:00:00').getDay()
@@ -9980,7 +10010,7 @@
           cod: c.cod,
           qtd: c.qtd,
           local: 'C',
-          pv: '',
+          pv: pvHerdado,
           id: 'PR-CUT-' + Date.now(),
           obs: 'recortado de ' + (c.de || '?'),
           status: 'Planejado',
@@ -12529,13 +12559,13 @@
         })
       }
 
-      // v0.0.71: PAINEL CONECTADO POR PADRÃO — login obrigatório na abertura para eliminar divergência de dados
+      // v0.0.72: PAINEL CONECTADO POR PADRÃO — login obrigatório na abertura para eliminar divergência de dados
       // v0.0.64: rascunho SEMPRE carrega do localStorage (cache local / reidratação rápida)
       declDraft = declLoad()
       progBuildFromDecls()
 
       // ==================== SINCRONIZAÇÃO DO RASCUNHO COM O SERVIDOR (Compass 2.1 / PocketBase) ====================
-      // v0.0.71: Conexão exigida por padrão. Ao abrir sem sessão válida, exibe modal imediato de login.
+      // v0.0.72: Conexão exigida por padrão. Ao abrir sem sessão válida, exibe modal imediato de login.
       // Modo rascunho isolado por navegador fica desativado por padrão; dados são centralizados no PocketBase.
       const ANDON_SYNC = {
         api: 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev',
@@ -12690,7 +12720,7 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
-        // v0.0.71: Conexão obrigatória por padrão
+        // v0.0.72: Conexão obrigatória por padrão
         // v0.0.70: poka-yoke smktGuardZero anti-zeramento do saldo SMKT (sync pull e gravação local)
         // v0.0.69: autocura SMKT com pull por maior rev, reset de flag e cura pós-pull
         // v0.0.68: autocura SMKT (restaura saldo legado indevidamente arquivado) e cancelamento com escopo de PV
@@ -12845,7 +12875,7 @@
             alertBox.style.background = '#fee2e2'
             alertBox.style.border = '1px solid #fca5a5'
             alertBox.style.color = '#991b1b'
-            alertBox.textContent = 'Informe e-mail e senha cadastrados.'
+            alertBox.textContent = 'Informe usuário/e-mail e senha cadastrados.'
           }
           return
         }
