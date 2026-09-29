@@ -427,7 +427,22 @@
           style="height: 52px; width: auto; object-fit: contain"
         />
         <div>
-          <h1>Entregas por Semana — Produto × PV</h1>
+          <h1>
+            Entregas por Semana — Produto × PV
+            <span
+              style="
+                font-size: 12px;
+                opacity: 0.8;
+                font-weight: 400;
+                vertical-align: middle;
+                margin-left: 8px;
+                background: rgba(255, 255, 255, 0.2);
+                padding: 2px 8px;
+                border-radius: 6px;
+              "
+              >v0.0.74</span
+            >
+          </h1>
           <div class="sub">
             Base: data de entrega do ITEM no MaxiProd · PVs aprovados com saldo a faturar ·
             <span id="fonte"></span>
@@ -476,7 +491,7 @@
       <footer>
         Faturamento · método Compass: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
         valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20260927.xlsx
+        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.74
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -579,6 +594,15 @@
               onclick="progAddLine(true)"
             >
               + Programar
+            </button>
+            <button
+              id="btnReprogHist"
+              class="dlbtn"
+              style="background: #0284c7; border-color: #0284c7; color: #fff"
+              onclick="reprogOpenModal()"
+              title="Histórico auditável de reprogramações e movimentações"
+            >
+              📋 Histórico de Reprogramações
             </button>
             <button
               id="btnUndoTop"
@@ -948,7 +972,7 @@
       </main>
       <footer>
         FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260927.xlsx ·
-        dados: MaxiProd (data de entrega por item)
+        dados: MaxiProd (data de entrega por item) · v0.0.74
       </footer>
     </div>
 
@@ -1063,7 +1087,7 @@
       <footer>
         Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
         nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20260927.xlsx
+        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.74
       </footer>
     </div>
 
