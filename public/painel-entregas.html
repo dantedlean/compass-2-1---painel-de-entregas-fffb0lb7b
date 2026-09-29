@@ -438,7 +438,7 @@
                 vertical-align: middle;
                 margin-left: 6px;
               "
-              >v0.0.81</span
+              >v0.0.82</span
             >
           </h1>
           <div class="sub">
@@ -732,7 +732,7 @@
       <footer>
         Faturamento · método Compass: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
         valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.81
+        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.82
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -1204,7 +1204,7 @@
       </main>
       <footer>
         FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260927.xlsx ·
-        dados: MaxiProd (data de entrega por item) · v0.0.81
+        dados: MaxiProd (data de entrega por item) · v0.0.82
       </footer>
     </div>
 
@@ -1319,7 +1319,7 @@
       <footer>
         Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
         nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.81
+        artifacts/entregas_por_semana_itens_20260927.xlsx · v0.0.82
       </footer>
     </div>
 
@@ -15875,10 +15875,21 @@
         card.style.display = ''
         const hj = new Date()
         const dow = (hj.getDay() + 6) % 7 // hj ANTES de isoOf (era usado antes de existir)
+        const cicloAno = (function () {
+          if (DATA.progSemana && Array.isArray(DATA.progSemana.dias)) {
+            for (let i = 0; i < DATA.progSemana.dias.length; i++) {
+              const d = DATA.progSemana.dias[i]
+              const p = String(d.data || '').split('/')
+              if (p.length === 3 && p[2].length === 4) return p[2]
+            }
+          }
+          if (DATA.nfFat && DATA.nfFat.ano) return String(DATA.nfFat.ano)
+          return '2026'
+        })()
         function isoOf(dt) {
           const p = String(dt).split('/')
           if (p.length === 3) return p[2] + '-' + p[1] + '-' + p[0]
-          if (p.length === 2) return String(hj.getFullYear()) + '-' + p[1] + '-' + p[0]
+          if (p.length === 2) return cicloAno + '-' + p[1] + '-' + p[0]
           return dt
         }
         const dias = [
@@ -15916,9 +15927,11 @@
         const box = document.getElementById('pbtns')
         if (!progDia) {
           // dia atual se estiver na semana declarada; senão o primeiro dia
+          const hoje =
+            String(hj.getDate()).padStart(2, '0') + '/' + String(hj.getMonth() + 1).padStart(2, '0')
           const chosen =
             dias.find(function (x) {
-              return x.data === '25/09'
+              return x.data === hoje
             }) || dias[0]
           progDia = chosen.dia
           progDate = chosen.data
@@ -19714,6 +19727,7 @@
           series: [
             {
               type: 'line',
+              smooth: false,
               symbol: 'none',
               data: nf.daily.map(function (d) {
                 return d.valor
@@ -19723,7 +19737,7 @@
               markLine: {
                 silent: true,
                 symbol: 'none',
-                label: { formatter: 'Média' },
+                label: { show: true, position: 'end', formatter: 'Média' },
                 lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
                 data: [{ type: 'average', name: 'Média' }],
               },
@@ -19773,10 +19787,18 @@
                 return d.valor
               }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
+              markLine: {
+                silent: true,
+                symbol: 'none',
+                label: { show: true, position: 'end', formatter: 'Média R$ {c}' },
+                lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
+                data: [{ type: 'average', name: 'Média' }],
+              },
             },
             {
               name: 'NFs',
               type: 'line',
+              smooth: false,
               yAxisIndex: 1,
               symbol: 'circle',
               symbolSize: 5,
@@ -19785,13 +19807,6 @@
               }),
               itemStyle: { color: '#16a34a' },
               lineStyle: { color: '#16a34a', width: 2 },
-              markLine: {
-                silent: true,
-                symbol: 'none',
-                label: { formatter: 'Média' },
-                lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
-                data: [{ type: 'average', name: 'Média' }],
-              },
             },
           ],
         })
@@ -19832,10 +19847,18 @@
                 return m.valor
               }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
+              markLine: {
+                silent: true,
+                symbol: 'none',
+                label: { show: true, position: 'end', formatter: 'Média R$ {c}' },
+                lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
+                data: [{ type: 'average', name: 'Média' }],
+              },
             },
             {
               name: 'NFs',
               type: 'line',
+              smooth: false,
               yAxisIndex: 1,
               symbol: 'circle',
               symbolSize: 6,
@@ -19844,13 +19867,6 @@
               }),
               itemStyle: { color: '#16a34a' },
               lineStyle: { color: '#16a34a', width: 2 },
-              markLine: {
-                silent: true,
-                symbol: 'none',
-                label: { formatter: 'Média' },
-                lineStyle: { type: 'dashed', color: '#16a34a', width: 2 },
-                data: [{ type: 'average', name: 'Média' }],
-              },
             },
           ],
         })
