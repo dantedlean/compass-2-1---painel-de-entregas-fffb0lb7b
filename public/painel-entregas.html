@@ -439,6 +439,255 @@
         <span class="badge" id="badgePvs"></span>
       </div>
     </header>
+    <!-- Modal de Login Obrigatório na Abertura (Conectado por padrão) -->
+    <div
+      id="loginModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.78);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      "
+    >
+      <div
+        id="loginModalCard"
+        style="
+          background: #ffffff;
+          border-radius: 16px;
+          max-width: 440px;
+          width: 100%;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          border: 1px solid #e2e8f0;
+          animation: loginFadeIn 0.2s ease-out;
+        "
+      >
+        <div
+          style="
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            padding: 24px 24px 20px;
+            color: #fff;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+            <span style="font-size: 22px">🔒</span>
+            <h2
+              style="
+                margin: 0;
+                font-size: 18px;
+                font-weight: 800;
+                color: #fff;
+                letter-spacing: -0.01em;
+              "
+            >
+              Acesso ao Compass 2.1
+            </h2>
+          </div>
+          <p style="margin: 0; font-size: 13px; color: #bfdbfe; line-height: 1.4">
+            Painel conectado por padrão para sincronização em tempo real entre todos os operadores e
+            ambientes.
+          </p>
+        </div>
+
+        <form
+          id="loginModalForm"
+          onsubmit="
+            event.preventDefault()
+            andonModalSubmit()
+          "
+          style="padding: 24px"
+        >
+          <div
+            id="loginModalAlert"
+            style="
+              display: none;
+              padding: 10px 12px;
+              border-radius: 8px;
+              font-size: 12.5px;
+              margin-bottom: 16px;
+              line-height: 1.4;
+            "
+          ></div>
+
+          <div style="margin-bottom: 16px">
+            <label
+              for="modalConnEmail"
+              style="
+                display: block;
+                font-size: 12px;
+                font-weight: 700;
+                color: #475569;
+                margin-bottom: 6px;
+              "
+            >
+              E-mail de acesso
+            </label>
+            <input
+              id="modalConnEmail"
+              type="email"
+              required
+              placeholder="seu.email@empresa.com.br"
+              style="
+                width: 100%;
+                box-sizing: border-box;
+                padding: 10px 12px;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                font-size: 13.5px;
+                color: #0f172a;
+                background: #f8fafc;
+                outline: none;
+                transition: border-color 0.15s;
+              "
+              onfocus="
+                this.style.borderColor = '#2563eb'
+                this.style.background = '#fff'
+              "
+              onblur="
+                this.style.borderColor = '#cbd5e1'
+                this.style.background = '#f8fafc'
+              "
+            />
+          </div>
+
+          <div style="margin-bottom: 20px">
+            <label
+              for="modalConnPass"
+              style="
+                display: block;
+                font-size: 12px;
+                font-weight: 700;
+                color: #475569;
+                margin-bottom: 6px;
+              "
+            >
+              Senha
+            </label>
+            <input
+              id="modalConnPass"
+              type="password"
+              required
+              placeholder="••••••••"
+              style="
+                width: 100%;
+                box-sizing: border-box;
+                padding: 10px 12px;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                font-size: 13.5px;
+                color: #0f172a;
+                background: #f8fafc;
+                outline: none;
+                transition: border-color 0.15s;
+              "
+              onfocus="
+                this.style.borderColor = '#2563eb'
+                this.style.background = '#fff'
+              "
+              onblur="
+                this.style.borderColor = '#cbd5e1'
+                this.style.background = '#f8fafc'
+              "
+            />
+          </div>
+
+          <button
+            id="modalConnBtn"
+            type="submit"
+            style="
+              width: 100%;
+              padding: 12px;
+              background: #16a34a;
+              border: none;
+              border-radius: 8px;
+              color: #ffffff;
+              font-size: 14px;
+              font-weight: 800;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              transition: background 0.15s;
+            "
+            onmouseover="this.style.background = '#15803d'"
+            onmouseout="this.style.background = '#16a34a'"
+          >
+            <span>Conectar e sincronizar</span>
+          </button>
+
+          <div
+            style="
+              margin-top: 14px;
+              font-size: 11.5px;
+              color: #64748b;
+              text-align: center;
+              line-height: 1.4;
+            "
+          >
+            Dados de programação e supermercado são gravados centralizadamente no servidor.
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Banner de Offline / Erro de Conexão -->
+    <div
+      id="connOfflineBanner"
+      style="
+        display: none;
+        background: #fee2e2;
+        border-bottom: 1.5px solid #f87171;
+        color: #991b1b;
+        padding: 10px 18px;
+        font-size: 13px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      "
+    >
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="font-size: 18px">⚠️</span>
+        <span id="connOfflineMsg">
+          <b>Falha na conexão com o servidor:</b> não é possível sincronizar as alterações.
+        </span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center">
+        <button
+          onclick="andonRetryConn()"
+          class="dlbtn"
+          style="
+            background: #dc2626;
+            border-color: #dc2626;
+            color: #fff;
+            padding: 4px 12px;
+            font-size: 12px;
+          "
+        >
+          🔄 Tentar novamente
+        </button>
+        <button
+          onclick="andonShowLoginModal()"
+          class="dlbtn"
+          style="
+            background: #ffffff;
+            border-color: #fca5a5;
+            color: #991b1b;
+            padding: 4px 10px;
+            font-size: 12px;
+          "
+        >
+          Trocar conta / Reconectar
+        </button>
+      </div>
+    </div>
+
     <nav class="tabnav">
       <button id="tabEnt" class="on" onclick="showView('ent')">📅 Entregas por semana</button>
       <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
@@ -484,6 +733,20 @@
           <button id="btnConn" class="dlbtn" style="display: none" onclick="andonToggleConn()">
             🔗 Conectar servidor
           </button>
+          <button
+            id="btnDisconnect"
+            class="dlbtn"
+            style="
+              display: none;
+              background: rgba(239, 68, 68, 0.15);
+              border-color: rgba(239, 68, 68, 0.4);
+              color: #fecaca;
+            "
+            onclick="andonLogout()"
+            title="Sair da sessão atual e trocar de usuário"
+          >
+            🚪 Sair
+          </button>
           <span class="note" style="margin: 0; color: #cbd5e1" id="connInfo"></span>
           <div id="connBox" style="display: none; gap: 6px; align-items: center; flex-wrap: wrap">
             <input
@@ -520,7 +783,7 @@
               Entrar
             </button>
             <span class="note" style="margin: 0; color: #cbd5e1"
-              >conectando, o rascunho fica salvo no servidor — funciona em qualquer máquina</span
+              >conectado ao servidor — dados sincronizados em tempo real com o Compass 2.1</span
             >
           </div>
         </div>
@@ -12266,14 +12529,14 @@
         })
       }
 
-      // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
+      // v0.0.71: PAINEL CONECTADO POR PADRÃO — login obrigatório na abertura para eliminar divergência de dados
+      // v0.0.64: rascunho SEMPRE carrega do localStorage (cache local / reidratação rápida)
       declDraft = declLoad()
       progBuildFromDecls()
 
       // ==================== SINCRONIZAÇÃO DO RASCUNHO COM O SERVIDOR (Compass 2.1 / PocketBase) ====================
-      // Dante 28/09: movimentos precisam FIXAR — rascunho migra do localStorage para o backend do Compass 2.1.
-      // Estratégia: localStorage continua sendo cache local; cada alteração grava um snapshot do rascunho
-      // completo em reprogramming_events (event_type 'system', source 'andon-draft'). Último snapshot vence.
+      // v0.0.71: Conexão exigida por padrão. Ao abrir sem sessão válida, exibe modal imediato de login.
+      // Modo rascunho isolado por navegador fica desativado por padrão; dados são centralizados no PocketBase.
       const ANDON_SYNC = {
         api: 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev',
         token: localStorage.getItem('andon|token') || '',
@@ -12291,7 +12554,14 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identity: email, password: pass }),
           })
-          if (!r.ok) throw new Error('login falhou (' + r.status + ')')
+          if (!r.ok) {
+            let msg = 'login falhou (' + r.status + ')'
+            try {
+              const ej = await r.json()
+              if (ej && ej.message) msg = ej.message
+            } catch (_) {}
+            throw new Error(msg)
+          }
           const d = await r.json()
           this.token = d.token
           this.user = d.record
@@ -12306,6 +12576,40 @@
           )
           return d
         },
+        async validateSession() {
+          if (!this.connected()) return false
+          try {
+            const r = await fetch(this.api + '/api/collections/users/auth-refresh', {
+              method: 'POST',
+              headers: this.headers(),
+            })
+            if (r.ok) {
+              const d = await r.json()
+              this.token = d.token
+              this.user = d.record
+              localStorage.setItem('andon|token', d.token)
+              return true
+            }
+            if (r.status === 401 || r.status === 403) {
+              // Token expirou ou foi invalidado
+              this.logout(false)
+              return false
+            }
+            // Outro erro de rede (5xx, timeout): mantém token para tentar de novo via offline banner
+            return 'network_error'
+          } catch (err) {
+            return 'network_error'
+          }
+        },
+        logout(reload) {
+          this.token = ''
+          this.user = null
+          localStorage.removeItem('andon|token')
+          localStorage.removeItem('andon|user')
+          if (reload !== false) {
+            window.location.reload()
+          }
+        },
         async push(draft, motivo) {
           if (!this.connected()) return false
           const body = {
@@ -12317,16 +12621,31 @@
             changes: { draft: draft, rev: Date.now(), browser: navigator.userAgent.slice(0, 80) },
             before_snapshot: { field: 'andon_draft', value: 'v' + Date.now() },
           }
-          const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
-            method: 'POST',
-            headers: this.headers(),
-            body: JSON.stringify(body),
-          })
-          if (!r.ok) {
-            const t = await r.text()
-            throw new Error('push falhou (' + r.status + '): ' + t.slice(0, 120))
+          try {
+            const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
+              method: 'POST',
+              headers: this.headers(),
+              body: JSON.stringify(body),
+            })
+            if (!r.ok) {
+              const t = await r.text()
+              andonShowOffline(
+                true,
+                'Falha ao gravar no servidor (' +
+                  r.status +
+                  '). Alterações não foram salvas na nuvem.',
+              )
+              throw new Error('push falhou (' + r.status + '): ' + t.slice(0, 120))
+            }
+            andonShowOffline(false)
+            return true
+          } catch (err) {
+            andonShowOffline(
+              true,
+              'Sem conexão com o servidor. Verifique a internet e tente novamente.',
+            )
+            throw err
           }
-          return true
         },
         async pull() {
           if (!this.connected()) return null
@@ -12338,7 +12657,13 @@
             encodeURIComponent(f) +
             '&sort=-created&perPage=1'
           const r = await fetch(url, { headers: this.headers() })
-          if (!r.ok) return null
+          if (!r.ok) {
+            if (r.status === 401 || r.status === 403) {
+              this.logout(false)
+              andonShowLoginModal('Sessão expirada. Conecte-se novamente.')
+            }
+            return null
+          }
           const d = await r.json()
           if (!d.items || !d.items.length) return null
           return d.items[0]
@@ -12365,6 +12690,7 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
+        // v0.0.71: Conexão obrigatória por padrão
         // v0.0.70: poka-yoke smktGuardZero anti-zeramento do saldo SMKT (sync pull e gravação local)
         // v0.0.69: autocura SMKT com pull por maior rev, reset de flag e cura pós-pull
         // v0.0.68: autocura SMKT (restaura saldo legado indevidamente arquivado) e cancelamento com escopo de PV
@@ -12380,15 +12706,22 @@
             changes: { entradas: ent || [], historico: hist || [], rev: Date.now() },
             before_snapshot: { field: 'andon_smkt', value: 'v' + Date.now() },
           }
-          const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
-            method: 'POST',
-            headers: this.headers(),
-            body: JSON.stringify(body),
-          })
-          if (!r.ok) {
-            throw new Error('push smkt falhou (' + r.status + ')')
+          try {
+            const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
+              method: 'POST',
+              headers: this.headers(),
+              body: JSON.stringify(body),
+            })
+            if (!r.ok) {
+              andonShowOffline(true, 'Falha ao sincronizar SMKT com o servidor (' + r.status + ').')
+              throw new Error('push smkt falhou (' + r.status + ')')
+            }
+            andonShowOffline(false)
+            return true
+          } catch (err) {
+            andonShowOffline(true, 'Sem conexão com o servidor para gravar SMKT.')
+            throw err
           }
-          return true
         },
         async syncSmktFromServer() {
           if (!this.connected()) return false
@@ -12436,98 +12769,296 @@
         },
       }
       window.ANDON_SYNC = ANDON_SYNC
+
       function andonToggleConn() {
-        const box = document.getElementById('connBox')
-        box.style.display = box.style.display === 'none' ? 'flex' : 'none'
-        if (box.style.display === 'flex') {
-          const e = document.getElementById('connEmail')
-          if (e && !e.value) e.focus()
-        }
+        andonShowLoginModal()
       }
       window.andonToggleConn = andonToggleConn
-      ;(function () {
-        const btn = document.getElementById('btnConn')
-        if (!btn) return
-        const info = document.getElementById('connInfo')
-        function paint() {
-          if (ANDON_SYNC.connected()) {
-            const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
-            btn.style.display = ''
-            btn.textContent = '🔗 ' + String(u.name || u.email || 'conectado').slice(0, 18)
-            info.textContent = 'rascunho salvo no servidor'
+
+      function andonLogout() {
+        if (
+          confirm(
+            'Deseja realmente desconectar? O painel exige login ativo para operar conectado por padrão.',
+          )
+        ) {
+          ANDON_SYNC.logout(true)
+        }
+      }
+      window.andonLogout = andonLogout
+
+      function andonShowOffline(show, msg) {
+        const b = document.getElementById('connOfflineBanner')
+        if (!b) return
+        if (show) {
+          b.style.display = 'flex'
+          const m = document.getElementById('connOfflineMsg')
+          if (m && msg) m.innerHTML = '<b>Aviso de conexão:</b> ' + msg
+        } else {
+          b.style.display = 'none'
+        }
+      }
+      window.andonShowOffline = andonShowOffline
+
+      function andonShowLoginModal(warnMsg) {
+        const modal = document.getElementById('loginModalOverlay')
+        if (!modal) return
+        modal.style.display = 'flex'
+        const alertBox = document.getElementById('loginModalAlert')
+        if (alertBox) {
+          if (warnMsg) {
+            alertBox.style.display = 'block'
+            alertBox.style.background = '#fee2e2'
+            alertBox.style.border = '1px solid #fca5a5'
+            alertBox.style.color = '#991b1b'
+            alertBox.textContent = warnMsg
           } else {
-            btn.style.display = ''
-            btn.textContent = '🔗 Conectar servidor'
-            info.textContent = 'rascunho só neste navegador'
+            alertBox.style.display = 'none'
           }
         }
-        paint()
-        const go = document.getElementById('btnConnGo')
-        go.addEventListener('click', async function () {
-          const email = document.getElementById('connEmail').value.trim()
-          const pass = document.getElementById('connPass').value
-          if (!email || !pass) {
-            alert('Informe e-mail e senha.')
-            return
+        const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
+        const emailInput = document.getElementById('modalConnEmail')
+        if (emailInput && !emailInput.value) {
+          emailInput.value = u.email || ''
+        }
+        const passInput = document.getElementById('modalConnPass')
+        setTimeout(function () {
+          if (emailInput && !emailInput.value) emailInput.focus()
+          else if (passInput) passInput.focus()
+        }, 80)
+      }
+      window.andonShowLoginModal = andonShowLoginModal
+
+      function andonHideLoginModal() {
+        const modal = document.getElementById('loginModalOverlay')
+        if (modal) modal.style.display = 'none'
+      }
+      window.andonHideLoginModal = andonHideLoginModal
+
+      async function andonModalSubmit() {
+        const email = document.getElementById('modalConnEmail').value.trim()
+        const pass = document.getElementById('modalConnPass').value
+        const btn = document.getElementById('modalConnBtn')
+        const alertBox = document.getElementById('loginModalAlert')
+        if (!email || !pass) {
+          if (alertBox) {
+            alertBox.style.display = 'block'
+            alertBox.style.background = '#fee2e2'
+            alertBox.style.border = '1px solid #fca5a5'
+            alertBox.style.color = '#991b1b'
+            alertBox.textContent = 'Informe e-mail e senha cadastrados.'
           }
-          go.disabled = true
-          go.textContent = 'Entrando…'
+          return
+        }
+        btn.disabled = true
+        btn.innerHTML = '<span>Conectando ao servidor…</span>'
+        try {
+          await ANDON_SYNC.login(email, pass)
+          andonHideLoginModal()
+          andonShowOffline(false)
+          paintConnBar()
+          const st = document.getElementById('declStatus')
+          if (st) st.textContent = 'Conectado ao servidor — dados sincronizados'
+          // Puxa snapshot atualizado do servidor
           try {
-            await ANDON_SYNC.login(email, pass)
-            paint()
-            const st = document.getElementById('declStatus')
-            if (st) st.textContent = 'Conectado ao servidor — rascunho sincronizado entre máquinas'
-            document.getElementById('connBox').style.display = 'none'
-            // puxa o último snapshot do servidor e depois envia o estado atual se for mais novo
-            try {
-              const pulled = await ANDON_SYNC.syncFromServer()
-              if (pulled) {
-                renderProg()
-                if (st) st.textContent = 'Rascunho do servidor carregado'
-              }
-            } catch (e) {}
-            try {
-              await ANDON_SYNC.push(declDraft, 'Sessão conectada — estado atual salvo')
-            } catch (e) {}
-          } catch (e) {
-            alert('Falha ao conectar: ' + e.message)
-          } finally {
-            go.disabled = false
-            go.textContent = 'Entrar'
+            const pulledProg = await ANDON_SYNC.syncFromServer()
+            if (pulledProg) {
+              renderProg()
+              if (st) st.textContent = 'Programação sincronizada com o servidor'
+            }
+          } catch (_) {}
+          try {
+            if (typeof smktSelfHeal === 'function') smktSelfHeal()
+            const pulledSmkt = await ANDON_SYNC.syncSmktFromServer()
+            if (pulledSmkt) {
+              if (typeof smktSelfHeal === 'function') smktSelfHeal()
+              if (typeof renderSmkt === 'function') renderSmkt()
+              renderSemana()
+              renderKpis()
+              renderTabela()
+            }
+          } catch (_) {}
+          // Salva estado local no servidor caso ainda não exista snapshot remoto
+          try {
+            await ANDON_SYNC.push(declDraft, 'Login inicial — alinhamento de snapshot')
+          } catch (_) {}
+        } catch (err) {
+          if (alertBox) {
+            alertBox.style.display = 'block'
+            alertBox.style.background = '#fee2e2'
+            alertBox.style.border = '1px solid #fca5a5'
+            alertBox.style.color = '#991b1b'
+            alertBox.textContent =
+              'Falha ao conectar: ' +
+              (err.message || 'Credenciais inválidas ou servidor inacessível.')
           }
-        })
-        // hook global: toda declSave() empurra o rascunho ao servidor (fire-and-forget)
+        } finally {
+          btn.disabled = false
+          btn.innerHTML = '<span>Conectar e sincronizar</span>'
+        }
+      }
+      window.andonModalSubmit = andonModalSubmit
+
+      async function andonRetryConn() {
+        if (!ANDON_SYNC.connected()) {
+          andonShowLoginModal('Por favor, faça login para conectar ao servidor.')
+          return
+        }
+        const st = document.getElementById('declStatus')
+        if (st) st.textContent = 'Verificando conexão com o servidor…'
+        const check = await ANDON_SYNC.validateSession()
+        if (check === true) {
+          andonShowOffline(false)
+          paintConnBar()
+          try {
+            const pulled = await ANDON_SYNC.syncFromServer()
+            if (pulled) renderProg()
+            const pSmkt = await ANDON_SYNC.syncSmktFromServer()
+            if (pSmkt) {
+              if (typeof renderSmkt === 'function') renderSmkt()
+              renderSemana()
+              renderKpis()
+              renderTabela()
+            }
+            if (st) st.textContent = 'Conexão restaurada com sucesso!'
+          } catch (e) {
+            andonShowOffline(true, 'Conectado, mas ocorreu erro no sync: ' + e.message)
+          }
+        } else if (check === false) {
+          andonShowLoginModal('Sessão expirada. Conecte-se novamente.')
+        } else {
+          andonShowOffline(
+            true,
+            'Servidor continua inacessível. Verifique sua rede e tente novamente.',
+          )
+        }
+      }
+      window.andonRetryConn = andonRetryConn
+
+      function paintConnBar() {
+        const btn = document.getElementById('btnConn')
+        const btnOut = document.getElementById('btnDisconnect')
+        const info = document.getElementById('connInfo')
+        if (!btn || !info) return
+        if (ANDON_SYNC.connected()) {
+          const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
+          btn.style.display = ''
+          btn.style.background = '#15803d'
+          btn.style.borderColor = '#16a34a'
+          btn.style.color = '#ffffff'
+          btn.textContent = '🟢 ' + String(u.name || u.email || 'Conectado').slice(0, 18)
+          if (btnOut) btnOut.style.display = ''
+          info.textContent = 'conectado ao servidor — dados sincronizados'
+        } else {
+          btn.style.display = ''
+          btn.style.background = '#dc2626'
+          btn.style.borderColor = '#dc2626'
+          btn.style.color = '#ffffff'
+          btn.textContent = '🔒 Conectar servidor (obrigatório)'
+          if (btnOut) btnOut.style.display = 'none'
+          info.textContent = 'login obrigatório — painel não conectado'
+        }
+      }
+
+      ;(function () {
+        paintConnBar()
+
+        // Hook antigo do connBox mantido para compatibilidade se o usuário abrir o form alternativo
+        const go = document.getElementById('btnConnGo')
+        if (go) {
+          go.addEventListener('click', async function () {
+            const email = document.getElementById('connEmail').value.trim()
+            const pass = document.getElementById('connPass').value
+            if (!email || !pass) {
+              alert('Informe e-mail e senha.')
+              return
+            }
+            go.disabled = true
+            go.textContent = 'Entrando…'
+            try {
+              await ANDON_SYNC.login(email, pass)
+              paintConnBar()
+              andonShowOffline(false)
+              const st = document.getElementById('declStatus')
+              if (st) st.textContent = 'Conectado ao servidor — dados sincronizados entre máquinas'
+              document.getElementById('connBox').style.display = 'none'
+              try {
+                const pulled = await ANDON_SYNC.syncFromServer()
+                if (pulled) {
+                  renderProg()
+                  if (st) st.textContent = 'Rascunho do servidor carregado'
+                }
+              } catch (e) {}
+              try {
+                await ANDON_SYNC.push(declDraft, 'Sessão conectada — estado atual salvo')
+              } catch (e) {}
+            } catch (e) {
+              alert('Falha ao conectar: ' + e.message)
+            } finally {
+              go.disabled = false
+              go.textContent = 'Entrar'
+            }
+          })
+        }
+
+        // hook global: toda declSave() empurra o rascunho ao servidor
         const _origDeclSave = declSave
         declSave = function () {
           _origDeclSave()
           if (ANDON_SYNC.connected()) {
             localStorage.setItem('andon|rev', String(Date.now()))
             ANDON_SYNC.push(declDraft).catch(function () {})
+          } else {
+            // Se usuário tentar alterar sem sessão, abre imediatamente a tela de conexão
+            andonShowLoginModal('Faça login para salvar suas alterações no servidor.')
           }
         }
-        // ao abrir: se conectado, puxa o snapshot do servidor (servidor vence a menos que o local seja mais novo)
-        if (ANDON_SYNC.connected()) {
-          ANDON_SYNC.syncFromServer()
-            .then(function (pulled) {
-              if (pulled) {
-                renderProg()
-                const st = document.getElementById('declStatus')
-                if (st) st.textContent = 'Rascunho carregado do servidor (Compass 2.1)'
-              }
-            })
-            .catch(function () {})
-          if (typeof smktSelfHeal === 'function') smktSelfHeal()
-          ANDON_SYNC.syncSmktFromServer()
-            .then(function (pulled) {
-              if (pulled) {
-                if (typeof smktSelfHeal === 'function') smktSelfHeal()
-                if (typeof renderSmkt === 'function') renderSmkt()
-                renderSemana()
-                renderKpis()
-                renderTabela()
-              }
-            })
-            .catch(function () {})
+
+        // Verificação na abertura: conectado por padrão
+        if (!ANDON_SYNC.connected()) {
+          // Exibe imediatamente o fluxo de login
+          andonShowLoginModal()
+        } else {
+          // Sessão existe: valida em background e sincroniza imediatamente dados do servidor
+          ANDON_SYNC.validateSession().then(function (res) {
+            if (res === false) {
+              paintConnBar()
+              andonShowLoginModal('Sua sessão expirou. Conecte-se para continuar.')
+              return
+            }
+            if (res === 'network_error') {
+              andonShowOffline(
+                true,
+                'Não foi possível contatar o servidor no momento. Modo somente visualização do cache local.',
+              )
+            }
+
+            ANDON_SYNC.syncFromServer()
+              .then(function (pulled) {
+                if (pulled) {
+                  renderProg()
+                  const st = document.getElementById('declStatus')
+                  if (st) st.textContent = 'Programação sincronizada com o servidor (Compass 2.1)'
+                }
+              })
+              .catch(function (e) {
+                andonShowOffline(true, 'Falha ao sincronizar programação: ' + e.message)
+              })
+
+            if (typeof smktSelfHeal === 'function') smktSelfHeal()
+            ANDON_SYNC.syncSmktFromServer()
+              .then(function (pulled) {
+                if (pulled) {
+                  if (typeof smktSelfHeal === 'function') smktSelfHeal()
+                  if (typeof renderSmkt === 'function') renderSmkt()
+                  renderSemana()
+                  renderKpis()
+                  renderTabela()
+                }
+              })
+              .catch(function (e) {
+                andonShowOffline(true, 'Falha ao sincronizar SMKT: ' + e.message)
+              })
+          })
         }
       })()
       renderProg()
