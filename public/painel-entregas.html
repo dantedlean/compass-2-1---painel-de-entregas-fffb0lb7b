@@ -419,7 +419,6 @@
     </style>
   </head>
   <body>
-    <!-- Painel de Entregas — Versão v0.0.73 -->
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -440,563 +439,47 @@
         <span class="badge" id="badgePvs"></span>
       </div>
     </header>
-    <!-- Modal de Login Obrigatório na Abertura (Conectado por padrão) -->
-    <div
-      id="loginModalOverlay"
-      style="
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.78);
-        backdrop-filter: blur(4px);
-        z-index: 99999;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-      "
-    >
-      <div
-        id="loginModalCard"
-        style="
-          background: #ffffff;
-          border-radius: 16px;
-          max-width: 440px;
-          width: 100%;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-          overflow: hidden;
-          border: 1px solid #e2e8f0;
-          animation: loginFadeIn 0.2s ease-out;
-        "
-      >
-        <div
-          style="
-            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
-            padding: 24px 24px 20px;
-            color: #fff;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
-            <span style="font-size: 22px">🔒</span>
-            <h2
-              style="
-                margin: 0;
-                font-size: 18px;
-                font-weight: 800;
-                color: #fff;
-                letter-spacing: -0.01em;
-              "
-            >
-              Acesso ao Compass 2.1
-            </h2>
-          </div>
-          <p style="margin: 0; font-size: 13px; color: #bfdbfe; line-height: 1.4">
-            Painel conectado por padrão para sincronização em tempo real entre todos os operadores e
-            ambientes.
-          </p>
+    <nav class="tabnav">
+      <button id="tabNf" class="on" onclick="showView('nf')">💸 Faturamento</button>
+      <button id="tabEnt" onclick="showView('ent')">📅 Entregas por semana</button>
+      <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
+    </nav>
+    <div id="viewNf" class="view on">
+      <main>
+        <div class="kpis" id="nfKpis"></div>
+        <div class="card">
+          <h2>NFs emitidas por dia — <span id="nfMesLbl">mês atual</span></h2>
+          <div id="chNfDia" style="width: 100%; height: 260px"></div>
         </div>
-
-        <form
-          id="loginModalForm"
-          onsubmit="
-            event.preventDefault()
-            andonModalSubmit()
-          "
-          style="padding: 24px"
-        >
-          <div
-            id="loginModalAlert"
-            style="
-              display: none;
-              padding: 10px 12px;
-              border-radius: 8px;
-              font-size: 12.5px;
-              margin-bottom: 16px;
-              line-height: 1.4;
-            "
-          ></div>
-
-          <div style="margin-bottom: 16px">
-            <label
-              for="modalConnEmail"
-              style="
-                display: block;
-                font-size: 12px;
-                font-weight: 700;
-                color: #475569;
-                margin-bottom: 6px;
-              "
-            >
-              Usuário ou e-mail de acesso
-            </label>
-            <input
-              id="modalConnEmail"
-              type="text"
-              required
-              placeholder="analista_projetos ou seu.email@empresa.com.br"
-              style="
-                width: 100%;
-                box-sizing: border-box;
-                padding: 10px 12px;
-                border: 1.5px solid #cbd5e1;
-                border-radius: 8px;
-                font-size: 13.5px;
-                color: #0f172a;
-                background: #f8fafc;
-                outline: none;
-                transition: border-color 0.15s;
-              "
-              onfocus="
-                this.style.borderColor = '#2563eb'
-                this.style.background = '#fff'
-              "
-              onblur="
-                this.style.borderColor = '#cbd5e1'
-                this.style.background = '#f8fafc'
-              "
-            />
-          </div>
-
-          <div style="margin-bottom: 20px">
-            <label
-              for="modalConnPass"
-              style="
-                display: block;
-                font-size: 12px;
-                font-weight: 700;
-                color: #475569;
-                margin-bottom: 6px;
-              "
-            >
-              Senha
-            </label>
-            <input
-              id="modalConnPass"
-              type="password"
-              required
-              placeholder="••••••••"
-              style="
-                width: 100%;
-                box-sizing: border-box;
-                padding: 10px 12px;
-                border: 1.5px solid #cbd5e1;
-                border-radius: 8px;
-                font-size: 13.5px;
-                color: #0f172a;
-                background: #f8fafc;
-                outline: none;
-                transition: border-color 0.15s;
-              "
-              onfocus="
-                this.style.borderColor = '#2563eb'
-                this.style.background = '#fff'
-              "
-              onblur="
-                this.style.borderColor = '#cbd5e1'
-                this.style.background = '#f8fafc'
-              "
-            />
-          </div>
-
-          <button
-            id="modalConnBtn"
-            type="submit"
-            style="
-              width: 100%;
-              padding: 12px;
-              background: #16a34a;
-              border: none;
-              border-radius: 8px;
-              color: #ffffff;
-              font-size: 14px;
-              font-weight: 800;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 8px;
-              transition: background 0.15s;
-            "
-            onmouseover="this.style.background = '#15803d'"
-            onmouseout="this.style.background = '#16a34a'"
-          >
-            <span>Conectar e sincronizar</span>
-          </button>
-
-          <div
-            style="
-              margin-top: 14px;
-              font-size: 11.5px;
-              color: #64748b;
-              text-align: center;
-              line-height: 1.4;
-            "
-          >
-            Dados de programação e supermercado são gravados centralizadamente no servidor.
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal de Histórico de Reprogramações e Trocas de Local -->
-    <div
-      id="reprogModalOverlay"
-      style="
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.72);
-        backdrop-filter: blur(4px);
-        z-index: 99998;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-      "
-    >
-      <div
-        style="
-          background: #ffffff;
-          border-radius: 14px;
-          max-width: 960px;
-          width: 100%;
-          max-height: 85vh;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-          overflow: hidden;
-          border: 1px solid #cbd5e1;
-          animation: loginFadeIn 0.2s ease-out;
-        "
-      >
-        <div
-          style="
-            background: linear-gradient(135deg, #0f766e, #115e59);
-            padding: 18px 22px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 10px">
-            <span style="font-size: 22px">📋</span>
-            <div>
-              <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: #fff">
-                Histórico de Reprogramações e Movimentações
-              </h2>
-              <div style="font-size: 12px; color: #ccfbf1">
-                Auditoria em tempo real: quem moveu, dia de origem, destino e trocas de local
-              </div>
-            </div>
-          </div>
-          <button
-            onclick="reprogCloseModal()"
-            style="
-              background: rgba(255, 255, 255, 0.2);
-              border: none;
-              color: #fff;
-              font-size: 18px;
-              width: 32px;
-              height: 32px;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 800;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-            title="Fechar"
-          >
-            ✕
-          </button>
+        <div class="card">
+          <h2>NFs emitidas por mês — <span id="nfAnoLbl">ano atual</span></h2>
+          <div id="chNfMes" style="width: 100%; height: 280px"></div>
         </div>
-
-        <div
-          style="
-            padding: 12px 18px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px">
-            <span style="font-size: 13px; font-weight: 700; color: #475569">🔍 Buscar:</span>
-            <input
-              id="reprogSearch"
-              type="text"
-              placeholder="Buscar por código, produto, PV ou usuário..."
-              oninput="reprogFilterTable()"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-                font-size: 12.5px;
-                outline: none;
-              "
-            />
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px">
-            <button
-              onclick="reprogLoadEvents()"
-              class="dlbtn"
-              style="background: #ffffff; border-color: #cbd5e1; color: #0f766e; font-size: 12px"
-            >
-              🔄 Atualizar
-            </button>
-            <span id="reprogCount" class="note" style="margin: 0; font-weight: 700"></span>
-          </div>
-        </div>
-
-        <div style="flex: 1; overflow-y: auto; padding: 14px 18px">
-          <div
-            id="reprogAlert"
-            style="
-              display: none;
-              padding: 12px;
-              border-radius: 8px;
-              font-size: 13px;
-              margin-bottom: 10px;
-            "
-          ></div>
-          <div
-            class="tblwrap"
-            style="max-height: 480px; border: 1px solid #e2e8f0; border-radius: 8px"
-          >
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px">
+        <div class="card">
+          <h2>Últimas NFs emitidas</h2>
+          <div class="tblwrap" style="max-height: 420px">
+            <table id="tbNf">
               <thead>
-                <tr style="background: #f1f5f9; color: #334155; text-align: left">
-                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Data/Hora</th>
-                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Usuário</th>
-                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Item</th>
-                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">Movimentação</th>
-                  <th style="padding: 9px 12px; border-bottom: 1px solid #cbd5e1">
-                    Qtd / Detalhes
-                  </th>
+                <tr>
+                  <th>NF</th>
+                  <th>Data emissão</th>
+                  <th>Empresa</th>
+                  <th>Operação</th>
+                  <th>Valor total</th>
                 </tr>
               </thead>
-              <tbody id="reprogTbody">
-                <tr>
-                  <td colspan="5" style="text-align: center; padding: 24px; color: #64748b">
-                    Carregando histórico...
-                  </td>
-                </tr>
-              </tbody>
+              <tbody id="nfTb"></tbody>
             </table>
           </div>
         </div>
-
-        <div
-          style="
-            padding: 10px 18px;
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: flex-end;
-          "
-        >
-          <button
-            onclick="reprogCloseModal()"
-            class="dlbtn"
-            style="background: #64748b; border-color: #64748b; color: #fff; font-size: 12.5px"
-          >
-            Fechar
-          </button>
-        </div>
-      </div>
+      </main>
+      <footer>
+        Faturamento · método Compass: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
+        valorTotal da NF · fonte MaxiProd GraphQL · gerado em
+        artifacts/entregas_por_semana_itens_20260927.xlsx
+      </footer>
     </div>
-
-    <!-- Modal Seletor de Local de Fabricação (Curitiba / Vinhedo) com Propagação Global -->
-    <div
-      id="itemLocalModalOverlay"
-      style="
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.72);
-        backdrop-filter: blur(4px);
-        z-index: 99999;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-      "
-    >
-      <div
-        style="
-          background: #ffffff;
-          border-radius: 14px;
-          max-width: 460px;
-          width: 100%;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-          overflow: hidden;
-          border: 1px solid #cbd5e1;
-          animation: loginFadeIn 0.2s ease-out;
-        "
-      >
-        <div
-          style="
-            background: linear-gradient(135deg, #1e3a8a, #2563eb);
-            padding: 18px 20px;
-            color: #fff;
-          "
-        >
-          <div style="display: flex; align-items: center; justify-content: space-between">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff">
-              Alterar Local de Fabricação
-            </h3>
-            <button
-              onclick="itemLocalCloseModal()"
-              style="
-                background: rgba(255, 255, 255, 0.2);
-                border: none;
-                color: #fff;
-                font-size: 16px;
-                width: 28px;
-                height: 28px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-weight: 800;
-              "
-            >
-              ✕
-            </button>
-          </div>
-          <div style="font-size: 12px; color: #bfdbfe; margin-top: 4px">
-            A alteração propaga para todas as linhas, programação e faturamento no sistema.
-          </div>
-        </div>
-
-        <div style="padding: 20px">
-          <div
-            style="
-              margin-bottom: 14px;
-              padding: 10px 12px;
-              background: #f8fafc;
-              border: 1px solid #e2e8f0;
-              border-radius: 8px;
-            "
-          >
-            <div
-              style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase"
-            >
-              Produto
-            </div>
-            <div id="itemLocalCod" style="font-size: 14px; font-weight: 800; color: #1e3a8a"></div>
-            <div id="itemLocalDesc" style="font-size: 12px; color: #334155; margin-top: 2px"></div>
-          </div>
-
-          <div style="margin-bottom: 18px">
-            <label
-              style="
-                display: block;
-                font-size: 12px;
-                font-weight: 700;
-                color: #475569;
-                margin-bottom: 6px;
-              "
-            >
-              Novo local de fabricação:
-            </label>
-            <select
-              id="itemLocalSelect"
-              style="
-                width: 100%;
-                padding: 10px 12px;
-                border: 1.5px solid #cbd5e1;
-                border-radius: 8px;
-                font-size: 13.5px;
-                color: #0f172a;
-                font-weight: 700;
-                background: #fff;
-                outline: none;
-              "
-            >
-              <option value="Curitiba">🏭 Curitiba</option>
-              <option value="Vinhedo">🏭 Vinhedo</option>
-            </select>
-          </div>
-
-          <div style="display: flex; gap: 8px; justify-content: flex-end">
-            <button
-              onclick="itemLocalCloseModal()"
-              class="dlbtn"
-              style="background: #f1f5f9; border-color: #cbd5e1; color: #475569"
-            >
-              Cancelar
-            </button>
-            <button
-              id="itemLocalSaveBtn"
-              onclick="itemLocalSave()"
-              class="dlbtn"
-              style="background: #16a34a; border-color: #16a34a; color: #fff; font-weight: 800"
-            >
-              💾 Salvar em todo o sistema
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Banner de Offline / Erro de Conexão -->
-    <div
-      id="connOfflineBanner"
-      style="
-        display: none;
-        background: #fee2e2;
-        border-bottom: 1.5px solid #f87171;
-        color: #991b1b;
-        padding: 10px 18px;
-        font-size: 13px;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-      "
-    >
-      <div style="display: flex; align-items: center; gap: 8px">
-        <span style="font-size: 18px">⚠️</span>
-        <span id="connOfflineMsg">
-          <b>Falha na conexão com o servidor:</b> não é possível sincronizar as alterações.
-        </span>
-      </div>
-      <div style="display: flex; gap: 8px; align-items: center">
-        <button
-          onclick="andonRetryConn()"
-          class="dlbtn"
-          style="
-            background: #dc2626;
-            border-color: #dc2626;
-            color: #fff;
-            padding: 4px 12px;
-            font-size: 12px;
-          "
-        >
-          🔄 Tentar novamente
-        </button>
-        <button
-          onclick="andonShowLoginModal()"
-          class="dlbtn"
-          style="
-            background: #ffffff;
-            border-color: #fca5a5;
-            color: #991b1b;
-            padding: 4px 10px;
-            font-size: 12px;
-          "
-        >
-          Trocar conta / Reconectar
-        </button>
-      </div>
-    </div>
-
-    <nav class="tabnav">
-      <button id="tabEnt" class="on" onclick="showView('ent')">📅 Entregas por semana</button>
-      <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
-    </nav>
-    <div id="viewEnt" class="view on">
+    <div id="viewEnt" class="view">
       <main>
         <div
           class="card"
@@ -1037,20 +520,6 @@
           <button id="btnConn" class="dlbtn" style="display: none" onclick="andonToggleConn()">
             🔗 Conectar servidor
           </button>
-          <button
-            id="btnDisconnect"
-            class="dlbtn"
-            style="
-              display: none;
-              background: rgba(239, 68, 68, 0.15);
-              border-color: rgba(239, 68, 68, 0.4);
-              color: #fecaca;
-            "
-            onclick="andonLogout()"
-            title="Sair da sessão atual e trocar de usuário"
-          >
-            🚪 Sair
-          </button>
           <span class="note" style="margin: 0; color: #cbd5e1" id="connInfo"></span>
           <div id="connBox" style="display: none; gap: 6px; align-items: center; flex-wrap: wrap">
             <input
@@ -1087,7 +556,7 @@
               Entrar
             </button>
             <span class="note" style="margin: 0; color: #cbd5e1"
-              >conectado ao servidor — dados sincronizados em tempo real com o Compass 2.1</span
+              >conectando, o rascunho fica salvo no servidor — funciona em qualquer máquina</span
             >
           </div>
         </div>
@@ -1121,15 +590,6 @@
             </button>
             <button id="btnDlProg" class="dlbtn" style="display: none">
               ⬇ Baixar programação editada (.xlsx)
-            </button>
-            <button
-              id="btnReprogHist"
-              class="dlbtn"
-              style="background: #0f766e; border-color: #0f766e; color: #fff; font-weight: 700"
-              onclick="reprogOpenModal()"
-              title="Visualizar histórico completo de reprogramações e trocas de local gravadas no servidor"
-            >
-              📋 Histórico de Reprogramações
             </button>
             <span class="note" id="progPct" style="margin: 0; font-weight: 800"></span>
             <span
@@ -1487,9 +947,8 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean — v0.0.73 — gerado a partir de
-        artifacts/entregas_por_semana_itens_20260927.xlsx · dados: MaxiProd (data de entrega por
-        item)
+        FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20260927.xlsx ·
+        dados: MaxiProd (data de entrega por item)
       </footer>
     </div>
 
@@ -1602,8 +1061,8 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar · v0.0.73 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
-        entrega no nível do item · fretes (50x/00043) marcados · fonte
+        Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
+        nível do item · fretes (50x/00043) marcados · fonte
         artifacts/entregas_por_semana_itens_20260927.xlsx
       </footer>
     </div>
@@ -8966,6 +8425,268 @@
           ],
           nfCount: 31,
         },
+        nfFat: {
+          mesLabel: '09/2026',
+          daily: [
+            { label: '01/09', qtd: 1, valor: 116221.72 },
+            { label: '02/09', qtd: 2, valor: 80843.76 },
+            { label: '03/09', qtd: 6, valor: 152767.97 },
+            { label: '04/09', qtd: 4, valor: 129462.85 },
+            { label: '05/09', qtd: 0, valor: 0 },
+            { label: '06/09', qtd: 0, valor: 0 },
+            { label: '07/09', qtd: 0, valor: 0 },
+            { label: '08/09', qtd: 2, valor: 81701.11 },
+            { label: '09/09', qtd: 4, valor: 162727.51 },
+            { label: '10/09', qtd: 6, valor: 249442.85 },
+            { label: '11/09', qtd: 2, valor: 164564.96 },
+            { label: '12/09', qtd: 1, valor: 3120.0 },
+            { label: '13/09', qtd: 0, valor: 0 },
+            { label: '14/09', qtd: 3, valor: 91633.45 },
+            { label: '15/09', qtd: 4, valor: 280619.66 },
+            { label: '16/09', qtd: 0, valor: 0 },
+            { label: '17/09', qtd: 10, valor: 208134.33 },
+            { label: '18/09', qtd: 6, valor: 223181.72 },
+            { label: '19/09', qtd: 1, valor: 129936.0 },
+            { label: '20/09', qtd: 0, valor: 0 },
+            { label: '21/09', qtd: 1, valor: 122339.98 },
+            { label: '22/09', qtd: 3, valor: 139304.29 },
+            { label: '23/09', qtd: 0, valor: 0 },
+            { label: '24/09', qtd: 2, valor: 73590.39 },
+            { label: '25/09', qtd: 5, valor: 410039.72 },
+            { label: '26/09', qtd: 1, valor: 23899.14 },
+            { label: '27/09', qtd: 1, valor: 88153.0 },
+            { label: '28/09', qtd: 4, valor: 163402.22 },
+            { label: '29/09', qtd: 0, valor: 0 },
+            { label: '30/09', qtd: 0, valor: 0 },
+          ],
+          monthly: [
+            { label: '01/2026', qtd: 10, valor: 509117.28 },
+            { label: '02/2026', qtd: 18, valor: 535201.55 },
+            { label: '03/2026', qtd: 32, valor: 1091926.23 },
+            { label: '04/2026', qtd: 22, valor: 801400.55 },
+            { label: '05/2026', qtd: 29, valor: 391913.71 },
+            { label: '06/2026', qtd: 78, valor: 801178.66 },
+            { label: '07/2026', qtd: 53, valor: 1304171.73 },
+            { label: '08/2026', qtd: 56, valor: 2210976.43 },
+            { label: '09/2026', qtd: 69, valor: 3095086.63 },
+          ],
+          mesQtd: 69,
+          mesValor: 3095086.63,
+          anoQtd: 367,
+          anoValor: 10740972.77,
+          recentes: [
+            {
+              nf: '799',
+              data: '2026-09-28',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 46636.64,
+            },
+            {
+              nf: '800',
+              data: '2026-09-28',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 46636.64,
+            },
+            {
+              nf: '801',
+              data: '2026-09-28',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 35064.47,
+            },
+            {
+              nf: '802',
+              data: '2026-09-28',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 35064.47,
+            },
+            {
+              nf: '203',
+              data: '2026-09-27',
+              emp: 'SLEAN',
+              op: 'Venda de produção do estabelecimento',
+              valor: 88153.0,
+            },
+            {
+              nf: '798',
+              data: '2026-09-26',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 23899.14,
+            },
+            {
+              nf: '793',
+              data: '2026-09-25',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 92221.72,
+            },
+            {
+              nf: '794',
+              data: '2026-09-25',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 129936.0,
+            },
+            {
+              nf: '795',
+              data: '2026-09-25',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 65840.0,
+            },
+            {
+              nf: '796',
+              data: '2026-09-25',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 59864.0,
+            },
+            {
+              nf: '797',
+              data: '2026-09-25',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 62178.0,
+            },
+            {
+              nf: '790',
+              data: '2026-09-24',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 38525.92,
+            },
+            {
+              nf: '791',
+              data: '2026-09-24',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 35064.47,
+            },
+            {
+              nf: '787',
+              data: '2026-09-22',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 95948.93,
+            },
+            {
+              nf: '788',
+              data: '2026-09-22',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 4055.36,
+            },
+            {
+              nf: '789',
+              data: '2026-09-22',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 39300.0,
+            },
+            {
+              nf: '785',
+              data: '2026-09-21',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 122339.98,
+            },
+            {
+              nf: '784',
+              data: '2026-09-19',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 129936.0,
+            },
+            {
+              nf: '197',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              op: 'Venda de produção do estabelecimento',
+              valor: 46320.0,
+            },
+            {
+              nf: '198',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              op: 'Venda de produção do estabelecimento',
+              valor: 46320.0,
+            },
+            {
+              nf: '199',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              op: 'Venda de produção do estabelecimento',
+              valor: 23160.0,
+            },
+            {
+              nf: '200',
+              data: '2026-09-18',
+              emp: 'SLEAN',
+              op: 'Venda de produção do estabelecimento',
+              valor: 23160.0,
+            },
+            {
+              nf: '782',
+              data: '2026-09-18',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 36137.88,
+            },
+            {
+              nf: '783',
+              data: '2026-09-18',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 48083.84,
+            },
+            {
+              nf: '774',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 58483.84,
+            },
+            {
+              nf: '775',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 47237.88,
+            },
+            {
+              nf: '776',
+              data: '2026-09-17',
+              emp: 'DTEKT',
+              op: 'Venda de produção do estabelecimento',
+              valor: 23916.39,
+            },
+            {
+              nf: '107',
+              data: '2026-09-17',
+              emp: 'DLEAN FILIAL VINHEDO',
+              op: 'Venda de produção do estabelecimento',
+              valor: 1946.0,
+            },
+            {
+              nf: '108',
+              data: '2026-09-17',
+              emp: 'DLEAN FILIAL VINHEDO',
+              op: 'Venda de produção do estabelecimento',
+              valor: 1946.0,
+            },
+            {
+              nf: '109',
+              data: '2026-09-17',
+              emp: 'DLEAN FILIAL VINHEDO',
+              op: 'Venda de produção do estabelecimento',
+              valor: 550.0,
+            },
+          ],
+        },
       }
       const SEM = DATA.semanas
       const FMT = new Intl.NumberFormat('pt-BR', {
@@ -9228,7 +8949,7 @@
               pv: d.pv || '—',
               cli: '',
               emp: '',
-              vtot: left * vuDe(d.cod),
+              vtot: 0,
               sit: 'Sem PV associado',
               cheg: '—',
               local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
@@ -9495,15 +9216,11 @@
             const pvRows = pvList
               .map(function (v) {
                 const vin = v.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
-                const semPV = v.pv === '—' || String(v.pv).trim() === ''
-                const pvCell = semPV
-                  ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
-                  : v.pv
                 return (
                   '<tr' +
                   vin +
                   '><td class="pvtag">' +
-                  pvCell +
+                  v.pv +
                   '</td><td>' +
                   v.cli +
                   '</td>' +
@@ -9518,11 +9235,9 @@
                   v.local +
                   '</td>' +
                   '<td>' +
-                  (semPV
-                    ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
-                    : v.atr
-                      ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
-                      : '<span class="tagP">em dia</span>') +
+                  (v.atr
+                    ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                    : '<span class="tagP">em dia</span>') +
                   '</td></tr>'
                 )
               })
@@ -9598,18 +9313,6 @@
                 ex.pvNovo.split('|')[0] +
                 '</div>'
               : ''
-            const temSemPV = pvList.some(function (v) {
-              return v.pv === '—' || String(v.pv).trim() === ''
-            })
-            const sitBadge = temSemPV
-              ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
-              : p.atrasado
-                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
-                : '<span class="tagP">em dia</span>'
-            const pvCountDisplay =
-              temSemPV && pvList.length === 1
-                ? '<span class="tagS" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-weight:800;font-size:10px">Sem PV</span>'
-                : pvList.length + ' PV' + (pvList.length > 1 ? 's' : '')
             return (
               '<tr class="prow' +
               (ex.ok ? ' exOK' : '') +
@@ -9633,13 +9336,17 @@
               FMT.format(p.vtot) +
               '</td>' +
               '<td class="num">' +
-              pvCountDisplay +
+              pvList.length +
+              ' PV' +
+              (pvList.length > 1 ? 's' : '') +
               '</td>' +
               '<td>' +
               chegTxt +
               '</td>' +
               '<td>' +
-              sitBadge +
+              (p.atrasado
+                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                : '<span class="tagP">em dia</span>') +
               '</td>' +
               '<td class="exec"><input type="checkbox" data-p="ok" ' +
               (ex.ok ? 'checked' : '') +
@@ -9951,17 +9658,7 @@
             const p = progProdsCache[ix]
             if (!p) return
             const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
-            const pvKeys = Object.keys(p.pvs || {})
-            const pvHerda = pvKeys.length === 1 ? pvKeys[0].split('|')[0] : ''
-            dragP = {
-              cod: p.cod,
-              desc: p.desc,
-              qtd: p.qtd,
-              vtot: p.vtot,
-              de: progDate,
-              ex: ex,
-              pv: pvHerda,
-            }
+            dragP = { cod: p.cod, desc: p.desc, qtd: p.qtd, vtot: p.vtot, de: progDate, ex: ex }
             tr.classList.add('dragging')
             try {
               e.dataTransfer.setData('text/plain', p.cod)
@@ -10041,7 +9738,6 @@
           desc: p.desc,
           qtd: p.qtd,
           de: progDate,
-          pv: Object.keys(p.pvs || {})[0]?.split('|')[0] || '',
           cut: false,
           exQtd: ex.qtd || 0,
         }
@@ -10079,7 +9775,6 @@
           desc: p.desc,
           qtd: saldo,
           de: progDate,
-          pv: Object.keys(p.pvs || {})[0]?.split('|')[0] || '',
           cut: true,
           exQtd: ex.qtd || 0,
           exOk: !!ex.ok,
@@ -10124,12 +9819,6 @@
           alert('Origem e destino são o mesmo dia.')
           return
         }
-        const pvHerdado =
-          c.pv ||
-          DATA.rows.find(function (r) {
-            return r.codigo === c.cod && Number(r.qtd || 0) > 0
-          })?.pv ||
-          ''
         if (c.cut) {
           // RECORTE: transfere a qtd (já líquida do executado) e zera a origem.
           declDraft.push({
@@ -10140,7 +9829,7 @@
             cod: c.cod,
             qtd: c.qtd,
             local: 'C',
-            pv: pvHerdado,
+            pv: '',
             id: 'PR-CUT-' + Date.now(),
             obs: 'recortado de ' + (c.de || '?'),
             status: 'Planejado',
@@ -10186,7 +9875,7 @@
           cod: c.cod,
           qtd: c.qtd,
           local: 'C',
-          pv: pvHerdado,
+          pv: '',
           id: 'PR-COPY-' + Date.now(),
           obs: 'colado de ' + (c.de || '?'),
           status: 'Planejado',
@@ -10206,15 +9895,9 @@
         if (!dragP) return
         const p = dragP
         const ex = p.ex || {}
-        const exQtd = Number(ex.qtd) || 0
-        const saldo = Math.max(0, p.qtd - exQtd)
+        const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
         if (saldo <= 0) {
           alert('Nada a mover — a qtd realizada cobre o planejado.')
-          return
-        }
-        const origemIso = String(progIso(p.de))
-        if (origemIso === String(dateDest)) {
-          alert('Origem e destino são o mesmo dia.')
           return
         }
         if (
@@ -10240,49 +9923,17 @@
           pvNovo: ex.pvNovo || null,
           smkt: ex.smkt || null,
         })
-        // herda local e pv da declaração de origem correspondente se existir (prioriza pv do dragP se houver)
-        const origDecl =
-          declDraft.find(function (d) {
-            const mesmoPV = !p.pv || String(d.pv) === String(p.pv)
-            return (
-              d.cod === p.cod &&
-              progIso(d.data) === origemIso &&
-              mesmoPV &&
-              d.status !== 'Cancelado'
-            )
-          }) ||
-          declDraft.find(function (d) {
-            return d.cod === p.cod && progIso(d.data) === origemIso && d.status !== 'Cancelado'
-          })
-        const locHerda = (origDecl && origDecl.local) || 'C'
-        const pvHerda = p.pv || (origDecl && origDecl.pv) || ''
-        // destino: nova linha Planejado no rascunho com o saldo a mover
+        // destino: nova linha Planejado no rascunho
         declDraft.push({
           dia: diaDest,
           data: dateDest,
           cod: p.cod,
           qtd: saldo,
-          local: locHerda,
-          pv: pvHerda,
+          local: 'C',
+          pv: '',
           id: 'PR-MOVE-' + Date.now(),
           obs: 'movido de ' + p.de,
           status: 'Planejado',
-        })
-        // Atualiza a origem nas declarações ativas (declDraft) com escopo de CÓDIGO + DIA + PV:
-        // - Regra 1 (lote inteiro / sem fabricação): cancela na origem (qtd = 0, status = 'Cancelado')
-        // - Regra 2 (fabricado parcial): reduz a origem ao que já foi fabricado
-        declDraft.forEach(function (d) {
-          const mesmoCod = d.cod === p.cod
-          const mesmoDia = progIso(d.data) === origemIso
-          const mesmoPV = !pvHerda || !d.pv || String(d.pv) === String(pvHerda)
-          if (mesmoCod && mesmoDia && mesmoPV && d.status !== 'Cancelado') {
-            if (exQtd > 0) {
-              d.qtd = Math.min(Number(d.qtd) || 0, exQtd)
-            } else {
-              d.qtd = 0
-              d.status = 'Cancelado'
-            }
-          }
         })
         declSave()
         progBuildFromDecls()
@@ -10308,12 +9959,6 @@
           alert('Origem e destino são o mesmo dia.')
           return
         }
-        const pvHerdado =
-          c.pv ||
-          DATA.rows.find(function (r) {
-            return r.codigo === c.cod && Number(r.qtd || 0) > 0
-          })?.pv ||
-          ''
         declDraft.push({
           dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
             new Date(dateDest + 'T12:00:00').getDay()
@@ -10322,7 +9967,7 @@
           cod: c.cod,
           qtd: c.qtd,
           local: 'C',
-          pv: pvHerdado,
+          pv: '',
           id: 'PR-CUT-' + Date.now(),
           obs: 'recortado de ' + (c.de || '?'),
           status: 'Planejado',
@@ -10768,123 +10413,13 @@
       function smktAlocs() {
         return []
       }
-
-      window.smktLegitConsumoAtiva = false
-
-      function smktGuardZero(nextEnts, ctx) {
-        ctx = ctx || {}
-        const current = smktEntradas()
-        const curQtd = current.reduce(function (acc, x) {
-          return acc + (Number(x && x.qtd) || 0)
-        }, 0)
-        const nextArr = Array.isArray(nextEnts)
-          ? nextEnts.filter(function (x) {
-              return x && x.cod && Number(x.qtd) > 0.0001
-            })
-          : []
-        const nextQtd = nextArr.reduce(function (acc, x) {
-          return acc + (Number(x && x.qtd) || 0)
-        }, 0)
-        const legit = ctx.legit === true || window.smktLegitConsumoAtiva === true
-        if (curQtd > 0.0001 && nextQtd <= 0.0001 && !legit) {
-          // tentativa de zeramento automático BLOQUEADA
-          try {
-            smktHistorySave({
-              ts: new Date().toISOString(),
-              tipo: 'guard-bloqueio',
-              origem: ctx.origem || 'desconhecida',
-              msg:
-                'Zeramento automático do SMKT bloqueado pelo poka-yoke (qtd local ' + curQtd + ')',
-            })
-          } catch (e) {}
-          try {
-            if (typeof toast === 'function')
-              toast('Poka-yoke: zeramento automático do SMKT bloqueado — saldo preservado.')
-          } catch (e) {}
-          console.warn('[smktGuardZero] zeramento bloqueado', {
-            origem: ctx.origem,
-            curQtd: curQtd,
-            nextQtd: nextQtd,
-          })
-          return false
-        }
-        return true
-      }
-
-      // Guarda geral Poka-yoke antes de operações destrutivas no saldo do SMKT (v0.0.70)
-      function smktGuardBeforeDestructive(newEnts, context) {
-        const current = smktEntradas()
-        const curQtd = current.reduce(function (a, x) {
-          return a + (Number(x && x.qtd) || 0)
-        }, 0)
-        const newArr = Array.isArray(newEnts)
-          ? newEnts.filter(function (x) {
-              return x && x.cod && Number(x.qtd) > 0.0001
-            })
-          : []
-        const newQtd = newArr.reduce(function (a, x) {
-          return a + (Number(x && x.qtd) || 0)
-        }, 0)
-
-        // Se o saldo atual já está vazio, ou o novo saldo não reduz quantidade total nem produtos, liberação normal
-        if (curQtd <= 0.0001) return true
-        if (newQtd >= curQtd - 0.0001 && newArr.length >= current.length) return true
-
-        const ctx = context || {}
-        // Ações explícitas permitidas: consumo manual confirmado (retirada/alocação), desfazer de entrada, ou confirmação explícita
-        if (
-          ctx.explicitUserAction === true ||
-          ctx.source === 'consume' ||
-          ctx.source === 'undo-entry' ||
-          ctx.source === 'confirmed-dialog'
-        ) {
-          return true
-        }
-
-        // Redução acidental ou automática bloqueada
-        const msg =
-          'Poka-yoke SMKT: gravação destrutiva/redução de saldo bloqueada (' +
-          (ctx.source || 'ação não explicitamente autorizada') +
-          '). Saldo atual: ' +
-          curQtd.toFixed(0) +
-          ' un (' +
-          current.length +
-          ' itens) → Proposta: ' +
-          newQtd.toFixed(0) +
-          ' un (' +
-          newArr.length +
-          ' itens).'
-        console.warn(msg)
-        try {
-          const h = smktHistory()
-          h.unshift({
-            data: new Date().toLocaleDateString('pt-BR'),
-            cod: 'SISTEMA',
-            qtd: 0,
-            event: 'Poka-yoke: Gravação destrutiva bloqueada',
-            motivo: msg,
-          })
-          localStorage.setItem('smkt|historico', JSON.stringify(h))
-        } catch (e) {}
-        return false
-      }
-
-      function smktSave(ent, alc, context) {
-        const nextEnt = ent || []
-        // Guarda poka-yoke: bloqueia zeramentos indevidos e reduções não explicitadas
-        if (!smktGuardZero(nextEnt, context)) {
-          return false
-        }
-        if (!smktGuardBeforeDestructive(nextEnt, context)) {
-          return false
-        }
-        localStorage.setItem('smkt|entradas', JSON.stringify(nextEnt))
+      function smktSave(ent, alc) {
+        localStorage.setItem('smkt|entradas', JSON.stringify(ent || []))
         localStorage.setItem('smkt|alocs', '[]')
         if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
           localStorage.setItem('andon|smkt-rev', String(Date.now()))
-          window.ANDON_SYNC.pushSmkt(nextEnt, smktHistory()).catch(function () {})
+          window.ANDON_SYNC.pushSmkt(ent || [], smktHistory()).catch(function () {})
         }
-        return true
       }
       function smktConsume(cod, q, evento, meta) {
         q = Math.max(0, Number(q) || 0)
@@ -10896,25 +10431,12 @@
             ents[i].qtd -= take
             need -= take
           }
-        window.smktLegitConsumoAtiva = true
-        try {
-          smktSave(
-            ents.filter(function (x) {
-              return Number(x.qtd) > 0.0001
-            }),
-            [],
-            {
-              explicitUserAction: true,
-              source: 'consume',
-              cod: cod,
-              qtd: q,
-              evento: evento,
-              legit: true,
-            },
-          )
-        } finally {
-          window.smktLegitConsumoAtiva = false
-        }
+        smktSave(
+          ents.filter(function (x) {
+            return Number(x.qtd) > 0.0001
+          }),
+          [],
+        )
         if (q > 0) {
           const h = smktHistory()
           h.unshift(
@@ -10932,8 +10454,6 @@
         }
         return need <= 0.0001
       }
-      // Poka-yoke v0.0.70: smktEnsureMigrated NUNCA mais zera entradas nem arquiva saldo automaticamente.
-      // Se houver saldo existente no localStorage, preserva-o intacto.
       function smktEnsureMigrated() {
         if (localStorage.getItem('smkt|v3-migrated') === '1') return
         let ents = []
@@ -10945,10 +10465,19 @@
           alcs = JSON.parse(localStorage.getItem('smkt|alocs') || '[]')
         } catch (e) {}
         const h = smktHistory()
-        // Registra no histórico apenas alocações legadas já finalizadas para rastreabilidade, sem tocar em entradas
-        let loggedAlcs = 0
+        let keep = []
+        ;(Array.isArray(ents) ? ents : []).forEach(function (x) {
+          if (!x || !x.cod || !(Number(x.qtd) > 0)) return
+          h.unshift({
+            data: x.data || new Date().toLocaleDateString('pt-BR'),
+            cod: String(x.cod),
+            qtd: Number(x.qtd),
+            event: 'Saldo legado arquivado — origem não confirmada',
+            motivo: 'Não foi entrada manual confirmada por Dante; removido do saldo ativo.',
+          })
+        })
         ;(Array.isArray(alcs) ? alcs : []).forEach(function (a) {
-          if (a && a.cod && Number(a.qtd) > 0) {
+          if (a && a.cod && Number(a.qtd) > 0)
             h.unshift({
               data: a.data || new Date().toLocaleDateString('pt-BR'),
               cod: String(a.cod),
@@ -10956,49 +10485,12 @@
               event: 'Alocação legada — histórico',
               pv: String(a.pv || ''),
               nf: a.nf || '',
-              motivo: a.obs || 'Migração legada informativa',
+              motivo: a.obs || '',
             })
-            loggedAlcs++
-          }
         })
-        if (loggedAlcs > 0) {
-          smktHistorySave(h)
-        }
-        // Entradas ativas NÃO são modificadas e smktSave([], []) foi permanentemente eliminado.
+        smktSave([], [])
+        smktHistorySave(h)
         localStorage.setItem('smkt|v3-migrated', '1')
-      }
-      function smktSelfHeal() {
-        if (localStorage.getItem('smkt|v3-selfheal') === '1') return
-        const h = smktHistory()
-        if (!h || !h.length) {
-          localStorage.setItem('smkt|v3-selfheal', '1')
-          return
-        }
-        let ents = smktEntradas()
-        let restaurados = 0
-        h.forEach(function (x) {
-          const isArquivado =
-            x &&
-            (x.event === 'Saldo legado arquivado — origem não confirmada' ||
-              String(x.event || '').indexOf('Saldo legado arquivado') >= 0)
-          if (isArquivado && x.cod && Number(x.qtd) > 0 && !x.restaurado) {
-            ents.push({
-              cod: String(x.cod),
-              qtd: Number(x.qtd),
-              origem: 'self-heal',
-              data: x.data || new Date().toLocaleDateString('pt-BR'),
-            })
-            x.restaurado = true
-            x.event = 'Saldo legado restaurado — autocura'
-            x.motivo = 'Restaurado para saldo ativo pela autocura (v0.0.70).'
-            restaurados++
-          }
-        })
-        if (restaurados > 0) {
-          smktSave(ents, [])
-          smktHistorySave(h)
-        }
-        localStorage.setItem('smkt|v3-selfheal', '1')
       }
       function smktNFStatus(cod) {
         // Estoque SMKT só muda por ação manual: entrada, alocação ou retirada. NF não cria nem consome saldo automaticamente.
@@ -11037,7 +10529,6 @@
       }
       function renderSmkt() {
         smktEnsureMigrated()
-        smktSelfHeal()
         const sel = document.getElementById('smProd'),
           cods = new Set(smktCodigos())
         DATA.rows.forEach(function (r) {
@@ -12657,132 +12148,10 @@
             dt.length === 5
               ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
               : dt
-          const codItem = pvSel.itens[0].codigo
-          const pvStr = String(pvSel.pv)
-
-          // Verifica se este PV/código já possui declaração ativa em outro dia da semana
-          const declsAtivas = declDraft.filter(function (d) {
-            if (d.status === 'Cancelado' || Number(d.qtd) <= 0) return false
-            const mesmoCod = d.cod === codItem
-            const mesmoPV = !d.pv || !pvStr || String(d.pv) === pvStr
-            return mesmoCod && mesmoPV
-          })
-
-          const declEmOutroDia = declsAtivas.filter(function (d) {
-            return progIso(d.data) !== String(progIso(iso))
-          })
-
-          if (declEmOutroDia.length > 0) {
-            const diasOrigem = Array.from(
-              new Set(
-                declEmOutroDia.map(function (d) {
-                  return dtBR(progIso(d.data))
-                }),
-              ),
-            ).join(', ')
-
-            // Calcula total planejado e total já fabricado nos dias de origem
-            let totOrigPlanejado = 0
-            let totOrigFabricado = 0
-            declEmOutroDia.forEach(function (d) {
-              totOrigPlanejado += Number(d.qtd) || 0
-              const dIso = progIso(d.data)
-              const dBR = dIso.slice(8, 10) + '/' + dIso.slice(5, 7)
-              const ex = getProgExec(d.cod, dBR) || getProgExec(d.cod, dIso) || {}
-              totOrigFabricado += Number(ex.qtd) || 0
-            })
-
-            const saldoOrig = Math.max(0, totOrigPlanejado - totOrigFabricado)
-            if (saldoOrig <= 0) {
-              alert(
-                'Nada a mover — o item ' +
-                  codItem +
-                  ' (PV ' +
-                  pvStr +
-                  ') já está alocado em ' +
-                  diasOrigem +
-                  ' e a quantidade realizada cobre o planejado.',
-              )
-              return
-            }
-
-            const qtdMover = Math.min(q, saldoOrig)
-            const aviso =
-              'O item ' +
-              codItem +
-              ' (PV ' +
-              pvStr +
-              ') já possui declaração em ' +
-              diasOrigem +
-              (totOrigFabricado > 0 ? ' (fabricado: ' + totOrigFabricado + ' un)' : '') +
-              '.\n\nDeseja movimentar o saldo (' +
-              qtdMover +
-              ' un) para ' +
-              dtBR(iso) +
-              ' evitando duplicação?'
-            if (!confirm(aviso)) return
-
-            // Aplica as regras de movimentação na origem (escopo código + dia + PV):
-            declEmOutroDia.forEach(function (d) {
-              const mesmoPV = !pvStr || !d.pv || String(d.pv) === pvStr
-              if (!mesmoPV) return
-              const dIso = progIso(d.data)
-              const dBR = dIso.slice(8, 10) + '/' + dIso.slice(5, 7)
-              const ex = getProgExec(d.cod, dBR) || getProgExec(d.cod, dIso) || {}
-              const exQtd = Number(ex.qtd) || 0
-              if (exQtd > 0) {
-                d.qtd = Math.min(Number(d.qtd) || 0, exQtd)
-              } else {
-                d.qtd = 0
-                d.status = 'Cancelado'
-              }
-              // Atualiza o registro de execução na origem
-              setProgExec(d.cod, dBR, {
-                ok: ex.ok,
-                qtd: ex.qtd,
-                rl: iso,
-                saldo: qtdMover,
-                pvNovo: ex.pvNovo || null,
-                smkt: ex.smkt || null,
-              })
-            })
-
-            // Aloca no destino com a quantidade a mover
-            declDraft.push({
-              dia: progDia || 'Segunda',
-              data: iso,
-              cod: codItem,
-              qtd: qtdMover,
-              local: document.getElementById('addLocal').value,
-              pv: pvSel.pv,
-              id: 'PR-ADD-' + Date.now(),
-              obs: 'movido de ' + diasOrigem + ' via PV ' + pvSel.pv,
-              status: 'Planejado',
-            })
-            declSave()
-            progBuildFromDecls()
-            renderProg()
-            inp.value = ''
-            qtd.value = ''
-            pvSel = null
-            info.innerHTML =
-              '<span style="color:#16a34a">✔ ' +
-              codItem +
-              ' movido de ' +
-              diasOrigem +
-              ' para ' +
-              iso.split('-').reverse().join('/') +
-              ' (' +
-              qtdMover +
-              ' un) — nada duplicado</span>'
-            return
-          }
-
-          // Se não havia declaração em outro dia, inclui normalmente
           declDraft.push({
             dia: progDia || 'Segunda',
             data: iso,
-            cod: codItem,
+            cod: pvSel.itens[0].codigo,
             qtd: q,
             local: document.getElementById('addLocal').value,
             pv: pvSel.pv,
@@ -12871,15 +12240,14 @@
         })
       }
 
-      // v0.0.73: Histórico de reprogramações auditável + mudança global de local de fabricação (Curitiba/Vinhedo)
-      // v0.0.72: PAINEL CONECTADO POR PADRÃO — login obrigatório na abertura para eliminar divergência de dados
-      // v0.0.64: rascunho SEMPRE carrega do localStorage (cache local / reidratação rápida)
+      // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
       declDraft = declLoad()
       progBuildFromDecls()
 
       // ==================== SINCRONIZAÇÃO DO RASCUNHO COM O SERVIDOR (Compass 2.1 / PocketBase) ====================
-      // v0.0.72: Conexão exigida por padrão. Ao abrir sem sessão válida, exibe modal imediato de login.
-      // Modo rascunho isolado por navegador fica desativado por padrão; dados são centralizados no PocketBase.
+      // Dante 28/09: movimentos precisam FIXAR — rascunho migra do localStorage para o backend do Compass 2.1.
+      // Estratégia: localStorage continua sendo cache local; cada alteração grava um snapshot do rascunho
+      // completo em reprogramming_events (event_type 'system', source 'andon-draft'). Último snapshot vence.
       const ANDON_SYNC = {
         api: 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev',
         token: localStorage.getItem('andon|token') || '',
@@ -12897,14 +12265,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identity: email, password: pass }),
           })
-          if (!r.ok) {
-            let msg = 'login falhou (' + r.status + ')'
-            try {
-              const ej = await r.json()
-              if (ej && ej.message) msg = ej.message
-            } catch (_) {}
-            throw new Error(msg)
-          }
+          if (!r.ok) throw new Error('login falhou (' + r.status + ')')
           const d = await r.json()
           this.token = d.token
           this.user = d.record
@@ -12919,40 +12280,6 @@
           )
           return d
         },
-        async validateSession() {
-          if (!this.connected()) return false
-          try {
-            const r = await fetch(this.api + '/api/collections/users/auth-refresh', {
-              method: 'POST',
-              headers: this.headers(),
-            })
-            if (r.ok) {
-              const d = await r.json()
-              this.token = d.token
-              this.user = d.record
-              localStorage.setItem('andon|token', d.token)
-              return true
-            }
-            if (r.status === 401 || r.status === 403) {
-              // Token expirou ou foi invalidado
-              this.logout(false)
-              return false
-            }
-            // Outro erro de rede (5xx, timeout): mantém token para tentar de novo via offline banner
-            return 'network_error'
-          } catch (err) {
-            return 'network_error'
-          }
-        },
-        logout(reload) {
-          this.token = ''
-          this.user = null
-          localStorage.removeItem('andon|token')
-          localStorage.removeItem('andon|user')
-          if (reload !== false) {
-            window.location.reload()
-          }
-        },
         async push(draft, motivo) {
           if (!this.connected()) return false
           const body = {
@@ -12964,31 +12291,16 @@
             changes: { draft: draft, rev: Date.now(), browser: navigator.userAgent.slice(0, 80) },
             before_snapshot: { field: 'andon_draft', value: 'v' + Date.now() },
           }
-          try {
-            const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
-              method: 'POST',
-              headers: this.headers(),
-              body: JSON.stringify(body),
-            })
-            if (!r.ok) {
-              const t = await r.text()
-              andonShowOffline(
-                true,
-                'Falha ao gravar no servidor (' +
-                  r.status +
-                  '). Alterações não foram salvas na nuvem.',
-              )
-              throw new Error('push falhou (' + r.status + '): ' + t.slice(0, 120))
-            }
-            andonShowOffline(false)
-            return true
-          } catch (err) {
-            andonShowOffline(
-              true,
-              'Sem conexão com o servidor. Verifique a internet e tente novamente.',
-            )
-            throw err
+          const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(body),
+          })
+          if (!r.ok) {
+            const t = await r.text()
+            throw new Error('push falhou (' + r.status + '): ' + t.slice(0, 120))
           }
+          return true
         },
         async pull() {
           if (!this.connected()) return null
@@ -13000,13 +12312,7 @@
             encodeURIComponent(f) +
             '&sort=-created&perPage=1'
           const r = await fetch(url, { headers: this.headers() })
-          if (!r.ok) {
-            if (r.status === 401 || r.status === 403) {
-              this.logout(false)
-              andonShowLoginModal('Sessão expirada. Conecte-se novamente.')
-            }
-            return null
-          }
+          if (!r.ok) return null
           const d = await r.json()
           if (!d.items || !d.items.length) return null
           return d.items[0]
@@ -13033,10 +12339,6 @@
           localStorage.setItem('andon|rev', String(srvRev))
           return true
         },
-        // v0.0.72: Conexão obrigatória por padrão
-        // v0.0.70: poka-yoke smktGuardZero anti-zeramento do saldo SMKT (sync pull e gravação local)
-        // v0.0.69: autocura SMKT com pull por maior rev, reset de flag e cura pós-pull
-        // v0.0.68: autocura SMKT (restaura saldo legado indevidamente arquivado) e cancelamento com escopo de PV
         // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
         async pushSmkt(ent, hist) {
           if (!this.connected()) return false
@@ -13049,22 +12351,15 @@
             changes: { entradas: ent || [], historico: hist || [], rev: Date.now() },
             before_snapshot: { field: 'andon_smkt', value: 'v' + Date.now() },
           }
-          try {
-            const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
-              method: 'POST',
-              headers: this.headers(),
-              body: JSON.stringify(body),
-            })
-            if (!r.ok) {
-              andonShowOffline(true, 'Falha ao sincronizar SMKT com o servidor (' + r.status + ').')
-              throw new Error('push smkt falhou (' + r.status + ')')
-            }
-            andonShowOffline(false)
-            return true
-          } catch (err) {
-            andonShowOffline(true, 'Sem conexão com o servidor para gravar SMKT.')
-            throw err
+          const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(body),
+          })
+          if (!r.ok) {
+            throw new Error('push smkt falhou (' + r.status + ')')
           }
+          return true
         },
         async syncSmktFromServer() {
           if (!this.connected()) return false
@@ -13073,335 +12368,114 @@
             this.api +
             '/api/collections/reprogramming_events/records?filter=' +
             encodeURIComponent(f) +
-            '&sort=-created&perPage=5'
+            '&sort=-created&perPage=1'
           const r = await fetch(url, { headers: this.headers() })
           if (!r.ok) return false
           const d = await r.json()
           if (!d.items || !d.items.length) return false
-          const validItems = d.items.filter(function (it) {
-            return it && it.changes && Array.isArray(it.changes.entradas)
-          })
-          if (!validItems.length) return false
-          validItems.sort(function (a, b) {
-            return Number(b.changes.rev || 0) - Number(a.changes.rev || 0)
-          })
-          const best = validItems[0]
-          const ch = best.changes || {}
+          const ch = d.items[0].changes || {}
+          if (!Array.isArray(ch.entradas)) return false
           const locRev = Number(localStorage.getItem('andon|smkt-rev') || 0)
           const srvRev = Number(ch.rev || 0)
           if (locRev > srvRev) return false // local mais novo — push prevalece
-
-          // Poka-yoke v0.0.70: validação de zeramento antes de sobrescrever entradas locais
-          if (!smktGuardZero(ch.entradas, { origem: 'sync' })) {
-            // Servidor mandou lista vazia mas local tem saldo: NÃO grava entradas vazias,
-            // preserva o saldo local e dispara push local para reidratar o servidor com rev maior.
-            if (Array.isArray(ch.historico))
-              localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
-            const newRev = Math.max(Date.now(), srvRev + 1)
-            localStorage.setItem('andon|smkt-rev', String(newRev))
-            this.pushSmkt(smktEntradas(), smktHistory()).catch(function () {})
-            return false
-          }
-
           localStorage.setItem('smkt|entradas', JSON.stringify(ch.entradas))
           if (Array.isArray(ch.historico))
             localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
           localStorage.setItem('andon|smkt-rev', String(srvRev))
-          localStorage.removeItem('smkt|v3-selfheal')
           return true
         },
       }
       window.ANDON_SYNC = ANDON_SYNC
-
       function andonToggleConn() {
-        andonShowLoginModal()
+        const box = document.getElementById('connBox')
+        box.style.display = box.style.display === 'none' ? 'flex' : 'none'
+        if (box.style.display === 'flex') {
+          const e = document.getElementById('connEmail')
+          if (e && !e.value) e.focus()
+        }
       }
       window.andonToggleConn = andonToggleConn
-
-      function andonLogout() {
-        if (
-          confirm(
-            'Deseja realmente desconectar? O painel exige login ativo para operar conectado por padrão.',
-          )
-        ) {
-          ANDON_SYNC.logout(true)
-        }
-      }
-      window.andonLogout = andonLogout
-
-      function andonShowOffline(show, msg) {
-        const b = document.getElementById('connOfflineBanner')
-        if (!b) return
-        if (show) {
-          b.style.display = 'flex'
-          const m = document.getElementById('connOfflineMsg')
-          if (m && msg) m.innerHTML = '<b>Aviso de conexão:</b> ' + msg
-        } else {
-          b.style.display = 'none'
-        }
-      }
-      window.andonShowOffline = andonShowOffline
-
-      function andonShowLoginModal(warnMsg) {
-        const modal = document.getElementById('loginModalOverlay')
-        if (!modal) return
-        modal.style.display = 'flex'
-        const alertBox = document.getElementById('loginModalAlert')
-        if (alertBox) {
-          if (warnMsg) {
-            alertBox.style.display = 'block'
-            alertBox.style.background = '#fee2e2'
-            alertBox.style.border = '1px solid #fca5a5'
-            alertBox.style.color = '#991b1b'
-            alertBox.textContent = warnMsg
-          } else {
-            alertBox.style.display = 'none'
-          }
-        }
-        const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
-        const emailInput = document.getElementById('modalConnEmail')
-        if (emailInput && !emailInput.value) {
-          emailInput.value = u.email || ''
-        }
-        const passInput = document.getElementById('modalConnPass')
-        setTimeout(function () {
-          if (emailInput && !emailInput.value) emailInput.focus()
-          else if (passInput) passInput.focus()
-        }, 80)
-      }
-      window.andonShowLoginModal = andonShowLoginModal
-
-      function andonHideLoginModal() {
-        const modal = document.getElementById('loginModalOverlay')
-        if (modal) modal.style.display = 'none'
-      }
-      window.andonHideLoginModal = andonHideLoginModal
-
-      async function andonModalSubmit() {
-        const email = document.getElementById('modalConnEmail').value.trim()
-        const pass = document.getElementById('modalConnPass').value
-        const btn = document.getElementById('modalConnBtn')
-        const alertBox = document.getElementById('loginModalAlert')
-        if (!email || !pass) {
-          if (alertBox) {
-            alertBox.style.display = 'block'
-            alertBox.style.background = '#fee2e2'
-            alertBox.style.border = '1px solid #fca5a5'
-            alertBox.style.color = '#991b1b'
-            alertBox.textContent = 'Informe usuário/e-mail e senha cadastrados.'
-          }
-          return
-        }
-        btn.disabled = true
-        btn.innerHTML = '<span>Conectando ao servidor…</span>'
-        try {
-          await ANDON_SYNC.login(email, pass)
-          andonHideLoginModal()
-          andonShowOffline(false)
-          paintConnBar()
-          const st = document.getElementById('declStatus')
-          if (st) st.textContent = 'Conectado ao servidor — dados sincronizados'
-          // Puxa snapshot atualizado do servidor
-          try {
-            const pulledProg = await ANDON_SYNC.syncFromServer()
-            if (pulledProg) {
-              renderProg()
-              if (st) st.textContent = 'Programação sincronizada com o servidor'
-            }
-          } catch (_) {}
-          try {
-            if (typeof smktSelfHeal === 'function') smktSelfHeal()
-            const pulledSmkt = await ANDON_SYNC.syncSmktFromServer()
-            if (pulledSmkt) {
-              if (typeof smktSelfHeal === 'function') smktSelfHeal()
-              if (typeof renderSmkt === 'function') renderSmkt()
-              renderSemana()
-              renderKpis()
-              renderTabela()
-            }
-          } catch (_) {}
-          // Salva estado local no servidor caso ainda não exista snapshot remoto
-          try {
-            await ANDON_SYNC.push(declDraft, 'Login inicial — alinhamento de snapshot')
-          } catch (_) {}
-        } catch (err) {
-          if (alertBox) {
-            alertBox.style.display = 'block'
-            alertBox.style.background = '#fee2e2'
-            alertBox.style.border = '1px solid #fca5a5'
-            alertBox.style.color = '#991b1b'
-            alertBox.textContent =
-              'Falha ao conectar: ' +
-              (err.message || 'Credenciais inválidas ou servidor inacessível.')
-          }
-        } finally {
-          btn.disabled = false
-          btn.innerHTML = '<span>Conectar e sincronizar</span>'
-        }
-      }
-      window.andonModalSubmit = andonModalSubmit
-
-      async function andonRetryConn() {
-        if (!ANDON_SYNC.connected()) {
-          andonShowLoginModal('Por favor, faça login para conectar ao servidor.')
-          return
-        }
-        const st = document.getElementById('declStatus')
-        if (st) st.textContent = 'Verificando conexão com o servidor…'
-        const check = await ANDON_SYNC.validateSession()
-        if (check === true) {
-          andonShowOffline(false)
-          paintConnBar()
-          try {
-            const pulled = await ANDON_SYNC.syncFromServer()
-            if (pulled) renderProg()
-            const pSmkt = await ANDON_SYNC.syncSmktFromServer()
-            if (pSmkt) {
-              if (typeof renderSmkt === 'function') renderSmkt()
-              renderSemana()
-              renderKpis()
-              renderTabela()
-            }
-            if (st) st.textContent = 'Conexão restaurada com sucesso!'
-          } catch (e) {
-            andonShowOffline(true, 'Conectado, mas ocorreu erro no sync: ' + e.message)
-          }
-        } else if (check === false) {
-          andonShowLoginModal('Sessão expirada. Conecte-se novamente.')
-        } else {
-          andonShowOffline(
-            true,
-            'Servidor continua inacessível. Verifique sua rede e tente novamente.',
-          )
-        }
-      }
-      window.andonRetryConn = andonRetryConn
-
-      function paintConnBar() {
-        const btn = document.getElementById('btnConn')
-        const btnOut = document.getElementById('btnDisconnect')
-        const info = document.getElementById('connInfo')
-        if (!btn || !info) return
-        if (ANDON_SYNC.connected()) {
-          const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
-          btn.style.display = ''
-          btn.style.background = '#15803d'
-          btn.style.borderColor = '#16a34a'
-          btn.style.color = '#ffffff'
-          btn.textContent = '🟢 ' + String(u.name || u.email || 'Conectado').slice(0, 18)
-          if (btnOut) btnOut.style.display = ''
-          info.textContent = 'conectado ao servidor — dados sincronizados'
-        } else {
-          btn.style.display = ''
-          btn.style.background = '#dc2626'
-          btn.style.borderColor = '#dc2626'
-          btn.style.color = '#ffffff'
-          btn.textContent = '🔒 Conectar servidor (obrigatório)'
-          if (btnOut) btnOut.style.display = 'none'
-          info.textContent = 'login obrigatório — painel não conectado'
-        }
-      }
-
       ;(function () {
-        paintConnBar()
-
-        // Hook antigo do connBox mantido para compatibilidade se o usuário abrir o form alternativo
-        const go = document.getElementById('btnConnGo')
-        if (go) {
-          go.addEventListener('click', async function () {
-            const email = document.getElementById('connEmail').value.trim()
-            const pass = document.getElementById('connPass').value
-            if (!email || !pass) {
-              alert('Informe e-mail e senha.')
-              return
-            }
-            go.disabled = true
-            go.textContent = 'Entrando…'
-            try {
-              await ANDON_SYNC.login(email, pass)
-              paintConnBar()
-              andonShowOffline(false)
-              const st = document.getElementById('declStatus')
-              if (st) st.textContent = 'Conectado ao servidor — dados sincronizados entre máquinas'
-              document.getElementById('connBox').style.display = 'none'
-              try {
-                const pulled = await ANDON_SYNC.syncFromServer()
-                if (pulled) {
-                  renderProg()
-                  if (st) st.textContent = 'Rascunho do servidor carregado'
-                }
-              } catch (e) {}
-              try {
-                await ANDON_SYNC.push(declDraft, 'Sessão conectada — estado atual salvo')
-              } catch (e) {}
-            } catch (e) {
-              alert('Falha ao conectar: ' + e.message)
-            } finally {
-              go.disabled = false
-              go.textContent = 'Entrar'
-            }
-          })
+        const btn = document.getElementById('btnConn')
+        if (!btn) return
+        const info = document.getElementById('connInfo')
+        function paint() {
+          if (ANDON_SYNC.connected()) {
+            const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
+            btn.style.display = ''
+            btn.textContent = '🔗 ' + String(u.name || u.email || 'conectado').slice(0, 18)
+            info.textContent = 'rascunho salvo no servidor'
+          } else {
+            btn.style.display = ''
+            btn.textContent = '🔗 Conectar servidor'
+            info.textContent = 'rascunho só neste navegador'
+          }
         }
-
-        // hook global: toda declSave() empurra o rascunho ao servidor
+        paint()
+        const go = document.getElementById('btnConnGo')
+        go.addEventListener('click', async function () {
+          const email = document.getElementById('connEmail').value.trim()
+          const pass = document.getElementById('connPass').value
+          if (!email || !pass) {
+            alert('Informe e-mail e senha.')
+            return
+          }
+          go.disabled = true
+          go.textContent = 'Entrando…'
+          try {
+            await ANDON_SYNC.login(email, pass)
+            paint()
+            const st = document.getElementById('declStatus')
+            if (st) st.textContent = 'Conectado ao servidor — rascunho sincronizado entre máquinas'
+            document.getElementById('connBox').style.display = 'none'
+            // puxa o último snapshot do servidor e depois envia o estado atual se for mais novo
+            try {
+              const pulled = await ANDON_SYNC.syncFromServer()
+              if (pulled) {
+                renderProg()
+                if (st) st.textContent = 'Rascunho do servidor carregado'
+              }
+            } catch (e) {}
+            try {
+              await ANDON_SYNC.push(declDraft, 'Sessão conectada — estado atual salvo')
+            } catch (e) {}
+          } catch (e) {
+            alert('Falha ao conectar: ' + e.message)
+          } finally {
+            go.disabled = false
+            go.textContent = 'Entrar'
+          }
+        })
+        // hook global: toda declSave() empurra o rascunho ao servidor (fire-and-forget)
         const _origDeclSave = declSave
         declSave = function () {
           _origDeclSave()
           if (ANDON_SYNC.connected()) {
             localStorage.setItem('andon|rev', String(Date.now()))
             ANDON_SYNC.push(declDraft).catch(function () {})
-          } else {
-            // Se usuário tentar alterar sem sessão, abre imediatamente a tela de conexão
-            andonShowLoginModal('Faça login para salvar suas alterações no servidor.')
           }
         }
-
-        // Verificação na abertura: conectado por padrão
-        if (!ANDON_SYNC.connected()) {
-          // Exibe imediatamente o fluxo de login
-          andonShowLoginModal()
-        } else {
-          // Sessão existe: valida em background e sincroniza imediatamente dados do servidor
-          ANDON_SYNC.validateSession().then(function (res) {
-            if (res === false) {
-              paintConnBar()
-              andonShowLoginModal('Sua sessão expirou. Conecte-se para continuar.')
-              return
-            }
-            if (res === 'network_error') {
-              andonShowOffline(
-                true,
-                'Não foi possível contatar o servidor no momento. Modo somente visualização do cache local.',
-              )
-            }
-
-            ANDON_SYNC.syncFromServer()
-              .then(function (pulled) {
-                if (pulled) {
-                  renderProg()
-                  const st = document.getElementById('declStatus')
-                  if (st) st.textContent = 'Programação sincronizada com o servidor (Compass 2.1)'
-                }
-              })
-              .catch(function (e) {
-                andonShowOffline(true, 'Falha ao sincronizar programação: ' + e.message)
-              })
-
-            if (typeof smktSelfHeal === 'function') smktSelfHeal()
-            ANDON_SYNC.syncSmktFromServer()
-              .then(function (pulled) {
-                if (pulled) {
-                  if (typeof smktSelfHeal === 'function') smktSelfHeal()
-                  if (typeof renderSmkt === 'function') renderSmkt()
-                  renderSemana()
-                  renderKpis()
-                  renderTabela()
-                }
-              })
-              .catch(function (e) {
-                andonShowOffline(true, 'Falha ao sincronizar SMKT: ' + e.message)
-              })
-          })
+        // ao abrir: se conectado, puxa o snapshot do servidor (servidor vence a menos que o local seja mais novo)
+        if (ANDON_SYNC.connected()) {
+          ANDON_SYNC.syncFromServer()
+            .then(function (pulled) {
+              if (pulled) {
+                renderProg()
+                const st = document.getElementById('declStatus')
+                if (st) st.textContent = 'Rascunho carregado do servidor (Compass 2.1)'
+              }
+            })
+            .catch(function () {})
+          ANDON_SYNC.syncSmktFromServer()
+            .then(function (pulled) {
+              if (pulled && typeof renderSmkt === 'function') {
+                renderSmkt()
+                renderSemana()
+                renderKpis()
+                renderTabela()
+              }
+            })
+            .catch(function () {})
         }
       })()
       renderProg()
@@ -13413,13 +12487,25 @@
 
       // ==================== ABAS: Entregas × Carteira a Faturar ====================
       function showView(v) {
+        document.getElementById('viewNf').classList.toggle('on', v === 'nf')
         document.getElementById('viewEnt').classList.toggle('on', v === 'ent')
         document.getElementById('viewFat').classList.toggle('on', v === 'fat')
+        document.getElementById('tabNf').classList.toggle('on', v === 'nf')
         document.getElementById('tabEnt').classList.toggle('on', v === 'ent')
         document.getElementById('tabFat').classList.toggle('on', v === 'fat')
         if (v === 'fat' && !window._fatInit) {
           renderFat()
           window._fatInit = true
+        }
+        if (v === 'nf' && !window._nfInit) {
+          renderNf()
+        }
+        if (v === 'nf' && window._nfCharts) {
+          setTimeout(function () {
+            window._nfCharts.forEach(function (c) {
+              c.resize()
+            })
+          }, 50)
         }
         if (v === 'ent' && (gChart || tChart)) {
           setTimeout(function () {
@@ -13429,6 +12515,124 @@
         }
       }
       window.showView = showView
+
+      // ==================== VIEW FATURAMENTO (método Compass: NFs reais MaxiProd) ====================
+      function renderNf() {
+        const nf = DATA.nfFat
+        const K = document.getElementById('nfKpis')
+        if (!nf) {
+          K.innerHTML =
+            '<div class="kpi"><div class="val">—</div><div class="lbl">Faturamento indisponível nesta geração (falha na busca MaxiProd)</div></div>'
+          return
+        }
+        const F2 = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          maximumFractionDigits: 0,
+        })
+        K.innerHTML =
+          '<div class="kpi"><div class="val">' +
+          nf.mesQtd +
+          '</div><div class="lbl">NFs emitidas no mês (' +
+          nf.mesLabel +
+          ')</div></div>' +
+          '<div class="kpi"><div class="val">' +
+          F2.format(nf.mesValor) +
+          '</div><div class="lbl">Faturamento no mês</div></div>' +
+          '<div class="kpi"><div class="val">' +
+          nf.anoQtd +
+          '</div><div class="lbl">NFs emitidas no ano</div></div>' +
+          '<div class="kpi"><div class="val">' +
+          F2.format(nf.anoValor) +
+          '</div><div class="lbl">Faturamento no ano</div></div>'
+        document.getElementById('nfMesLbl').textContent = nf.mesLabel
+        const c1 = echarts.init(document.getElementById('chNfDia'))
+        c1.setOption({
+          grid: { left: 60, right: 60, top: 30, bottom: 60 },
+          tooltip: { trigger: 'axis' },
+          xAxis: {
+            type: 'category',
+            data: nf.daily.map((d) => d.label),
+            axisLabel: { rotate: 45, fontSize: 10 },
+          },
+          yAxis: [
+            { type: 'value', name: 'NFs', allowDecimals: false },
+            {
+              type: 'value',
+              name: 'R$',
+              axisLabel: { formatter: (v) => (v / 1000).toFixed(0) + 'k' },
+            },
+          ],
+          series: [
+            {
+              name: 'NFs emitidas',
+              type: 'bar',
+              data: nf.daily.map((d) => d.qtd),
+              itemStyle: { color: '#2563eb' },
+            },
+            {
+              name: 'Valor (R$)',
+              type: 'line',
+              yAxisIndex: 1,
+              data: nf.daily.map((d) => d.valor),
+              smooth: true,
+              itemStyle: { color: '#16a34a' },
+            },
+          ],
+        })
+        const c2 = echarts.init(document.getElementById('chNfMes'))
+        c2.setOption({
+          grid: { left: 60, right: 60, top: 30, bottom: 40 },
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'category', data: nf.monthly.map((m) => m.label) },
+          yAxis: [
+            { type: 'value', name: 'NFs', allowDecimals: false },
+            {
+              type: 'value',
+              name: 'R$',
+              axisLabel: { formatter: (v) => (v / 1000000).toFixed(1) + 'M' },
+            },
+          ],
+          series: [
+            {
+              name: 'NFs emitidas',
+              type: 'bar',
+              data: nf.monthly.map((m) => m.qtd),
+              itemStyle: { color: '#1e3a8a' },
+            },
+            {
+              name: 'Valor (R$)',
+              type: 'line',
+              yAxisIndex: 1,
+              data: nf.monthly.map((m) => m.valor),
+              smooth: true,
+              itemStyle: { color: '#f59e0b' },
+            },
+          ],
+        })
+        window._nfCharts = [c1, c2]
+        document.getElementById('nfTb').innerHTML = nf.recentes
+          .map(
+            (n) =>
+              '<tr><td><b>' +
+              n.nf +
+              '</b></td><td>' +
+              n.data.slice(8, 10) +
+              '/' +
+              n.data.slice(5, 7) +
+              '/' +
+              n.data.slice(0, 4) +
+              '</td><td>' +
+              n.emp +
+              '</td><td>' +
+              n.op +
+              '</td><td class="num">' +
+              F2.format(n.valor) +
+              '</td></tr>',
+          )
+          .join('')
+        window._nfInit = true
+      }
 
       // ==================== VIEW CARTEIRA A FATURAR ====================
       const MES_N = {
