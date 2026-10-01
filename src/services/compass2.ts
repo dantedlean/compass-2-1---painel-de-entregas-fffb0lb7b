@@ -352,3 +352,66 @@ export async function createSmktAllocation(input: {
     created_by: pb.authStore.record?.id,
   })
 }
+
+/* ==================== SMKT — entrada manual de estoque ==================== */
+/* Entrada de produto pronto no Supermercado (produção alocada direto ou ajuste manual).
+   Persistida como reprogramming_events (event_type 'actual', source 'smkt_entrada'). */
+
+export interface SmktEntrada {
+  id: string
+  cycle_id: string
+  product_code: string
+  product_name: string
+  quantity: number
+  data: string
+  reason: string
+}
+
+export async function listSmktEntradas(cycleId: string): Promise<SmktEntrada[]> {
+  requireAuth()
+  const rows = await pb.collection('reprogramming_events').getFullList<ReprogrammingEvent>({
+    filter: pb.filter("cycle_id = {:cycleId} && event_type = 'actual' && source = 'smkt_entrada'", {
+      cycleId,
+    }),
+    sort: '-created',
+    batch: 200,
+  })
+  return rows.map((row) => {
+    const c = (row.changes || {}) as Record<string, string>
+    return {
+      id: row.id,
+      cycle_id: row.cycle_id,
+      product_code: String(c.product_code || ''),
+      product_name: String(c.product_name || ''),
+      quantity: Number(c.quantity || 0),
+      data: String(c.data || ''),
+      reason: row.reason || '',
+    }
+  })
+}
+
+export async function createSmktEntrada(input: {
+  cycle_id: string
+  product_code: string
+  product_name: string
+  quantity: number
+  data?: string
+  notes?: string
+}): Promise<ReprogrammingEvent> {
+  requireAuth()
+  return pb.collection('reprogramming_events').create<ReprogrammingEvent>({
+    cycle_id: input.cycle_id,
+    event_type: 'actual',
+    occurred_at: new Date().toISOString(),
+    source: 'smkt_entrada',
+    reason: input.notes || `Entrada manual no SMKT · ${input.product_code}`,
+    changes: {
+      product_code: input.product_code,
+      product_name: input.product_name,
+      quantity: input.quantity,
+      data: input.data || '',
+    },
+    before_snapshot: { field: 'smkt_entrada', value: input.quantity },
+    created_by: pb.authStore.record?.id,
+  })
+}

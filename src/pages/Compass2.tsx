@@ -9,9 +9,11 @@ import {
   listProductionDeclarations,
   listReprogrammingEvents,
   listSmktAllocations,
+  listSmktEntradas,
   listSyncRuns,
   listFaturamentoNfs,
   createSmktAllocation,
+  createSmktEntrada,
   recordReprogrammingEvent,
   syncMaxiProd,
   type FaturamentoNf,
@@ -20,6 +22,7 @@ import {
   type ProductionDeclaration,
   type ReprogrammingEvent,
   type SmktAllocation,
+  type SmktEntrada,
   type SyncRun,
 } from '@/services/compass2'
 
@@ -93,6 +96,14 @@ export default function Compass2() {
     pv_number: '',
     quantity: '1',
     nf_number: '',
+    notes: '',
+  })
+  const [smktEntradas, setSmktEntradas] = useState<SmktEntrada[]>([])
+  const [smktEntradaForm, setSmktEntradaForm] = useState({
+    product_code: '',
+    product_name: '',
+    quantity: '1',
+    data: '',
     notes: '',
   })
   const [pvQuery, setPvQuery] = useState('')
@@ -210,23 +221,33 @@ export default function Compass2() {
       setSyncRuns([])
       setSmktAllocs([])
       setNfs([])
+      setSmktEntradas([])
       return
     }
-    const [nextItems, nextDeclarations, nextEvents, nextSyncRuns, nextAllocs, nextNfs] =
-      await Promise.all([
-        listPlanningItems(nextCycleId),
-        listProductionDeclarations(nextCycleId),
-        listReprogrammingEvents(nextCycleId),
-        listSyncRuns(nextCycleId),
-        listSmktAllocations(nextCycleId),
-        listFaturamentoNfs().catch(() => [] as FaturamentoNf[]),
-      ])
+    const [
+      nextItems,
+      nextDeclarations,
+      nextEvents,
+      nextSyncRuns,
+      nextAllocs,
+      nextNfs,
+      nextEntradas,
+    ] = await Promise.all([
+      listPlanningItems(nextCycleId),
+      listProductionDeclarations(nextCycleId),
+      listReprogrammingEvents(nextCycleId),
+      listSyncRuns(nextCycleId),
+      listSmktAllocations(nextCycleId),
+      listFaturamentoNfs().catch(() => [] as FaturamentoNf[]),
+      listSmktEntradas(nextCycleId),
+    ])
     setItems(nextItems)
     setDeclarations(nextDeclarations)
     setEvents(nextEvents)
     setSyncRuns(nextSyncRuns)
     setSmktAllocs(nextAllocs)
     setNfs(nextNfs)
+    setSmktEntradas(nextEntradas)
   }
 
   async function loadWorkspace(preferredCycleId?: string) {
@@ -273,6 +294,7 @@ export default function Compass2() {
     setSyncRuns([])
     setSmktAllocs([])
     setNfs([])
+    setSmktEntradas([])
   }
 
   async function createCycle(event: FormEvent<HTMLFormElement>) {
@@ -430,6 +452,31 @@ export default function Compass2() {
       await loadCycle(cycleId)
     } catch (allocError) {
       setError(errorMessage(allocError))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function createEntrada(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!cycleId) return
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      await createSmktEntrada({
+        cycle_id: cycleId,
+        product_code: smktEntradaForm.product_code,
+        product_name: smktEntradaForm.product_name,
+        quantity: Number(smktEntradaForm.quantity),
+        data: smktEntradaForm.data,
+        notes: smktEntradaForm.notes,
+      })
+      setSmktEntradaForm({ product_code: '', product_name: '', quantity: '1', data: '', notes: '' })
+      setNotice('Entrada manual no Supermercado persistida no histórico auditável.')
+      await loadCycle(cycleId)
+    } catch (entradaError) {
+      setError(errorMessage(entradaError))
     } finally {
       setBusy(false)
     }
@@ -1004,6 +1051,125 @@ export default function Compass2() {
                   <tr>
                     <td className="px-2 py-5 text-center text-slate-500" colSpan={6}>
                       Nenhuma baixa do Supermercado registrada neste ciclo.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Camada 2.1.1"
+            title="Supermercado — entrada manual de estoque"
+            tag="histórico auditável"
+          />
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Registra a entrada de produto pronto no Supermercado (produção alocada direto ou ajuste
+            manual). Fica no histórico auditável — não movimenta o MaxiProd.
+          </p>
+          {!cycleId ? (
+            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              Selecione um ciclo para registrar a entrada.
+            </p>
+          ) : (
+            <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={createEntrada}>
+              <label className="text-xs font-medium text-slate-600">
+                Produto (catálogo do ciclo)
+                <select
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  value={smktEntradaForm.product_code}
+                  onChange={(event) => {
+                    const code = event.target.value
+                    const sample = items.find((row) => row.product_code === code)
+                    setSmktEntradaForm({
+                      ...smktEntradaForm,
+                      product_code: code,
+                      product_name: sample?.product_name || '',
+                    })
+                  }}
+                  required
+                >
+                  <option value="">— escolha o produto —</option>
+                  {Array.from(
+                    new Set(
+                      items.filter((row) => !isFreightRow(row)).map((row) => row.product_code),
+                    ),
+                  )
+                    .sort()
+                    .map((code) => {
+                      const sample = items.find((row) => row.product_code === code)
+                      return (
+                        <option key={code} value={code}>
+                          {code} · {(sample?.product_name || '').slice(0, 40)}
+                        </option>
+                      )
+                    })}
+                </select>
+              </label>
+              <NumberInput
+                label="Quantidade"
+                value={smktEntradaForm.quantity}
+                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, quantity: value })}
+              />
+              <label className="text-xs font-medium text-slate-600">
+                Data da entrada
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  type="date"
+                  value={smktEntradaForm.data}
+                  onChange={(event) =>
+                    setSmktEntradaForm({ ...smktEntradaForm, data: event.target.value })
+                  }
+                />
+              </label>
+              <TextInput
+                label="Observação (opcional)"
+                value={smktEntradaForm.notes}
+                placeholder="ex.: produção de terça não declarada"
+                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, notes: value })}
+              />
+              <button
+                className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60 sm:col-span-2"
+                disabled={busy}
+                type="submit"
+              >
+                Registrar entrada no Supermercado
+              </button>
+            </form>
+          )}
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-xs">
+              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-2 py-2">Quando</th>
+                  <th className="px-2 py-2">Produto</th>
+                  <th className="px-2 py-2">Qtd.</th>
+                  <th className="px-2 py-2">Data da entrada</th>
+                  <th className="px-2 py-2">Observação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {smktEntradas.map((entrada) => (
+                  <tr className="border-b border-slate-100" key={entrada.id}>
+                    <td className="px-2 py-2">{dateLabel(entrada.data || undefined)}</td>
+                    <td className="px-2 py-2">
+                      <strong className="font-mono">{entrada.product_code}</strong>
+                      <br />
+                      <span className="text-slate-500">{entrada.product_name}</span>
+                    </td>
+                    <td className="px-2 py-2 font-semibold">{entrada.quantity}</td>
+                    <td className="px-2 py-2">{dateLabel(entrada.data || undefined)}</td>
+                    <td className="max-w-[220px] truncate px-2 py-2 text-slate-500">
+                      {entrada.reason}
+                    </td>
+                  </tr>
+                ))}
+                {smktEntradas.length === 0 && (
+                  <tr>
+                    <td className="px-2 py-5 text-center text-slate-500" colSpan={5}>
+                      Nenhuma entrada manual registrada neste ciclo.
                     </td>
                   </tr>
                 )}
