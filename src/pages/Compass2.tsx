@@ -50,6 +50,21 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Não foi possível concluir a operação.'
 }
 
+// Fretes NÃO são produtos: não aparecem como opção de baixa do Supermercado.
+// Mesma regra dos relatórios: 00043, 501-506, palavras de veículo (exceto carrinho/cart/carro).
+function isFreightRow(row: PlanningItem) {
+  const code = (row.product_code || '').trim()
+  const desc = `${row.product_name || ''}`.toLowerCase()
+  if (row.is_freight) return true
+  if (code === '00043') return true
+  if (/^50[1-6]-/.test(code)) return true
+  const pal = ['frete', 'caminhao', 'caminhão', 'vuc', 'carreta', 'toco', 'truck']
+  const exc = ['carrinho', 'cart', 'carro']
+  const hasPal = pal.some((p) => desc.includes(p))
+  const hasExc = exc.some((e) => desc.includes(e))
+  return hasPal && !hasExc
+}
+
 function dateLabel(value?: string) {
   if (!value) return '—'
   const [year, month, day] = value.slice(0, 10).split('-')
@@ -899,7 +914,11 @@ export default function Compass2() {
                   required
                 >
                   <option value="">— escolha o produto —</option>
-                  {Array.from(new Set(items.map((row) => row.product_code)))
+                  {Array.from(
+                    new Set(
+                      items.filter((row) => !isFreightRow(row)).map((row) => row.product_code),
+                    ),
+                  )
                     .sort()
                     .map((code) => {
                       const sample = items.find((row) => row.product_code === code)
