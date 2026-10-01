@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T01:10:48.348Z",
+  "generatedAt": "2026-10-01T18:30:14.153Z",
   "collections": [
     {
       "name": "users",
@@ -29,14 +29,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -66,7 +71,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["draft", "open", "closed", "archived"]
+          "selectValues": [
+            "draft",
+            "open",
+            "closed",
+            "archived"
+          ]
         },
         {
           "name": "start_date",
@@ -85,7 +95,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["manual", "maxiprod", "import", "pulso"]
+          "selectValues": [
+            "manual",
+            "maxiprod",
+            "import",
+            "pulso"
+          ]
         },
         {
           "name": "source_version",
@@ -111,14 +126,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -220,14 +240,25 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["pending", "producing", "produced", "fulfilled", "cancelled"]
+          "selectValues": [
+            "pending",
+            "producing",
+            "produced",
+            "fulfilled",
+            "cancelled"
+          ]
         },
         {
           "name": "source_system",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["maxiprod", "manual", "pulso", "import"]
+          "selectValues": [
+            "maxiprod",
+            "manual",
+            "pulso",
+            "import"
+          ]
         },
         {
           "name": "source_record_id",
@@ -258,14 +289,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -329,14 +365,23 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["manual", "pulso", "maxiprod", "import"]
+          "selectValues": [
+            "manual",
+            "pulso",
+            "maxiprod",
+            "import"
+          ]
         },
         {
           "name": "status",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["draft", "confirmed", "cancelled"]
+          "selectValues": [
+            "draft",
+            "confirmed",
+            "cancelled"
+          ]
         },
         {
           "name": "declared_by",
@@ -356,14 +401,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -394,7 +444,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["scenario", "actual", "import", "system"]
+          "selectValues": [
+            "scenario",
+            "actual",
+            "import",
+            "system"
+          ]
         },
         {
           "name": "occurred_at",
@@ -438,14 +493,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -475,7 +535,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["maxiprod", "pulso", "manual"]
+          "selectValues": [
+            "maxiprod",
+            "pulso",
+            "manual"
+          ]
         },
         {
           "name": "started_at",
@@ -494,7 +558,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["running", "succeeded", "partial", "failed"]
+          "selectValues": [
+            "running",
+            "succeeded",
+            "partial",
+            "failed"
+          ]
         },
         {
           "name": "rows_read",
@@ -544,20 +613,202 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
         "CREATE INDEX idx_sync_runs_status_started ON sync_runs (status, started_at DESC)",
         "CREATE INDEX idx_sync_runs_cycle ON sync_runs (cycle_id, started_at DESC)"
       ]
+    },
+    {
+      "name": "faturamento_nfs",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "nf_number",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "company_cnpj",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "issue_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "issue_day",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "total_value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "freight_value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "client_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fiscal_op",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "items",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_fat_nfs_company_number ON faturamento_nfs (company_cnpj, nf_number)",
+        "CREATE INDEX idx_fat_nfs_issue ON faturamento_nfs (issue_date)",
+        "CREATE INDEX idx_fat_nfs_day ON faturamento_nfs (issue_day)"
+      ]
+    },
+    {
+      "name": "faturamento_sync_state",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "last_sync_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "finished_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "running",
+            "succeeded",
+            "failed"
+          ]
+        },
+        {
+          "name": "nfs_count",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_error",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": []
     }
   ]
 }
