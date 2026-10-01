@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T23:02:51.221Z",
+  "generatedAt": "2026-10-01T00:47:25.208Z",
   "collections": [
     {
       "name": "users",
@@ -29,14 +29,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -66,7 +71,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["draft", "open", "closed", "archived"]
+          "selectValues": [
+            "draft",
+            "open",
+            "closed",
+            "archived"
+          ]
         },
         {
           "name": "start_date",
@@ -85,7 +95,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["manual", "maxiprod", "import", "pulso"]
+          "selectValues": [
+            "manual",
+            "maxiprod",
+            "import",
+            "pulso"
+          ]
         },
         {
           "name": "source_version",
@@ -111,14 +126,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -220,14 +240,25 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["pending", "producing", "produced", "fulfilled", "cancelled"]
+          "selectValues": [
+            "pending",
+            "producing",
+            "produced",
+            "fulfilled",
+            "cancelled"
+          ]
         },
         {
           "name": "source_system",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["maxiprod", "manual", "pulso", "import"]
+          "selectValues": [
+            "maxiprod",
+            "manual",
+            "pulso",
+            "import"
+          ]
         },
         {
           "name": "source_record_id",
@@ -258,14 +289,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -329,14 +365,23 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["manual", "pulso", "maxiprod", "import"]
+          "selectValues": [
+            "manual",
+            "pulso",
+            "maxiprod",
+            "import"
+          ]
         },
         {
           "name": "status",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["draft", "confirmed", "cancelled"]
+          "selectValues": [
+            "draft",
+            "confirmed",
+            "cancelled"
+          ]
         },
         {
           "name": "declared_by",
@@ -356,14 +401,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -394,7 +444,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["scenario", "actual", "import", "system"]
+          "selectValues": [
+            "scenario",
+            "actual",
+            "import",
+            "system"
+          ]
         },
         {
           "name": "occurred_at",
@@ -438,14 +493,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -475,7 +535,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["maxiprod", "pulso", "manual"]
+          "selectValues": [
+            "maxiprod",
+            "pulso",
+            "manual"
+          ]
         },
         {
           "name": "started_at",
@@ -494,7 +558,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["running", "succeeded", "partial", "failed"]
+          "selectValues": [
+            "running",
+            "succeeded",
+            "partial",
+            "failed"
+          ]
         },
         {
           "name": "rows_read",
@@ -544,14 +613,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
