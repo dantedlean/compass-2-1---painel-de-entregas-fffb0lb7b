@@ -10,9 +10,11 @@ import {
   listReprogrammingEvents,
   listSmktAllocations,
   listSyncRuns,
+  listFaturamentoNfs,
   createSmktAllocation,
   recordReprogrammingEvent,
   syncMaxiProd,
+  type FaturamentoNf,
   type PlanningCycle,
   type PlanningItem,
   type ProductionDeclaration,
@@ -69,6 +71,8 @@ export default function Compass2() {
   const [events, setEvents] = useState<ReprogrammingEvent[]>([])
   const [syncRuns, setSyncRuns] = useState<SyncRun[]>([])
   const [smktAllocs, setSmktAllocs] = useState<SmktAllocation[]>([])
+  const [nfs, setNfs] = useState<FaturamentoNf[]>([])
+  const [weekTab, setWeekTab] = useState('')
   const [smktForm, setSmktForm] = useState({
     product_code: '',
     pv_number: '',
@@ -105,6 +109,84 @@ export default function Compass2() {
   )
   const declaredQuantity = declarations.reduce((total, row) => total + row.quantity, 0)
 
+  // ── Semanas (visão de reagendamento) ──
+  const weekGroups = useMemo(() => {
+    const groups = new Map<string, PlanningItem[]>()
+    for (const row of items) {
+      const key = row.planned_week || '—'
+      const list = groups.get(key) || []
+      list.push(row)
+      groups.set(key, list)
+    }
+    const order = (week: string) => (week === 'ATRASADO' ? '0' : week)
+    return Array.from(groups.entries())
+      .sort((a, b) => order(a[0]).localeCompare(order(b[0])))
+      .map(([week, rows]) => {
+        const total = rows.reduce((sum, row) => sum + (row.total_value || 0), 0)
+        const qty = rows.reduce((sum, row) => sum + row.quantity, 0)
+        const pvs = new Set(rows.map((row) => `${row.pv_number}|${row.company_name}`)).size
+        return { week, rows, total, qty, pvs }
+      })
+  }, [items])
+
+  // ── Faturamento (NFs emitidas, sync a cada 15 min) ──
+  const fatMetrics = useMemo(() => {
+    const brt = new Date(Date.now() - 3 * 3600 * 1000)
+    const curY = brt.getUTCFullYear()
+    const curM = brt.getUTCMonth() + 1
+    const mesPrefix = `${curY}-${String(curM).padStart(2, '0')}`
+    const mesNfs = nfs.filter((row) => row.issue_day.startsWith(mesPrefix))
+    const mesValor = mesNfs.reduce((sum, row) => sum + (row.total_value || 0), 0)
+    const anoValor = nfs.reduce((sum, row) => sum + (row.total_value || 0), 0)
+    const byDay = new Map<string, { qtd: number; valor: number }>()
+    for (const row of mesNfs) {
+      const day = row.issue_day
+      const cur = byDay.get(day) || { qtd: 0, valor: 0 }
+      cur.qtd += 1
+      cur.valor += row.total_value || 0
+      byDay.set(day, cur)
+    }
+    const daily = Array.from(byDay.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([day, v]) => ({ day, ...v }))
+    const byMonth = new Map<string, { qtd: number; valor: number }>()
+    for (const row of nfs) {
+      const mk = row.issue_day.slice(0, 7)
+      const cur = byMonth.get(mk) || { qtd: 0, valor: 0 }
+      cur.qtd += 1
+      cur.valor += row.total_value || 0
+      byMonth.set(mk, cur)
+    }
+    const monthly = Array.from(byMonth.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, v]) => ({ month, ...v }))
+    const diasUteis = (ini: string, fim: string) => {
+      let n = 0
+      const d = new Date(`${ini}T00:00:00Z`)
+      const e = new Date(`${fim}T00:00:00Z`)
+      while (d <= e) {
+        const wd = d.getUTCDay()
+        if (wd > 0 && wd < 6) n += 1
+        d.setUTCDate(d.getUTCDate() + 1)
+      }
+      return n
+    }
+    const hoje = brt.toISOString().slice(0, 10)
+    const mesDu = diasUteis(`${mesPrefix}-01`, hoje)
+    const anoDu = diasUteis(`${curY}-01-01`, hoje)
+    return {
+      mesLabel: `${String(curM).padStart(2, '0')}/${curY}`,
+      mesQtd: mesNfs.length,
+      mesValor,
+      anoQtd: nfs.length,
+      anoValor,
+      daily,
+      monthly,
+      mediaDiaUtilMes: mesDu ? Math.round(mesValor / mesDu) : 0,
+      mediaDiaUtilAno: anoDu ? Math.round(anoValor / anoDu) : 0,
+    }
+  }, [nfs])
+
   async function loadCycle(nextCycleId: string) {
     if (!nextCycleId) {
       setItems([])
@@ -112,20 +194,24 @@ export default function Compass2() {
       setEvents([])
       setSyncRuns([])
       setSmktAllocs([])
+      setNfs([])
       return
     }
-    const [nextItems, nextDeclarations, nextEvents, nextSyncRuns, nextAllocs] = await Promise.all([
-      listPlanningItems(nextCycleId),
-      listProductionDeclarations(nextCycleId),
-      listReprogrammingEvents(nextCycleId),
-      listSyncRuns(nextCycleId),
-      listSmktAllocations(nextCycleId),
-    ])
+    const [nextItems, nextDeclarations, nextEvents, nextSyncRuns, nextAllocs, nextNfs] =
+      await Promise.all([
+        listPlanningItems(nextCycleId),
+        listProductionDeclarations(nextCycleId),
+        listReprogrammingEvents(nextCycleId),
+        listSyncRuns(nextCycleId),
+        listSmktAllocations(nextCycleId),
+        listFaturamentoNfs().catch(() => [] as FaturamentoNf[]),
+      ])
     setItems(nextItems)
     setDeclarations(nextDeclarations)
     setEvents(nextEvents)
     setSyncRuns(nextSyncRuns)
     setSmktAllocs(nextAllocs)
+    setNfs(nextNfs)
   }
 
   async function loadWorkspace(preferredCycleId?: string) {
@@ -167,6 +253,7 @@ export default function Compass2() {
     setEvents([])
     setSyncRuns([])
     setSmktAllocs([])
+    setNfs([])
   }
 
   async function createCycle(event: FormEvent<HTMLFormElement>) {
@@ -430,6 +517,163 @@ export default function Compass2() {
             note={`${declarations.length} declarações no ciclo`}
           />
         </section>
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Reagendamento"
+            title="Entregas por semana"
+            tag="itens do ciclo · somente leitura"
+          />
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Itens agrupados pela semana planejada (data de entrega no nível do item, fonte
+            MaxiProd). Atrasado = entrega anterior à semana corrente. Clique numa semana para ver os
+            itens.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {weekGroups.map((group) => (
+              <button
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                  weekTab === group.week
+                    ? 'border-cyan-700 bg-cyan-700 text-white'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+                key={group.week}
+                onClick={() => setWeekTab(weekTab === group.week ? '' : group.week)}
+                type="button"
+              >
+                {group.week === 'ATRASADO' ? 'Atrasado' : group.week.replace('2026-W', 'S')} ·{' '}
+                {money(group.total)}
+              </button>
+            ))}
+            {weekGroups.length === 0 && (
+              <span className="text-sm text-slate-500">Nenhum item no ciclo.</span>
+            )}
+          </div>
+          {weekTab && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-xs">
+                <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-2 py-2">Produto</th>
+                    <th className="px-2 py-2">PV</th>
+                    <th className="px-2 py-2">Cliente</th>
+                    <th className="px-2 py-2">Empresa</th>
+                    <th className="px-2 py-2">Entrega</th>
+                    <th className="px-2 py-2">Qtd.</th>
+                    <th className="px-2 py-2">Valor</th>
+                    <th className="px-2 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(weekGroups.find((group) => group.week === weekTab)?.rows || []).map((row) => (
+                    <tr className="border-b border-slate-100" key={row.id}>
+                      <td className="px-2 py-2">
+                        <strong className="font-mono">{row.product_code}</strong>{' '}
+                        <span className="text-slate-500">{row.product_name}</span>
+                      </td>
+                      <td className="px-2 py-2 font-semibold">{row.pv_number || '—'}</td>
+                      <td className="px-2 py-2">{row.client_name || '—'}</td>
+                      <td className="px-2 py-2">{row.company_name}</td>
+                      <td className="px-2 py-2">{dateLabel(row.delivery_date)}</td>
+                      <td className="px-2 py-2">{row.quantity}</td>
+                      <td className="px-2 py-2">{money(row.total_value || 0)}</td>
+                      <td className="px-2 py-2">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5">{row.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Faturamento"
+            title="NFs emitidas — atualização a cada 15 min"
+            tag="somente leitura · MaxiProd"
+          />
+          <div className="mt-4 grid gap-4 md:grid-cols-4">
+            <Metric
+              label={`Mês ${fatMetrics.mesLabel}`}
+              value={fatMetrics.mesValor}
+              note={`${fatMetrics.mesQtd} NFs · média ${money(fatMetrics.mediaDiaUtilMes)}/dia útil`}
+            />
+            <Metric
+              label={`Acumulado ${fatMetrics.mesLabel.slice(3)}`}
+              value={fatMetrics.anoValor}
+              note={`${fatMetrics.anoQtd} NFs · média ${money(fatMetrics.mediaDiaUtilAno)}/dia útil`}
+            />
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
+              <p className="text-sm text-slate-500">
+                Faturamento por mês — {fatMetrics.mesLabel.slice(3)}
+              </p>
+              <div className="mt-3 space-y-1.5">
+                {fatMetrics.monthly.map((month) => {
+                  const max = Math.max(...fatMetrics.monthly.map((m) => m.valor), 1)
+                  return (
+                    <div className="flex items-center gap-2 text-xs" key={month.month}>
+                      <span className="w-12 shrink-0 text-slate-500">
+                        {month.month.slice(5)}/{month.month.slice(0, 4)}
+                      </span>
+                      <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-3 rounded-full bg-blue-600"
+                          style={{ width: `${Math.max(2, (100 * month.valor) / max)}%` }}
+                        />
+                      </div>
+                      <span className="w-24 shrink-0 text-right font-semibold">
+                        {money(month.valor)}
+                      </span>
+                      <span className="w-12 shrink-0 text-right text-slate-500">
+                        {month.qtd} NF
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-xs">
+              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-2 py-2">NF</th>
+                  <th className="px-2 py-2">Data</th>
+                  <th className="px-2 py-2">Empresa</th>
+                  <th className="px-2 py-2">Cliente</th>
+                  <th className="px-2 py-2">Destino</th>
+                  <th className="px-2 py-2">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nfs.slice(0, 25).map((row) => (
+                  <tr
+                    className="border-b border-slate-100"
+                    key={`${row.company_cnpj}-${row.nf_number}`}
+                  >
+                    <td className="px-2 py-2 font-semibold">{row.nf_number}</td>
+                    <td className="px-2 py-2">{dateLabel(row.issue_day)}</td>
+                    <td className="px-2 py-2">{row.company_name}</td>
+                    <td className="px-2 py-2">{row.client_name || '—'}</td>
+                    <td className="px-2 py-2">
+                      {row.city ? `${row.city}${row.uf ? `/${row.uf}` : ''}` : '—'}
+                    </td>
+                    <td className="px-2 py-2 font-semibold">{money(row.total_value || 0)}</td>
+                  </tr>
+                ))}
+                {nfs.length === 0 && (
+                  <tr>
+                    <td className="px-2 py-5 text-center text-slate-500" colSpan={6}>
+                      Nenhuma NF carregada ainda — o sync a cada 15 min popula esta lista.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <SectionTitle eyebrow="Camada 1" title="Ciclo de planejamento" tag="persistido" />

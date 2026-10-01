@@ -255,6 +255,29 @@ export async function listReprogrammingEvents(cycleId: string): Promise<Reprogra
   })
 }
 
+/* ==================== Faturamento — NFs emitidas (sync a cada 15 min) ==================== */
+
+export interface FaturamentoNf extends RecordModel {
+  nf_number: string
+  company_cnpj: string
+  company_name: string
+  issue_date: string
+  issue_day: string
+  total_value: number
+  freight_value: number
+  client_name: string
+  city: string
+  uf: string
+  fiscal_op: string
+  items?: Array<{ cod: string; desc: string; qtd: number; valor: number; classe: string }>
+}
+
+export async function listFaturamentoNfs(): Promise<FaturamentoNf[]> {
+  return pb
+    .collection('faturamento_nfs')
+    .getFullList<FaturamentoNf>({ sort: '-issue_day,-nf_number', batch: 200 })
+}
+
 /* ==================== Supermercado (SMKT) — produtos prontos ==================== */
 /* Alocação = baixa do produto pronto do SMKT para um PV, registrando a NF de saída.
    Persistida como reprogramming_events (event_type 'actual') — histórico auditável. */
