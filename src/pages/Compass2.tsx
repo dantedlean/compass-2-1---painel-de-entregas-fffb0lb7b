@@ -217,7 +217,11 @@ export default function Compass2() {
   async function loadWorkspace(preferredCycleId?: string) {
     const nextCycles = await listPlanningCycles()
     setCycles(nextCycles)
-    const nextCycleId = preferredCycleId || cycleId || nextCycles[0]?.id || ''
+    // Default: ciclo operacional aberto mais recente (nao o de homologacao/draft)
+    const openCycle = nextCycles
+      .filter((cycle) => cycle.status === 'open')
+      .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''))[0]
+    const nextCycleId = preferredCycleId || cycleId || openCycle?.id || nextCycles[0]?.id || ''
     setCycleId(nextCycleId)
     await loadCycle(nextCycleId)
   }
