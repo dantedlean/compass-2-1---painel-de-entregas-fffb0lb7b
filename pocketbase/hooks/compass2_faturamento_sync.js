@@ -15,7 +15,12 @@ routerAdd(
   '/backend/v1/compass2/faturamento-sync',
   (e) => {
     var out = (function () {
-      var FAT_CNPJS = ['33518000000137', '33518000000218', '51743790000136', '45758498000194']
+      var FAT_CNPJ_POR_APELIDO = {
+        DLEAN: '33518000000137',
+        'DLEAN FILIAL VINHEDO': '33518000000218',
+        SLEAN: '51743790000136',
+        DTEKT: '45758498000194',
+      }
       var FAT_OPS = ['venda', 'serviço', 'servico', 'prestação']
 
       function classificarItem(it) {
@@ -77,7 +82,7 @@ routerAdd(
             '",lte:"' +
             lte +
             '"}})' +
-            '{items{numero,valorTotal,emissaoData,freteValor,my:minhaEmpresa{apelido},cnpj:minhaEmpresa{cnpjOuCpf},' +
+            '{items{numero,valorTotal,emissaoData,freteValor,my:minhaEmpresa{apelido},' +
             'dest:destinatarioOuRemetente{razaoSocial,apelido},' +
             'cid:freteDestinoMunicipio{descricao,uf{sigla}},' +
             'op:operacaoFiscal{descricao},' +
@@ -115,7 +120,6 @@ routerAdd(
           }
           if (opDesc && !ehVenda) continue
           var my = n.my || {}
-          var cnpj = String((n.cnpj || {}).cnpjOuCpf || '').replace(/\D/g, '')
           var em = String(n.emissaoData || '')
           var day = em.slice(0, 10)
           if (!day) continue
@@ -134,6 +138,7 @@ routerAdd(
           var dest = n.dest || {}
           var cid = n.cid || {}
           var uf = cid.uf || {}
+          var cnpj = FAT_CNPJ_POR_APELIDO[String(my.apelido || '')] || ''
           limpos.push({
             nf_number: String(n.numero || ''),
             company_cnpj: cnpj,
@@ -255,6 +260,12 @@ routerAdd('GET', '/backend/v1/compass2/faturamento', (e) => {
 
 // Cron a cada 15 minutos (UTC) — atualiza os dados financeiros sozinho
 cronAdd('faturamento_sync', '*/15 * * * *', () => {
+  var FAT_CNPJ_POR_APELIDO = {
+    DLEAN: '33518000000137',
+    'DLEAN FILIAL VINHEDO': '33518000000218',
+    SLEAN: '51743790000136',
+    DTEKT: '45758498000194',
+  }
   var FAT_OPS = ['venda', 'serviço', 'servico', 'prestação']
 
   function classificarItem(it) {
@@ -314,7 +325,7 @@ cronAdd('faturamento_sync', '*/15 * * * *', () => {
         '",lte:"' +
         lte +
         '"}})' +
-        '{items{numero,valorTotal,emissaoData,freteValor,my:minhaEmpresa{apelido},cnpj:minhaEmpresa{cnpjOuCpf},' +
+        '{items{numero,valorTotal,emissaoData,freteValor,my:minhaEmpresa{apelido},' +
         'dest:destinatarioOuRemetente{razaoSocial,apelido},' +
         'cid:freteDestinoMunicipio{descricao,uf{sigla}},' +
         'op:operacaoFiscal{descricao},' +
@@ -352,7 +363,6 @@ cronAdd('faturamento_sync', '*/15 * * * *', () => {
       }
       if (opDesc && !ehVenda) continue
       var my = n.my || {}
-      var cnpj = String((n.cnpj || {}).cnpjOuCpf || '').replace(/\D/g, '')
       var em = String(n.emissaoData || '')
       var day = em.slice(0, 10)
       if (!day) continue
@@ -371,6 +381,7 @@ cronAdd('faturamento_sync', '*/15 * * * *', () => {
       var dest = n.dest || {}
       var cid = n.cid || {}
       var uf = cid.uf || {}
+      var cnpj = FAT_CNPJ_POR_APELIDO[String(my.apelido || '')] || ''
       limpos.push({
         nf_number: String(n.numero || ''),
         company_cnpj: cnpj,
