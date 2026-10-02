@@ -1426,24 +1426,69 @@ export default function Compass2() {
               {(() => {
                 const hoje = hojeIso
                 const passados = progWeek.dias.filter((d) => d < hoje)
-                const futuras = progWeek.dias.filter((d) => d >= hoje)
-                // sábado sempre visível (vazio = espaço para atrasos); sequência futura até sexta da próxima semana
-                const segProx = isoD(mondayOf(new Date(hoje + 'T12:00:00')))
-                const sexProx = addDU(segProx, 4)
-                const futurasSequencia: string[] = []
-                let cursor = new Date(hoje + 'T12:00:00')
+                // sequência futura: todos os dias do calendário de amanhã até a sexta da próxima semana (domingo fora)
+                const proxSeg = addDU(isoD(mondayOf(new Date(hoje + 'T12:00:00'))), 5)
+                const sexProx = addDU(proxSeg, 4)
+                const sequencia: string[] = []
+                const cur = new Date(hoje + 'T12:00:00')
                 const fim = new Date(sexProx + 'T12:00:00')
-                while (cursor <= fim) {
-                  cursor.setDate(cursor.getDate() + 1)
-                  const iso = isoD(cursor)
-                  if (iso <= sexProx) futurasSequencia.push(iso)
+                while (cur <= fim) {
+                  cur.setDate(cur.getDate() + 1)
+                  const iso = isoD(cur)
+                  const dow = new Date(iso + 'T12:00:00').getDay()
+                  if (iso <= sexProx && dow !== 0) sequencia.push(iso)
                 }
-                const diasVisiveis = [
-                  ...passados,
-                  ...futuras.filter((d) => !futurasSequencia.includes(d)),
-                  ...futurasSequencia,
-                ]
-                const sab = futurasSequencia.find((d) => new Date(d + 'T12:00:00').getDay() === 6)
+                const futuras = [
+                  ...new Set([...progWeek.dias.filter((d) => d >= hoje), ...sequencia]),
+                ].sort()
+                const btnDia = (data: string, passado: boolean) => {
+                  const rows = progWeek.out.filter((a) => a.data === data)
+                  const tq = rows.reduce((s, r) => s + r.qtd, 0)
+                  const dt = new Date(data + 'T12:00:00')
+                  const dowC = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
+                  const dowL = [
+                    'Domingo',
+                    'Segunda',
+                    'Terça',
+                    'Quarta',
+                    'Quinta',
+                    'Sexta',
+                    'Sábado',
+                  ][dt.getDay()]
+                  const vazio = tq === 0
+                  return (
+                    <button
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                        passado
+                          ? encerrados.includes(data)
+                            ? 'border-slate-400 bg-slate-200 text-slate-500'
+                            : 'border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
+                          : progDay === data
+                            ? 'border-blue-900 bg-blue-900 text-white'
+                            : vazio
+                              ? 'border-dashed border-slate-300 bg-white text-slate-400 hover:bg-slate-50'
+                              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                      key={data}
+                      onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
+                      title={
+                        data === hoje
+                          ? 'hoje'
+                          : vazio && dt.getDay() === 6
+                            ? 'Sábado livre — espaço para programar atrasos'
+                            : undefined
+                      }
+                      type="button"
+                    >
+                      {passado ? dowL : dowC} · {brD(data)} ·{' '}
+                      {vazio ? (dt.getDay() === 6 ? 'vazio (atrasos)' : 'vazio') : `${tq} un`}
+                      {passado && encerrados.includes(data) && ' ✔'}
+                      {clipboard && (
+                        <span className="ml-1 text-[10px] font-bold text-amber-700">⇩ colar</span>
+                      )}
+                    </button>
+                  )
+                }
                 return (
                   <>
                     {passados.length > 0 && (
@@ -1452,29 +1497,7 @@ export default function Compass2() {
                           Dias passados — encerre e salve no histórico
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                          {passados.map((data) => {
-                            const rows = progWeek.out.filter((a) => a.data === data)
-                            const tq = rows.reduce((s, r) => s + r.qtd, 0)
-                            const dt = new Date(data + 'T12:00:00')
-                            const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
-                              dt.getDay()
-                            ]
-                            return (
-                              <button
-                                className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                                  encerrados.includes(data)
-                                    ? 'border-slate-400 bg-slate-200 text-slate-500'
-                                    : 'border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
-                                }`}
-                                key={data}
-                                onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
-                                type="button"
-                              >
-                                {dow} · {brD(data)} · {tq} un
-                                {encerrados.includes(data) && ' ✔'}
-                              </button>
-                            )
-                          })}
+                          {passados.map((data) => btnDia(data, true))}
                           {passados.some((d) => !encerrados.includes(d)) && (
                             <button
                               className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 hover:bg-blue-100"
@@ -1488,57 +1511,12 @@ export default function Compass2() {
                       </div>
                     )}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {diasVisiveis.length === 0 && (
+                      {futuras.length === 0 && (
                         <span className="text-sm text-slate-500">
                           Nenhuma programação declarada — inclua um PV abaixo.
                         </span>
                       )}
-                      {diasVisiveis.map((data) => {
-                        const rows = progWeek.out.filter((a) => a.data === data)
-                        const dt = new Date(data + 'T12:00:00')
-                        const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
-                        const tq = rows.reduce((s, r) => s + r.qtd, 0)
-                        return (
-                          <button
-                            className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                              progDay === data
-                                ? 'border-blue-900 bg-blue-900 text-white'
-                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                            }`}
-                            key={data}
-                            onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
-                            type="button"
-                          >
-                            {
-                              [
-                                'Domingo',
-                                'Segunda',
-                                'Terça',
-                                'Quarta',
-                                'Quinta',
-                                'Sexta',
-                                'Sábado',
-                              ][dt.getDay()]
-                            }{' '}
-                            · {brD(data)} · {tq} un
-                            {clipboard && (
-                              <span className="ml-1 text-[10px] font-bold text-amber-700">
-                                ⇩ colar
-                              </span>
-                            )}
-                          </button>
-                        )
-                      })}
-                      {sab && !progWeek.dias.includes(sab) && (
-                        <button
-                          className="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-400"
-                          onClick={() => (clipboard ? colarNoDia(sab) : setProgDay(sab))}
-                          title="Sábado livre — espaço para programar atrasos"
-                          type="button"
-                        >
-                          Sábado · {brD(sab)} · vazio (atrasos)
-                        </button>
-                      )}
+                      {futuras.map((data) => btnDia(data, false))}
                     </div>
                   </>
                 )
