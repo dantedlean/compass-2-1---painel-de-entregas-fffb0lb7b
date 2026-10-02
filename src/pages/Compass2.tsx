@@ -1543,6 +1543,394 @@ export default function Compass2() {
                 </div>
               )}
             </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <SectionTitle
+                eyebrow="Programação"
+                title="Programação em batelada — por produto e semana"
+                tag="alvo principal · PVs alocáveis ao clicar"
+              />
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                <strong>Batelada por produto</strong> nas semanas (Atrasado, S40, S41…): quantidade
+                total e valor por produto. Ao clicar no produto, abrem os{' '}
+                <strong>PVs alocáveis</strong> — todos os PVs da carteira que usam o produto. Ao
+                selecionar a semana, a <strong>programação diária</strong> aparece no card abaixo,
+                com seleção de dia.
+              </p>
+              {weekBatches.length === 0 && (
+                <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                  Nenhum item no ciclo.
+                </p>
+              )}
+              <div className="mt-4 space-y-3">
+                {weekBatches.map((batch) => {
+                  const prods = new Map<
+                    string,
+                    {
+                      code: string
+                      name: string
+                      qty: number
+                      valor: number
+                      rows: typeof batch.rows
+                    }
+                  >()
+                  for (const r of batch.rows) {
+                    const key = r.row.product_code || '—'
+                    const cur = prods.get(key) || {
+                      code: key,
+                      name: r.row.product_name || '',
+                      qty: 0,
+                      valor: 0,
+                      rows: [],
+                    }
+                    cur.qty += r.row.quantity
+                    cur.valor += r.row.total_value || 0
+                    cur.rows.push(r)
+                    prods.set(key, cur)
+                  }
+                  const list = Array.from(prods.values()).sort((a, b) => b.valor - a.valor)
+                  return (
+                    <div key={batch.week} className="rounded-2xl border border-slate-200 p-4">
+                      <button
+                        className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
+                        onClick={() => setWeekTab(weekTab === batch.week ? '' : batch.week)}
+                        type="button"
+                      >
+                        <span className="flex flex-wrap items-center gap-3">
+                          <span className="text-slate-400">
+                            {weekTab === batch.week ? '▾' : '▸'}
+                          </span>
+                          <span
+                            className={`rounded-full px-3 py-1 text-sm font-bold ${
+                              weekTab === batch.week
+                                ? 'bg-blue-900 text-white'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {batch.week === 'ATRASADO'
+                              ? 'Atrasado'
+                              : batch.week.replace('2026-W', 'S')}
+                          </span>
+                          <span className="text-sm text-slate-500">
+                            {batch.rows.length} item(ns) · {batch.qty} un
+                          </span>
+                        </span>
+                        <span className="text-base font-bold text-slate-900">
+                          {money(batch.valor)}
+                        </span>
+                      </button>
+                      {weekTab === batch.week && (
+                        <div className="mt-2.5 space-y-1.5">
+                          {list.map((p) => {
+                            const open = weekProdOpen === batch.week + '|' + p.code
+                            const alocaveis = (itemsByCode.get(p.code) || []).filter(
+                              (row) =>
+                                !weekBatches.some((b) => b.rows.some((r) => r.row.id === row.id)),
+                            )
+                            return (
+                              <div key={p.code} className="rounded-xl border border-slate-200">
+                                <button
+                                  className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
+                                  onClick={() =>
+                                    setWeekProdOpen(open ? '' : batch.week + '|' + p.code)
+                                  }
+                                  type="button"
+                                >
+                                  <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+                                  <strong className="font-mono text-sm">{p.code}</strong>
+                                  <span className="text-sm text-slate-500">{p.name}</span>
+                                  <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
+                                    {p.qty} un
+                                  </span>
+                                  <span className="text-sm font-semibold text-slate-900">
+                                    {money(p.valor)}
+                                  </span>
+                                  {alocaveis.length > 0 && (
+                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                                      +{alocaveis.length} PV(s) alocável(is) fora da semana
+                                    </span>
+                                  )}
+                                </button>
+                                {open && (
+                                  <div className="border-t border-slate-100 px-4 py-3">
+                                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                                      PVs desta semana ({p.rows.length})
+                                    </p>
+                                    <table className="mt-1.5 w-full min-w-[640px] text-left text-xs">
+                                      <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                                        <tr>
+                                          <th className="px-2 py-1.5">PV</th>
+                                          <th className="px-2 py-1.5">Cliente</th>
+                                          <th className="px-2 py-1.5">Empresa</th>
+                                          <th className="px-2 py-1.5">Entrega</th>
+                                          <th className="px-2 py-1.5">Coleta</th>
+                                          <th className="px-2 py-1.5">Chegada</th>
+                                          <th className="px-2 py-1.5">Qtd.</th>
+                                          <th className="px-2 py-1.5">Valor</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {p.rows.map(({ row, t }) => (
+                                          <tr className="border-b border-slate-100" key={row.id}>
+                                            <td className="px-2 py-1.5 font-semibold">
+                                              {row.pv_number || '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5">
+                                              {row.client_name || '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5">{row.company_name}</td>
+                                            <td className="px-2 py-1.5">
+                                              {dateLabel(row.delivery_date)}
+                                            </td>
+                                            <td className="px-2 py-1.5">
+                                              {t
+                                                ? t.cid === '~'
+                                                  ? '~' + brD(t.coleta)
+                                                  : brD(t.coleta)
+                                                : '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5">
+                                              {t
+                                                ? t.cid === '~'
+                                                  ? '~' + brD(t.cheg)
+                                                  : brD(t.cheg)
+                                                : '—'}
+                                            </td>
+                                            <td className="px-2 py-1.5 font-semibold">
+                                              {row.quantity}
+                                            </td>
+                                            <td className="px-2 py-1.5">
+                                              {money(row.total_value || 0)}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                    {alocaveis.length > 0 && (
+                                      <>
+                                        <p className="mt-3 text-xs font-bold uppercase tracking-wide text-amber-700">
+                                          Outros PVs alocáveis com este produto ({alocaveis.length})
+                                        </p>
+                                        <table className="mt-1.5 w-full min-w-[640px] text-left text-xs">
+                                          <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                                            <tr>
+                                              <th className="px-2 py-1.5">PV</th>
+                                              <th className="px-2 py-1.5">Cliente</th>
+                                              <th className="px-2 py-1.5">Empresa</th>
+                                              <th className="px-2 py-1.5">Semana</th>
+                                              <th className="px-2 py-1.5">Entrega</th>
+                                              <th className="px-2 py-1.5">Coleta</th>
+                                              <th className="px-2 py-1.5">Qtd.</th>
+                                              <th className="px-2 py-1.5">Valor</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {alocaveis.map((row) => {
+                                              const t = transitoDe(row)
+                                              return (
+                                                <tr
+                                                  className="border-b border-slate-100"
+                                                  key={row.id}
+                                                >
+                                                  <td className="px-2 py-1.5 font-semibold">
+                                                    {row.pv_number || '—'}
+                                                  </td>
+                                                  <td className="px-2 py-1.5">
+                                                    {row.client_name || '—'}
+                                                  </td>
+                                                  <td className="px-2 py-1.5">
+                                                    {row.company_name}
+                                                  </td>
+                                                  <td className="px-2 py-1.5">
+                                                    {row.planned_week === 'ATRASADO'
+                                                      ? 'Atrasado'
+                                                      : (row.planned_week || '—').replace(
+                                                          '2026-W',
+                                                          'S',
+                                                        )}
+                                                  </td>
+                                                  <td className="px-2 py-1.5">
+                                                    {dateLabel(row.delivery_date)}
+                                                  </td>
+                                                  <td className="px-2 py-1.5">
+                                                    {t
+                                                      ? t.cid === '~'
+                                                        ? '~' + brD(t.coleta)
+                                                        : brD(t.coleta)
+                                                      : '—'}
+                                                  </td>
+                                                  <td className="px-2 py-1.5 font-semibold">
+                                                    {row.quantity}
+                                                  </td>
+                                                  <td className="px-2 py-1.5">
+                                                    {money(row.total_value || 0)}
+                                                  </td>
+                                                </tr>
+                                              )
+                                            })}
+                                          </tbody>
+                                        </table>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {weekTab === batch.week && weekDayPlans.get(batch.week) && (
+                        <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+                          <p className="text-xs font-bold uppercase tracking-wide text-blue-800">
+                            Programação diária — coletas da semana (clique no dia)
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {weekDayPlans.get(batch.week).days.map((day: string) => {
+                              const rows = weekDayPlans.get(batch.week)!.byDay.get(day) || []
+                              const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
+                              const dt = new Date(day + 'T12:00:00')
+                              const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
+                                dt.getDay()
+                              ]
+                              return (
+                                <button
+                                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                                    weekDayTab === day
+                                      ? 'border-blue-900 bg-blue-900 text-white'
+                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                  key={day}
+                                  onClick={() => setWeekDayTab(weekDayTab === day ? '' : day)}
+                                  type="button"
+                                >
+                                  {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          {weekDayTab && weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) && (
+                            <div className="mt-3 space-y-1.5">
+                              {(() => {
+                                const rows =
+                                  weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) || []
+                                const prodsDia = new Map<
+                                  string,
+                                  {
+                                    code: string
+                                    name: string
+                                    qty: number
+                                    valor: number
+                                    rows: typeof rows
+                                  }
+                                >()
+                                for (const r of rows) {
+                                  const key = r.row.product_code || '—'
+                                  const cur = prodsDia.get(key) || {
+                                    code: key,
+                                    name: r.row.product_name || '',
+                                    qty: 0,
+                                    valor: 0,
+                                    rows: [],
+                                  }
+                                  cur.qty += r.row.quantity
+                                  cur.valor += r.row.total_value || 0
+                                  cur.rows.push(r)
+                                  prodsDia.set(key, cur)
+                                }
+                                return Array.from(prodsDia.values())
+                                  .sort((a, b) => b.valor - a.valor)
+                                  .map((p) => {
+                                    const open = weekDayProdOpen === p.code
+                                    return (
+                                      <div
+                                        key={p.code}
+                                        className="rounded-xl border border-slate-200 bg-white"
+                                      >
+                                        <button
+                                          className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
+                                          onClick={() => setWeekDayProdOpen(open ? '' : p.code)}
+                                          type="button"
+                                        >
+                                          <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+                                          <strong className="font-mono text-sm">{p.code}</strong>
+                                          <span className="text-sm text-slate-500">{p.name}</span>
+                                          <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
+                                            {p.qty} un
+                                          </span>
+                                          <span className="text-sm font-semibold text-slate-900">
+                                            {money(p.valor)}
+                                          </span>
+                                        </button>
+                                        {open && (
+                                          <table className="w-full min-w-[640px] text-left text-xs">
+                                            <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                                              <tr>
+                                                <th className="px-4 py-1.5">PV</th>
+                                                <th className="px-4 py-1.5">Cliente</th>
+                                                <th className="px-4 py-1.5">Empresa</th>
+                                                <th className="px-4 py-1.5">Entrega</th>
+                                                <th className="px-4 py-1.5">Coleta</th>
+                                                <th className="px-4 py-1.5">Chegada</th>
+                                                <th className="px-4 py-1.5">Qtd.</th>
+                                                <th className="px-4 py-1.5">Valor</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {p.rows.map(({ row, t }) => (
+                                                <tr
+                                                  className="border-b border-slate-100"
+                                                  key={row.id}
+                                                >
+                                                  <td className="px-4 py-1.5 font-semibold">
+                                                    {row.pv_number || '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {row.client_name || '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {row.company_name}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {dateLabel(row.delivery_date)}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {t
+                                                      ? t.cid === '~'
+                                                        ? '~' + brD(t.coleta)
+                                                        : brD(t.coleta)
+                                                      : '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {t
+                                                      ? t.cid === '~'
+                                                        ? '~' + brD(t.cheg)
+                                                        : brD(t.cheg)
+                                                      : '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5 font-semibold">
+                                                    {row.quantity}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {money(row.total_value || 0)}
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        )}
+                                      </div>
+                                    )
+                                  })
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
           </>
         )}
         {view === 'smkt' && (
