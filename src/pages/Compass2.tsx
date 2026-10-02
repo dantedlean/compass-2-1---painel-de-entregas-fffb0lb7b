@@ -288,6 +288,8 @@ export default function Compass2() {
     cut: boolean
   } | null>(null)
   const [pvDig, setPvDig] = useState('')
+  const [encerrados, setEncerrados] = useState<string[]>([])
+  const [histOpen, setHistOpen] = useState(false)
   const [weekDayTab, setWeekDayTab] = useState('')
   const [weekDayProdOpen, setWeekDayProdOpen] = useState('')
   const [smktEntradaForm, setSmktEntradaForm] = useState({
@@ -710,6 +712,40 @@ export default function Compass2() {
       }
     } catch (e) {
       console.warn('loadAndonDraft falhou', e)
+    }
+    try {
+      const f2 = `cycle_id = '${cycleId}' && event_type = 'system' && source = 'prog-encerrados'`
+      const rows2 = await pb.collection('reprogramming_events').getFullList<ReprogrammingEvent>({
+        filter: pb.filter(f2),
+        sort: '-created',
+        batch: 200,
+      })
+      const datas = (rows2[0]?.changes as { datas?: string[] })?.datas
+      if (Array.isArray(datas)) setEncerrados(datas)
+    } catch (e2) {
+      console.warn('loadEncerrados falhou', e2)
+    }
+  }
+
+  async function encerrarDia(data: string) {
+    const prev = encerrados
+    pushUndo(() => setEncerrados(prev))
+    const next = [...new Set([...encerrados, data])]
+    setEncerrados(next)
+    try {
+      await pb.collection('reprogramming_events').create<ReprogrammingEvent>({
+        cycle_id: cycleId,
+        event_type: 'system',
+        occurred_at: new Date().toISOString(),
+        source: 'prog-encerrados',
+        reason: `Dia ${brD(data)} encerrado e salvo no histórico`,
+        changes: { datas: next },
+        before_snapshot: { field: 'prog_encerrados', value: 'v' + Date.now() },
+        created_by: pb.authStore.record?.id,
+      })
+      setAddInfo(`✔ ${brD(data)} encerrado — salvo no histórico`)
+    } catch (e) {
+      setAddInfo('Dia marcado como encerrado localmente (falha ao salvar no servidor)')
     }
   }
 
@@ -1387,41 +1423,123 @@ export default function Compass2() {
                   entraram no card
                 </div>
               )}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {progWeek.dias.length === 0 && (
-                  <span className="text-sm text-slate-500">
-                    Nenhuma programação declarada — inclua um PV abaixo.
-                  </span>
-                )}
-                {progWeek.dias.map((data) => {
-                  const rows = progWeek.out.filter((a) => a.data === data)
-                  const dt = new Date(data + 'T12:00:00')
-                  const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
-                  const tq = rows.reduce((s, r) => s + r.qtd, 0)
-                  return (
-                    <button
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                        progDay === data
-                          ? 'border-blue-900 bg-blue-900 text-white'
-                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                      }`}
-                      key={data}
-                      onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
-                      type="button"
-                    >
-                      {
-                        ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
-                          dt.getDay()
-                        ]
-                      }{' '}
-                      · {brD(data)} · {tq} un
-                      {clipboard && (
-                        <span className="ml-1 text-[10px] font-bold text-amber-700">⇩ colar</span>
+              {(() => {
+                const hoje = hojeIso
+                const passados = progWeek.dias.filter((d) => d < hoje)
+                const futuras = progWeek.dias.filter((d) => d >= hoje)
+                // sábado sempre visível (vazio = espaço para atrasos); sequência futura até sexta da próxima semana
+                const segProx = addDU(isoD(mondayOf(new Date(hoje + 'T12:00:00'))), 7)
+                const futurasSequencia: string[] = []
+                let cursor = hoje
+                while (cursor < segProx) {
+                  cursor = addDU(cursor, 1)
+                  futurasSequencia.push(cursor)
+                }
+                const diasVisiveis = [
+                  ...passados,
+                  ...futuras.filter((d) => !futurasSequencia.includes(d)),
+                  ...futurasSequencia,
+                ]
+                const sab = futurasSequencia.find((d) => new Date(d + 'T12:00:00').getDay() === 6)
+                return (
+                  <>
+                    {passados.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                          Dias passados — encerre e salve no histórico
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          {passados.map((data) => {
+                            const rows = progWeek.out.filter((a) => a.data === data)
+                            const tq = rows.reduce((s, r) => s + r.qtd, 0)
+                            const dt = new Date(data + 'T12:00:00')
+                            const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
+                              dt.getDay()
+                            ]
+                            return (
+                              <button
+                                className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                                  encerrados.includes(data)
+                                    ? 'border-slate-400 bg-slate-200 text-slate-500'
+                                    : 'border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
+                                }`}
+                                key={data}
+                                onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
+                                type="button"
+                              >
+                                {dow} · {brD(data)} · {tq} un
+                                {encerrados.includes(data) && ' ✔'}
+                              </button>
+                            )
+                          })}
+                          {passados.some((d) => !encerrados.includes(d)) && (
+                            <button
+                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 hover:bg-blue-100"
+                              onClick={() => encerrarDia(passados[passados.length - 1])}
+                              type="button"
+                            >
+                              🔒 Encerrar {brD(passados[passados.length - 1])} e salvar no histórico
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {diasVisiveis.length === 0 && (
+                        <span className="text-sm text-slate-500">
+                          Nenhuma programação declarada — inclua um PV abaixo.
+                        </span>
                       )}
-                    </button>
-                  )
-                })}
-              </div>
+                      {diasVisiveis.map((data) => {
+                        const rows = progWeek.out.filter((a) => a.data === data)
+                        const dt = new Date(data + 'T12:00:00')
+                        const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
+                        const tq = rows.reduce((s, r) => s + r.qtd, 0)
+                        return (
+                          <button
+                            className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                              progDay === data
+                                ? 'border-blue-900 bg-blue-900 text-white'
+                                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                            }`}
+                            key={data}
+                            onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
+                            type="button"
+                          >
+                            {
+                              [
+                                'Domingo',
+                                'Segunda',
+                                'Terça',
+                                'Quarta',
+                                'Quinta',
+                                'Sexta',
+                                'Sábado',
+                              ][dt.getDay()]
+                            }{' '}
+                            · {brD(data)} · {tq} un
+                            {clipboard && (
+                              <span className="ml-1 text-[10px] font-bold text-amber-700">
+                                ⇩ colar
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                      {sab && !progWeek.dias.includes(sab) && (
+                        <button
+                          className="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-400"
+                          onClick={() => (clipboard ? colarNoDia(sab) : setProgDay(sab))}
+                          title="Sábado livre — espaço para programar atrasos"
+                          type="button"
+                        >
+                          Sábado · {brD(sab)} · vazio (atrasos)
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
               <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3">
                 <strong className="text-xs">+ Incluir item:</strong>
                 <input
