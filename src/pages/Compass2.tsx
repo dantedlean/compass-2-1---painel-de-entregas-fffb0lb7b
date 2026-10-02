@@ -252,6 +252,26 @@ export default function Compass2() {
   const [smktEntradas, setSmktEntradas] = useState<SmktEntrada[]>([])
   const [smktEntradaOpen, setSmktEntradaOpen] = useState('')
   const [weekProdOpen, setWeekProdOpen] = useState('')
+  const [progDay, setProgDay] = useState('')
+  const [progDraft, setProgDraft] = useState<
+    Array<{
+      dia: string
+      data: string
+      cod: string
+      qtd: number
+      local: string
+      pv: string
+      obs: string
+    }>
+  >([])
+  const [progExec, setProgExec] = useState<
+    Record<string, { ok: boolean; qtd: number; rl?: string; pvNovo?: string }>
+  >({})
+  const [addPv, setAddPv] = useState('')
+  const [addQtd, setAddQtd] = useState('0')
+  const [addLocal, setAddLocal] = useState('C')
+  const [addInfo, setAddInfo] = useState('')
+  const [undoStack, setUndoStack] = useState<Array<() => void>>([])
   const [weekDayTab, setWeekDayTab] = useState('')
   const [weekDayProdOpen, setWeekDayProdOpen] = useState('')
   const [smktEntradaForm, setSmktEntradaForm] = useState({
@@ -364,6 +384,133 @@ export default function Compass2() {
         return { week, rows, total, qty, pvs }
       })
   }, [items])
+
+  const progHoje = useMemo(() => {
+    const hjBR = hojeIso.slice(8, 10) + '/' + hojeIso.slice(5, 7)
+    const dias = progWeek.out.filter((a) => a.data === hjBR)
+    const prog = dias.reduce((s, a) => s + a.qtd, 0)
+    const vistos = new Set<string>()
+    let done = 0
+    for (const a of dias) {
+      if (vistos.has(a.cod)) continue
+      vistos.add(a.cod)
+      const ex = progExec[a.cod + '|' + hjBR]
+      done += (ex && ex.qtd) || 0
+    }
+    const pct = prog > 0 ? Math.round((done / prog) * 100) : done > 0 ? 100 : 0
+    return { prog: Math.round(prog), done: Math.round(done), pct }
+  }, [progWeek, progExec, hojeIso])
+
+  // ── Agenda editável (modelo Andon): rascunho → linhas por dia com PVs da carteira ──
+  const carteiraByPv = useMemo(() => {
+    const map = new Map<string, PlanningItem[]>()
+    for (const row of items) {
+      if (row.is_freight || isFreightRow(row)) continue
+      const key = String(row.pv_number || '').trim()
+      if (!key) continue
+      const list = map.get(key) || []
+      list.push(row)
+      map.set(key, list)
+    }
+    return map
+  }, [items])
+
+  const progWeek = useMemo(() => {
+    const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+    const avail = new Map<string, number>()
+    for (const row of items) {
+      const k = `${row.product_code}|${row.pv_number}|${row.company_name}`
+      avail.set(k, (avail.get(k) || 0) + row.quantity)
+    }
+    const fosseis: string[] = []
+    const out: Array<{
+      dia: string
+      data: string
+      cod: string
+      desc: string
+      qtd: number
+      pv: string
+      cli: string
+      emp: string
+      vtot: number
+      sit: string
+      cheg: string
+      local: string
+    }> = []
+    for (const d of progDraft) {
+      if (!d.cod || !d.data || !(d.qtd > 0)) continue
+      const dt = new Date(d.data + 'T12:00:00')
+      const day = DIAS[dt.getDay()]
+      const date = d.data.slice(8, 10) + '/' + d.data.slice(5, 7)
+      let left = d.qtd
+      const cand = items
+        .filter((r) => r.product_code === d.cod && (!d.pv || String(r.pv_number) === String(d.pv)))
+        .sort((a, b) => (a.delivery_date || '').localeCompare(b.delivery_date || ''))
+      if (!cand.length) {
+        fosseis.push(
+          `${d.cod} ×${d.qtd}${d.pv ? ' · PV ' + d.pv + ' faturado/sem saldo' : ' · código sem saldo na carteira'}`,
+        )
+        continue
+      }
+      const prodIso = d.data
+      for (const r of cand) {
+        const k = `${r.product_code}|${r.pv_number}|${r.company_name}`
+        const q = Math.min(left, avail.get(k) || 0)
+        if (q <= 0) continue
+        let atrasado = r.planned_week === 'ATRASADO'
+        let chegTxt: string
+        const t = transitoDe(r)
+        const tdu =
+          d.local === 'V'
+            ? (TRANSITO_VINHEDO as Record<string, [number, number]>)
+            : (TRANSITO as Record<string, [number, number]>)
+        const cid = t && t.cid !== '~' ? t.cid : null
+        if (cid) {
+          const coleta = addDU(prodIso, 1)
+          const cheg = addDU(coleta, tdu[cid][0])
+          chegTxt = brD(cheg)
+          if (cheg > (r.delivery_date || '')) atrasado = true
+        } else if (d.local === 'V') {
+          chegTxt = 'Vinhedo · cidade fora da tabela'
+        } else {
+          chegTxt = 'entrega ' + brD(r.delivery_date || '') + ' · cidade fora da tabela'
+        }
+        out.push({
+          dia: day,
+          data: date,
+          cod: d.cod,
+          desc: r.product_name || '',
+          qtd: q,
+          pv: String(r.pv_number || ''),
+          cli: r.client_name || '',
+          emp: r.company_name || '',
+          vtot: r.quantity ? ((r.total_value || 0) * q) / r.quantity : 0,
+          sit: atrasado ? 'ATRASADO' : 'em dia',
+          cheg: chegTxt,
+          local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+        })
+        avail.set(k, (avail.get(k) || 0) - q)
+        left -= q
+      }
+      if (left > 0)
+        out.push({
+          dia: day,
+          data: date,
+          cod: d.cod,
+          desc: d.cod,
+          qtd: left,
+          pv: d.pv || '—',
+          cli: '',
+          emp: '',
+          vtot: 0,
+          sit: 'Sem PV associado',
+          cheg: '—',
+          local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+        })
+    }
+    const dias = [...new Map(out.map((a) => [a.data + '|' + a.dia, a])).keys()].sort()
+    return { dias: Array.from(new Set(out.map((a) => a.data))).sort(), out, fosseis }
+  }, [progDraft, items])
 
   // ── Batelada por produto nas semanas (agregado, com PVs ao expandir) ──
   const weekBatches = useMemo(() => {
@@ -784,6 +931,122 @@ export default function Compass2() {
     }
   }
 
+  // ── Ações da agenda editável (modelo Andon) ──
+  function pushUndo(fn: () => void) {
+    setUndoStack((s) => [...s.slice(-9), fn])
+  }
+
+  function addProgLine() {
+    const pv = addPv.trim()
+    const rows = carteiraByPv.get(pv)
+    if (!rows || !rows.length) {
+      setAddInfo(`PV ${pv || '—'} não encontrado na carteira`)
+      return
+    }
+    const q = Number(addQtd) || 0
+    if (q <= 0) {
+      setAddInfo('Informe a quantidade.')
+      return
+    }
+    const data = progDay || new Date().toISOString().slice(0, 10)
+    const cod = rows[0].product_code
+    const prev = progDraft
+    pushUndo(() => setProgDraft(prev))
+    setProgDraft([
+      ...progDraft,
+      { dia: '', data, cod, qtd: q, local: addLocal, pv, obs: `incluído via PV ${pv}` },
+    ])
+    setAddInfo(`✔ Incluído em ${brD(data)} — nada gravado no MaxiProd`)
+    setAddPv('')
+    setAddQtd('0')
+  }
+
+  function delProgLine(cod: string, data: string) {
+    const prev = progDraft
+    pushUndo(() => setProgDraft(prev))
+    setProgDraft(progDraft.filter((d) => !(d.cod === cod && d.data === data)))
+  }
+
+  function setExec(
+    cod: string,
+    data: string,
+    patch: { ok?: boolean; qtd?: number; rl?: string; pvNovo?: string },
+  ) {
+    const key = cod + '|' + data
+    const prev = progExec
+    pushUndo(() => setProgExec(prev))
+    setProgExec((m) => {
+      const cur = { ...(m[key] || { ok: false, qtd: 0 }), ...patch }
+      const next = { ...m }
+      if (cur.ok || cur.qtd || cur.rl || cur.pvNovo) next[key] = cur
+      else delete next[key]
+      return next
+    })
+  }
+
+  function realocar(cod: string, data: string, qtdTotal: number) {
+    const key = cod + '|' + data
+    const ex = progExec[key] || { ok: false, qtd: 0 }
+    const saldo = qtdTotal - (ex.qtd || 0)
+    if (saldo <= 0) {
+      setAddInfo('Nada para realocar — qtd realizada cobre o programado.')
+      return
+    }
+    const prox = addDU(data, 1)
+    setExec(cod, data, { rl: brD(prox), qtd: qtdTotal })
+    setAddInfo(`→ ${brD(prox)} (${saldo} un realocadas)`)
+  }
+
+  function trocarPv(cod: string, data: string, novoPv: string) {
+    if (!novoPv) return
+    const prev = progDraft
+    pushUndo(() => setProgDraft(prev))
+    setProgDraft(
+      progDraft.map((d) =>
+        d.cod === cod && d.data === data
+          ? { ...d, pv: novoPv, obs: `PV trocado para ${novoPv}` }
+          : d,
+      ),
+    )
+  }
+
+  function undoLast() {
+    const fn = undoStack[undoStack.length - 1]
+    if (!fn) {
+      setAddInfo('Nada para desfazer.')
+      return
+    }
+    fn()
+    setUndoStack((s) => s.slice(0, -1))
+    setAddInfo('↩ Última ação desfeita')
+  }
+
+  function baixarProgramacao() {
+    const cols = ['Dia', 'Data', 'Codigo', 'Qtd', 'Local', 'PV', 'Observacao']
+    const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+    const rows = progDraft.map((d) => {
+      const dt = new Date(d.data + 'T12:00:00')
+      return [
+        DIAS[dt.getDay()],
+        d.data,
+        d.cod,
+        d.qtd,
+        d.local === 'V' ? 'V' : 'C',
+        d.pv || '',
+        d.obs || '',
+      ]
+    })
+    const csv = [cols, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'))
+      .join('\n')
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download =
+      'DEVOLUTIVA_PROGRAMACAO_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.csv'
+    a.click()
+  }
+
   if (!authenticated) {
     return (
       <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
@@ -929,396 +1192,348 @@ export default function Compass2() {
                 note={`${declarations.length} declarações no ciclo`}
               />
             </section>
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <SectionTitle
-                eyebrow="Programação"
-                title="Programação em batelada — por produto e semana"
-                tag="alvo principal · PVs alocáveis ao clicar"
-              />
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                <strong>Batelada por produto</strong> nas semanas (Atrasado, S40, S41…): quantidade
-                total e valor por produto. Ao clicar no produto, abrem os{' '}
-                <strong>PVs alocáveis</strong> — todos os PVs da carteira que usam o produto (o da
-                semana em destaque, os demais abaixo). Ao selecionar a semana, a{' '}
-                <strong>programação diária</strong> aparece no card abaixo, com seleção de dia.
-              </p>
-              {weekBatches.length === 0 && (
-                <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                  Nenhum item no ciclo.
-                </p>
-              )}
-              <div className="mt-4 space-y-3">
-                {weekBatches.map((batch) => {
-                  const prods = new Map<
-                    string,
-                    {
-                      code: string
-                      name: string
-                      qty: number
-                      valor: number
-                      rows: typeof batch.rows
-                    }
-                  >()
-                  for (const r of batch.rows) {
-                    const key = r.row.product_code || '—'
-                    const cur = prods.get(key) || {
-                      code: key,
-                      name: r.row.product_name || '',
-                      qty: 0,
-                      valor: 0,
-                      rows: [],
-                    }
-                    cur.qty += r.row.quantity
-                    cur.valor += r.row.total_value || 0
-                    cur.rows.push(r)
-                    prods.set(key, cur)
+            <section className="rounded-2xl border border-slate-800 bg-slate-950 p-5 text-white shadow-sm">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="rounded-lg bg-blue-900 px-3 py-1.5 text-sm font-extrabold">
+                  S{String(isoWeek(new Date(hojeIso + 'T12:00:00'))).padStart(2, '0')} ·{' '}
+                  {brD(hojeIso)}
+                </span>
+                <span className="text-sm font-bold">
+                  {
+                    ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+                      new Date(hojeIso + 'T12:00:00').getDay()
+                    ]
                   }
-                  const list = Array.from(prods.values()).sort((a, b) => b.valor - a.valor)
+                </span>
+                <span className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-extrabold">
+                  Hoje: {progHoje.prog} un programadas · {progHoje.done} un realizadas ·{' '}
+                  {progHoje.pct}%
+                </span>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="text-base font-bold text-slate-900">Programação de produção</h3>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                  AGENDA EDITÁVEL
+                </span>
+              </div>
+              <p className="mt-1.5 text-sm leading-6 text-slate-500">
+                Agenda por dia × PVs atendidos (atrasados priorizados). Marque ✓{' '}
+                <strong>Executado</strong>, ajuste a <strong>qtd realizada</strong>,{' '}
+                <strong>Realocar</strong> o saldo para o próximo dia útil ou troque o{' '}
+                <strong>PV de destino</strong>. Nada é gravado no MaxiProd.
+              </p>
+              {progWeek.fosseis.length > 0 && (
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800">
+                  ▲ {progWeek.fosseis.length} declaração(ões) sem cobertura (PV faturado?) — não
+                  entraram no card
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {progWeek.dias.length === 0 && (
+                  <span className="text-sm text-slate-500">
+                    Nenhuma programação declarada — inclua um PV abaixo.
+                  </span>
+                )}
+                {progWeek.dias.map((data) => {
+                  const rows = progWeek.out.filter((a) => a.data === data)
+                  const dt = new Date(data + 'T12:00:00')
+                  const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
+                  const tq = rows.reduce((s, r) => s + r.qtd, 0)
                   return (
-                    <div key={batch.week} className="rounded-2xl border border-slate-200 p-4">
-                      <button
-                        className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
-                        onClick={() => setWeekTab(weekTab === batch.week ? '' : batch.week)}
-                        type="button"
-                      >
-                        <span className="flex flex-wrap items-center gap-3">
-                          <span className="text-slate-400">
-                            {weekTab === batch.week ? '▾' : '▸'}
-                          </span>
-                          <span
-                            className={`rounded-full px-3 py-1 text-sm font-bold ${
-                              weekTab === batch.week
-                                ? 'bg-cyan-700 text-white'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {batch.week === 'ATRASADO'
-                              ? 'Atrasado'
-                              : batch.week.replace('2026-W', 'S')}
-                          </span>
-                          <span className="text-sm text-slate-500">
-                            {batch.rows.length} item(ns) · {batch.qty} un
-                          </span>
-                        </span>
-                        <span className="text-base font-bold text-slate-900">
-                          {money(batch.valor)}
-                        </span>
-                      </button>
-                      <div className="mt-2.5 space-y-1.5">
-                        {list.map((p) => {
-                          const open = weekProdOpen === batch.week + '|' + p.code
-                          const alocaveis = (itemsByCode.get(p.code) || []).filter(
-                            (row) =>
-                              !weekBatches.some((b) => b.rows.some((r) => r.row.id === row.id)),
-                          )
-                          const alocValor = alocaveis.reduce(
-                            (s, row) => s + (row.total_value || 0),
-                            0,
-                          )
-                          return (
-                            <div key={p.code} className="rounded-xl border border-slate-200">
-                              <button
-                                className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
-                                onClick={() =>
-                                  setWeekProdOpen(open ? '' : batch.week + '|' + p.code)
-                                }
-                                type="button"
-                              >
-                                <span className="text-slate-400">{open ? '▾' : '▸'}</span>
-                                <strong className="font-mono text-sm">{p.code}</strong>
-                                <span className="text-sm text-slate-500">{p.name}</span>
-                                <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
-                                  {p.qty} un
-                                </span>
-                                <span className="text-sm font-semibold text-slate-900">
-                                  {money(p.valor)}
-                                </span>
-                                {alocaveis.length > 0 && (
-                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                                    +{alocaveis.length} PV(s) alocável(is) fora da semana
-                                  </span>
-                                )}
-                              </button>
-                              {open && (
-                                <div className="border-t border-slate-100 px-4 py-3">
-                                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    PVs desta semana ({p.rows.length})
-                                  </p>
-                                  <table className="mt-1.5 w-full min-w-[640px] text-left text-xs">
-                                    <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
-                                      <tr>
-                                        <th className="px-2 py-1.5">PV</th>
-                                        <th className="px-2 py-1.5">Cliente</th>
-                                        <th className="px-2 py-1.5">Empresa</th>
-                                        <th className="px-2 py-1.5">Entrega</th>
-                                        <th className="px-2 py-1.5">Coleta</th>
-                                        <th className="px-2 py-1.5">Chegada</th>
-                                        <th className="px-2 py-1.5">Qtd.</th>
-                                        <th className="px-2 py-1.5">Valor</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {p.rows.map(({ row, t }) => (
-                                        <tr className="border-b border-slate-100" key={row.id}>
-                                          <td className="px-2 py-1.5 font-semibold">
-                                            {row.pv_number || '—'}
-                                          </td>
-                                          <td className="px-2 py-1.5">{row.client_name || '—'}</td>
-                                          <td className="px-2 py-1.5">{row.company_name}</td>
-                                          <td className="px-2 py-1.5">
-                                            {dateLabel(row.delivery_date)}
-                                          </td>
-                                          <td className="px-2 py-1.5">
-                                            {t
-                                              ? t.cid === '~'
-                                                ? '~' + brD(t.coleta)
-                                                : brD(t.coleta)
-                                              : '—'}
-                                          </td>
-                                          <td className="px-2 py-1.5">
-                                            {t
-                                              ? t.cid === '~'
-                                                ? '~' + brD(t.cheg)
-                                                : brD(t.cheg)
-                                              : '—'}
-                                          </td>
-                                          <td className="px-2 py-1.5 font-semibold">
-                                            {row.quantity}
-                                          </td>
-                                          <td className="px-2 py-1.5">
-                                            {money(row.total_value || 0)}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                  {alocaveis.length > 0 && (
-                                    <>
-                                      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-amber-700">
-                                        Outros PVs alocáveis com este produto ({alocaveis.length} ·{' '}
-                                        {alocValor ? money(alocValor) : 'fora desta semana'})
-                                      </p>
-                                      <table className="mt-1.5 w-full min-w-[640px] text-left text-xs">
-                                        <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
-                                          <tr>
-                                            <th className="px-2 py-1.5">PV</th>
-                                            <th className="px-2 py-1.5">Cliente</th>
-                                            <th className="px-2 py-1.5">Empresa</th>
-                                            <th className="px-2 py-1.5">Semana</th>
-                                            <th className="px-2 py-1.5">Entrega</th>
-                                            <th className="px-2 py-1.5">Coleta</th>
-                                            <th className="px-2 py-1.5">Qtd.</th>
-                                            <th className="px-2 py-1.5">Valor</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {alocaveis.map((row) => {
-                                            const t = transitoDe(row)
-                                            return (
-                                              <tr
-                                                className="border-b border-slate-100"
-                                                key={row.id}
-                                              >
-                                                <td className="px-2 py-1.5 font-semibold">
-                                                  {row.pv_number || '—'}
-                                                </td>
-                                                <td className="px-2 py-1.5">
-                                                  {row.client_name || '—'}
-                                                </td>
-                                                <td className="px-2 py-1.5">{row.company_name}</td>
-                                                <td className="px-2 py-1.5">
-                                                  {row.planned_week === 'ATRASADO'
-                                                    ? 'Atrasado'
-                                                    : (row.planned_week || '—').replace(
-                                                        '2026-W',
-                                                        'S',
-                                                      )}
-                                                </td>
-                                                <td className="px-2 py-1.5">
-                                                  {dateLabel(row.delivery_date)}
-                                                </td>
-                                                <td className="px-2 py-1.5">
-                                                  {t
-                                                    ? t.cid === '~'
-                                                      ? '~' + brD(t.coleta)
-                                                      : brD(t.coleta)
-                                                    : '—'}
-                                                </td>
-                                                <td className="px-2 py-1.5 font-semibold">
-                                                  {row.quantity}
-                                                </td>
-                                                <td className="px-2 py-1.5">
-                                                  {money(row.total_value || 0)}
-                                                </td>
-                                              </tr>
-                                            )
-                                          })}
-                                        </tbody>
-                                      </table>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                      {weekTab === batch.week && weekDayPlans.get(batch.week) && (
-                        <div className="mt-3 rounded-xl border border-cyan-200 bg-cyan-50/50 p-3">
-                          <p className="text-xs font-bold uppercase tracking-wide text-cyan-800">
-                            Programação diária — coletas da semana (clique no dia)
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {weekDayPlans.get(batch.week).days.map((day) => {
-                              const rows = weekDayPlans.get(batch.week).byDay.get(day) || []
-                              const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
-                              const dt = new Date(day + 'T12:00:00')
-                              const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
-                                dt.getDay()
-                              ]
-                              return (
-                                <button
-                                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                                    weekDayTab === day
-                                      ? 'border-cyan-700 bg-cyan-700 text-white'
-                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                                  }`}
-                                  key={day}
-                                  onClick={() => setWeekDayTab(weekDayTab === day ? '' : day)}
-                                  type="button"
-                                >
-                                  {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
-                                </button>
-                              )
-                            })}
-                            {weekDayPlans.get(batch.week).days.length === 0 && (
-                              <span className="text-xs text-slate-500">
-                                Nenhuma coleta calculável nesta semana (cliente fora da tabela de
-                                trânsito ou sem data).
-                              </span>
-                            )}
-                          </div>
-                          {weekDayTab && weekDayPlans.get(batch.week).byDay.get(weekDayTab) && (
-                            <div className="mt-3 space-y-1.5">
-                              {(() => {
-                                const rows =
-                                  weekDayPlans.get(batch.week).byDay.get(weekDayTab) || []
-                                const prodsDia = new Map<
-                                  string,
-                                  {
-                                    code: string
-                                    name: string
-                                    qty: number
-                                    valor: number
-                                    rows: typeof rows
-                                  }
-                                >()
-                                for (const r of rows) {
-                                  const key = r.row.product_code || '—'
-                                  const cur = prodsDia.get(key) || {
-                                    code: key,
-                                    name: r.row.product_name || '',
-                                    qty: 0,
-                                    valor: 0,
-                                    rows: [],
-                                  }
-                                  cur.qty += r.row.quantity
-                                  cur.valor += r.row.total_value || 0
-                                  cur.rows.push(r)
-                                  prodsDia.set(key, cur)
-                                }
-                                const listDia = Array.from(prodsDia.values()).sort(
-                                  (a, b) => b.valor - a.valor,
-                                )
-                                return listDia.map((p) => {
-                                  const open = weekDayProdOpen === p.code
-                                  return (
-                                    <div
-                                      key={p.code}
-                                      className="rounded-xl border border-slate-200 bg-white"
-                                    >
-                                      <button
-                                        className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
-                                        onClick={() => setWeekDayProdOpen(open ? '' : p.code)}
-                                        type="button"
-                                      >
-                                        <span className="text-slate-400">{open ? '▾' : '▸'}</span>
-                                        <strong className="font-mono text-sm">{p.code}</strong>
-                                        <span className="text-sm text-slate-500">{p.name}</span>
-                                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
-                                          {p.qty} un
-                                        </span>
-                                        <span className="text-sm font-semibold text-slate-900">
-                                          {money(p.valor)}
-                                        </span>
-                                      </button>
-                                      {open && (
-                                        <table className="w-full min-w-[640px] text-left text-xs">
-                                          <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
-                                            <tr>
-                                              <th className="px-4 py-1.5">PV</th>
-                                              <th className="px-4 py-1.5">Cliente</th>
-                                              <th className="px-4 py-1.5">Empresa</th>
-                                              <th className="px-4 py-1.5">Entrega</th>
-                                              <th className="px-4 py-1.5">Coleta</th>
-                                              <th className="px-4 py-1.5">Chegada</th>
-                                              <th className="px-4 py-1.5">Qtd.</th>
-                                              <th className="px-4 py-1.5">Valor</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {p.rows.map(({ row, t }) => (
-                                              <tr
-                                                className="border-b border-slate-100"
-                                                key={row.id}
-                                              >
-                                                <td className="px-4 py-1.5 font-semibold">
-                                                  {row.pv_number || '—'}
-                                                </td>
-                                                <td className="px-4 py-1.5">
-                                                  {row.client_name || '—'}
-                                                </td>
-                                                <td className="px-4 py-1.5">{row.company_name}</td>
-                                                <td className="px-4 py-1.5">
-                                                  {dateLabel(row.delivery_date)}
-                                                </td>
-                                                <td className="px-4 py-1.5">
-                                                  {t
-                                                    ? t.cid === '~'
-                                                      ? '~' + brD(t.coleta)
-                                                      : brD(t.coleta)
-                                                    : '—'}
-                                                </td>
-                                                <td className="px-4 py-1.5">
-                                                  {t
-                                                    ? t.cid === '~'
-                                                      ? '~' + brD(t.cheg)
-                                                      : brD(t.cheg)
-                                                    : '—'}
-                                                </td>
-                                                <td className="px-4 py-1.5 font-semibold">
-                                                  {row.quantity}
-                                                </td>
-                                                <td className="px-4 py-1.5">
-                                                  {money(row.total_value || 0)}
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      )}
-                                    </div>
-                                  )
-                                })
-                              })()}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                        progDay === data
+                          ? 'border-blue-900 bg-blue-900 text-white'
+                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                      key={data}
+                      onClick={() => setProgDay(data)}
+                      type="button"
+                    >
+                      {
+                        ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+                          dt.getDay()
+                        ]
+                      }{' '}
+                      · {brD(data)} · {tq} un
+                    </button>
                   )
                 })}
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3">
+                <strong className="text-xs">+ Incluir item:</strong>
+                <input
+                  className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-bold"
+                  inputMode="numeric"
+                  onChange={(event) => {
+                    setAddPv(event.target.value)
+                    const rows = carteiraByPv.get(event.target.value.trim())
+                    setAddInfo(
+                      rows && rows.length
+                        ? `PV ${rows[0].pv_number} · ${rows[0].client_name} · ${rows[0].company_name} — ${rows
+                            .map((r) => r.product_code)
+                            .join(' · ')} · saldo ${rows.reduce((s, r) => s + r.quantity, 0)} un`
+                        : '',
+                    )
+                    if (rows && rows.length && addQtd === '0')
+                      setAddQtd(String(rows.reduce((s, r) => s + r.quantity, 0)))
+                  }}
+                  placeholder="Nº do PV"
+                  value={addPv}
+                />
+                <input
+                  className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  min="0"
+                  onChange={(event) => setAddQtd(event.target.value)}
+                  type="number"
+                  value={addQtd}
+                />
+                <select
+                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                  onChange={(event) => setAddLocal(event.target.value)}
+                  value={addLocal}
+                >
+                  <option value="C">Curitiba</option>
+                  <option value="V">Vinhedo</option>
+                </select>
+                <button
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                  disabled={busy}
+                  onClick={addProgLine}
+                  type="button"
+                >
+                  + Incluir no dia selecionado
+                </button>
+                <button
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  onClick={undoLast}
+                  type="button"
+                >
+                  ↩ Desfazer
+                </button>
+                <button
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  onClick={baixarProgramacao}
+                  type="button"
+                >
+                  ⬇ Baixar (.csv)
+                </button>
+                {addInfo && <span className="text-xs font-semibold text-blue-800">{addInfo}</span>}
+              </div>
+              {progDay && (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-left text-xs">
+                    <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-2 py-2">Código / Produto</th>
+                        <th className="px-2 py-2">Qtd</th>
+                        <th className="px-2 py-2">Valor</th>
+                        <th className="px-2 py-2">PVs</th>
+                        <th className="px-2 py-2">Chegada no cliente</th>
+                        <th className="px-2 py-2">Situação</th>
+                        <th className="px-2 py-2">Executado</th>
+                        <th className="px-2 py-2">Qtd realizada</th>
+                        <th className="px-2 py-2">Realocar / PV destino</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const rs = progWeek.out.filter((a) => a.data === progDay && a.qtd > 0)
+                        const map = new Map<
+                          string,
+                          {
+                            cod: string
+                            desc: string
+                            qtd: number
+                            vtot: number
+                            pvs: Map<
+                              string,
+                              {
+                                pv: string
+                                cli: string
+                                qtd: number
+                                vtot: number
+                                atr: boolean
+                                cheg: string
+                                local: string
+                              }
+                            >
+                            atrasado: boolean
+                          }
+                        >()
+                        for (const a of rs) {
+                          let p = map.get(a.cod)
+                          if (!p) {
+                            p = {
+                              cod: a.cod,
+                              desc: a.desc,
+                              qtd: 0,
+                              vtot: 0,
+                              pvs: new Map(),
+                              atrasado: false,
+                            }
+                            map.set(a.cod, p)
+                          }
+                          p.qtd += a.qtd
+                          p.vtot += a.vtot
+                          if (a.sit === 'ATRASADO') p.atrasado = true
+                          const kpv = a.pv + '|' + a.cli
+                          let v = p.pvs.get(kpv)
+                          if (!v) {
+                            v = {
+                              pv: a.pv,
+                              cli: a.cli,
+                              qtd: 0,
+                              vtot: 0,
+                              atr: false,
+                              cheg: a.cheg,
+                              local: a.local,
+                            }
+                            p.pvs.set(kpv, v)
+                          }
+                          v.qtd += a.qtd
+                          v.vtot += a.vtot
+                          if (a.sit === 'ATRASADO') v.atr = true
+                        }
+                        const prods = Array.from(map.values()).sort((x, y) => y.vtot - x.vtot)
+                        let tq = 0
+                        let tv = 0
+                        return (
+                          <>
+                            {prods.map((p) => {
+                              const key = p.cod + '|' + progDay
+                              const ex = progExec[key] || { ok: false, qtd: 0 }
+                              tq += p.qtd
+                              tv += p.vtot
+                              const pvList = Array.from(p.pvs.values()).sort(
+                                (x, y) => Number(x.pv) - Number(y.pv),
+                              )
+                              const outros = (itemsByCode.get(p.cod) || []).filter(
+                                (r) =>
+                                  !p.pvs.has(String(r.pv_number) + '|' + (r.client_name || '')),
+                              )
+                              const chegs = [...new Set(pvList.map((v) => v.cheg).filter(Boolean))]
+                              const chegTxt = chegs.length
+                                ? chegs.length === 1
+                                  ? chegs[0]
+                                  : chegs[0] + ' … ' + chegs[chegs.length - 1]
+                                : '—'
+                              return (
+                                <tr
+                                  className={
+                                    'border-b border-slate-100' + (ex.ok ? ' bg-emerald-50' : '')
+                                  }
+                                  key={p.cod}
+                                >
+                                  <td className="px-2 py-2">
+                                    <div className="font-mono font-bold">{p.cod}</div>
+                                    <div className="text-slate-500">{p.desc}</div>
+                                    <button
+                                      className="mt-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-800 hover:bg-red-100"
+                                      onClick={() => delProgLine(p.cod, progDay)}
+                                      type="button"
+                                    >
+                                      🗑 Excluir linha
+                                    </button>
+                                  </td>
+                                  <td className="px-2 py-2 text-right font-bold">
+                                    {Math.round(p.qtd)}
+                                  </td>
+                                  <td className="px-2 py-2 text-right">{money(p.vtot)}</td>
+                                  <td className="px-2 py-2 text-center">
+                                    {pvList.length} PV{pvList.length > 1 ? 's' : ''}
+                                  </td>
+                                  <td className="px-2 py-2">{chegTxt}</td>
+                                  <td className="px-2 py-2">
+                                    {p.atrasado ? (
+                                      <span className="rounded-full bg-red-100 px-2 py-0.5 font-bold text-red-800">
+                                        ATRASADO
+                                      </span>
+                                    ) : (
+                                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-800">
+                                        em dia
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-2 py-2 text-center">
+                                    <input
+                                      checked={ex.ok}
+                                      onChange={(event) =>
+                                        setExec(p.cod, progDay, { ok: event.target.checked })
+                                      }
+                                      type="checkbox"
+                                    />
+                                  </td>
+                                  <td className="px-2 py-2">
+                                    <input
+                                      className="w-16 rounded-md border border-slate-300 px-1.5 py-1 text-right"
+                                      max={p.qtd}
+                                      min="0"
+                                      onChange={(event) =>
+                                        setExec(p.cod, progDay, {
+                                          qtd: Number(event.target.value) || 0,
+                                        })
+                                      }
+                                      placeholder="0"
+                                      type="number"
+                                      value={ex.qtd || ''}
+                                    />
+                                  </td>
+                                  <td className="px-2 py-2">
+                                    <button
+                                      className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
+                                      onClick={() => realocar(p.cod, progDay, p.qtd)}
+                                      type="button"
+                                    >
+                                      Realocar ↦
+                                    </button>
+                                    {ex.rl && (
+                                      <div className="mt-0.5 text-[10px] font-bold text-amber-700">
+                                        → {ex.rl} ({p.qtd - (ex.qtd || 0)} un)
+                                      </div>
+                                    )}
+                                    <select
+                                      className="mt-1 w-40 rounded-md border border-slate-300 px-1.5 py-1 text-[11px]"
+                                      onChange={(event) =>
+                                        trocarPv(p.cod, progDay, event.target.value)
+                                      }
+                                      value=""
+                                    >
+                                      <option value="">
+                                        PV atual ({pvList.map((v) => v.pv).join('/')})
+                                      </option>
+                                      <option value="__SMKT__">
+                                        🛒 Supermercado (produto pronto)
+                                      </option>
+                                      {outros.slice(0, 40).map((r) => (
+                                        <option key={r.id} value={String(r.pv_number)}>
+                                          {r.pv_number} · {(r.client_name || '').slice(0, 22)} (
+                                          {r.quantity} un)
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                            <tr className="bg-slate-50 font-bold">
+                              <td className="px-2 py-2">
+                                TOTAL {progDay ? brD(progDay) : ''} — {prods.length} produtos
+                              </td>
+                              <td className="px-2 py-2 text-right">{Math.round(tq)}</td>
+                              <td className="px-2 py-2 text-right">{money(tv)}</td>
+                              <td className="px-2 py-2" colSpan={6} />
+                            </tr>
+                          </>
+                        )
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
           </>
         )}
