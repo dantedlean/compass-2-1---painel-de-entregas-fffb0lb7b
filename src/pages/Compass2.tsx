@@ -78,6 +78,142 @@ function money(value = 0) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+// ── Trânsito Curitiba/Vinhedo → cliente (mesma metodologia do Andon) ──
+const TRANSITO: Record<string, [number, number]> = {
+  GUARAPUAVA: [1, 254],
+  MARINGA: [1, 425],
+  ITAQUERA: [1, 441],
+  MAUA: [1, 445],
+  GRU: [1, 429],
+  GUARULHOS: [1, 429],
+  'NOVO MUNDO': [1, 420],
+  'SAO PAULO': [1, 420],
+  CACAPAVA: [1, 520],
+  'SAO CARLOS': [2, 615],
+  JALES: [2, 773],
+  BARRETOS: [2, 804],
+  'NOVA SANTA RITA': [2, 751],
+  'FLORES DA CUNHA': [2, 553],
+  ITABORAI: [2, 880],
+  GOIANIA: [3, 1282],
+  MACAIBA: [4, 3275],
+  RECIFE: [4, 3074],
+  'JOAO PESSOA': [4, 3188],
+  ATIBAIA: [1, 570],
+  ESTRELA: [2, 690],
+  BRASILIA: [3, 1360],
+  SBC: [1, 400],
+  SP35: [1, 420],
+  ITAPEVA: [1, 470],
+  CONTAGEM: [3, 981],
+  HIDROLANDIA: [3, 1248],
+  CARIACICA: [3, 1348],
+}
+const TRANSITO_VINHEDO: Record<string, [number, number]> = {
+  GUARULHOS: [1, 92],
+  SOROCABA: [1, 93],
+  SOC: [1, 93],
+  'FRANCO DA ROCHA': [1, 464],
+  'F DA ROCHA': [1, 464],
+  SP09: [1, 464],
+  SP22: [1, 92],
+  CONTAGEM: [2, 572],
+  XMG1: [2, 572],
+  CASCAVEL: [3, 905],
+  CURITIBA: [1, 458],
+  TECUMSEH: [1, 458],
+  ITAQUERA: [1, 100],
+  'SAO PAULO': [1, 100],
+  GRU: [1, 92],
+  SP35: [1, 100],
+  SBC: [1, 110],
+  MAUA: [1, 110],
+  'NOVO MUNDO': [1, 100],
+  CACAPAVA: [1, 150],
+  ATIBAIA: [1, 80],
+  ITAPEVA: [1, 120],
+}
+
+function normS(s: string) {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+}
+
+function isoD(d: Date) {
+  return (
+    d.getFullYear() +
+    '-' +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(d.getDate()).padStart(2, '0')
+  )
+}
+
+function addDU(iso: string, n: number) {
+  const x = new Date(iso + 'T12:00:00')
+  let i = 0
+  while (i < n) {
+    x.setDate(x.getDate() + 1)
+    const w = x.getDay()
+    if (w > 0 && w < 6) i++
+  }
+  return isoD(x)
+}
+
+function subDU(iso: string, n: number) {
+  const x = new Date(iso + 'T12:00:00')
+  let i = 0
+  while (i < n) {
+    x.setDate(x.getDate() - 1)
+    const w = x.getDay()
+    if (w > 0 && w < 6) i++
+  }
+  return isoD(x)
+}
+
+function mondayOf(d: Date) {
+  const x = new Date(d)
+  const w = x.getDay()
+  x.setDate(x.getDate() + (w === 0 ? -6 : 1 - w))
+  return x
+}
+
+function brD(iso: string) {
+  return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : '—'
+}
+
+interface TransitoInfo {
+  cid: string
+  tdu: number
+  km: number
+  coleta: string
+  fim: string
+  cheg: string
+}
+
+function transitoDe(row: PlanningItem): TransitoInfo | null {
+  const origV = /VINHEDO/i.test(row.company_name || '')
+  const tab = origV ? TRANSITO_VINHEDO : TRANSITO
+  const c = normS(row.client_name || '')
+  let cid: string | null = null
+  for (const k of Object.keys(tab)) {
+    if (c.indexOf(k) >= 0) {
+      cid = k
+      break
+    }
+  }
+  if (!cid) return null
+  const ent = (row.delivery_date || '').slice(0, 10)
+  if (!ent || ent.length !== 10) return null
+  const [tdu, km] = tab[cid]
+  const coleta = subDU(ent, tdu)
+  const fim = addDU(coleta, 1)
+  const cheg = addDU(fim, tdu)
+  return { cid, tdu, km, coleta, fim, cheg }
+}
+
 export default function Compass2() {
   const [authenticated, setAuthenticated] = useState(pb.authStore.isValid)
   const [email, setEmail] = useState('')
@@ -100,6 +236,9 @@ export default function Compass2() {
   })
   const [smktEntradas, setSmktEntradas] = useState<SmktEntrada[]>([])
   const [smktEntradaOpen, setSmktEntradaOpen] = useState('')
+  const [dayTab, setDayTab] = useState('')
+  const [dayProdOpen, setDayProdOpen] = useState('')
+  const [weekProdOpen, setWeekProdOpen] = useState('')
   const [smktEntradaForm, setSmktEntradaForm] = useState({
     product_code: '',
     product_name: '',
@@ -173,6 +312,58 @@ export default function Compass2() {
     () => smktEntradaGroups.reduce((sum, g) => sum + g.valor, 0),
     [smktEntradaGroups],
   )
+
+  // ── Programação diária (metodologia Andon): coleta = entrega − trânsito ──
+  const hojeIso = useMemo(() => {
+    const brt = new Date(Date.now() - 3 * 3600 * 1000)
+    return brt.toISOString().slice(0, 10)
+  }, [])
+
+  const dayPlan = useMemo(() => {
+    const seg = isoD(mondayOf(new Date(hojeIso + 'T12:00:00')))
+    const sex = addDU(seg, 4)
+    const byDay = new Map<
+      string,
+      Array<{ row: PlanningItem; t: TransitoInfo; atrasada: boolean }>
+    >()
+    for (const row of items) {
+      if (row.is_freight || isFreightRow(row)) continue
+      const t = transitoDe(row)
+      if (!t) continue
+      if (t.coleta < seg || t.coleta > sex) continue
+      const atrasada = t.coleta < hojeIso
+      const list = byDay.get(t.coleta) || []
+      list.push({ row, t, atrasada })
+      byDay.set(t.coleta, list)
+    }
+    const days = Array.from(byDay.keys()).sort()
+    return { seg, sex, days, byDay }
+  }, [items, hojeIso])
+
+  // ── Batelada por produto nas semanas (agregado, com PVs ao expandir) ──
+  const weekBatches = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        week: string
+        rows: Array<{ row: PlanningItem; t: TransitoInfo | null }>
+        qty: number
+        valor: number
+      }
+    >()
+    for (const row of items) {
+      if (row.is_freight || isFreightRow(row)) continue
+      const wk = row.planned_week || '—'
+      const cur = groups.get(wk) || { week: wk, rows: [], qty: 0, valor: 0 }
+      const t = transitoDe(row)
+      cur.rows.push({ row, t })
+      cur.qty += row.quantity
+      cur.valor += row.total_value || 0
+      groups.set(wk, cur)
+    }
+    const order = (w: string) => (w === 'ATRASADO' ? '0' : w)
+    return Array.from(groups.values()).sort((a, b) => order(a.week).localeCompare(order(b.week)))
+  }, [items])
   // ── Semanas (visão de reagendamento) ──
   const weekGroups = useMemo(() => {
     const groups = new Map<string, PlanningItem[]>()
@@ -696,6 +887,240 @@ export default function Compass2() {
               </table>
             </div>
           )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Programação"
+            title="Programação diária — coleta desta semana"
+            tag="metodologia Andon · coleta = entrega − trânsito"
+          />
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Por dia útil da semana corrente: produtos cuja <strong>coleta</strong> (entrega − dias
+            úteis de trânsito) cai no dia. Produção finaliza 1 dia útil após a coleta; chegada no
+            cliente = fim + trânsito. Clique no produto para ver os PVs.
+          </p>
+          {dayPlan.days.length === 0 && (
+            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              Nenhuma coleta programada para esta semana.
+            </p>
+          )}
+          {dayPlan.days.length > 0 && (
+            <>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {dayPlan.days.map((day) => {
+                  const rows = dayPlan.byDay.get(day) || []
+                  const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
+                  const dt = new Date(day + 'T12:00:00')
+                  const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
+                  return (
+                    <button
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        dayTab === day
+                          ? 'border-cyan-700 bg-cyan-700 text-white'
+                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                      key={day}
+                      onClick={() => setDayTab(dayTab === day ? '' : day)}
+                      type="button"
+                    >
+                      {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
+                    </button>
+                  )
+                })}
+              </div>
+              {dayTab && (
+                <div className="mt-4 space-y-2">
+                  {(() => {
+                    const rows = dayPlan.byDay.get(dayTab) || []
+                    const prods = new Map<
+                      string,
+                      { code: string; name: string; qty: number; valor: number; rows: typeof rows }
+                    >()
+                    for (const r of rows) {
+                      const key = r.row.product_code || '—'
+                      const cur = prods.get(key) || {
+                        code: key,
+                        name: r.row.product_name || '',
+                        qty: 0,
+                        valor: 0,
+                        rows: [],
+                      }
+                      cur.qty += r.row.quantity
+                      cur.valor += r.row.total_value || 0
+                      cur.rows.push(r)
+                      prods.set(key, cur)
+                    }
+                    const list = Array.from(prods.values()).sort((a, b) => b.valor - a.valor)
+                    return list.map((p) => {
+                      const open = dayProdOpen === p.code
+                      const atrasados = p.rows.filter((r) => r.atrasada).length
+                      return (
+                        <div key={p.code} className="rounded-xl border border-slate-200">
+                          <button
+                            className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
+                            onClick={() => setDayProdOpen(open ? '' : p.code)}
+                            type="button"
+                          >
+                            <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+                            <strong className="font-mono text-sm">{p.code}</strong>
+                            <span className="text-sm text-slate-500">{p.name}</span>
+                            <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
+                              {p.qty} un
+                            </span>
+                            <span className="text-sm font-semibold text-slate-900">
+                              {money(p.valor)}
+                            </span>
+                            {atrasados > 0 && (
+                              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+                                {atrasados} atrasado(s)
+                              </span>
+                            )}
+                          </button>
+                          {open && (
+                            <table className="w-full min-w-[640px] text-left text-xs">
+                              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                                <tr>
+                                  <th className="px-4 py-2">PV</th>
+                                  <th className="px-4 py-2">Cliente</th>
+                                  <th className="px-4 py-2">Empresa</th>
+                                  <th className="px-4 py-2">Entrega</th>
+                                  <th className="px-4 py-2">Coleta</th>
+                                  <th className="px-4 py-2">Chegada</th>
+                                  <th className="px-4 py-2">Qtd.</th>
+                                  <th className="px-4 py-2">Valor</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {p.rows.map(({ row, t }) => (
+                                  <tr className="border-b border-slate-100" key={row.id}>
+                                    <td className="px-4 py-2 font-semibold">
+                                      {row.pv_number || '—'}
+                                    </td>
+                                    <td className="px-4 py-2">{row.client_name || '—'}</td>
+                                    <td className="px-4 py-2">{row.company_name}</td>
+                                    <td className="px-4 py-2">{dateLabel(row.delivery_date)}</td>
+                                    <td className="px-4 py-2">{t ? brD(t.coleta) : '—'}</td>
+                                    <td className="px-4 py-2">{t ? brD(t.cheg) : '—'}</td>
+                                    <td className="px-4 py-2 font-semibold">{row.quantity}</td>
+                                    <td className="px-4 py-2">{money(row.total_value || 0)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Programação"
+            title="Programação em batelada — por produto e semana"
+            tag="agregado por produto · PVs ao clicar"
+          />
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Mesma agregação por produto das semanas (Atrasado, S40, S41…): quantidade total e valor
+            por produto, com os PVs, coletas e chegadas ao expandir. Fretes fora.
+          </p>
+          {weekBatches.length === 0 && (
+            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              Nenhum item no ciclo.
+            </p>
+          )}
+          <div className="mt-4 space-y-3">
+            {weekBatches.map((batch) => {
+              const prods = new Map<
+                string,
+                { code: string; name: string; qty: number; valor: number; rows: typeof batch.rows }
+              >()
+              for (const r of batch.rows) {
+                const key = r.row.product_code || '—'
+                const cur = prods.get(key) || {
+                  code: key,
+                  name: r.row.product_name || '',
+                  qty: 0,
+                  valor: 0,
+                  rows: [],
+                }
+                cur.qty += r.row.quantity
+                cur.valor += r.row.total_value || 0
+                cur.rows.push(r)
+                prods.set(key, cur)
+              }
+              const list = Array.from(prods.values()).sort((a, b) => b.valor - a.valor)
+              return (
+                <div key={batch.week}>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    {batch.week === 'ATRASADO' ? 'Atrasado' : batch.week.replace('2026-W', 'S')} ·{' '}
+                    {batch.qty} un · {money(batch.valor)}
+                  </p>
+                  <div className="mt-1.5 space-y-1.5">
+                    {list.map((p) => {
+                      const open = weekProdOpen === batch.week + '|' + p.code
+                      return (
+                        <div key={p.code} className="rounded-xl border border-slate-200">
+                          <button
+                            className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
+                            onClick={() => setWeekProdOpen(open ? '' : batch.week + '|' + p.code)}
+                            type="button"
+                          >
+                            <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+                            <strong className="font-mono text-sm">{p.code}</strong>
+                            <span className="text-sm text-slate-500">{p.name}</span>
+                            <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
+                              {p.qty} un
+                            </span>
+                            <span className="text-sm font-semibold text-slate-900">
+                              {money(p.valor)}
+                            </span>
+                          </button>
+                          {open && (
+                            <table className="w-full min-w-[640px] text-left text-xs">
+                              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                                <tr>
+                                  <th className="px-4 py-2">PV</th>
+                                  <th className="px-4 py-2">Cliente</th>
+                                  <th className="px-4 py-2">Empresa</th>
+                                  <th className="px-4 py-2">Entrega</th>
+                                  <th className="px-4 py-2">Coleta</th>
+                                  <th className="px-4 py-2">Chegada</th>
+                                  <th className="px-4 py-2">Qtd.</th>
+                                  <th className="px-4 py-2">Valor</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {p.rows.map(({ row, t }) => (
+                                  <tr className="border-b border-slate-100" key={row.id}>
+                                    <td className="px-4 py-2 font-semibold">
+                                      {row.pv_number || '—'}
+                                    </td>
+                                    <td className="px-4 py-2">{row.client_name || '—'}</td>
+                                    <td className="px-4 py-2">{row.company_name}</td>
+                                    <td className="px-4 py-2">{dateLabel(row.delivery_date)}</td>
+                                    <td className="px-4 py-2">{t ? brD(t.coleta) : '—'}</td>
+                                    <td className="px-4 py-2">{t ? brD(t.cheg) : '—'}</td>
+                                    <td className="px-4 py-2 font-semibold">{row.quantity}</td>
+                                    <td className="px-4 py-2">{money(row.total_value || 0)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
