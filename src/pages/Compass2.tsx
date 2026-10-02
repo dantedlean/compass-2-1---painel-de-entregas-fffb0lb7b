@@ -2064,28 +2064,34 @@ export default function Compass2() {
                             Programação diária — coletas da semana (clique no dia)
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {weekDayPlans.get(batch.week).days.map((day: string) => {
-                              const rows = weekDayPlans.get(batch.week)!.byDay.get(day) || []
-                              const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
-                              const dt = new Date(day + 'T12:00:00')
-                              const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
-                                dt.getDay()
-                              ]
-                              return (
-                                <button
-                                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                                    weekDayTab === day
-                                      ? 'border-blue-900 bg-blue-900 text-white'
-                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                                  }`}
-                                  key={day}
-                                  onClick={() => setWeekDayTab(weekDayTab === day ? '' : day)}
-                                  type="button"
-                                >
-                                  {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
-                                </button>
+                            {(() => {
+                              const plano = weekDayPlans.get(batch.week)!
+                              const diasSemana = Array.from({ length: 5 }, (_, i) =>
+                                addDU(plano.seg, i),
                               )
-                            })}
+                              return diasSemana.map((day: string) => {
+                                const rows = plano.byDay.get(day) || []
+                                const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
+                                const dt = new Date(day + 'T12:00:00')
+                                const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
+                                  dt.getDay()
+                                ]
+                                return (
+                                  <button
+                                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                                      weekDayTab === day
+                                        ? 'border-blue-900 bg-blue-900 text-white'
+                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                    }`}
+                                    key={day}
+                                    onClick={() => setWeekDayTab(weekDayTab === day ? '' : day)}
+                                    type="button"
+                                  >
+                                    {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
+                                  </button>
+                                )
+                              })
+                            })()}
                           </div>
                           {weekDayTab && weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) && (
                             <div className="mt-3 space-y-1.5">
