@@ -99,10 +99,12 @@ export default function Compass2() {
     notes: '',
   })
   const [smktEntradas, setSmktEntradas] = useState<SmktEntrada[]>([])
+  const [smktEntradaOpen, setSmktEntradaOpen] = useState('')
   const [smktEntradaForm, setSmktEntradaForm] = useState({
     product_code: '',
     product_name: '',
     quantity: '1',
+    unit_value: '0',
     data: '',
     notes: '',
   })
@@ -504,7 +506,14 @@ export default function Compass2() {
         data: smktEntradaForm.data,
         notes: smktEntradaForm.notes,
       })
-      setSmktEntradaForm({ product_code: '', product_name: '', quantity: '1', data: '', notes: '' })
+      setSmktEntradaForm({
+        product_code: '',
+        product_name: '',
+        quantity: '1',
+        unit_value: '0',
+        data: '',
+        notes: '',
+      })
       setNotice('Entrada manual no Supermercado persistida no histórico auditável.')
       await loadCycle(cycleId)
     } catch (entradaError) {
