@@ -169,6 +169,10 @@ export default function Compass2() {
     return Array.from(groups.values()).sort((a, b) => b.valor - a.valor)
   }, [smktEntradas])
 
+  const smktEntradaTotal = useMemo(
+    () => smktEntradaGroups.reduce((sum, g) => sum + g.valor, 0),
+    [smktEntradaGroups],
+  )
   // ── Semanas (visão de reagendamento) ──
   const weekGroups = useMemo(() => {
     const groups = new Map<string, PlanningItem[]>()
@@ -976,11 +980,19 @@ export default function Compass2() {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <SectionTitle
-            eyebrow="Camada 2.1"
-            title="Supermercado — entrada manual de estoque"
-            tag="histórico auditável"
-          />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <SectionTitle
+              eyebrow="Camada 2.1"
+              title="Supermercado — entrada manual de estoque"
+              tag="histórico auditável"
+            />
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                Valor total em estoque
+              </p>
+              <p className="text-lg font-bold text-emerald-900">{money(smktEntradaTotal)}</p>
+            </div>
+          </div>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             Registra a entrada de produto pronto no Supermercado (produção alocada direto ou ajuste
             manual). Fica no histórico auditável — não movimenta o MaxiProd.
@@ -990,11 +1002,14 @@ export default function Compass2() {
               Selecione um ciclo para registrar a entrada.
             </p>
           ) : (
-            <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={createEntrada}>
-              <label className="text-xs font-medium text-slate-600">
-                Produto (catálogo do ciclo)
+            <form
+              className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,2.2fr)_90px_130px_150px_minmax(0,1.8fr)]"
+              onSubmit={createEntrada}
+            >
+              <label className="col-span-2 text-xs font-medium text-slate-600 sm:col-span-1">
+                Produto
                 <select
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm"
                   value={smktEntradaForm.product_code}
                   onChange={(event) => {
                     const code = event.target.value
@@ -1029,19 +1044,19 @@ export default function Compass2() {
                 </select>
               </label>
               <NumberInput
-                label="Quantidade"
+                label="Qtd"
                 value={smktEntradaForm.quantity}
                 onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, quantity: value })}
               />
               <NumberInput
-                label="Valor unitário (R$)"
+                label="V. unit. R$"
                 value={smktEntradaForm.unit_value}
                 onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, unit_value: value })}
               />
               <label className="text-xs font-medium text-slate-600">
-                Data da entrada
+                Data
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
                   type="date"
                   value={smktEntradaForm.data}
                   onChange={(event) =>
@@ -1049,14 +1064,19 @@ export default function Compass2() {
                   }
                 />
               </label>
-              <TextInput
-                label="Observação (opcional)"
-                value={smktEntradaForm.notes}
-                placeholder="ex.: produção de terça não declarada"
-                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, notes: value })}
-              />
+              <label className="col-span-2 text-xs font-medium text-slate-600 sm:col-span-2">
+                Obs.
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+                  value={smktEntradaForm.notes}
+                  placeholder="ex.: produção de terça não declarada"
+                  onChange={(event) =>
+                    setSmktEntradaForm({ ...smktEntradaForm, notes: event.target.value })
+                  }
+                />
+              </label>
               <button
-                className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60 sm:col-span-2"
+                className="col-span-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
                 disabled={busy}
                 type="submit"
               >
