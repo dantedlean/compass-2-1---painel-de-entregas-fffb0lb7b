@@ -674,11 +674,12 @@ export default function Compass2() {
   async function loadAndonDraft(cycleId: string) {
     try {
       const f = `cycle_id = '${cycleId}' && event_type = 'system' && source = 'andon-draft'`
-      const rows = await pb.collection('reprogramming_events').getList<ReprogrammingEvent>(1, 1, {
+      const rows = await pb.collection('reprogramming_events').getFullList<ReprogrammingEvent>({
         filter: pb.filter(f),
         sort: '-created',
+        batch: 200,
       })
-      const ev = rows.items[0]
+      const ev = rows[0]
       const draft = (
         ev?.changes as {
           draft?: Array<{
@@ -707,8 +708,8 @@ export default function Compass2() {
           })),
         )
       }
-    } catch {
-      // sem rascunho no servidor — agenda começa vazia
+    } catch (e) {
+      console.warn('loadAndonDraft falhou', e)
     }
   }
 
