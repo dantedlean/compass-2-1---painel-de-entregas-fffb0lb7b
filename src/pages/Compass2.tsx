@@ -280,6 +280,13 @@ export default function Compass2() {
   const [addLocal, setAddLocal] = useState('C')
   const [addInfo, setAddInfo] = useState('')
   const [undoStack, setUndoStack] = useState<Array<() => void>>([])
+  const [clipboard, setClipboard] = useState<{
+    cod: string
+    qtd: number
+    from: string
+    cut: boolean
+  } | null>(null)
+  const [pvDig, setPvDig] = useState('')
   const [weekDayTab, setWeekDayTab] = useState('')
   const [weekDayProdOpen, setWeekDayProdOpen] = useState('')
   const [smktEntradaForm, setSmktEntradaForm] = useState({
@@ -1029,6 +1036,103 @@ export default function Compass2() {
     setAddInfo('↩ Última ação desfeita')
   }
 
+  function copiarLinha(cod: string, data: string, qtd: number) {
+    setClipboard({ cod, qtd, from: data, cut: false })
+    setAddInfo(`Copiado: ${cod} (${qtd} un) — clique num dia para colar`)
+  }
+
+  function recortarLinha(cod: string, data: string, qtd: number) {
+    const ex = progExec[cod + '|' + data] || { ok: false, qtd: 0 }
+    const saldo = qtd - (ex.qtd || 0)
+    if (saldo <= 0) {
+      setAddInfo('Nada para recortar — qtd realizada cobre o programado.')
+      return
+    }
+    setClipboard({ cod, qtd: saldo, from: data, cut: true })
+    setAddInfo(`Recortado: ${cod} (${saldo} un) — clique num dia para colar`)
+  }
+
+  function colarNoDia(data: string) {
+    if (!clipboard) {
+      setAddInfo('Nada copiado/recortado — use Copiar ou Recortar primeiro.')
+      return
+    }
+    const prev = progDraft
+    pushUndo(() => setProgDraft(prev))
+    if (clipboard.cut) {
+      // mover: reduzir a origem e criar no destino
+      const restante = Math.max(0, clipboard.qtd - 0)
+      setProgDraft([
+        ...progDraft.filter((d) => !(d.cod === clipboard.cod && d.data === clipboard.from)),
+        {
+          dia: '',
+          data,
+          cod: clipboard.cod,
+          qtd: restante,
+          local: addLocal,
+          pv: '',
+          obs: `movido de ${clipboard.from}`,
+        },
+      ])
+      setAddInfo(`✔ Movido ${clipboard.cod} (${restante} un) para ${brD(data)}`)
+    } else {
+      setProgDraft([
+        ...progDraft,
+        {
+          dia: '',
+          data,
+          cod: clipboard.cod,
+          qtd: clipboard.qtd,
+          local: addLocal,
+          pv: '',
+          obs: `copiado de ${clipboard.from}`,
+        },
+      ])
+      setAddInfo(`✔ Colado ${clipboard.cod} (${clipboard.qtd} un) em ${brD(data)}`)
+    }
+    setClipboard(null)
+  }
+
+  function editarQtd(cod: string, data: string, novaQtd: number) {
+    const prev = progDraft
+    pushUndo(() => setProgDraft(prev))
+    const linhas = progDraft.filter((d) => d.cod === cod && d.data === data)
+    if (!linhas.length) {
+      setProgDraft([
+        ...progDraft,
+        { dia: '', data, cod, qtd: novaQtd, local: addLocal, pv: '', obs: 'qtd editada' },
+      ])
+      return
+    }
+    const primeira = linhas[0]
+    const resto = linhas.slice(1)
+    setProgDraft([
+      ...progDraft.filter((d) => !(d.cod === cod && d.data === data)),
+      { ...primeira, qtd: novaQtd },
+      ...resto,
+    ])
+  }
+
+  function incluirPvDigitado(cod: string, data: string) {
+    const pv = pvDig.trim()
+    if (!pv) return
+    const rows = carteiraByPv.get(pv)
+    if (!rows || !rows.length) {
+      setAddInfo(`PV ${pv} não encontrado na carteira`)
+      return
+    }
+    trocarPv(cod, data, pv)
+    setPvDig('')
+  }
+
+  function removerInvalidas() {
+    const cods = new Set(progWeek.fosseis.map((f) => f.split(' ')[0]))
+    const prev = progDraft
+    pushUndo(() => setProgDraft(prev))
+    setProgDraft(progDraft.filter((d) => !cods.has(d.cod)))
+    setAddInfo(`${progWeek.fosseis.length} declaração(ões) inválida(s) removida(s)`)
+  }
+
   function baixarProgramacao() {
     const cols = ['Dia', 'Data', 'Codigo', 'Qtd', 'Local', 'PV', 'Observacao']
     const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
@@ -1258,7 +1362,7 @@ export default function Compass2() {
                           : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                       }`}
                       key={data}
-                      onClick={() => setProgDay(data)}
+                      onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
                       type="button"
                     >
                       {
@@ -1267,6 +1371,9 @@ export default function Compass2() {
                         ]
                       }{' '}
                       · {brD(data)} · {tq} un
+                      {clipboard && (
+                        <span className="ml-1 text-[10px] font-bold text-amber-700">⇩ colar</span>
+                      )}
                     </button>
                   )
                 })}
@@ -1322,6 +1429,15 @@ export default function Compass2() {
                 >
                   ↩ Desfazer
                 </button>
+                {progWeek.fosseis.length > 0 && (
+                  <button
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-800 hover:bg-red-100"
+                    onClick={removerInvalidas}
+                    type="button"
+                  >
+                    🧹 Remover inválidas ({progWeek.fosseis.length})
+                  </button>
+                )}
                 <button
                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
                   onClick={baixarProgramacao}
@@ -1447,8 +1563,17 @@ export default function Compass2() {
                                       🗑 Excluir linha
                                     </button>
                                   </td>
-                                  <td className="px-2 py-2 text-right font-bold">
-                                    {Math.round(p.qtd)}
+                                  <td className="px-2 py-2 text-right">
+                                    <input
+                                      className="w-16 rounded-md border border-slate-300 px-1.5 py-1 text-right font-bold"
+                                      min="0"
+                                      onChange={(event) =>
+                                        editarQtd(p.cod, progDay, Number(event.target.value) || 0)
+                                      }
+                                      title="Editar qtd a fabricar — ajusta as linhas deste produto no dia"
+                                      type="number"
+                                      value={Math.round(p.qtd)}
+                                    />
                                   </td>
                                   <td className="px-2 py-2 text-right">{money(p.vtot)}</td>
                                   <td className="px-2 py-2 text-center">
@@ -1491,18 +1616,47 @@ export default function Compass2() {
                                     />
                                   </td>
                                   <td className="px-2 py-2">
-                                    <button
-                                      className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
-                                      onClick={() => realocar(p.cod, progDay, p.qtd)}
-                                      type="button"
-                                    >
-                                      Realocar ↦
-                                    </button>
+                                    <div className="flex flex-wrap gap-1">
+                                      <button
+                                        className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
+                                        onClick={() => realocar(p.cod, progDay, p.qtd)}
+                                        type="button"
+                                      >
+                                        Realocar ↦
+                                      </button>
+                                      <button
+                                        className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
+                                        onClick={() => copiarLinha(p.cod, progDay, p.qtd)}
+                                        title="Copiar linha (clique num dia para colar)"
+                                        type="button"
+                                      >
+                                        Copiar
+                                      </button>
+                                      <button
+                                        className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
+                                        onClick={() => recortarLinha(p.cod, progDay, p.qtd)}
+                                        title="Recortar: move a qtd deste dia para onde colar. Se houver executado, transfere só o saldo"
+                                        type="button"
+                                      >
+                                        Recortar
+                                      </button>
+                                    </div>
                                     {ex.rl && (
                                       <div className="mt-0.5 text-[10px] font-bold text-amber-700">
                                         → {ex.rl} ({p.qtd - (ex.qtd || 0)} un)
                                       </div>
                                     )}
+                                    <input
+                                      className="mt-1 w-40 rounded-md border border-slate-300 px-1.5 py-1 text-[11px]"
+                                      inputMode="numeric"
+                                      onChange={(event) => setPvDig(event.target.value)}
+                                      onKeyDown={(event) => {
+                                        if (event.key === 'Enter') incluirPvDigitado(p.cod, progDay)
+                                      }}
+                                      placeholder="ou digite o nº do PV…"
+                                      title="Digite o nº do PV e Enter — troca o destino"
+                                      value={pvDig}
+                                    />
                                     <select
                                       className="mt-1 w-40 rounded-md border border-slate-300 px-1.5 py-1 text-[11px]"
                                       onChange={(event) =>
@@ -1619,6 +1773,153 @@ export default function Compass2() {
                           {money(batch.valor)}
                         </span>
                       </button>
+                      {weekTab === batch.week && weekDayPlans.get(batch.week) && (
+                        <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+                          <p className="text-xs font-bold uppercase tracking-wide text-blue-800">
+                            Programação diária — coletas da semana (clique no dia)
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {weekDayPlans.get(batch.week).days.map((day: string) => {
+                              const rows = weekDayPlans.get(batch.week)!.byDay.get(day) || []
+                              const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
+                              const dt = new Date(day + 'T12:00:00')
+                              const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
+                                dt.getDay()
+                              ]
+                              return (
+                                <button
+                                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                                    weekDayTab === day
+                                      ? 'border-blue-900 bg-blue-900 text-white'
+                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                  key={day}
+                                  onClick={() => setWeekDayTab(weekDayTab === day ? '' : day)}
+                                  type="button"
+                                >
+                                  {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          {weekDayTab && weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) && (
+                            <div className="mt-3 space-y-1.5">
+                              {(() => {
+                                const rows =
+                                  weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) || []
+                                const prodsDia = new Map<
+                                  string,
+                                  {
+                                    code: string
+                                    name: string
+                                    qty: number
+                                    valor: number
+                                    rows: typeof rows
+                                  }
+                                >()
+                                for (const r of rows) {
+                                  const key = r.row.product_code || '—'
+                                  const cur = prodsDia.get(key) || {
+                                    code: key,
+                                    name: r.row.product_name || '',
+                                    qty: 0,
+                                    valor: 0,
+                                    rows: [],
+                                  }
+                                  cur.qty += r.row.quantity
+                                  cur.valor += r.row.total_value || 0
+                                  cur.rows.push(r)
+                                  prodsDia.set(key, cur)
+                                }
+                                return Array.from(prodsDia.values())
+                                  .sort((a, b) => b.valor - a.valor)
+                                  .map((p) => {
+                                    const open = weekDayProdOpen === p.code
+                                    return (
+                                      <div
+                                        key={p.code}
+                                        className="rounded-xl border border-slate-200 bg-white"
+                                      >
+                                        <button
+                                          className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
+                                          onClick={() => setWeekDayProdOpen(open ? '' : p.code)}
+                                          type="button"
+                                        >
+                                          <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+                                          <strong className="font-mono text-sm">{p.code}</strong>
+                                          <span className="text-sm text-slate-500">{p.name}</span>
+                                          <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
+                                            {p.qty} un
+                                          </span>
+                                          <span className="text-sm font-semibold text-slate-900">
+                                            {money(p.valor)}
+                                          </span>
+                                        </button>
+                                        {open && (
+                                          <table className="w-full min-w-[640px] text-left text-xs">
+                                            <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                                              <tr>
+                                                <th className="px-4 py-1.5">PV</th>
+                                                <th className="px-4 py-1.5">Cliente</th>
+                                                <th className="px-4 py-1.5">Empresa</th>
+                                                <th className="px-4 py-1.5">Entrega</th>
+                                                <th className="px-4 py-1.5">Coleta</th>
+                                                <th className="px-4 py-1.5">Chegada</th>
+                                                <th className="px-4 py-1.5">Qtd.</th>
+                                                <th className="px-4 py-1.5">Valor</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {p.rows.map(({ row, t }) => (
+                                                <tr
+                                                  className="border-b border-slate-100"
+                                                  key={row.id}
+                                                >
+                                                  <td className="px-4 py-1.5 font-semibold">
+                                                    {row.pv_number || '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {row.client_name || '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {row.company_name}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {dateLabel(row.delivery_date)}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {t
+                                                      ? t.cid === '~'
+                                                        ? '~' + brD(t.coleta)
+                                                        : brD(t.coleta)
+                                                      : '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {t
+                                                      ? t.cid === '~'
+                                                        ? '~' + brD(t.cheg)
+                                                        : brD(t.cheg)
+                                                      : '—'}
+                                                  </td>
+                                                  <td className="px-4 py-1.5 font-semibold">
+                                                    {row.quantity}
+                                                  </td>
+                                                  <td className="px-4 py-1.5">
+                                                    {money(row.total_value || 0)}
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        )}
+                                      </div>
+                                    )
+                                  })
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {weekTab === batch.week && (
                         <div className="mt-2.5 space-y-1.5">
                           {list.map((p) => {
@@ -1777,153 +2078,6 @@ export default function Compass2() {
                               </div>
                             )
                           })}
-                        </div>
-                      )}
-                      {weekTab === batch.week && weekDayPlans.get(batch.week) && (
-                        <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
-                          <p className="text-xs font-bold uppercase tracking-wide text-blue-800">
-                            Programação diária — coletas da semana (clique no dia)
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {weekDayPlans.get(batch.week).days.map((day: string) => {
-                              const rows = weekDayPlans.get(batch.week)!.byDay.get(day) || []
-                              const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
-                              const dt = new Date(day + 'T12:00:00')
-                              const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
-                                dt.getDay()
-                              ]
-                              return (
-                                <button
-                                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                                    weekDayTab === day
-                                      ? 'border-blue-900 bg-blue-900 text-white'
-                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                                  }`}
-                                  key={day}
-                                  onClick={() => setWeekDayTab(weekDayTab === day ? '' : day)}
-                                  type="button"
-                                >
-                                  {dow} {brD(day)} · {rows.length} coleta(s) · {money(valor)}
-                                </button>
-                              )
-                            })}
-                          </div>
-                          {weekDayTab && weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) && (
-                            <div className="mt-3 space-y-1.5">
-                              {(() => {
-                                const rows =
-                                  weekDayPlans.get(batch.week)!.byDay.get(weekDayTab) || []
-                                const prodsDia = new Map<
-                                  string,
-                                  {
-                                    code: string
-                                    name: string
-                                    qty: number
-                                    valor: number
-                                    rows: typeof rows
-                                  }
-                                >()
-                                for (const r of rows) {
-                                  const key = r.row.product_code || '—'
-                                  const cur = prodsDia.get(key) || {
-                                    code: key,
-                                    name: r.row.product_name || '',
-                                    qty: 0,
-                                    valor: 0,
-                                    rows: [],
-                                  }
-                                  cur.qty += r.row.quantity
-                                  cur.valor += r.row.total_value || 0
-                                  cur.rows.push(r)
-                                  prodsDia.set(key, cur)
-                                }
-                                return Array.from(prodsDia.values())
-                                  .sort((a, b) => b.valor - a.valor)
-                                  .map((p) => {
-                                    const open = weekDayProdOpen === p.code
-                                    return (
-                                      <div
-                                        key={p.code}
-                                        className="rounded-xl border border-slate-200 bg-white"
-                                      >
-                                        <button
-                                          className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
-                                          onClick={() => setWeekDayProdOpen(open ? '' : p.code)}
-                                          type="button"
-                                        >
-                                          <span className="text-slate-400">{open ? '▾' : '▸'}</span>
-                                          <strong className="font-mono text-sm">{p.code}</strong>
-                                          <span className="text-sm text-slate-500">{p.name}</span>
-                                          <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
-                                            {p.qty} un
-                                          </span>
-                                          <span className="text-sm font-semibold text-slate-900">
-                                            {money(p.valor)}
-                                          </span>
-                                        </button>
-                                        {open && (
-                                          <table className="w-full min-w-[640px] text-left text-xs">
-                                            <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
-                                              <tr>
-                                                <th className="px-4 py-1.5">PV</th>
-                                                <th className="px-4 py-1.5">Cliente</th>
-                                                <th className="px-4 py-1.5">Empresa</th>
-                                                <th className="px-4 py-1.5">Entrega</th>
-                                                <th className="px-4 py-1.5">Coleta</th>
-                                                <th className="px-4 py-1.5">Chegada</th>
-                                                <th className="px-4 py-1.5">Qtd.</th>
-                                                <th className="px-4 py-1.5">Valor</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {p.rows.map(({ row, t }) => (
-                                                <tr
-                                                  className="border-b border-slate-100"
-                                                  key={row.id}
-                                                >
-                                                  <td className="px-4 py-1.5 font-semibold">
-                                                    {row.pv_number || '—'}
-                                                  </td>
-                                                  <td className="px-4 py-1.5">
-                                                    {row.client_name || '—'}
-                                                  </td>
-                                                  <td className="px-4 py-1.5">
-                                                    {row.company_name}
-                                                  </td>
-                                                  <td className="px-4 py-1.5">
-                                                    {dateLabel(row.delivery_date)}
-                                                  </td>
-                                                  <td className="px-4 py-1.5">
-                                                    {t
-                                                      ? t.cid === '~'
-                                                        ? '~' + brD(t.coleta)
-                                                        : brD(t.coleta)
-                                                      : '—'}
-                                                  </td>
-                                                  <td className="px-4 py-1.5">
-                                                    {t
-                                                      ? t.cid === '~'
-                                                        ? '~' + brD(t.cheg)
-                                                        : brD(t.cheg)
-                                                      : '—'}
-                                                  </td>
-                                                  <td className="px-4 py-1.5 font-semibold">
-                                                    {row.quantity}
-                                                  </td>
-                                                  <td className="px-4 py-1.5">
-                                                    {money(row.total_value || 0)}
-                                                  </td>
-                                                </tr>
-                                              ))}
-                                            </tbody>
-                                          </table>
-                                        )}
-                                      </div>
-                                    )
-                                  })
-                              })()}
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
