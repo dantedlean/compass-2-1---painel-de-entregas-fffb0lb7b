@@ -270,6 +270,7 @@ export default function Compass2() {
       local: string
       pv: string
       obs: string
+      status?: string
     }>
   >([])
   const [progExec, setProgExec] = useState<
@@ -670,6 +671,47 @@ export default function Compass2() {
     }
   }, [nfs])
 
+  async function loadAndonDraft(cycleId: string) {
+    try {
+      const f = `cycle_id = '${cycleId}' && event_type = 'system' && source = 'andon-draft'`
+      const rows = await pb.collection('reprogramming_events').getList<ReprogrammingEvent>(1, 1, {
+        filter: pb.filter(f),
+        sort: '-created',
+      })
+      const ev = rows.items[0]
+      const draft = (
+        ev?.changes as {
+          draft?: Array<{
+            cod: string
+            data: string
+            qtd: number
+            local?: string
+            pv?: string
+            obs?: string
+            status?: string
+            dia?: string
+          }>
+        }
+      )?.draft
+      if (Array.isArray(draft) && draft.length) {
+        setProgDraft(
+          draft.map((d) => ({
+            dia: d.dia || '',
+            data: d.data,
+            cod: d.cod,
+            qtd: Number(d.qtd) || 0,
+            local: d.local === 'V' ? 'V' : 'C',
+            pv: d.pv || '',
+            obs: d.obs || '',
+            status: d.status || 'Planejado',
+          })),
+        )
+      }
+    } catch {
+      // sem rascunho no servidor — agenda começa vazia
+    }
+  }
+
   async function loadCycle(nextCycleId: string) {
     if (!nextCycleId) {
       setItems([])
@@ -705,6 +747,7 @@ export default function Compass2() {
     setSmktAllocs(nextAllocs)
     setNfs(nextNfs)
     setSmktEntradas(nextEntradas)
+    await loadAndonDraft(nextCycleId)
   }
 
   async function loadWorkspace(preferredCycleId?: string) {
