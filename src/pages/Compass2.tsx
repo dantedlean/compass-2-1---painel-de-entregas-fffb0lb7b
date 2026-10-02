@@ -1090,7 +1090,7 @@ export default function Compass2() {
               return (
                 <div key={group.code} className="rounded-xl border border-slate-200">
                   <button
-                    className="flex w-full flex-wrap items-center justify-between gap-2 px-4 py-3 text-left hover:bg-slate-50"
+                    className="flex w-full flex-wrap items-center justify-start gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-slate-50"
                     onClick={() => setSmktEntradaOpen(open ? '' : group.code)}
                     type="button"
                   >
