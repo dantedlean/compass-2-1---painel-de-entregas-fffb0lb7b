@@ -363,6 +363,26 @@ export default function Compass2() {
     return Array.from(groups.values()).sort((a, b) => order(a.week).localeCompare(order(b.week)))
   }, [items])
 
+  // ── Semanas (visão de reagendamento) ──
+  const weekGroups = useMemo(() => {
+    const groups = new Map<string, PlanningItem[]>()
+    for (const row of items) {
+      const key = row.planned_week || '—'
+      const list = groups.get(key) || []
+      list.push(row)
+      groups.set(key, list)
+    }
+    const order = (week: string) => (week === 'ATRASADO' ? '0' : week)
+    return Array.from(groups.entries())
+      .sort((a, b) => order(a[0]).localeCompare(order(b[0])))
+      .map(([week, rows]) => {
+        const total = rows.reduce((sum, row) => sum + (row.total_value || 0), 0)
+        const qty = rows.reduce((sum, row) => sum + row.quantity, 0)
+        const pvs = new Set(rows.map((row) => `${row.pv_number}|${row.company_name}`)).size
+        return { week, rows, total, qty, pvs }
+      })
+  }, [items])
+
   // ── Programação diária por semana (metodologia Andon): coleta = entrega − trânsito ──
   const allDayPlans = useMemo(() => {
     const out = new Map<
@@ -420,26 +440,6 @@ export default function Compass2() {
     if (weekTab && allDayPlans.has(weekTab)) out.set(weekTab, allDayPlans.get(weekTab)!)
     return out
   }, [allDayPlans, weekTab])
-
-  // ── Semanas (visão de reagendamento) ──
-  const weekGroups = useMemo(() => {
-    const groups = new Map<string, PlanningItem[]>()
-    for (const row of items) {
-      const key = row.planned_week || '—'
-      const list = groups.get(key) || []
-      list.push(row)
-      groups.set(key, list)
-    }
-    const order = (week: string) => (week === 'ATRASADO' ? '0' : week)
-    return Array.from(groups.entries())
-      .sort((a, b) => order(a[0]).localeCompare(order(b[0])))
-      .map(([week, rows]) => {
-        const total = rows.reduce((sum, row) => sum + (row.total_value || 0), 0)
-        const qty = rows.reduce((sum, row) => sum + row.quantity, 0)
-        const pvs = new Set(rows.map((row) => `${row.pv_number}|${row.company_name}`)).size
-        return { week, rows, total, qty, pvs }
-      })
-  }, [items])
 
   // ── Faturamento (NFs emitidas, sync a cada 15 min) ──
   const fatMetrics = useMemo(() => {
