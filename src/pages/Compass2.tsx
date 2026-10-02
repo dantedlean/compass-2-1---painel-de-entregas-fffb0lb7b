@@ -1163,14 +1163,14 @@ export default function Compass2() {
                           )
                         })}
                       </div>
-                      {weekTab === batch.week && weekDayPlans[batch.week] && (
+                      {weekTab === batch.week && weekDayPlans.get(batch.week) && (
                         <div className="mt-3 rounded-xl border border-cyan-200 bg-cyan-50/50 p-3">
                           <p className="text-xs font-bold uppercase tracking-wide text-cyan-800">
                             Programação diária — coletas da semana (clique no dia)
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {weekDayPlans[batch.week].days.map((day) => {
-                              const rows = weekDayPlans[batch.week].byDay.get(day) || []
+                            {weekDayPlans.get(batch.week).days.map((day) => {
+                              const rows = weekDayPlans.get(batch.week).byDay.get(day) || []
                               const valor = rows.reduce((s, r) => s + (r.row.total_value || 0), 0)
                               const dt = new Date(day + 'T12:00:00')
                               const dow = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][
@@ -1191,17 +1191,18 @@ export default function Compass2() {
                                 </button>
                               )
                             })}
-                            {weekDayPlans[batch.week].days.length === 0 && (
+                            {weekDayPlans.get(batch.week).days.length === 0 && (
                               <span className="text-xs text-slate-500">
                                 Nenhuma coleta calculável nesta semana (cliente fora da tabela de
                                 trânsito ou sem data).
                               </span>
                             )}
                           </div>
-                          {weekDayTab && weekDayPlans[batch.week].byDay.get(weekDayTab) && (
+                          {weekDayTab && weekDayPlans.get(batch.week).byDay.get(weekDayTab) && (
                             <div className="mt-3 space-y-1.5">
                               {(() => {
-                                const rows = weekDayPlans[batch.week].byDay.get(weekDayTab) || []
+                                const rows =
+                                  weekDayPlans.get(batch.week).byDay.get(weekDayTab) || []
                                 const prodsDia = new Map<
                                   string,
                                   {
