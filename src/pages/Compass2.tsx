@@ -338,6 +338,31 @@ export default function Compass2() {
     return map
   }, [items])
 
+  // ── Batelada por produto nas semanas (agregado, com PVs ao expandir) ──
+  const weekBatches = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        week: string
+        rows: Array<{ row: PlanningItem; t: TransitoInfo | null }>
+        qty: number
+        valor: number
+      }
+    >()
+    for (const row of items) {
+      if (row.is_freight || isFreightRow(row)) continue
+      const wk = row.planned_week || '—'
+      const cur = groups.get(wk) || { week: wk, rows: [], qty: 0, valor: 0 }
+      const t = transitoDe(row)
+      cur.rows.push({ row, t })
+      cur.qty += row.quantity
+      cur.valor += row.total_value || 0
+      groups.set(wk, cur)
+    }
+    const order = (w: string) => (w === 'ATRASADO' ? '0' : w)
+    return Array.from(groups.values()).sort((a, b) => order(a.week).localeCompare(order(b.week)))
+  }, [items])
+
   // ── Programação diária por semana (metodologia Andon): coleta = entrega − trânsito ──
   const allDayPlans = useMemo(() => {
     const out = new Map<
@@ -396,30 +421,6 @@ export default function Compass2() {
     return out
   }, [allDayPlans, weekTab])
 
-  // ── Batelada por produto nas semanas (agregado, com PVs ao expandir) ──
-  const weekBatches = useMemo(() => {
-    const groups = new Map<
-      string,
-      {
-        week: string
-        rows: Array<{ row: PlanningItem; t: TransitoInfo | null }>
-        qty: number
-        valor: number
-      }
-    >()
-    for (const row of items) {
-      if (row.is_freight || isFreightRow(row)) continue
-      const wk = row.planned_week || '—'
-      const cur = groups.get(wk) || { week: wk, rows: [], qty: 0, valor: 0 }
-      const t = transitoDe(row)
-      cur.rows.push({ row, t })
-      cur.qty += row.quantity
-      cur.valor += row.total_value || 0
-      groups.set(wk, cur)
-    }
-    const order = (w: string) => (w === 'ATRASADO' ? '0' : w)
-    return Array.from(groups.values()).sort((a, b) => order(a.week).localeCompare(order(b.week)))
-  }, [items])
   // ── Semanas (visão de reagendamento) ──
   const weekGroups = useMemo(() => {
     const groups = new Map<string, PlanningItem[]>()
