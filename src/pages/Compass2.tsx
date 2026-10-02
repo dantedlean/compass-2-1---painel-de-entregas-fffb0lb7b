@@ -477,7 +477,7 @@ export default function Compass2() {
         }
         out.push({
           dia: day,
-          data: date,
+          data: d.data,
           cod: d.cod,
           desc: r.product_name || '',
           qtd: q,
@@ -495,7 +495,7 @@ export default function Compass2() {
       if (left > 0)
         out.push({
           dia: day,
-          data: date,
+          data: d.data,
           cod: d.cod,
           desc: d.cod,
           qtd: left,
