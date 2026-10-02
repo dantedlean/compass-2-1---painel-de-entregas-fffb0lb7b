@@ -187,6 +187,14 @@ function isoMonday(year: number, week: number) {
   return new Date(ms).toISOString().slice(0, 10)
 }
 
+function isoWeek(d: Date) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const day = t.getUTCDay() || 7
+  t.setUTCDate(t.getUTCDate() + 4 - day)
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1))
+  return Math.ceil(((t.getTime() - y.getTime()) / 86400000 + 1) / 7)
+}
+
 function brD(iso: string) {
   return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : '—'
 }
