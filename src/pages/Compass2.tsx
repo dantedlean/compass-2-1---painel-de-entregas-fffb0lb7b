@@ -1428,12 +1428,15 @@ export default function Compass2() {
                 const passados = progWeek.dias.filter((d) => d < hoje)
                 const futuras = progWeek.dias.filter((d) => d >= hoje)
                 // sábado sempre visível (vazio = espaço para atrasos); sequência futura até sexta da próxima semana
-                const segProx = addDU(isoD(mondayOf(new Date(hoje + 'T12:00:00'))), 7)
+                const segProx = isoD(mondayOf(new Date(hoje + 'T12:00:00')))
+                const sexProx = addDU(segProx, 4)
                 const futurasSequencia: string[] = []
-                let cursor = hoje
-                while (cursor < segProx) {
-                  cursor = addDU(cursor, 1)
-                  futurasSequencia.push(cursor)
+                let cursor = new Date(hoje + 'T12:00:00')
+                const fim = new Date(sexProx + 'T12:00:00')
+                while (cursor <= fim) {
+                  cursor.setDate(cursor.getDate() + 1)
+                  const iso = isoD(cursor)
+                  if (iso <= sexProx) futurasSequencia.push(iso)
                 }
                 const diasVisiveis = [
                   ...passados,
