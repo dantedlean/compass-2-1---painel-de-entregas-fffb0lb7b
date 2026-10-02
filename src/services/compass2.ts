@@ -363,6 +363,7 @@ export interface SmktEntrada {
   product_code: string
   product_name: string
   quantity: number
+  unit_value: number
   data: string
   reason: string
 }
@@ -384,6 +385,7 @@ export async function listSmktEntradas(cycleId: string): Promise<SmktEntrada[]> 
       product_code: String(c.product_code || ''),
       product_name: String(c.product_name || ''),
       quantity: Number(c.quantity || 0),
+      unit_value: Number(c.unit_value || 0),
       data: String(c.data || ''),
       reason: row.reason || '',
     }
@@ -395,6 +397,7 @@ export async function createSmktEntrada(input: {
   product_code: string
   product_name: string
   quantity: number
+  unit_value?: number
   data?: string
   notes?: string
 }): Promise<ReprogrammingEvent> {
@@ -409,6 +412,7 @@ export async function createSmktEntrada(input: {
       product_code: input.product_code,
       product_name: input.product_name,
       quantity: input.quantity,
+      unit_value: input.unit_value ?? 0,
       data: input.data || '',
     },
     before_snapshot: { field: 'smkt_entrada', value: input.quantity },

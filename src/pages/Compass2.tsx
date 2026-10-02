@@ -135,6 +135,38 @@ export default function Compass2() {
   )
   const declaredQuantity = declarations.reduce((total, row) => total + row.quantity, 0)
 
+  // ── SMKT — entradas manuais agrupadas por produto ──
+  const smktEntradaGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        code: string
+        name: string
+        qty: number
+        valor: number
+        registros: number
+        rows: SmktEntrada[]
+      }
+    >()
+    for (const entrada of smktEntradas) {
+      const key = entrada.product_code || '—'
+      const cur = groups.get(key) || {
+        code: key,
+        name: entrada.product_name || '',
+        qty: 0,
+        valor: 0,
+        registros: 0,
+        rows: [],
+      }
+      cur.qty += entrada.quantity
+      cur.valor += entrada.quantity * (entrada.unit_value || 0)
+      cur.registros += 1
+      cur.rows.push(entrada)
+      groups.set(key, cur)
+    }
+    return Array.from(groups.values()).sort((a, b) => b.valor - a.valor)
+  }, [smktEntradas])
+
   // ── Semanas (visão de reagendamento) ──
   const weekGroups = useMemo(() => {
     const groups = new Map<string, PlanningItem[]>()
@@ -937,6 +969,155 @@ export default function Compass2() {
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <SectionTitle
             eyebrow="Camada 2.1"
+            title="Supermercado — entrada manual de estoque"
+            tag="histórico auditável"
+          />
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Registra a entrada de produto pronto no Supermercado (produção alocada direto ou ajuste
+            manual). Fica no histórico auditável — não movimenta o MaxiProd.
+          </p>
+          {!cycleId ? (
+            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              Selecione um ciclo para registrar a entrada.
+            </p>
+          ) : (
+            <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={createEntrada}>
+              <label className="text-xs font-medium text-slate-600">
+                Produto (catálogo do ciclo)
+                <select
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  value={smktEntradaForm.product_code}
+                  onChange={(event) => {
+                    const code = event.target.value
+                    const sample = items.find((row) => row.product_code === code)
+                    setSmktEntradaForm({
+                      ...smktEntradaForm,
+                      product_code: code,
+                      product_name: sample?.product_name || '',
+                      unit_value:
+                        sample?.unit_value != null
+                          ? String(sample.unit_value)
+                          : smktEntradaForm.unit_value,
+                    })
+                  }}
+                  required
+                >
+                  <option value="">— escolha o produto —</option>
+                  {Array.from(
+                    new Set(
+                      items.filter((row) => !isFreightRow(row)).map((row) => row.product_code),
+                    ),
+                  )
+                    .sort()
+                    .map((code) => {
+                      const sample = items.find((row) => row.product_code === code)
+                      return (
+                        <option key={code} value={code}>
+                          {code} · {(sample?.product_name || '').slice(0, 40)}
+                        </option>
+                      )
+                    })}
+                </select>
+              </label>
+              <NumberInput
+                label="Quantidade"
+                value={smktEntradaForm.quantity}
+                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, quantity: value })}
+              />
+              <NumberInput
+                label="Valor unitário (R$)"
+                value={smktEntradaForm.unit_value}
+                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, unit_value: value })}
+              />
+              <label className="text-xs font-medium text-slate-600">
+                Data da entrada
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  type="date"
+                  value={smktEntradaForm.data}
+                  onChange={(event) =>
+                    setSmktEntradaForm({ ...smktEntradaForm, data: event.target.value })
+                  }
+                />
+              </label>
+              <TextInput
+                label="Observação (opcional)"
+                value={smktEntradaForm.notes}
+                placeholder="ex.: produção de terça não declarada"
+                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, notes: value })}
+              />
+              <button
+                className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60 sm:col-span-2"
+                disabled={busy}
+                type="submit"
+              >
+                Registrar entrada no Supermercado
+              </button>
+            </form>
+          )}
+          <div className="mt-6 space-y-2">
+            {smktEntradaGroups.map((group) => {
+              const open = smktEntradaOpen === group.code
+              return (
+                <div key={group.code} className="rounded-xl border border-slate-200">
+                  <button
+                    className="flex w-full flex-wrap items-center justify-between gap-2 px-4 py-3 text-left hover:bg-slate-50"
+                    onClick={() => setSmktEntradaOpen(open ? '' : group.code)}
+                    type="button"
+                  >
+                    <span className="flex items-center gap-2 text-sm">
+                      <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+                      <strong className="font-mono">{group.code}</strong>
+                      <span className="text-slate-500">{group.name}</span>
+                    </span>
+                    <span className="flex items-center gap-4 text-xs">
+                      <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">
+                        {group.registros} entrada(s)
+                      </span>
+                      <span className="font-semibold text-slate-700">{group.qty} un</span>
+                      <span className="font-semibold text-slate-900">{money(group.valor)}</span>
+                    </span>
+                  </button>
+                  {open && (
+                    <table className="w-full min-w-[640px] text-left text-xs">
+                      <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
+                        <tr>
+                          <th className="px-4 py-2">Data da entrada</th>
+                          <th className="px-4 py-2">Qtd.</th>
+                          <th className="px-4 py-2">V. unitário</th>
+                          <th className="px-4 py-2">V. total</th>
+                          <th className="px-4 py-2">Observação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.rows.map((entrada) => (
+                          <tr className="border-b border-slate-100" key={entrada.id}>
+                            <td className="px-4 py-2">{dateLabel(entrada.data || undefined)}</td>
+                            <td className="px-4 py-2 font-semibold">{entrada.quantity}</td>
+                            <td className="px-4 py-2">{money(entrada.unit_value)}</td>
+                            <td className="px-4 py-2">
+                              {money(entrada.quantity * entrada.unit_value)}
+                            </td>
+                            <td className="px-4 py-2 text-slate-500">{entrada.reason || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )
+            })}
+            {smktEntradas.length === 0 && (
+              <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                Nenhuma entrada manual registrada neste ciclo.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <SectionTitle
+            eyebrow="Camada 2.1.1"
             title="Supermercado — baixa de produto pronto"
             tag="PV + NF registrados"
           />
@@ -1051,125 +1232,6 @@ export default function Compass2() {
                   <tr>
                     <td className="px-2 py-5 text-center text-slate-500" colSpan={6}>
                       Nenhuma baixa do Supermercado registrada neste ciclo.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <SectionTitle
-            eyebrow="Camada 2.1.1"
-            title="Supermercado — entrada manual de estoque"
-            tag="histórico auditável"
-          />
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Registra a entrada de produto pronto no Supermercado (produção alocada direto ou ajuste
-            manual). Fica no histórico auditável — não movimenta o MaxiProd.
-          </p>
-          {!cycleId ? (
-            <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-              Selecione um ciclo para registrar a entrada.
-            </p>
-          ) : (
-            <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={createEntrada}>
-              <label className="text-xs font-medium text-slate-600">
-                Produto (catálogo do ciclo)
-                <select
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-                  value={smktEntradaForm.product_code}
-                  onChange={(event) => {
-                    const code = event.target.value
-                    const sample = items.find((row) => row.product_code === code)
-                    setSmktEntradaForm({
-                      ...smktEntradaForm,
-                      product_code: code,
-                      product_name: sample?.product_name || '',
-                    })
-                  }}
-                  required
-                >
-                  <option value="">— escolha o produto —</option>
-                  {Array.from(
-                    new Set(
-                      items.filter((row) => !isFreightRow(row)).map((row) => row.product_code),
-                    ),
-                  )
-                    .sort()
-                    .map((code) => {
-                      const sample = items.find((row) => row.product_code === code)
-                      return (
-                        <option key={code} value={code}>
-                          {code} · {(sample?.product_name || '').slice(0, 40)}
-                        </option>
-                      )
-                    })}
-                </select>
-              </label>
-              <NumberInput
-                label="Quantidade"
-                value={smktEntradaForm.quantity}
-                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, quantity: value })}
-              />
-              <label className="text-xs font-medium text-slate-600">
-                Data da entrada
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  type="date"
-                  value={smktEntradaForm.data}
-                  onChange={(event) =>
-                    setSmktEntradaForm({ ...smktEntradaForm, data: event.target.value })
-                  }
-                />
-              </label>
-              <TextInput
-                label="Observação (opcional)"
-                value={smktEntradaForm.notes}
-                placeholder="ex.: produção de terça não declarada"
-                onChange={(value) => setSmktEntradaForm({ ...smktEntradaForm, notes: value })}
-              />
-              <button
-                className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60 sm:col-span-2"
-                disabled={busy}
-                type="submit"
-              >
-                Registrar entrada no Supermercado
-              </button>
-            </form>
-          )}
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-xs">
-              <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-2 py-2">Quando</th>
-                  <th className="px-2 py-2">Produto</th>
-                  <th className="px-2 py-2">Qtd.</th>
-                  <th className="px-2 py-2">Data da entrada</th>
-                  <th className="px-2 py-2">Observação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {smktEntradas.map((entrada) => (
-                  <tr className="border-b border-slate-100" key={entrada.id}>
-                    <td className="px-2 py-2">{dateLabel(entrada.data || undefined)}</td>
-                    <td className="px-2 py-2">
-                      <strong className="font-mono">{entrada.product_code}</strong>
-                      <br />
-                      <span className="text-slate-500">{entrada.product_name}</span>
-                    </td>
-                    <td className="px-2 py-2 font-semibold">{entrada.quantity}</td>
-                    <td className="px-2 py-2">{dateLabel(entrada.data || undefined)}</td>
-                    <td className="max-w-[220px] truncate px-2 py-2 text-slate-500">
-                      {entrada.reason}
-                    </td>
-                  </tr>
-                ))}
-                {smktEntradas.length === 0 && (
-                  <tr>
-                    <td className="px-2 py-5 text-center text-slate-500" colSpan={5}>
-                      Nenhuma entrada manual registrada neste ciclo.
                     </td>
                   </tr>
                 )}
