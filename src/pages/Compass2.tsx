@@ -211,9 +211,16 @@ function transitoDe(row: PlanningItem): TransitoInfo | null {
       break
     }
   }
-  if (!cid) return null
   const ent = (row.delivery_date || '').slice(0, 10)
   if (!ent || ent.length !== 10) return null
+  if (!cid) {
+    // Cidade fora da tabela (como no Andon): estimativa padrão 2 dias úteis — marcar com ~ e "consultar transportadora"
+    const tdu = 2
+    const coleta = subDU(ent, tdu)
+    const fim = addDU(coleta, 1)
+    const cheg = addDU(fim, tdu)
+    return { cid: '~', tdu, km: 0, coleta, fim, cheg }
+  }
   const [tdu, km] = tab[cid]
   const coleta = subDU(ent, tdu)
   const fim = addDU(coleta, 1)
@@ -975,6 +982,9 @@ export default function Compass2() {
                         type="button"
                       >
                         <span className="flex flex-wrap items-center gap-3">
+                          <span className="text-slate-400">
+                            {weekTab === batch.week ? '▾' : '▸'}
+                          </span>
                           <span
                             className={`rounded-full px-3 py-1 text-sm font-bold ${
                               weekTab === batch.week
@@ -1058,8 +1068,20 @@ export default function Compass2() {
                                           <td className="px-2 py-1.5">
                                             {dateLabel(row.delivery_date)}
                                           </td>
-                                          <td className="px-2 py-1.5">{t ? brD(t.coleta) : '—'}</td>
-                                          <td className="px-2 py-1.5">{t ? brD(t.cheg) : '—'}</td>
+                                          <td className="px-2 py-1.5">
+                                            {t
+                                              ? t.cid === '~'
+                                                ? '~' + brD(t.coleta)
+                                                : brD(t.coleta)
+                                              : '—'}
+                                          </td>
+                                          <td className="px-2 py-1.5">
+                                            {t
+                                              ? t.cid === '~'
+                                                ? '~' + brD(t.cheg)
+                                                : brD(t.cheg)
+                                              : '—'}
+                                          </td>
                                           <td className="px-2 py-1.5 font-semibold">
                                             {row.quantity}
                                           </td>
@@ -1116,7 +1138,11 @@ export default function Compass2() {
                                                   {dateLabel(row.delivery_date)}
                                                 </td>
                                                 <td className="px-2 py-1.5">
-                                                  {t ? brD(t.coleta) : '—'}
+                                                  {t
+                                                    ? t.cid === '~'
+                                                      ? '~' + brD(t.coleta)
+                                                      : brD(t.coleta)
+                                                    : '—'}
                                                 </td>
                                                 <td className="px-2 py-1.5 font-semibold">
                                                   {row.quantity}
@@ -1256,10 +1282,18 @@ export default function Compass2() {
                                                   {dateLabel(row.delivery_date)}
                                                 </td>
                                                 <td className="px-4 py-1.5">
-                                                  {t ? brD(t.coleta) : '—'}
+                                                  {t
+                                                    ? t.cid === '~'
+                                                      ? '~' + brD(t.coleta)
+                                                      : brD(t.coleta)
+                                                    : '—'}
                                                 </td>
                                                 <td className="px-4 py-1.5">
-                                                  {t ? brD(t.cheg) : '—'}
+                                                  {t
+                                                    ? t.cid === '~'
+                                                      ? '~' + brD(t.cheg)
+                                                      : brD(t.cheg)
+                                                    : '—'}
                                                 </td>
                                                 <td className="px-4 py-1.5 font-semibold">
                                                   {row.quantity}
@@ -1284,79 +1318,6 @@ export default function Compass2() {
                   )
                 })}
               </div>
-            </section>
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <SectionTitle
-                eyebrow="Reagendamento"
-                title="Entregas por semana"
-                tag="itens do ciclo · somente leitura"
-              />
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Itens agrupados pela semana planejada (data de entrega no nível do item, fonte
-                MaxiProd). Atrasado = entrega anterior à semana corrente. Clique numa semana para
-                ver os itens.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {weekGroups.map((group) => (
-                  <button
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                      weekTab === group.week
-                        ? 'border-cyan-700 bg-cyan-700 text-white'
-                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                    key={group.week}
-                    onClick={() => setWeekTab(weekTab === group.week ? '' : group.week)}
-                    type="button"
-                  >
-                    {group.week === 'ATRASADO' ? 'Atrasado' : group.week.replace('2026-W', 'S')} ·{' '}
-                    {money(group.total)}
-                  </button>
-                ))}
-                {weekGroups.length === 0 && (
-                  <span className="text-sm text-slate-500">Nenhum item no ciclo.</span>
-                )}
-              </div>
-              {weekTab && (
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-xs">
-                    <thead className="border-b border-slate-200 uppercase tracking-wide text-slate-500">
-                      <tr>
-                        <th className="px-2 py-2">Produto</th>
-                        <th className="px-2 py-2">PV</th>
-                        <th className="px-2 py-2">Cliente</th>
-                        <th className="px-2 py-2">Empresa</th>
-                        <th className="px-2 py-2">Entrega</th>
-                        <th className="px-2 py-2">Qtd.</th>
-                        <th className="px-2 py-2">Valor</th>
-                        <th className="px-2 py-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(weekGroups.find((group) => group.week === weekTab)?.rows || []).map(
-                        (row) => (
-                          <tr className="border-b border-slate-100" key={row.id}>
-                            <td className="px-2 py-2">
-                              <strong className="font-mono">{row.product_code}</strong>{' '}
-                              <span className="text-slate-500">{row.product_name}</span>
-                            </td>
-                            <td className="px-2 py-2 font-semibold">{row.pv_number || '—'}</td>
-                            <td className="px-2 py-2">{row.client_name || '—'}</td>
-                            <td className="px-2 py-2">{row.company_name}</td>
-                            <td className="px-2 py-2">{dateLabel(row.delivery_date)}</td>
-                            <td className="px-2 py-2">{row.quantity}</td>
-                            <td className="px-2 py-2">{money(row.total_value || 0)}</td>
-                            <td className="px-2 py-2">
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                                {row.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </section>
           </>
         )}
