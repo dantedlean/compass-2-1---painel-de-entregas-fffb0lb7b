@@ -234,6 +234,7 @@ export default function Compass2() {
   const [smktAllocs, setSmktAllocs] = useState<SmktAllocation[]>([])
   const [nfs, setNfs] = useState<FaturamentoNf[]>([])
   const [weekTab, setWeekTab] = useState('')
+  const [view, setView] = useState<'prog' | 'smkt' | 'fat' | 'gestao'>('prog')
   const [smktForm, setSmktForm] = useState({
     product_code: '',
     pv_number: '',
