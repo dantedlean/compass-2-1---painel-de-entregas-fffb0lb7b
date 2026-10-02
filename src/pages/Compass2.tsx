@@ -279,6 +279,17 @@ export default function Compass2() {
   const [addPv, setAddPv] = useState('')
   const [addQtd, setAddQtd] = useState('0')
   const [addLocal, setAddLocal] = useState('C')
+  const [addModo, setAddModo] = useState<'pv' | 'produto'>('pv')
+  const [addProduto, setAddProduto] = useState('')
+  const [allocModal, setAllocModal] = useState<{
+    cod: string
+    data: string
+    qtd: number
+    modo: 'mover' | 'copiar'
+  } | null>(null)
+  const [dragCod, setDragCod] = useState('')
+  const [allocData, setAllocData] = useState('')
+  const [allocQtd, setAllocQtd] = useState('0')
   const [addInfo, setAddInfo] = useState('')
   const [undoStack, setUndoStack] = useState<Array<() => void>>([])
   const [clipboard, setClipboard] = useState<{
@@ -1032,27 +1043,38 @@ export default function Compass2() {
   }
 
   function addProgLine() {
-    const pv = addPv.trim()
-    const rows = carteiraByPv.get(pv)
-    if (!rows || !rows.length) {
-      setAddInfo(`PV ${pv || '—'} não encontrado na carteira`)
-      return
-    }
     const q = Number(addQtd) || 0
     if (q <= 0) {
       setAddInfo('Informe a quantidade.')
       return
     }
     const data = progDay || new Date().toISOString().slice(0, 10)
-    const cod = rows[0].product_code
+    let cod = ''
+    let pv = ''
+    let obs = ''
+    if (addModo === 'pv') {
+      const rows = carteiraByPv.get(addPv.trim())
+      if (!rows || !rows.length) {
+        setAddInfo(`PV ${addPv.trim() || '—'} não encontrado na carteira`)
+        return
+      }
+      cod = rows[0].product_code
+      pv = addPv.trim()
+      obs = `incluído via PV ${pv}`
+    } else {
+      cod = addProduto
+      if (!cod) {
+        setAddInfo('Escolha o produto.')
+        return
+      }
+      obs = 'incluído por produto (PV opcional)'
+    }
     const prev = progDraft
     pushUndo(() => setProgDraft(prev))
-    setProgDraft([
-      ...progDraft,
-      { dia: '', data, cod, qtd: q, local: addLocal, pv, obs: `incluído via PV ${pv}` },
-    ])
-    setAddInfo(`✔ Incluído em ${brD(data)} — nada gravado no MaxiProd`)
+    setProgDraft([...progDraft, { dia: '', data, cod, qtd: q, local: addLocal, pv, obs }])
+    setAddInfo(`✔ ${cod} ×${q} incluído em ${brD(data)} — nada gravado no MaxiProd`)
     setAddPv('')
+    setAddProduto('')
     setAddQtd('0')
   }
 
@@ -1079,17 +1101,68 @@ export default function Compass2() {
     })
   }
 
-  function realocar(cod: string, data: string, qtdTotal: number) {
-    const key = cod + '|' + data
-    const ex = progExec[key] || { ok: false, qtd: 0 }
-    const saldo = qtdTotal - (ex.qtd || 0)
-    if (saldo <= 0) {
-      setAddInfo('Nada para realocar — qtd realizada cobre o programado.')
+  function abrirAlloc(cod: string, data: string, qtdTotal: number, modo: 'mover' | 'copiar') {
+    const ex = progExec[cod + '|' + data] || { ok: false, qtd: 0 }
+    const saldo = Math.max(0, qtdTotal - (ex.qtd || 0))
+    if (modo === 'mover' && saldo <= 0) {
+      setAddInfo('Nada a mover — a qtd realizada cobre o programado.')
       return
     }
     const prox = addDU(data, 1)
-    setExec(cod, data, { rl: brD(prox), qtd: qtdTotal })
-    setAddInfo(`→ ${brD(prox)} (${saldo} un realocadas)`)
+    setAllocModal({ cod, data, qtd: modo === 'mover' ? saldo : qtdTotal, modo })
+    setAllocData(prox)
+    setAllocQtd(String(modo === 'mover' ? saldo : qtdTotal))
+  }
+
+  function confirmarAlloc() {
+    if (!allocModal) return
+    const { cod, data, modo } = allocModal
+    const q = Number(allocQtd) || 0
+    if (q <= 0) {
+      setAddInfo('Informe a quantidade.')
+      return
+    }
+    const prev = progDraft
+    const prevExec = progExec
+    pushUndo(() => {
+      setProgDraft(prev)
+      setProgExec(prevExec)
+    })
+    if (modo === 'mover') {
+      // Regra Andon: origem marca o saldo como realocado p/ o destino; destino ganha linha Planejado
+      const ex = progExec[cod + '|' + data] || { ok: false, qtd: 0 }
+      setExec(cod, data, { ok: ex.ok, qtd: ex.qtd, rl: brD(allocData) })
+      setProgDraft([
+        ...progDraft,
+        {
+          dia: '',
+          data: allocData,
+          cod,
+          qtd: q,
+          local: addLocal,
+          pv: '',
+          obs: `movido de ${data}`,
+        },
+      ])
+      setAddInfo(
+        `✔ ${cod} ×${q} movido de ${brD(data)} para ${brD(allocData)} — nada gravado no MaxiProd`,
+      )
+    } else {
+      setProgDraft([
+        ...progDraft,
+        {
+          dia: '',
+          data: allocData,
+          cod,
+          qtd: q,
+          local: addLocal,
+          pv: '',
+          obs: `copiado de ${data}`,
+        },
+      ])
+      setAddInfo(`✔ ${cod} ×${q} copiado para ${brD(allocData)} — nada gravado no MaxiProd`)
+    }
+    setAllocModal(null)
   }
 
   function trocarPv(cod: string, data: string, novoPv: string) {
@@ -1471,6 +1544,27 @@ export default function Compass2() {
                       }`}
                       key={data}
                       onClick={() => (clipboard ? colarNoDia(data) : setProgDay(data))}
+                      onDragOver={(event) => {
+                        if (!dragCod) return
+                        event.preventDefault()
+                      }}
+                      onDrop={() => {
+                        if (!dragCod) return
+                        const [dcod, ddata] = dragCod.split('|')
+                        setDragCod('')
+                        if (ddata === data) {
+                          setAddInfo('Origem e destino são o mesmo dia.')
+                          return
+                        }
+                        abrirAlloc(
+                          dcod,
+                          ddata,
+                          progWeek.out
+                            .filter((a) => a.cod === dcod && a.data === ddata)
+                            .reduce((s, r) => s + r.qtd, 0),
+                          'mover',
+                        )
+                      }}
                       title={
                         data === hoje
                           ? 'hoje'
@@ -1523,25 +1617,64 @@ export default function Compass2() {
               })()}
               <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3">
                 <strong className="text-xs">+ Incluir item:</strong>
-                <input
-                  className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-bold"
-                  inputMode="numeric"
-                  onChange={(event) => {
-                    setAddPv(event.target.value)
-                    const rows = carteiraByPv.get(event.target.value.trim())
-                    setAddInfo(
-                      rows && rows.length
-                        ? `PV ${rows[0].pv_number} · ${rows[0].client_name} · ${rows[0].company_name} — ${rows
-                            .map((r) => r.product_code)
-                            .join(' · ')} · saldo ${rows.reduce((s, r) => s + r.quantity, 0)} un`
-                        : '',
-                    )
-                    if (rows && rows.length && addQtd === '0')
-                      setAddQtd(String(rows.reduce((s, r) => s + r.quantity, 0)))
-                  }}
-                  placeholder="Nº do PV"
-                  value={addPv}
-                />
+                <select
+                  className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-semibold"
+                  onChange={(event) => setAddModo(event.target.value as 'pv' | 'produto')}
+                  value={addModo}
+                >
+                  <option value="pv">por PV</option>
+                  <option value="produto">por produto</option>
+                </select>
+                {addModo === 'pv' ? (
+                  <input
+                    className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-bold"
+                    inputMode="numeric"
+                    onChange={(event) => {
+                      setAddPv(event.target.value)
+                      const rows = carteiraByPv.get(event.target.value.trim())
+                      setAddInfo(
+                        rows && rows.length
+                          ? `PV ${rows[0].pv_number} · ${rows[0].client_name} · ${rows[0].company_name} — ${rows
+                              .map((r) => r.product_code)
+                              .join(' · ')} · saldo ${rows.reduce((s, r) => s + r.quantity, 0)} un`
+                          : '',
+                      )
+                      if (rows && rows.length && addQtd === '0')
+                        setAddQtd(String(rows.reduce((s, r) => s + r.quantity, 0)))
+                    }}
+                    placeholder="Nº do PV"
+                    value={addPv}
+                  />
+                ) : (
+                  <select
+                    className="max-w-56 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+                    onChange={(event) => {
+                      setAddProduto(event.target.value)
+                      const rows = itemsByCode.get(event.target.value) || []
+                      const saldo = rows.reduce((s, r) => s + r.quantity, 0)
+                      setAddInfo(
+                        rows.length
+                          ? `${event.target.value} · ${rows[0].product_name} · ${rows.length} PV(s) na carteira · saldo total ${saldo} un`
+                          : '',
+                      )
+                      if (rows.length && addQtd === '0') setAddQtd(String(saldo))
+                    }}
+                    value={addProduto}
+                  >
+                    <option value="">— escolha o produto —</option>
+                    {Array.from(itemsByCode.keys())
+                      .sort()
+                      .map((code) => {
+                        const rows = itemsByCode.get(code) || []
+                        const sample = rows[0]
+                        return (
+                          <option key={code} value={code}>
+                            {code} · {(sample?.product_name || '').slice(0, 36)} ({rows.length} PV)
+                          </option>
+                        )
+                      })}
+                  </select>
+                )}
                 <input
                   className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                   min="0"
@@ -1693,7 +1826,11 @@ export default function Compass2() {
                                   className={
                                     'border-b border-slate-100' + (ex.ok ? ' bg-emerald-50' : '')
                                   }
+                                  draggable
                                   key={p.cod}
+                                  onDragEnd={() => setDragCod('')}
+                                  onDragStart={() => setDragCod(p.cod + '|' + progDay)}
+                                  title="Arraste até um dia acima para reprogramar (transfere o saldo = qtd − realizada)"
                                 >
                                   <td className="px-2 py-2">
                                     <div className="font-mono font-bold">{p.cod}</div>
@@ -3211,6 +3348,59 @@ export default function Compass2() {
               </div>
             </section>
           </>
+        )}
+
+        {allocModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+              <h3 className="text-base font-bold text-slate-900">
+                {allocModal.modo === 'mover' ? 'Alocar' : 'Copiar'} {allocModal.cod} —{' '}
+                {brD(allocModal.data)}
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                {allocModal.modo === 'mover'
+                  ? 'Transfere o saldo (qtd programada − qtd realizada) para outro dia. A origem fica marcada como realocada.'
+                  : 'Cria uma cópia da linha em outro dia — a linha original continua.'}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="text-xs font-medium text-slate-600">
+                  Data de alocação
+                  <input
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    onChange={(event) => setAllocData(event.target.value)}
+                    type="date"
+                    value={allocData}
+                  />
+                </label>
+                <label className="text-xs font-medium text-slate-600">
+                  Quantidade (un)
+                  <input
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    min="0"
+                    onChange={(event) => setAllocQtd(event.target.value)}
+                    type="number"
+                    value={allocQtd}
+                  />
+                </label>
+              </div>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                  onClick={() => setAllocModal(null)}
+                  type="button"
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+                  onClick={confirmarAlloc}
+                  type="button"
+                >
+                  ✔ Confirmar alocação
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </main>
