@@ -385,22 +385,6 @@ export default function Compass2() {
       })
   }, [items])
 
-  const progHoje = useMemo(() => {
-    const hjBR = hojeIso.slice(8, 10) + '/' + hojeIso.slice(5, 7)
-    const dias = progWeek.out.filter((a) => a.data === hjBR)
-    const prog = dias.reduce((s, a) => s + a.qtd, 0)
-    const vistos = new Set<string>()
-    let done = 0
-    for (const a of dias) {
-      if (vistos.has(a.cod)) continue
-      vistos.add(a.cod)
-      const ex = progExec[a.cod + '|' + hjBR]
-      done += (ex && ex.qtd) || 0
-    }
-    const pct = prog > 0 ? Math.round((done / prog) * 100) : done > 0 ? 100 : 0
-    return { prog: Math.round(prog), done: Math.round(done), pct }
-  }, [progWeek, progExec, hojeIso])
-
   // ── Agenda editável (modelo Andon): rascunho → linhas por dia com PVs da carteira ──
   const carteiraByPv = useMemo(() => {
     const map = new Map<string, PlanningItem[]>()
@@ -511,6 +495,22 @@ export default function Compass2() {
     const dias = [...new Map(out.map((a) => [a.data + '|' + a.dia, a])).keys()].sort()
     return { dias: Array.from(new Set(out.map((a) => a.data))).sort(), out, fosseis }
   }, [progDraft, items])
+
+  const progHoje = useMemo(() => {
+    const hjBR = hojeIso.slice(8, 10) + '/' + hojeIso.slice(5, 7)
+    const dias = progWeek.out.filter((a) => a.data === hjBR)
+    const prog = dias.reduce((s, a) => s + a.qtd, 0)
+    const vistos = new Set<string>()
+    let done = 0
+    for (const a of dias) {
+      if (vistos.has(a.cod)) continue
+      vistos.add(a.cod)
+      const ex = progExec[a.cod + '|' + hjBR]
+      done += (ex && ex.qtd) || 0
+    }
+    const pct = prog > 0 ? Math.round((done / prog) * 100) : done > 0 ? 100 : 0
+    return { prog: Math.round(prog), done: Math.round(done), pct }
+  }, [progWeek, progExec, hojeIso])
 
   // ── Batelada por produto nas semanas (agregado, com PVs ao expandir) ──
   const weekBatches = useMemo(() => {
