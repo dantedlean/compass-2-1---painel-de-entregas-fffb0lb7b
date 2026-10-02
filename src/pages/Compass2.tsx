@@ -1899,26 +1899,19 @@ export default function Compass2() {
                                     <div className="flex flex-wrap gap-1">
                                       <button
                                         className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
-                                        onClick={() => realocar(p.cod, progDay, p.qtd)}
+                                        onClick={() => abrirAlloc(p.cod, progDay, p.qtd, 'mover')}
+                                        title="Abrir alocação: escolher data e qtd (saldo = qtd − realizada)"
                                         type="button"
                                       >
-                                        Realocar ↦
+                                        Alocar ↦
                                       </button>
                                       <button
                                         className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
-                                        onClick={() => copiarLinha(p.cod, progDay, p.qtd)}
-                                        title="Copiar linha (clique num dia para colar)"
+                                        onClick={() => abrirAlloc(p.cod, progDay, p.qtd, 'copiar')}
+                                        title="Copiar linha para outro dia (escolher data e qtd)"
                                         type="button"
                                       >
                                         Copiar
-                                      </button>
-                                      <button
-                                        className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
-                                        onClick={() => recortarLinha(p.cod, progDay, p.qtd)}
-                                        title="Recortar: move a qtd deste dia para onde colar. Se houver executado, transfere só o saldo"
-                                        type="button"
-                                      >
-                                        Recortar
                                       </button>
                                     </div>
                                     {ex.rl && (
