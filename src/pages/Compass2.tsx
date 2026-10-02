@@ -390,7 +390,6 @@ export default function Compass2() {
     }
     return out
   }, [weekGroups, hojeIso])
-
   const weekDayPlans = useMemo(() => {
     const out: typeof allDayPlans = new Map()
     if (weekTab && allDayPlans.has(weekTab)) out.set(weekTab, allDayPlans.get(weekTab)!)
