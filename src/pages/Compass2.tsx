@@ -1502,7 +1502,7 @@ export default function Compass2() {
                 // sequência futura: todos os dias do calendário de amanhã até a sexta da próxima semana (domingo fora)
                 const proxSeg = addDU(isoD(mondayOf(new Date(hoje + 'T12:00:00'))), 5)
                 const sexProx = addDU(proxSeg, 4)
-                const sequencia: string[] = []
+                const sequencia: string[] = [hoje]
                 const cur = new Date(hoje + 'T12:00:00')
                 const fim = new Date(sexProx + 'T12:00:00')
                 while (cur <= fim) {
@@ -1550,8 +1550,20 @@ export default function Compass2() {
                       }}
                       onDrop={() => {
                         if (!dragCod) return
-                        const [dcod, ddata] = dragCod.split('|')
+                        const parts = dragCod.split('|')
                         setDragCod('')
+                        if (parts[0] === 'BATELADA') {
+                          const cod = parts[1]
+                          const qtd = Number(parts[2]) || 0
+                          setAllocModal({ cod, data: '', qtd, modo: 'copiar' })
+                          setAllocData(data)
+                          setAllocQtd(String(qtd))
+                          setAddInfo(
+                            `Arraste confirmado: ${cod} ×${qtd} — confirme a alocação em ${brD(data)}`,
+                          )
+                          return
+                        }
+                        const [dcod, ddata] = parts
                         if (ddata === data) {
                           setAddInfo('Origem e destino são o mesmo dia.')
                           return
@@ -2205,9 +2217,13 @@ export default function Compass2() {
                               <div key={p.code} className="rounded-xl border border-slate-200">
                                 <button
                                   className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-slate-50"
+                                  draggable
                                   onClick={() =>
                                     setWeekProdOpen(open ? '' : batch.week + '|' + p.code)
                                   }
+                                  onDragEnd={() => setDragCod('')}
+                                  onDragStart={() => setDragCod('BATELADA|' + p.code + '|' + p.qty)}
+                                  title="Arraste até um dia da AGENDA EDITÁVEL para incluir na programação de produção"
                                   type="button"
                                 >
                                   <span className="text-slate-400">{open ? '▾' : '▸'}</span>
