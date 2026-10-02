@@ -1099,12 +1099,16 @@ export default function Compass2() {
                       <strong className="font-mono">{group.code}</strong>
                       <span className="text-slate-500">{group.name}</span>
                     </span>
-                    <span className="flex items-center gap-4 text-xs">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">
+                    <span className="flex items-center gap-3 text-xs">
+                      <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sm font-bold text-sky-900">
+                        {group.qty} un
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
                         {group.registros} entrada(s)
                       </span>
-                      <span className="font-semibold text-slate-700">{group.qty} un</span>
-                      <span className="font-semibold text-slate-900">{money(group.valor)}</span>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {money(group.valor)}
+                      </span>
                     </span>
                   </button>
                   {open && (
