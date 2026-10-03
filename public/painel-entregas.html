@@ -427,12 +427,7 @@
           style="height: 52px; width: auto; object-fit: contain"
         />
         <div>
-          <h1>
-            Entregas por Semana — Produto × PV
-            <span style="font-size: 13px; font-weight: 600; opacity: 0.85; margin-left: 6px"
-              >v0.1.01</span
-            >
-          </h1>
+          <h1>Entregas por Semana — Produto × PV</h1>
           <div class="sub">
             Base: data de entrega do ITEM no MaxiProd · PVs aprovados com saldo a faturar ·
             <span id="fonte"></span>
@@ -440,12 +435,6 @@
         </div>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap">
-        <span
-          class="badge"
-          id="badgeVer"
-          style="background: #1e3a8a; color: #fff; border: none; font-weight: 700"
-          >v0.1.01</span
-        >
         <span class="badge" id="badgeRows"></span>
         <span class="badge" id="badgePvs"></span>
       </div>
@@ -675,18 +664,12 @@
         <div id="nfHero"></div>
         <div class="card">
           <h2>Faturamento por dia — <span id="nfMesLbl">mês atual</span></h2>
-          <div class="note">
-            Barras = valor faturado (R$) · linha discreta = nº de NFs · linha verde tracejada =
-            tendência · linha horizontal = média
-          </div>
+          <div class="note">Barras = valor faturado (R$) · linha = nº de NFs emitidas</div>
           <div id="chNfDia" style="width: 100%; height: 280px"></div>
         </div>
         <div class="card">
           <h2>Faturamento por mês — <span id="nfAnoLbl">ano atual</span></h2>
-          <div class="note">
-            Barras = valor faturado (R$) · linha discreta = nº de NFs · linha verde tracejada =
-            tendência · linha horizontal = média
-          </div>
+          <div class="note">Barras = valor faturado (R$) · linha = nº de NFs emitidas</div>
           <div id="chNfMes" style="width: 100%; height: 300px"></div>
         </div>
         <div class="card">
@@ -734,9 +717,9 @@
         </div>
       </main>
       <footer>
-        Faturamento · método Compass v0.1.01: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) ·
-        valor = valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.01
+        Faturamento · método Compass: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
+        valorTotal da NF · fonte MaxiProd GraphQL · gerado em
+        artifacts/entregas_por_semana_itens_20261003.xlsx
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -1207,8 +1190,8 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean v0.1.01 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx
-        · dados: MaxiProd (data de entrega por item) · v0.1.01
+        FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20261003.xlsx ·
+        dados: MaxiProd (data de entrega por item)
       </footer>
     </div>
 
@@ -1321,15 +1304,15 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar v0.1.01 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
-        entrega no nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.01
+        Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
+        nível do item · fretes (50x/00043) marcados · fonte
+        artifacts/entregas_por_semana_itens_20261003.xlsx
       </footer>
     </div>
 
     <script>
       const DATA = {
-        gerado: 'artifacts/entregas_por_semana_itens_20261001.xlsx',
+        gerado: 'artifacts/entregas_por_semana_itens_20261003.xlsx',
         semanas: [
           'Atrasado',
           'S40 · 28.09-02.10',
@@ -3388,40 +3371,6 @@
             data: '04/09',
             iso: '2026-09-04',
             semana: 'ATRASADO',
-            codigo: '404-0001',
-            desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-            pv: '510',
-            cliente: 'EBAZAR MAUA',
-            empresa: 'DTEKT',
-            qtd: 6.0,
-            vtot: 17988.0,
-            frete: false,
-            local: 'Curitiba',
-            si: 0,
-            siPlano: null,
-            prod: { qtd: 6.0, dias: ['Quarta'], dd: '23/09' },
-          },
-          {
-            data: '04/09',
-            iso: '2026-09-04',
-            semana: 'ATRASADO',
-            codigo: '502-0001-12',
-            desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
-            pv: '510',
-            cliente: 'EBAZAR MAUA',
-            empresa: 'DTEKT',
-            qtd: 1.0,
-            vtot: 1800.0,
-            frete: true,
-            local: 'Curitiba',
-            si: 0,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '04/09',
-            iso: '2026-09-04',
-            semana: 'ATRASADO',
             codigo: '412-0008',
             desc: 'MESA DESPACHO OUPM-0003',
             pv: '546',
@@ -3484,7 +3433,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: null,
-            prod: { qtd: 10.0, dias: ['Quarta', 'Quinta'], dd: '24/09' },
+            prod: { qtd: 10.0, dias: ['Quarta'], dd: '23/09' },
           },
           {
             data: '05/09',
@@ -3518,7 +3467,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: null,
-            prod: { qtd: 2.0, dias: ['Quinta'], dd: '24/09' },
+            prod: { qtd: 2.0, dias: ['Quarta'], dd: '23/09' },
           },
           {
             data: '05/09',
@@ -3552,7 +3501,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: null,
-            prod: { qtd: 17.0, dias: ['Quinta'], dd: '24/09' },
+            prod: { qtd: 17.0, dias: ['Quarta', 'Quinta'], dd: '24/09' },
           },
           {
             data: '05/09',
@@ -3620,7 +3569,7 @@
             local: 'Curitiba',
             si: 0,
             siPlano: 5,
-            prod: { qtd: 1.0, dias: ['Quinta'], dd: '24/09' },
+            prod: { qtd: 7.0, dias: ['Quinta'], dd: '24/09' },
           },
           {
             data: '06/09',
@@ -4119,27 +4068,6 @@
             data: '25/09',
             iso: '2026-09-25',
             semana: 'ATRASADO',
-            codigo: 'ID02730',
-            desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
-            pv: '121',
-            cliente: 'SHOPEE F DA ROCHA SP09',
-            empresa: 'SLEAN',
-            qtd: 20.0,
-            vtot: 16359.4,
-            frete: false,
-            local: 'Curitiba',
-            semanaErp: 'ATRASADO',
-            isoErp: '2026-09-25',
-            dataErp: '25/09',
-            rig: { iso: '2026-09-25', data: '25/09', cli: '', proj: 'SÃO PAULO/SP', local: '' },
-            si: 0,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '25/09',
-            iso: '2026-09-25',
-            semana: 'ATRASADO',
             codigo: 'ID01779',
             desc: 'BANCADA PACKING VOLUMOSO - SHOPEE',
             pv: '122',
@@ -4342,74 +4270,6 @@
             prod: null,
           },
           {
-            data: '30/09',
-            iso: '2026-09-30',
-            semana: '2026-W40',
-            codigo: '412-0006',
-            desc: 'MESA TEAM LEADER',
-            pv: '564',
-            cliente: 'EBAZAR SBC SP38',
-            empresa: 'DTEKT',
-            qtd: 8.0,
-            vtot: 8108.72,
-            frete: false,
-            local: 'Curitiba',
-            si: 1,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '30/09',
-            iso: '2026-09-30',
-            semana: '2026-W40',
-            codigo: '502-0001-12',
-            desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
-            pv: '564',
-            cliente: 'EBAZAR SBC SP38',
-            empresa: 'DTEKT',
-            qtd: 1.0,
-            vtot: 1800.0,
-            frete: true,
-            local: 'Curitiba',
-            si: 1,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '30/09',
-            iso: '2026-09-30',
-            semana: '2026-W40',
-            codigo: '412-0006',
-            desc: 'MESA TEAM LEADER',
-            pv: '565',
-            cliente: 'EBAZAR GRU SP27',
-            empresa: 'DTEKT',
-            qtd: 8.0,
-            vtot: 8108.72,
-            frete: false,
-            local: 'Curitiba',
-            si: 1,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '30/09',
-            iso: '2026-09-30',
-            semana: '2026-W40',
-            codigo: '502-0001-12',
-            desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
-            pv: '565',
-            cliente: 'EBAZAR GRU SP27',
-            empresa: 'DTEKT',
-            qtd: 1.0,
-            vtot: 1800.0,
-            frete: true,
-            local: 'Curitiba',
-            si: 1,
-            siPlano: null,
-            prod: null,
-          },
-          {
             data: '02/10',
             iso: '2026-10-02',
             semana: '2026-W40',
@@ -4511,27 +4371,6 @@
             data: '06/10',
             iso: '2026-10-06',
             semana: '2026-W41',
-            codigo: 'ID02730',
-            desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
-            pv: '126',
-            cliente: 'SHOPEE GUARULHOS SP22',
-            empresa: 'SLEAN',
-            qtd: 60.0,
-            vtot: 49078.2,
-            frete: false,
-            local: 'Curitiba',
-            semanaErp: '2026-W41',
-            isoErp: '2026-10-06',
-            dataErp: '06/10',
-            rig: { iso: '2026-10-06', data: '06/10', cli: '', proj: 'GUARULHOS/SP', local: '' },
-            si: 2,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '06/10',
-            iso: '2026-10-06',
-            semana: '2026-W41',
             codigo: '416-0002',
             desc: 'SUPORTE DE FIXAÇÃO',
             pv: '2147',
@@ -4558,6 +4397,74 @@
             vtot: 1082.33,
             frete: false,
             local: 'Curitiba',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '06/10',
+            iso: '2026-10-06',
+            semana: '2026-W41',
+            codigo: '901-0031',
+            desc: 'PARAFUSO ALLEN CILÍNDRICO PRETO M6x1,0x25',
+            pv: '89',
+            cliente: 'HUBBELL',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 30.0,
+            vtot: 66.0,
+            frete: false,
+            local: 'Vinhedo',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '06/10',
+            iso: '2026-10-06',
+            semana: '2026-W41',
+            codigo: 'F-KG1RP',
+            desc: 'CONECTOR PARALELO DUPLO GIRATORIO DE 1 GIRO (FK1G) P/ REPINTAR',
+            pv: '89',
+            cliente: 'HUBBELL',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 60.0,
+            vtot: 270.0,
+            frete: false,
+            local: 'Vinhedo',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '06/10',
+            iso: '2026-10-06',
+            semana: '2026-W41',
+            codigo: 'J-140',
+            desc: 'BUCHA PLASTICA/ ROTATIVA',
+            pv: '89',
+            cliente: 'HUBBELL',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 30.0,
+            vtot: 105.0,
+            frete: false,
+            local: 'Vinhedo',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '06/10',
+            iso: '2026-10-06',
+            semana: '2026-W41',
+            codigo: 'TN06-WZ',
+            desc: 'PORCA T ZINCADA 06 MM',
+            pv: '89',
+            cliente: 'HUBBELL',
+            empresa: 'DLEAN FILIAL VINHEDO',
+            qtd: 30.0,
+            vtot: 54.0,
+            frete: false,
+            local: 'Vinhedo',
             si: 2,
             siPlano: null,
             prod: null,
@@ -5281,6 +5188,57 @@
             prod: null,
           },
           {
+            data: '09/10',
+            iso: '2026-10-09',
+            semana: '2026-W41',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '617',
+            cliente: 'EBAZAR JABOATÃO DOS GUARARAPES',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 43133.46,
+            frete: false,
+            local: 'Curitiba',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '09/10',
+            iso: '2026-10-09',
+            semana: '2026-W41',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '617',
+            cliente: 'EBAZAR JABOATÃO DOS GUARARAPES',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 11340.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '09/10',
+            iso: '2026-10-09',
+            semana: '2026-W41',
+            codigo: '504-0005-11',
+            desc: 'RECIFE-PE CARRETA - MERCADO LIVRE',
+            pv: '617',
+            cliente: 'EBAZAR JABOATÃO DOS GUARARAPES',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 37500.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 2,
+            siPlano: null,
+            prod: null,
+          },
+          {
             data: '15/10',
             iso: '2026-10-15',
             semana: '2026-W42',
@@ -5291,23 +5249,6 @@
             empresa: 'DLEAN',
             qtd: 2.0,
             vtot: 3585.28,
-            frete: false,
-            local: 'Curitiba',
-            si: 3,
-            siPlano: null,
-            prod: null,
-          },
-          {
-            data: '15/10',
-            iso: '2026-10-15',
-            semana: '2026-W42',
-            codigo: '403-0039',
-            desc: 'CARRINHO TRANSPORTE CAIXAS',
-            pv: '2152',
-            cliente: 'ROTO FERMAX',
-            empresa: 'DLEAN',
-            qtd: 1.0,
-            vtot: 2497.6,
             frete: false,
             local: 'Curitiba',
             si: 3,
@@ -5479,6 +5420,414 @@
             vtot: 1954.1,
             frete: false,
             local: 'Vinhedo',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '609',
+            cliente: 'EBAZAR GOIÂNIA SG01',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 43133.46,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '609',
+            cliente: 'EBAZAR GOIÂNIA SG01',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 11340.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '503-0002-11',
+            desc: 'GOIANIA-GO CARRETA - MERCADO LIVRE',
+            pv: '609',
+            cliente: 'EBAZAR GOIÂNIA SG01',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 22500.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '610',
+            cliente: 'EBAZAR SERRA ES',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 43133.46,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '610',
+            cliente: 'EBAZAR SERRA ES',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 11340.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '502-0004-11',
+            desc: 'VITORIA-ES CARRETA - MERCADO LIVRE',
+            pv: '610',
+            cliente: 'EBAZAR SERRA ES',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 20250.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '611',
+            cliente: 'EBAZAR BENEVIDES SPA1',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 43133.46,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '611',
+            cliente: 'EBAZAR BENEVIDES SPA1',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 11340.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '505-0002-11',
+            desc: 'BELEM-PA CARRETA - MERCADO LIVRE',
+            pv: '611',
+            cliente: 'EBAZAR BENEVIDES SPA1',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 49500.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '612',
+            cliente: 'EBAZAR MORRO DA FUMAÇA (CRICIUMA))',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '612',
+            cliente: 'EBAZAR MORRO DA FUMAÇA (CRICIUMA))',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '505-0002-11',
+            desc: 'BELEM-PA CARRETA - MERCADO LIVRE',
+            pv: '612',
+            cliente: 'EBAZAR MORRO DA FUMAÇA (CRICIUMA))',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 49500.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '613',
+            cliente: 'EBAZAR LONDRINA',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '613',
+            cliente: 'EBAZAR LONDRINA',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '501-0001-10',
+            desc: 'CURITIBA-PR TOCO/TRUCK - MERCADO LIVRE',
+            pv: '613',
+            cliente: 'EBAZAR LONDRINA',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 5700.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '614',
+            cliente: 'EBAZAR ITAITINGA SCE1',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 43133.46,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '614',
+            cliente: 'EBAZAR ITAITINGA SCE1',
+            empresa: 'DTEKT',
+            qtd: 3.0,
+            vtot: 11340.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '504-0009-11',
+            desc: 'FORTALEZA-CE CARRETA - MERCADO LIVRE',
+            pv: '614',
+            cliente: 'EBAZAR ITAITINGA SCE1',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 47700.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '615',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '615',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '501-0003-10',
+            desc: 'PORTO ALEGRE-RS TOCO/TRUCK - MERCADO LIVRE',
+            pv: '615',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 10830.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '616',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '616',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 3,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/10',
+            iso: '2026-10-16',
+            semana: '2026-W42',
+            codigo: '501-0003-10',
+            desc: 'PORTO ALEGRE-RS TOCO/TRUCK - MERCADO LIVRE',
+            pv: '616',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 10830.0,
+            frete: true,
+            local: 'Curitiba',
             si: 3,
             siPlano: null,
             prod: null,
@@ -6127,6 +6476,159 @@
             empresa: 'DTEKT',
             qtd: 1.0,
             vtot: 28905.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '618',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '618',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '501-0003-10',
+            desc: 'PORTO ALEGRE-RS TOCO/TRUCK - MERCADO LIVRE',
+            pv: '618',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 10830.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '619',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '619',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '501-0003-10',
+            desc: 'PORTO ALEGRE-RS TOCO/TRUCK - MERCADO LIVRE',
+            pv: '619',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 10830.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '620',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '620',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '501-0003-10',
+            desc: 'PORTO ALEGRE-RS TOCO/TRUCK - MERCADO LIVRE',
+            pv: '620',
+            cliente: 'EBAZAR PORTO ALEGRE',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 10830.0,
             frete: true,
             local: 'Curitiba',
             si: 4,
@@ -7052,6 +7554,74 @@
             prod: null,
           },
           {
+            data: '16/11',
+            iso: '2026-11-16',
+            semana: '2026-W47',
+            codigo: '502-0002-12',
+            desc: 'RIO DE JANEIRO-RJ VUC - MERCADO LIVRE',
+            pv: '603',
+            cliente: 'EBAZAR CAMPOS DO GOYCATAZES',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 6750.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 8,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/11',
+            iso: '2026-11-16',
+            semana: '2026-W47',
+            codigo: 'OUBP-0001',
+            desc: 'Bancada de Packing OUBP-0001',
+            pv: '603',
+            cliente: 'EBAZAR CAMPOS DO GOYCATAZES',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 2324.95,
+            frete: false,
+            local: 'Curitiba',
+            si: 8,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/11',
+            iso: '2026-11-16',
+            semana: '2026-W47',
+            codigo: '501-0001-10',
+            desc: 'CURITIBA-PR TOCO/TRUCK - MERCADO LIVRE',
+            pv: '608',
+            cliente: 'EBAZAR ARAUCARIA',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 5700.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 8,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '16/11',
+            iso: '2026-11-16',
+            semana: '2026-W47',
+            codigo: 'CR0001',
+            desc: 'CARRINHO DE TRANSPORTE MANUAL',
+            pv: '608',
+            cliente: 'EBAZAR ARAUCARIA',
+            empresa: 'DTEKT',
+            qtd: 13.0,
+            vtot: 87100.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 8,
+            siPlano: null,
+            prod: null,
+          },
+          {
             data: '17/11',
             iso: '2026-11-17',
             semana: '2026-W47',
@@ -7206,7 +7776,7 @@
           },
         ],
         progSemana: {
-          arquivo: 'artifacts/programacao_semana_corrente_20261001.xlsx',
+          arquivo: 'artifacts/programacao_semana_corrente_20261003.xlsx',
           dias: [
             {
               dia: 'Terça',
@@ -7311,11 +7881,11 @@
               data: '23/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 6.0,
-              pv: '510',
-              cli: 'EBAZAR MAUA',
+              qtd: 10.0,
+              pv: '475',
+              cli: 'EBAZAR ITAQUERA',
               emp: 'DTEKT',
-              vtot: 17988.0,
+              vtot: 29980.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
               local: 'Curitiba',
@@ -7325,13 +7895,27 @@
               data: '23/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 7.0,
-              pv: '475',
-              cli: 'EBAZAR ITAQUERA',
+              qtd: 2.0,
+              pv: '505',
+              cli: 'EBAZAR CAÇAPAVA',
               emp: 'DTEKT',
-              vtot: 20986.0,
+              vtot: 5996.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '25/09',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quarta',
+              data: '23/09',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 1.0,
+              pv: '515',
+              cli: 'EBAZAR ESTRELA',
+              emp: 'DTEKT',
+              vtot: 2998.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: '28/09',
               local: 'Curitiba',
             },
             {
@@ -7409,39 +7993,11 @@
               data: '24/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 3.0,
-              pv: '475',
-              cli: 'EBAZAR ITAQUERA',
-              emp: 'DTEKT',
-              vtot: 8994.0,
-              sit: 'ATRASADO (recuperação)',
-              cheg: '26/09',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Quinta',
-              data: '24/09',
-              cod: '404-0001',
-              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 2.0,
-              pv: '505',
-              cli: 'EBAZAR CAÇAPAVA',
-              emp: 'DTEKT',
-              vtot: 5996.0,
-              sit: 'ATRASADO (recuperação)',
-              cheg: '26/09',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Quinta',
-              data: '24/09',
-              cod: '404-0001',
-              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 17.0,
+              qtd: 16.0,
               pv: '515',
               cli: 'EBAZAR ESTRELA',
               emp: 'DTEKT',
-              vtot: 50966.0,
+              vtot: 47968.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '28/09',
               local: 'Curitiba',
@@ -7465,11 +8021,11 @@
               data: '24/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 1.0,
+              qtd: 7.0,
               pv: '484',
               cli: 'EBAZAR SBC',
               emp: 'DTEKT',
-              vtot: 2998.0,
+              vtot: 20986.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '26/09',
               local: 'Curitiba',
@@ -7521,11 +8077,11 @@
               data: '29/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 19.0,
+              qtd: 13.0,
               pv: '484',
               cli: 'EBAZAR SBC',
               emp: 'DTEKT',
-              vtot: 56962.0,
+              vtot: 38974.0,
               sit: 'ATRASADO (recuperação)',
               cheg: '01/10',
               local: 'Curitiba',
@@ -7535,13 +8091,27 @@
               data: '29/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 21.0,
+              qtd: 25.0,
               pv: '504',
               cli: 'EBAZAR SUZANO',
               emp: 'DTEKT',
-              vtot: 62958.0,
+              vtot: 74950.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'entrega 10/09 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '29/09',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 2.0,
+              pv: '509',
+              cli: 'EBAZAR PELOTAS',
+              emp: 'DTEKT',
+              vtot: 5996.0,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'entrega 14/09 · cidade fora da tabela de trânsito',
               local: 'Curitiba',
             },
             {
@@ -7563,25 +8133,11 @@
               data: '30/09',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 4.0,
-              pv: '504',
-              cli: 'EBAZAR SUZANO',
-              emp: 'DTEKT',
-              vtot: 11992.0,
-              sit: 'ATRASADO (recuperação)',
-              cheg: 'entrega 10/09 · cidade fora da tabela de trânsito',
-              local: 'Curitiba',
-            },
-            {
-              dia: 'Quarta',
-              data: '30/09',
-              cod: '404-0001',
-              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 11.0,
+              qtd: 15.0,
               pv: '509',
               cli: 'EBAZAR PELOTAS',
               emp: 'DTEKT',
-              vtot: 32978.0,
+              vtot: 44970.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'entrega 14/09 · cidade fora da tabela de trânsito',
               local: 'Curitiba',
@@ -7591,11 +8147,11 @@
               data: '01/10',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 9.0,
+              qtd: 3.0,
               pv: '509',
               cli: 'EBAZAR PELOTAS',
               emp: 'DTEKT',
-              vtot: 26982.0,
+              vtot: 8994.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'entrega 14/09 · cidade fora da tabela de trânsito',
               local: 'Curitiba',
@@ -7605,11 +8161,11 @@
               data: '01/10',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 6.0,
+              qtd: 12.0,
               pv: '522',
               cli: 'EBAZAR BAURU',
               emp: 'DTEKT',
-              vtot: 17988.0,
+              vtot: 35976.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'entrega 15/09 · cidade fora da tabela de trânsito',
               local: 'Curitiba',
@@ -7647,11 +8203,11 @@
               data: '02/10',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 14.0,
+              qtd: 8.0,
               pv: '522',
               cli: 'EBAZAR BAURU',
               emp: 'DTEKT',
-              vtot: 41972.0,
+              vtot: 23984.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'entrega 15/09 · cidade fora da tabela de trânsito',
               local: 'Curitiba',
@@ -7661,13 +8217,27 @@
               data: '02/10',
               cod: '404-0001',
               desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-              qtd: 9.0,
+              qtd: 10.0,
               pv: '556',
               cli: 'EBAZAR TEOFILO OTONI',
               emp: 'DTEKT',
-              vtot: 26982.0,
+              vtot: 29980.0,
               sit: 'ATRASADO (recuperação)',
               cheg: 'entrega 26/09 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Sexta',
+              data: '02/10',
+              cod: '404-0001',
+              desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+              qtd: 5.0,
+              pv: '2155',
+              cli: 'MELI RECIFE 3 H&B SPE3',
+              emp: 'DLEAN',
+              vtot: 14990.0,
+              sit: 'em dia (2026-W41)',
+              cheg: '09/10',
               local: 'Curitiba',
             },
             {
@@ -7682,20 +8252,6 @@
               vtot: 8442.84,
               sit: 'em dia (2026-W44)',
               cheg: '06/10',
-              local: 'Vinhedo',
-            },
-            {
-              dia: 'Quinta',
-              data: '01/10',
-              cod: 'ID02730',
-              desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
-              qtd: 60.0,
-              pv: '126',
-              cli: 'SHOPEE GUARULHOS SP22',
-              emp: 'SLEAN',
-              vtot: 49078.2,
-              sit: 'em dia (2026-W41)',
-              cheg: '03/10',
               local: 'Vinhedo',
             },
             {
@@ -8484,65 +9040,9 @@
           },
         ],
         nfBaixadas: {
-          gerado: '2026-10-01T17:28:30.031785',
-          janela: ['2026-09-21', '2026-10-01'],
+          gerado: '2026-10-03T19:40:44.548513',
+          janela: ['2026-09-23', '2026-10-03'],
           nfs: [
-            {
-              nf: '785',
-              data: '2026-09-21',
-              emp: 'DTEKT',
-              itens: [
-                {
-                  pv: '527',
-                  cod: 'OUPH-0003',
-                  desc: 'ESTAÇÃO MODULAR COM NICHOS DE MDF E DIVISÓRIAS METALICAS - OUPH-0003',
-                  qtd: 8.0,
-                },
-                {
-                  pv: '527',
-                  cod: '504-0001-11',
-                  desc: 'SALVADOR-BA CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-                { pv: '527', cod: 'OUPW-0007', desc: 'Carrinho p/ PTW CPG 3.0', qtd: 11.0 },
-              ],
-            },
-            {
-              nf: '787',
-              data: '2026-09-22',
-              emp: 'DTEKT',
-              itens: [
-                { pv: '445', cod: 'CR0001', desc: 'CARRINHO DE TRANSPORTE MANUAL', qtd: 18.0 },
-                {
-                  pv: '445',
-                  cod: '504-0001-11',
-                  desc: 'SALVADOR-BA CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
-            {
-              nf: '788',
-              data: '2026-09-22',
-              emp: 'DTEKT',
-              itens: [
-                { pv: '446', cod: 'CR0001', desc: 'CARRINHO DE TRANSPORTE MANUAL', qtd: 2.0 },
-              ],
-            },
-            {
-              nf: '789',
-              data: '2026-09-22',
-              emp: 'DTEKT',
-              itens: [
-                { pv: '537', cod: 'AXDC-0001', desc: 'Mesa para Impressoras', qtd: 75.0 },
-                {
-                  pv: '537',
-                  cod: '502-0001-10',
-                  desc: 'SÃO PAULO-SP TOCO/TRUCK - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
             {
               nf: '790',
               data: '2026-09-24',
@@ -8936,16 +9436,89 @@
                 },
               ],
             },
+            {
+              nf: '812',
+              data: '2026-10-02',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '564', cod: '412-0006', desc: 'MESA TEAM LEADER', qtd: 8.0 },
+                {
+                  pv: '564',
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '813',
+              data: '2026-10-02',
+              emp: 'DTEKT',
+              itens: [
+                {
+                  pv: '510',
+                  cod: '404-0001',
+                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+                  qtd: 6.0,
+                },
+                {
+                  pv: '510',
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '814',
+              data: '2026-10-02',
+              emp: 'DTEKT',
+              itens: [
+                { pv: '565', cod: '412-0006', desc: 'MESA TEAM LEADER', qtd: 8.0 },
+                {
+                  pv: '565',
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                },
+              ],
+            },
+            {
+              nf: '209',
+              data: '2026-10-02',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '121',
+                  cod: 'ID02730',
+                  desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+                  qtd: 20.0,
+                },
+              ],
+            },
+            {
+              nf: '210',
+              data: '2026-10-02',
+              emp: 'SLEAN',
+              itens: [
+                {
+                  pv: '126',
+                  cod: 'ID02730',
+                  desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+                  qtd: 60.0,
+                },
+              ],
+            },
           ],
-          nfCount: 31,
+          nfCount: 32,
         },
         nfFat: {
           mesLabel: '10/2026',
           ano: 2026,
-          hoje: '2026-10-01',
+          hoje: '2026-10-03',
           daily: [
             { label: '01/10', qtd: 3, valor: 4442.0 },
-            { label: '02/10', qtd: 0, valor: 0 },
+            { label: '02/10', qtd: 5, valor: 105043.04 },
             { label: '03/10', qtd: 0, valor: 0 },
             { label: '04/10', qtd: 0, valor: 0 },
             { label: '05/10', qtd: 0, valor: 0 },
@@ -8986,17 +9559,115 @@
             { label: '07/2026', qtd: 53, valor: 1304171.73 },
             { label: '08/2026', qtd: 56, valor: 2210976.43 },
             { label: '09/2026', qtd: 80, valor: 4057907.49 },
-            { label: '10/2026', qtd: 3, valor: 4442.0 },
+            { label: '10/2026', qtd: 8, valor: 109485.04 },
           ],
-          mesQtd: 3,
-          mesValor: 4442.0,
-          anoQtd: 381,
-          anoValor: 11708235.63,
-          mesDiasUteis: 1,
-          anoDiasUteis: 196,
-          mediaDiaUtilMes: 4442,
-          mediaDiaUtilAno: 59736,
+          mesQtd: 8,
+          mesValor: 109485.04,
+          anoQtd: 386,
+          anoValor: 11813278.67,
+          mesDiasUteis: 2,
+          anoDiasUteis: 197,
+          mediaDiaUtilMes: 54743,
+          mediaDiaUtilAno: 59966,
           nfs: [
+            {
+              nf: '812',
+              data: '2026-10-02',
+              emp: 'DTEKT',
+              cliente: 'EBAZAR SBC SP38',
+              cidade: 'São Bernardo do Campo',
+              uf: 'SP',
+              op: 'Venda de produção do estabelecimento',
+              valor: 9908.72,
+              itens: [
+                { cod: '412-0006', desc: 'MESA TEAM LEADER', qtd: 8.0, valor: 8108.72 },
+                {
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                  valor: 1800.0,
+                },
+              ],
+            },
+            {
+              nf: '813',
+              data: '2026-10-02',
+              emp: 'DTEKT',
+              cliente: 'EBAZAR MAUA',
+              cidade: 'Mauá',
+              uf: 'SP',
+              op: 'Venda de produção do estabelecimento',
+              valor: 19788.0,
+              itens: [
+                {
+                  cod: '404-0001',
+                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 2000x800 - BERENICE',
+                  qtd: 6.0,
+                  valor: 17988.0,
+                },
+                {
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                  valor: 1800.0,
+                },
+              ],
+            },
+            {
+              nf: '814',
+              data: '2026-10-02',
+              emp: 'DTEKT',
+              cliente: 'EBAZAR GRU SP27',
+              cidade: 'Guarulhos',
+              uf: 'SP',
+              op: 'Venda de produção do estabelecimento',
+              valor: 9908.72,
+              itens: [
+                { cod: '412-0006', desc: 'MESA TEAM LEADER', qtd: 8.0, valor: 8108.72 },
+                {
+                  cod: '502-0001-12',
+                  desc: 'SÃO PAULO-SP VUC - MERCADO LIVRE',
+                  qtd: 1.0,
+                  valor: 1800.0,
+                },
+              ],
+            },
+            {
+              nf: '209',
+              data: '2026-10-02',
+              emp: 'SLEAN',
+              cliente: 'SHOPEE F DA ROCHA SP09',
+              cidade: 'Franco da Rocha',
+              uf: 'SP',
+              op: 'Venda de produção do estabelecimento',
+              valor: 16359.4,
+              itens: [
+                {
+                  cod: 'ID02730',
+                  desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+                  qtd: 20.0,
+                  valor: 16359.4,
+                },
+              ],
+            },
+            {
+              nf: '210',
+              data: '2026-10-02',
+              emp: 'SLEAN',
+              cliente: 'SHOPEE GUARULHOS SP22',
+              cidade: 'Guarulhos',
+              uf: 'SP',
+              op: 'Venda de produção do estabelecimento',
+              valor: 49078.2,
+              itens: [
+                {
+                  cod: 'ID02730',
+                  desc: 'SUPORTE PARA TOTE - ESTEIRA BOXING',
+                  qtd: 60.0,
+                  valor: 49078.2,
+                },
+              ],
+            },
             {
               nf: '112',
               data: '2026-10-01',
@@ -20148,7 +20819,7 @@
           series: [
             {
               type: 'line',
-              smooth: false,
+              smooth: true,
               symbol: 'none',
               data: nf.daily.map(function (d) {
                 return d.valor
@@ -20160,87 +20831,22 @@
         })
 
         // ---------- CHARTS ----------
-        function calcLinearTrend(data) {
-          var n = data.length
-          if (n < 2) return data.slice()
-          var sumX = 0,
-            sumY = 0,
-            sumXY = 0,
-            sumXX = 0
-          for (var i = 0; i < n; i++) {
-            var y = Number(data[i]) || 0
-            sumX += i
-            sumY += y
-            sumXY += i * y
-            sumXX += i * i
-          }
-          var denom = n * sumXX - sumX * sumX
-          if (denom === 0) return data.slice()
-          var slope = (n * sumXY - sumX * sumY) / denom
-          var intercept = (sumY - slope * sumX) / n
-          var res = []
-          for (var j = 0; j < n; j++) {
-            res.push(Math.round(slope * j + intercept))
-          }
-          return res
-        }
-
-        var diaValores = nf.daily.map(function (d) {
-          return d.valor
-        })
-        var diaTrend = calcLinearTrend(diaValores)
-        // Média dos períodos decorridos: considera apenas períodos que já passaram / têm dados (> 0)
-        var diaValoresDecorridos = diaValores.filter(function (v) {
-          return Number(v) > 0
-        })
-        var diaMedia = diaValoresDecorridos.length
-          ? diaValoresDecorridos.reduce(function (a, b) {
-              return a + b
-            }, 0) / diaValoresDecorridos.length
-          : 0
-
-        var mesValores = nf.monthly.map(function (m) {
-          return m.valor
-        })
-        var mesTrend = calcLinearTrend(mesValores)
-        var mesValoresDecorridos = mesValores.filter(function (v) {
-          return Number(v) > 0
-        })
-        var mesMedia = mesValoresDecorridos.length
-          ? mesValoresDecorridos.reduce(function (a, b) {
-              return a + b
-            }, 0) / mesValoresDecorridos.length
-          : 0
-
         document.getElementById('nfMesLbl').textContent = nf.mesLabel
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
         const c1 = echarts.init(document.getElementById('chNfDia'))
         c1.setOption({
-          grid: { left: 66, right: 24, top: 26, bottom: 60 },
+          grid: { left: 66, right: 56, top: 26, bottom: 60 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
-              if (!ps || !ps.length) return ''
-              var idx = ps[0].dataIndex
-              var d = (nf.daily && nf.daily[idx]) || { label: '', valor: 0, qtd: 0 }
-              var t = diaTrend && diaTrend[idx]
-              return (
-                d.label +
-                '<br/>' +
-                F0.format(d.valor) +
-                ' · ' +
-                d.qtd +
-                ' NFs' +
-                (t !== undefined
-                  ? '<br/><span style="color:#16a34a">Tendência: ' + F0.format(t) + '</span>'
-                  : '')
-              )
+              var d = nf.daily[ps[0].dataIndex]
+              return d.label + '<br/>' + F0.format(d.valor) + ' · ' + d.qtd + ' NFs'
             },
           },
           xAxis: {
             type: 'category',
-            data: (nf.daily || []).map(function (d) {
+            data: nf.daily.map(function (d) {
               return d.label
             }),
             axisLabel: { rotate: 45, fontSize: 10 },
@@ -20256,70 +20862,45 @@
               },
               splitLine: { lineStyle: { color: '#eef2f7' } },
             },
+            { type: 'value', name: 'NFs', minInterval: 1, splitLine: { show: false } },
           ],
           series: [
             {
               name: 'Valor',
               type: 'bar',
-              data: diaValores,
+              data: nf.daily.map(function (d) {
+                return d.valor
+              }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
-              markLine: {
-                silent: true,
-                symbol: ['none', 'none'],
-                lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
-                data: [
-                  {
-                    type: 'average',
-                    name: 'Média',
-                    label: {
-                      show: true,
-                      position: 'insideEndTop',
-                      formatter: 'Média ' + F0.format(diaMedia),
-                      color: '#16a34a',
-                      fontSize: 11,
-                    },
-                  },
-                ],
-              },
             },
             {
-              name: 'Tendência',
+              name: 'NFs',
               type: 'line',
-              smooth: false,
-              symbol: 'none',
-              data: diaTrend,
-              lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
-              silent: true,
-              tooltip: { show: false },
+              yAxisIndex: 1,
+              smooth: true,
+              symbol: 'circle',
+              symbolSize: 5,
+              data: nf.daily.map(function (d) {
+                return d.qtd
+              }),
+              itemStyle: { color: '#16a34a' },
+              lineStyle: { color: '#16a34a', width: 2 },
             },
           ],
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
         c2.setOption({
-          grid: { left: 66, right: 24, top: 26, bottom: 40 },
+          grid: { left: 66, right: 56, top: 26, bottom: 40 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
-              if (!ps || !ps.length) return ''
-              var idx = ps[0].dataIndex
-              var d = (nf.monthly && nf.monthly[idx]) || { label: '', valor: 0, qtd: 0 }
-              var t = mesTrend && mesTrend[idx]
-              return (
-                d.label +
-                '<br/><b>' +
-                F0.format(d.valor) +
-                '</b> · ' +
-                d.qtd +
-                ' NFs' +
-                (t !== undefined
-                  ? '<br/><span style="color:#16a34a">Tendência: ' + F0.format(t) + '</span>'
-                  : '')
-              )
+              var d = nf.monthly[ps[0].dataIndex]
+              return d.label + '<br/>' + F0.format(d.valor) + ' · ' + d.qtd + ' NFs'
             },
           },
           xAxis: {
             type: 'category',
-            data: (nf.monthly || []).map(function (m) {
+            data: nf.monthly.map(function (m) {
               return m.label
             }),
           },
@@ -20334,45 +20915,34 @@
               },
               splitLine: { lineStyle: { color: '#eef2f7' } },
             },
+            { type: 'value', name: 'NFs', minInterval: 1, splitLine: { show: false } },
           ],
           series: [
             {
               name: 'Valor',
               type: 'bar',
-              data: mesValores,
+              data: nf.monthly.map(function (m) {
+                return m.valor
+              }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
-              markLine: {
-                silent: true,
-                symbol: ['none', 'none'],
-                lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
-                data: [
-                  {
-                    type: 'average',
-                    name: 'Média',
-                    label: {
-                      show: true,
-                      position: 'insideEndTop',
-                      formatter: 'Média ' + F0.format(mesMedia),
-                      color: '#16a34a',
-                      fontSize: 11,
-                    },
-                  },
-                ],
-              },
             },
             {
-              name: 'Tendência',
+              name: 'NFs',
               type: 'line',
-              smooth: false,
-              symbol: 'none',
-              data: mesTrend,
-              lineStyle: { color: '#16a34a', width: 1.5, type: 'dashed' },
-              silent: true,
-              tooltip: { show: false },
+              yAxisIndex: 1,
+              smooth: true,
+              symbol: 'circle',
+              symbolSize: 6,
+              data: nf.monthly.map(function (m) {
+                return m.qtd
+              }),
+              itemStyle: { color: '#16a34a' },
+              lineStyle: { color: '#16a34a', width: 2 },
             },
           ],
         })
         window._nfCharts = [sp, c1, c2]
+
         // ---------- TABELA (filtros + ordenação + paginação + drill-down) ----------
         const state =
           window._nfState ||
