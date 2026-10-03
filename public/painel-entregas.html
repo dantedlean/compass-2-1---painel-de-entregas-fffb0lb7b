@@ -20809,7 +20809,13 @@
                     )
                   : 0,
                 mediaDuAno: Math.round(anoValor / curM),
-                medianaMes: Math.round(mediana(mesDuVals)),
+                medianaMes: Math.round(
+                  mediana(
+                    mesDuVals.filter(function (v) {
+                      return v > 0
+                    }),
+                  ),
+                ), // mediana diária: só dias úteis que FATURARAM
                 medianaAno: Math.round(mediana(anoMesVals)),
                 nfs: liveNfs,
               }
@@ -20916,8 +20922,32 @@
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
         const c1 = echarts.init(document.getElementById('chNfDia'))
+        function mkLbl(nome, cor, val) {
+          return {
+            name: nome,
+            type: 'line',
+            data: nf.daily.map(function () {
+              return val
+            }),
+            symbol: 'none',
+            lineStyle: { color: cor, width: 2, type: 'dashed' },
+            itemStyle: { color: cor },
+            tooltip: { show: false },
+            endLabel: {
+              show: true,
+              formatter: nome + ' ' + F0.format(val),
+              color: cor,
+              fontSize: 11,
+              fontWeight: 'bold',
+              backgroundColor: 'rgba(255,255,255,.85)',
+              padding: [2, 4],
+              borderRadius: 3,
+              distance: 4,
+            },
+          }
+        }
         c1.setOption({
-          grid: { left: 66, right: 56, top: 26, bottom: 60 },
+          grid: { left: 66, right: 150, top: 26, bottom: 60 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -20943,7 +20973,6 @@
               },
               splitLine: { lineStyle: { color: '#eef2f7' } },
             },
-            { type: 'value', name: 'NFs', minInterval: 1, splitLine: { show: false } },
           ],
           series: [
             {
@@ -20954,46 +20983,17 @@
               }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
             },
-            {
-              name: 'NFs',
-              type: 'line',
-              yAxisIndex: 1,
-              smooth: true,
-              symbol: 'circle',
-              symbolSize: 5,
-              data: nf.daily.map(function (d) {
-                return d.qtd
-              }),
-              itemStyle: { color: '#16a34a' },
-              lineStyle: { color: '#16a34a', width: 2 },
-            },
-            {
-              name: 'Média/dia útil',
-              type: 'line',
-              data: nf.daily.map(function () {
-                return nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes
-              }),
-              symbol: 'none',
-              lineStyle: { color: '#f59e0b', width: 2, type: 'dashed' },
-              itemStyle: { color: '#f59e0b' },
-              tooltip: { show: false },
-            },
-            {
-              name: 'Mediana/dia útil',
-              type: 'line',
-              data: nf.daily.map(function () {
-                return nf.medianaMes !== undefined ? nf.medianaMes : 0
-              }),
-              symbol: 'none',
-              lineStyle: { color: '#dc2626', width: 2, type: 'dotted' },
-              itemStyle: { color: '#dc2626' },
-              tooltip: { show: false },
-            },
+            mkLbl(
+              'Média/dia útil',
+              '#f59e0b',
+              nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes,
+            ),
+            mkLbl('Mediana', '#dc2626', nf.medianaMes !== undefined ? nf.medianaMes : 0),
           ],
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
         c2.setOption({
-          grid: { left: 66, right: 56, top: 26, bottom: 40 },
+          grid: { left: 66, right: 150, top: 26, bottom: 40 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -21018,7 +21018,6 @@
               },
               splitLine: { lineStyle: { color: '#eef2f7' } },
             },
-            { type: 'value', name: 'NFs', minInterval: 1, splitLine: { show: false } },
           ],
           series: [
             {
@@ -21029,41 +21028,12 @@
               }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
             },
-            {
-              name: 'NFs',
-              type: 'line',
-              yAxisIndex: 1,
-              smooth: true,
-              symbol: 'circle',
-              symbolSize: 6,
-              data: nf.monthly.map(function (m) {
-                return m.qtd
-              }),
-              itemStyle: { color: '#16a34a' },
-              lineStyle: { color: '#16a34a', width: 2 },
-            },
-            {
-              name: 'Média/dia útil',
-              type: 'line',
-              data: nf.monthly.map(function () {
-                return nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
-              }),
-              symbol: 'none',
-              lineStyle: { color: '#f59e0b', width: 2, type: 'dashed' },
-              itemStyle: { color: '#f59e0b' },
-              tooltip: { show: false },
-            },
-            {
-              name: 'Mediana/dia útil',
-              type: 'line',
-              data: nf.monthly.map(function () {
-                return nf.medianaAno !== undefined ? nf.medianaAno : 0
-              }),
-              symbol: 'none',
-              lineStyle: { color: '#dc2626', width: 2, type: 'dotted' },
-              itemStyle: { color: '#dc2626' },
-              tooltip: { show: false },
-            },
+            mkLbl(
+              'Média/mês',
+              '#f59e0b',
+              nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno,
+            ),
+            mkLbl('Mediana', '#dc2626', nf.medianaAno !== undefined ? nf.medianaAno : 0),
           ],
         })
         window._nfCharts = [sp, c1, c2]
