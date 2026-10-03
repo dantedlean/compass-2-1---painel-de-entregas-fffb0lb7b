@@ -9570,12 +9570,12 @@
           anoQtd: 386,
           anoValor: 11813278.67,
           mesDiasUteis: 2,
-          anoDiasUteis: 197,
+          anoDiasUteis: 190,
           mediaDiaUtilMes: 54743,
-          mediaDiaUtilAno: 59966,
-          mediaDuMes: 4977,
+          mediaDiaUtilAno: 62175,
+          mediaDuMes: 54743,
           mediaDuAno: 1181328,
-          medianaMes: 0,
+          medianaMes: 54743,
           medianaAno: 801290,
           nfs: [
             {
@@ -20721,8 +20721,46 @@
                 curY + '-01-01',
                 new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10),
               )
-              // Média e mediana (decisão Dante 03/10): gráfico diário = por dia útil do mês (dias úteis sem NF contam R$ 0);
-              // gráfico mensal = por mês do ano.
+              // Média e mediana por DIA ÚTIL JÁ PASSADO (regra Dante 03/10): sem sáb/dom/feriados;
+              // dias e meses futuros ficam FORA do cálculo.
+              function feriados(ano) {
+                var f = {}
+                ;[
+                  [1, 1],
+                  [4, 21],
+                  [5, 1],
+                  [9, 7],
+                  [10, 12],
+                  [11, 2],
+                  [11, 15],
+                  [12, 25],
+                ].forEach(function (p) {
+                  f[ano + '-' + ('0' + p[0]).slice(-2) + '-' + ('0' + p[1]).slice(-2)] = 1
+                })
+                // Páscoa (Gauss)
+                var a = ano % 19,
+                  b = Math.floor(ano / 100),
+                  c = ano % 100
+                var d = Math.floor(b / 4),
+                  e = b % 4,
+                  g = Math.floor((b - Math.floor((b + 8) / 25) + 1) / 3)
+                var h = (19 * a + b - d - g + 15) % 30,
+                  i = Math.floor(c / 4),
+                  k = c % 4
+                var l = (32 + 2 * e + 2 * i - h - k) % 7,
+                  m = Math.floor((a + 11 * h + 22 * l) / 451)
+                var mp = Math.floor((h + l - 7 * m + 114) / 31),
+                  dp = ((h + l - 7 * m + 114) % 31) + 1
+                var pas = new Date(Date.UTC(ano, mp - 1, dp))
+                function iso(dt) {
+                  return dt.toISOString().slice(0, 10)
+                }
+                f[iso(new Date(pas.getTime() - 47 * 86400000))] = 1 // Carnaval
+                f[iso(new Date(pas.getTime() - 2 * 86400000))] = 1 // Sexta-feira Santa
+                f[iso(new Date(pas.getTime() + 60 * 86400000))] = 1 // Corpus Christi
+                return f
+              }
+              var FER = feriados(curY)
               function mediana(vals) {
                 if (!vals.length) return 0
                 var s2 = vals.slice().sort(function (a, b) {
@@ -20731,22 +20769,28 @@
                 var n = s2.length
                 return n % 2 ? s2[(n - 1) / 2] : (s2[n / 2 - 1] + s2[n / 2]) / 2
               }
+              var hojeIso = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10)
               var mesDuVals = []
               for (var dd2 = 1; dd2 <= lastDay; dd2++) {
                 var k3 = curY + '-' + ('0' + curM).slice(-2) + '-' + ('0' + dd2).slice(-2)
+                if (k3 > hojeIso) continue // futuro não entra
                 var wd = new Date(Date.UTC(curY, curM - 1, dd2)).getUTCDay()
-                if (wd > 0 && wd < 6) mesDuVals.push((daily[k3] || { v: 0 }).v)
+                if (wd > 0 && wd < 6 && !FER[k3]) mesDuVals.push((daily[k3] || { v: 0 }).v)
               }
-              var anoMesVals = monthly_series.map(function (m) {
-                return m.valor
-              })
+              var anoMesVals = monthly_series
+                .filter(function (m) {
+                  return +m.label.slice(0, 2) <= curM
+                })
+                .map(function (m) {
+                  return m.valor
+                })
               var liveNfs = live.nfs.slice().sort(function (a, b) {
                 return String(b.data).localeCompare(String(a.data))
               })
               var liveData = {
                 mesLabel: ('0' + curM).slice(-2) + '/' + curY,
                 ano: curY,
-                hoje: new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10),
+                hoje: hojeIso,
                 daily: daily_series,
                 monthly: monthly_series,
                 mesQtd: mesQtd,
@@ -21030,11 +21074,11 @@
           var aMedia = nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
           var aMed = nf.medianaAno !== undefined ? nf.medianaAno : 0
           nfFoot.innerHTML =
-            '<b>Como calculamos:</b> média/dia útil = soma do valor faturado ÷ dias úteis do período (dias úteis sem NF contam R$ 0) — mês ' +
+            '<b>Como calculamos:</b> média/dia útil = soma do valor faturado ÷ dias úteis JÁ PASSADOS do período (sem sábados, domingos e feriados; dias e meses futuros não entram) — mês ' +
             F0.format(mMedia) +
             ' · ano ' +
             F0.format(aMedia) +
-            '. Mediana/dia útil = valor central entre os dias úteis ordenados (metade dos dias acima, metade abaixo) — mês ' +
+            '. Mediana = valor central entre os períodos já passados ordenados — mês ' +
             F0.format(mMed) +
             ' · ano ' +
             F0.format(aMed) +
