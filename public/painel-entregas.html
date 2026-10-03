@@ -430,7 +430,7 @@
           <h1>
             Entregas por Semana — Produto × PV
             <span style="font-size: 13px; font-weight: 600; opacity: 0.85; margin-left: 6px"
-              >v0.0.99</span
+              >v0.1.00</span
             >
           </h1>
           <div class="sub">
@@ -444,7 +444,7 @@
           class="badge"
           id="badgeVer"
           style="background: #1e3a8a; color: #fff; border: none; font-weight: 700"
-          >v0.0.99</span
+          >v0.1.00</span
         >
         <span class="badge" id="badgeRows"></span>
         <span class="badge" id="badgePvs"></span>
@@ -734,9 +734,9 @@
         </div>
       </main>
       <footer>
-        Faturamento · método Compass v0.0.99: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) ·
+        Faturamento · método Compass v0.1.00: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) ·
         valor = valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.0.99
+        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.00
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -1207,8 +1207,8 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean v0.0.99 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx
-        · dados: MaxiProd (data de entrega por item) · v0.0.99
+        FRIDA · Dlean v0.1.00 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx
+        · dados: MaxiProd (data de entrega por item) · v0.1.00
       </footer>
     </div>
 
@@ -1321,9 +1321,9 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar v0.0.99 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
+        Carteira a Faturar v0.1.00 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
         entrega no nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.0.99
+        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.00
       </footer>
     </div>
 
@@ -20210,17 +20210,30 @@
         document.getElementById('nfTblAno').textContent = nf.ano
         const c1 = echarts.init(document.getElementById('chNfDia'))
         c1.setOption({
-          grid: { left: 66, right: 56, top: 26, bottom: 60 },
+          grid: { left: 66, right: 24, top: 26, bottom: 60 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
-              var d = nf.daily[ps[0].dataIndex]
-              return d.label + '<br/>' + F0.format(d.valor) + ' · ' + d.qtd + ' NFs'
+              if (!ps || !ps.length) return ''
+              var idx = ps[0].dataIndex
+              var d = (nf.daily && nf.daily[idx]) || { label: '', valor: 0, qtd: 0 }
+              var t = diaTrend && diaTrend[idx]
+              return (
+                d.label +
+                '<br/>' +
+                F0.format(d.valor) +
+                ' · ' +
+                d.qtd +
+                ' NFs' +
+                (t !== undefined
+                  ? '<br/><span style="color:#16a34a">Tendência: ' + F0.format(t) + '</span>'
+                  : '')
+              )
             },
           },
           xAxis: {
             type: 'category',
-            data: nf.daily.map(function (d) {
+            data: (nf.daily || []).map(function (d) {
               return d.label
             }),
             axisLabel: { rotate: 45, fontSize: 10 },
@@ -20237,67 +20250,53 @@
               splitLine: { lineStyle: { color: '#eef2f7' } },
             },
           ],
-          series: (function () {
-            var vals = nf.daily.map(function (d) {
-              return d.valor
-            })
-            var n = vals.length,
-              sx = 0,
-              sy = 0,
-              sxy = 0,
-              sxx = 0,
-              i
-            for (i = 0; i < n; i++) {
-              sx += i
-              sy += vals[i]
-              sxy += i * vals[i]
-              sxx += i * i
-            }
-            var slope = n ? (n * sxy - sx * sy) / (n * sxx - sx * sx || 1) : 0
-            var inter = n ? (sy - slope * sx) / n : 0
-            var avg = n ? sy / n : 0
-            return [
-              {
-                name: 'Valor',
-                type: 'bar',
-                data: vals,
-                itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
-                markLine: {
-                  symbol: 'none',
-                  silent: true,
-                  lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
-                  label: {
-                    show: true,
-                    position: 'insideEndTop',
-                    formatter: 'Média ' + F0.format(avg),
-                  },
-                  data: [{ type: 'average', name: 'Média' }],
-                },
-              },
-              {
-                name: 'Tendência',
-                type: 'line',
-                smooth: false,
-                symbol: 'none',
-                data: vals.map(function (_, i) {
-                  return inter + slope * i
-                }),
-                lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
+          series: [
+            {
+              name: 'Valor',
+              type: 'bar',
+              data: diaValores,
+              itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
+              markLine: {
                 silent: true,
-                tooltip: { show: false },
+                symbol: ['none', 'none'],
+                lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
+                data: [
+                  {
+                    type: 'average',
+                    name: 'Média',
+                    label: {
+                      show: true,
+                      position: 'insideEndTop',
+                      formatter: 'Média ' + F0.format(diaMedia),
+                      color: '#16a34a',
+                      fontSize: 11,
+                    },
+                  },
+                ],
               },
-            ]
-          })(),
+            },
+            {
+              name: 'Tendência',
+              type: 'line',
+              smooth: false,
+              symbol: 'none',
+              data: diaTrend,
+              lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
+              silent: true,
+              tooltip: { show: false },
+            },
+          ],
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
         c2.setOption({
-          grid: { left: 66, right: 56, top: 26, bottom: 40 },
+          grid: { left: 66, right: 24, top: 26, bottom: 40 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
+              if (!ps || !ps.length) return ''
               var idx = ps[0].dataIndex
-              var d = nf.monthly[idx]
-              var t = mesTrend[idx]
+              var d = (nf.monthly && nf.monthly[idx]) || { label: '', valor: 0, qtd: 0 }
+              var t = mesTrend && mesTrend[idx]
               return (
                 d.label +
                 '<br/><b>' +
@@ -20313,7 +20312,7 @@
           },
           xAxis: {
             type: 'category',
-            data: nf.monthly.map(function (m) {
+            data: (nf.monthly || []).map(function (m) {
               return m.label
             }),
           },
@@ -20328,7 +20327,6 @@
               },
               splitLine: { lineStyle: { color: '#eef2f7' } },
             },
-            { type: 'value', name: 'NFs', minInterval: 1, splitLine: { show: false } },
           ],
           series: [
             {
@@ -20339,21 +20337,17 @@
               markLine: {
                 silent: true,
                 symbol: ['none', 'none'],
+                lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
                 data: [
                   {
-                    yAxis: Math.round(mesMedia),
+                    type: 'average',
                     name: 'Média',
-                    lineStyle: { color: '#f59e0b', type: 'dashed', width: 2 },
                     label: {
                       show: true,
                       position: 'insideEndTop',
                       formatter: 'Média ' + F0.format(mesMedia),
+                      color: '#16a34a',
                       fontSize: 11,
-                      fontWeight: 'bold',
-                      color: '#92400e',
-                      backgroundColor: 'rgba(254, 243, 199, 0.90)',
-                      borderRadius: 3,
-                      padding: [2, 6],
                     },
                   },
                 ],
@@ -20365,109 +20359,13 @@
               smooth: false,
               symbol: 'none',
               data: mesTrend,
-              itemStyle: { color: '#16a34a' },
-              lineStyle: { color: '#16a34a', width: 2, type: 'dashed' },
-            },
-            {
-              name: 'NFs',
-              type: 'line',
-              yAxisIndex: 1,
-              smooth: false,
-              symbol: 'circle',
-              symbolSize: 2,
-              data: nf.monthly.map(function (m) {
-                return m.qtd
-              }),
-              itemStyle: { color: '#94a3b8' },
-              lineStyle: { color: '#94a3b8', width: 1.5 },
+              lineStyle: { color: '#16a34a', width: 1.5, type: 'dashed' },
+              silent: true,
+              tooltip: { show: false },
             },
           ],
         })
         window._nfCharts = [sp, c1, c2]
-        return // ignore duplicate legacy c2 setup below if any
-        /* legacy c2 start */
-        var _dummyOldC2 = function() {
-        var c2_old = null
-        if (false) {
-              var d = nf.monthly[ps[0].dataIndex]
-              return d.label + '<br/>' + F0.format(d.valor) + ' · ' + d.qtd + ' NFs'
-            },
-          },
-          xAxis: {
-            type: 'category',
-            data: nf.monthly.map(function (m) {
-              return m.label
-            }),
-          },
-          yAxis: [
-            {
-              type: 'value',
-              name: 'R$',
-              axisLabel: {
-                formatter: function (v) {
-                  return (v / 1000000).toFixed(1) + 'M'
-                },
-              },
-              splitLine: { lineStyle: { color: '#eef2f7' } },
-            },
-          ],
-          series: (function () {
-            var vals = nf.monthly.map(function (m) {
-              return m.valor
-            })
-            var n = vals.length,
-              sx = 0,
-              sy = 0,
-              sxy = 0,
-              sxx = 0,
-              i
-            for (i = 0; i < n; i++) {
-              sx += i
-              sy += vals[i]
-              sxy += i * vals[i]
-              sxx += i * i
-            }
-            var slope = n ? (n * sxy - sx * sy) / (n * sxx - sx * sx || 1) : 0
-            var inter = n ? (sy - slope * sx) / n : 0
-            var avg = n ? sy / n : 0
-            return [
-              {
-                name: 'Valor',
-                type: 'bar',
-                data: vals,
-                itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
-                markLine: {
-                  symbol: 'none',
-                  silent: true,
-                  lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
-                  label: {
-                    show: true,
-                    position: 'insideEndTop',
-                    formatter: 'Média ' + F0.format(avg),
-                  },
-                  data: [{ type: 'average', name: 'Média' }],
-                },
-              },
-              {
-                name: 'Tendência',
-                type: 'line',
-                smooth: false,
-                symbol: 'none',
-                data: vals.map(function (_, i) {
-                  return inter + slope * i
-                }),
-                lineStyle: { color: '#16a34a', type: 'dashed', width: 1.5 },
-                silent: true,
-                tooltip: { show: false },
-              },
-            ]
-          })(),
-        })
-        }
-        }
-        /* legacy c2 end */
-        window._nfCharts = [sp, c1, c2]
-
         // ---------- TABELA (filtros + ordenação + paginação + drill-down) ----------
         const state =
           window._nfState ||
