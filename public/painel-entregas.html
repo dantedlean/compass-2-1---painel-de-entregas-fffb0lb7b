@@ -430,7 +430,7 @@
           <h1>
             Entregas por Semana — Produto × PV
             <span style="font-size: 13px; font-weight: 600; opacity: 0.85; margin-left: 6px"
-              >v0.1.00</span
+              >v0.1.01</span
             >
           </h1>
           <div class="sub">
@@ -444,7 +444,7 @@
           class="badge"
           id="badgeVer"
           style="background: #1e3a8a; color: #fff; border: none; font-weight: 700"
-          >v0.1.00</span
+          >v0.1.01</span
         >
         <span class="badge" id="badgeRows"></span>
         <span class="badge" id="badgePvs"></span>
@@ -734,9 +734,9 @@
         </div>
       </main>
       <footer>
-        Faturamento · método Compass v0.1.00: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) ·
+        Faturamento · método Compass v0.1.01: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) ·
         valor = valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.00
+        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.01
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -1207,8 +1207,8 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean v0.1.00 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx
-        · dados: MaxiProd (data de entrega por item) · v0.1.00
+        FRIDA · Dlean v0.1.01 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx
+        · dados: MaxiProd (data de entrega por item) · v0.1.01
       </footer>
     </div>
 
@@ -1321,9 +1321,9 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar v0.1.00 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
+        Carteira a Faturar v0.1.01 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
         entrega no nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.00
+        artifacts/entregas_por_semana_itens_20261001.xlsx · v0.1.01
       </footer>
     </div>
 
@@ -20189,20 +20189,27 @@
           return d.valor
         })
         var diaTrend = calcLinearTrend(diaValores)
-        var diaMedia = diaValores.length
-          ? diaValores.reduce(function (a, b) {
+        // Média dos períodos decorridos: considera apenas períodos que já passaram / têm dados (> 0)
+        var diaValoresDecorridos = diaValores.filter(function (v) {
+          return Number(v) > 0
+        })
+        var diaMedia = diaValoresDecorridos.length
+          ? diaValoresDecorridos.reduce(function (a, b) {
               return a + b
-            }, 0) / diaValores.length
+            }, 0) / diaValoresDecorridos.length
           : 0
 
         var mesValores = nf.monthly.map(function (m) {
           return m.valor
         })
         var mesTrend = calcLinearTrend(mesValores)
-        var mesMedia = mesValores.length
-          ? mesValores.reduce(function (a, b) {
+        var mesValoresDecorridos = mesValores.filter(function (v) {
+          return Number(v) > 0
+        })
+        var mesMedia = mesValoresDecorridos.length
+          ? mesValoresDecorridos.reduce(function (a, b) {
               return a + b
-            }, 0) / mesValores.length
+            }, 0) / mesValoresDecorridos.length
           : 0
 
         document.getElementById('nfMesLbl').textContent = nf.mesLabel
