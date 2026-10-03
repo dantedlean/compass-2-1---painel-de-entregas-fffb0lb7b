@@ -671,6 +671,10 @@
           <h2>Faturamento por mês — <span id="nfAnoLbl">ano atual</span></h2>
           <div class="note">Barras = valor faturado (R$) · linha = nº de NFs emitidas</div>
           <div id="chNfMes" style="width: 100%; height: 300px"></div>
+          <div
+            id="nfFormula"
+            style="font-size: 12px; color: #64748b; padding: 8px 4px 0; line-height: 1.5"
+          ></div>
         </div>
         <div class="card">
           <div
@@ -9569,6 +9573,10 @@
           anoDiasUteis: 197,
           mediaDiaUtilMes: 54743,
           mediaDiaUtilAno: 59966,
+          mediaDuMes: 4977,
+          mediaDuAno: 1181328,
+          medianaMes: 0,
+          medianaAno: 801290,
           nfs: [
             {
               nf: '812',
@@ -20713,6 +20721,25 @@
                 curY + '-01-01',
                 new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10),
               )
+              // Média e mediana (decisão Dante 03/10): gráfico diário = por dia útil do mês (dias úteis sem NF contam R$ 0);
+              // gráfico mensal = por mês do ano.
+              function mediana(vals) {
+                if (!vals.length) return 0
+                var s2 = vals.slice().sort(function (a, b) {
+                  return a - b
+                })
+                var n = s2.length
+                return n % 2 ? s2[(n - 1) / 2] : (s2[n / 2 - 1] + s2[n / 2]) / 2
+              }
+              var mesDuVals = []
+              for (var dd2 = 1; dd2 <= lastDay; dd2++) {
+                var k3 = curY + '-' + ('0' + curM).slice(-2) + '-' + ('0' + dd2).slice(-2)
+                var wd = new Date(Date.UTC(curY, curM - 1, dd2)).getUTCDay()
+                if (wd > 0 && wd < 6) mesDuVals.push((daily[k3] || { v: 0 }).v)
+              }
+              var anoMesVals = monthly_series.map(function (m) {
+                return m.valor
+              })
               var liveNfs = live.nfs.slice().sort(function (a, b) {
                 return String(b.data).localeCompare(String(a.data))
               })
@@ -20730,6 +20757,16 @@
                 anoDiasUteis: anoDu,
                 mediaDiaUtilMes: mesDu ? Math.round(mesValor / mesDu) : 0,
                 mediaDiaUtilAno: anoDu ? Math.round(anoValor / anoDu) : 0,
+                mediaDuMes: mesDuVals.length
+                  ? Math.round(
+                      mesDuVals.reduce(function (a, b) {
+                        return a + b
+                      }, 0) / mesDuVals.length,
+                    )
+                  : 0,
+                mediaDuAno: Math.round(anoValor / curM),
+                medianaMes: Math.round(mediana(mesDuVals)),
+                medianaAno: Math.round(mediana(anoMesVals)),
                 nfs: liveNfs,
               }
               window._nfLive = liveData
@@ -20886,6 +20923,28 @@
               itemStyle: { color: '#16a34a' },
               lineStyle: { color: '#16a34a', width: 2 },
             },
+            {
+              name: 'Média/dia útil',
+              type: 'line',
+              data: nf.daily.map(function () {
+                return nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes
+              }),
+              symbol: 'none',
+              lineStyle: { color: '#f59e0b', width: 2, type: 'dashed' },
+              itemStyle: { color: '#f59e0b' },
+              tooltip: { show: false },
+            },
+            {
+              name: 'Mediana/dia útil',
+              type: 'line',
+              data: nf.daily.map(function () {
+                return nf.medianaMes !== undefined ? nf.medianaMes : 0
+              }),
+              symbol: 'none',
+              lineStyle: { color: '#dc2626', width: 2, type: 'dotted' },
+              itemStyle: { color: '#dc2626' },
+              tooltip: { show: false },
+            },
           ],
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
@@ -20939,9 +20998,48 @@
               itemStyle: { color: '#16a34a' },
               lineStyle: { color: '#16a34a', width: 2 },
             },
+            {
+              name: 'Média/dia útil',
+              type: 'line',
+              data: nf.monthly.map(function () {
+                return nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
+              }),
+              symbol: 'none',
+              lineStyle: { color: '#f59e0b', width: 2, type: 'dashed' },
+              itemStyle: { color: '#f59e0b' },
+              tooltip: { show: false },
+            },
+            {
+              name: 'Mediana/dia útil',
+              type: 'line',
+              data: nf.monthly.map(function () {
+                return nf.medianaAno !== undefined ? nf.medianaAno : 0
+              }),
+              symbol: 'none',
+              lineStyle: { color: '#dc2626', width: 2, type: 'dotted' },
+              itemStyle: { color: '#dc2626' },
+              tooltip: { show: false },
+            },
           ],
         })
         window._nfCharts = [sp, c1, c2]
+        var nfFoot = document.getElementById('nfFormula')
+        if (nfFoot) {
+          var mMedia = nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes
+          var mMed = nf.medianaMes !== undefined ? nf.medianaMes : 0
+          var aMedia = nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
+          var aMed = nf.medianaAno !== undefined ? nf.medianaAno : 0
+          nfFoot.innerHTML =
+            '<b>Como calculamos:</b> média/dia útil = soma do valor faturado ÷ dias úteis do período (dias úteis sem NF contam R$ 0) — mês ' +
+            F0.format(mMedia) +
+            ' · ano ' +
+            F0.format(aMedia) +
+            '. Mediana/dia útil = valor central entre os dias úteis ordenados (metade dos dias acima, metade abaixo) — mês ' +
+            F0.format(mMed) +
+            ' · ano ' +
+            F0.format(aMed) +
+            '.'
+        }
 
         // ---------- TABELA (filtros + ordenação + paginação + drill-down) ----------
         const state =
