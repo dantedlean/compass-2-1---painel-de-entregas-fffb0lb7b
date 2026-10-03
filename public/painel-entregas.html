@@ -440,7 +440,12 @@
         </div>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap">
-        <span class="badge" id="badgeVer" style="background: #1e3a8a; color: #fff; border: none; font-weight: 700">v0.0.99</span>
+        <span
+          class="badge"
+          id="badgeVer"
+          style="background: #1e3a8a; color: #fff; border: none; font-weight: 700"
+          >v0.0.99</span
+        >
         <span class="badge" id="badgeRows"></span>
         <span class="badge" id="badgePvs"></span>
       </div>
@@ -670,12 +675,18 @@
         <div id="nfHero"></div>
         <div class="card">
           <h2>Faturamento por dia — <span id="nfMesLbl">mês atual</span></h2>
-          <div class="note">Barras = valor faturado (R$) · linha discreta = nº de NFs · linha verde tracejada = tendência · linha horizontal = média</div>
+          <div class="note">
+            Barras = valor faturado (R$) · linha discreta = nº de NFs · linha verde tracejada =
+            tendência · linha horizontal = média
+          </div>
           <div id="chNfDia" style="width: 100%; height: 280px"></div>
         </div>
         <div class="card">
           <h2>Faturamento por mês — <span id="nfAnoLbl">ano atual</span></h2>
-          <div class="note">Barras = valor faturado (R$) · linha discreta = nº de NFs · linha verde tracejada = tendência · linha horizontal = média</div>
+          <div class="note">
+            Barras = valor faturado (R$) · linha discreta = nº de NFs · linha verde tracejada =
+            tendência · linha horizontal = média
+          </div>
           <div id="chNfMes" style="width: 100%; height: 300px"></div>
         </div>
         <div class="card">
@@ -723,10 +734,11 @@
         </div>
       </main>
       <footer>
-        Faturamento · método Compass v0.0.99: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
-        valorTotal da NF · fonte MaxiProd GraphQL · gerado em
+        Faturamento · método Compass v0.0.99: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) ·
+        valor = valorTotal da NF · fonte MaxiProd GraphQL · gerado em
         artifacts/entregas_por_semana_itens_20261001.xlsx · v0.0.99
-      </footer>    </div>
+      </footer>
+    </div>
     <div id="viewEnt" class="view">
       <main>
         <div
@@ -1195,9 +1207,10 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean v0.0.99 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx ·
-        dados: MaxiProd (data de entrega por item) · v0.0.99
-      </footer>    </div>
+        FRIDA · Dlean v0.0.99 — gerado a partir de artifacts/entregas_por_semana_itens_20261001.xlsx
+        · dados: MaxiProd (data de entrega por item) · v0.0.99
+      </footer>
+    </div>
 
     <div id="viewFat" class="view">
       <main>
@@ -1308,10 +1321,11 @@
         </div>
       </main>
       <footer>
-        Carteira a Faturar v0.0.99 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
-        nível do item · fretes (50x/00043) marcados · fonte
+        Carteira a Faturar v0.0.99 · regra: PVs aprovados com saldo a faturar &gt; 0 · data de
+        entrega no nível do item · fretes (50x/00043) marcados · fonte
         artifacts/entregas_por_semana_itens_20261001.xlsx · v0.0.99
-      </footer>    </div>
+      </footer>
+    </div>
 
     <script>
       const DATA = {
@@ -20146,6 +20160,51 @@
         })
 
         // ---------- CHARTS ----------
+        function calcLinearTrend(data) {
+          var n = data.length
+          if (n < 2) return data.slice()
+          var sumX = 0,
+            sumY = 0,
+            sumXY = 0,
+            sumXX = 0
+          for (var i = 0; i < n; i++) {
+            var y = Number(data[i]) || 0
+            sumX += i
+            sumY += y
+            sumXY += i * y
+            sumXX += i * i
+          }
+          var denom = n * sumXX - sumX * sumX
+          if (denom === 0) return data.slice()
+          var slope = (n * sumXY - sumX * sumY) / denom
+          var intercept = (sumY - slope * sumX) / n
+          var res = []
+          for (var j = 0; j < n; j++) {
+            res.push(Math.round(slope * j + intercept))
+          }
+          return res
+        }
+
+        var diaValores = nf.daily.map(function (d) {
+          return d.valor
+        })
+        var diaTrend = calcLinearTrend(diaValores)
+        var diaMedia = diaValores.length
+          ? diaValores.reduce(function (a, b) {
+              return a + b
+            }, 0) / diaValores.length
+          : 0
+
+        var mesValores = nf.monthly.map(function (m) {
+          return m.valor
+        })
+        var mesTrend = calcLinearTrend(mesValores)
+        var mesMedia = mesValores.length
+          ? mesValores.reduce(function (a, b) {
+              return a + b
+            }, 0) / mesValores.length
+          : 0
+
         document.getElementById('nfMesLbl').textContent = nf.mesLabel
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
@@ -20236,6 +20295,100 @@
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
+              var idx = ps[0].dataIndex
+              var d = nf.monthly[idx]
+              var t = mesTrend[idx]
+              return (
+                d.label +
+                '<br/><b>' +
+                F0.format(d.valor) +
+                '</b> · ' +
+                d.qtd +
+                ' NFs' +
+                (t !== undefined
+                  ? '<br/><span style="color:#16a34a">Tendência: ' + F0.format(t) + '</span>'
+                  : '')
+              )
+            },
+          },
+          xAxis: {
+            type: 'category',
+            data: nf.monthly.map(function (m) {
+              return m.label
+            }),
+          },
+          yAxis: [
+            {
+              type: 'value',
+              name: 'R$',
+              axisLabel: {
+                formatter: function (v) {
+                  return (v / 1000000).toFixed(1) + 'M'
+                },
+              },
+              splitLine: { lineStyle: { color: '#eef2f7' } },
+            },
+            { type: 'value', name: 'NFs', minInterval: 1, splitLine: { show: false } },
+          ],
+          series: [
+            {
+              name: 'Valor',
+              type: 'bar',
+              data: mesValores,
+              itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
+              markLine: {
+                silent: true,
+                symbol: ['none', 'none'],
+                data: [
+                  {
+                    yAxis: Math.round(mesMedia),
+                    name: 'Média',
+                    lineStyle: { color: '#f59e0b', type: 'dashed', width: 2 },
+                    label: {
+                      show: true,
+                      position: 'insideEndTop',
+                      formatter: 'Média ' + F0.format(mesMedia),
+                      fontSize: 11,
+                      fontWeight: 'bold',
+                      color: '#92400e',
+                      backgroundColor: 'rgba(254, 243, 199, 0.90)',
+                      borderRadius: 3,
+                      padding: [2, 6],
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              name: 'Tendência',
+              type: 'line',
+              smooth: false,
+              symbol: 'none',
+              data: mesTrend,
+              itemStyle: { color: '#16a34a' },
+              lineStyle: { color: '#16a34a', width: 2, type: 'dashed' },
+            },
+            {
+              name: 'NFs',
+              type: 'line',
+              yAxisIndex: 1,
+              smooth: false,
+              symbol: 'circle',
+              symbolSize: 2,
+              data: nf.monthly.map(function (m) {
+                return m.qtd
+              }),
+              itemStyle: { color: '#94a3b8' },
+              lineStyle: { color: '#94a3b8', width: 1.5 },
+            },
+          ],
+        })
+        window._nfCharts = [sp, c1, c2]
+        return // ignore duplicate legacy c2 setup below if any
+        /* legacy c2 start */
+        var _dummyOldC2 = function() {
+        var c2_old = null
+        if (false) {
               var d = nf.monthly[ps[0].dataIndex]
               return d.label + '<br/>' + F0.format(d.valor) + ' · ' + d.qtd + ' NFs'
             },
@@ -20310,6 +20463,9 @@
             ]
           })(),
         })
+        }
+        }
+        /* legacy c2 end */
         window._nfCharts = [sp, c1, c2]
 
         // ---------- TABELA (filtros + ordenação + paginação + drill-down) ----------
