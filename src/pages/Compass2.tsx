@@ -1317,7 +1317,7 @@ export default function Compass2() {
       <main className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
         <div className="mx-auto max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-400">
-            Dlean · Compass 2.1
+            Dlean · Compass 2.2
           </p>
           <h1 className="mt-3 text-3xl font-bold">Entrar no workspace</h1>
           <p className="mt-2 text-sm leading-6 text-slate-400">
@@ -1369,7 +1369,7 @@ export default function Compass2() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-400">
-              Dlean · Compass 2.1
+              Dlean · Compass 2.2
             </p>
             <h1 className="mt-1 text-2xl font-bold">Planejamento operacional</h1>
             <p className="mt-1 text-sm text-slate-400">
