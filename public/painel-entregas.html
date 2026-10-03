@@ -20922,7 +20922,7 @@
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
         const c1 = echarts.init(document.getElementById('chNfDia'))
-        function mkLbl(nome, cor, val) {
+        function mkLbl(nome, cor, val, dist) {
           return {
             name: nome,
             type: 'line',
@@ -20942,10 +20942,12 @@
               backgroundColor: 'rgba(255,255,255,.85)',
               padding: [2, 4],
               borderRadius: 3,
-              distance: 4,
+              distance: dist || 4,
             },
           }
         }
+        var mMes = nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes
+        var medMes = nf.medianaMes !== undefined ? nf.medianaMes : 0
         c1.setOption({
           grid: { left: 66, right: 150, top: 26, bottom: 60 },
           tooltip: {
@@ -20983,15 +20985,15 @@
               }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
             },
-            mkLbl(
-              'Média/dia útil',
-              '#f59e0b',
-              nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes,
-            ),
-            mkLbl('Mediana', '#dc2626', nf.medianaMes !== undefined ? nf.medianaMes : 0),
-          ],
+            mMes === medMes
+              ? mkLbl('Média = Mediana', '#92400e', mMes)
+              : mkLbl('Média/dia útil', '#f59e0b', mMes),
+            mMes === medMes ? null : mkLbl('Mediana', '#dc2626', medMes),
+          ].filter(Boolean),
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
+        var mAno = nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
+        var medAno = nf.medianaAno !== undefined ? nf.medianaAno : 0
         c2.setOption({
           grid: { left: 66, right: 150, top: 26, bottom: 40 },
           tooltip: {
@@ -21028,13 +21030,11 @@
               }),
               itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
             },
-            mkLbl(
-              'Média/mês',
-              '#f59e0b',
-              nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno,
-            ),
-            mkLbl('Mediana', '#dc2626', nf.medianaAno !== undefined ? nf.medianaAno : 0),
-          ],
+            mAno === medAno
+              ? mkLbl('Média = Mediana', '#92400e', mAno)
+              : mkLbl('Média/mês', '#f59e0b', mAno),
+            mAno === medAno ? null : mkLbl('Mediana', '#dc2626', medAno),
+          ].filter(Boolean),
         })
         window._nfCharts = [sp, c1, c2]
         var nfFoot = document.getElementById('nfFormula')
