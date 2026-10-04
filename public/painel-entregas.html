@@ -1537,169 +1537,170 @@
         Programação automática · sugestão gerada no navegador a partir da carteira item a item
         (MaxiProd) · nada gravado no ERP
       </footer>
+    </div>
+
+    <div
+      id="paDateBox"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 60;
+        align-items: center;
+        justify-content: center;
+      "
+    >
       <div
-        id="paDateBox"
         style="
-          display: none;
-          position: fixed;
-          inset: 0;
-          background: rgba(15, 23, 42, 0.45);
-          z-index: 60;
-          align-items: center;
-          justify-content: center;
+          background: #fff;
+          border-radius: 14px;
+          padding: 18px 20px;
+          min-width: 340px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
         "
       >
-        <div
-          style="
-            background: #fff;
-            border-radius: 14px;
-            padding: 18px 20px;
-            min-width: 340px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-          "
-        >
-          <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
-            Enviar para a Programação
-          </div>
-          <div class="note" id="paDateInfo" style="margin: 0 0 10px"></div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
-            <label class="note" style="margin: 0; min-width: 70px">Semana:</label>
-            <select
-              id="paSemSel"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 13px;
-              "
-            ></select>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
-            <label class="note" style="margin: 0; min-width: 70px">Fábrica:</label>
-            <select
-              id="paLocalSel"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 13px;
-              "
-            >
-              <option value="Curitiba">Curitiba</option>
-              <option value="Vinhedo">Vinhedo</option>
-            </select>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
-            <label class="note" style="margin: 0; min-width: 70px">Qtd a alocar:</label>
-            <input
-              id="paQtdInput"
-              type="number"
-              min="1"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 13px;
-                text-align: right;
-                font-weight: 700;
-              "
-            />
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
-            <label class="note" style="margin: 0; min-width: 70px">Produzir em:</label>
-            <input
-              id="paDateInput"
-              type="date"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 13px;
-              "
-            />
-          </div>
-          <div style="display: flex; gap: 8px; justify-content: flex-end">
-            <button id="paDateCancel" class="dlbtn">Cancelar</button>
-            <button
-              id="paDateOk"
-              class="dlbtn"
-              style="background: #16a34a; border-color: #16a34a; color: #fff"
-            >
-              Enviar
-            </button>
-          </div>
+        <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
+          Enviar para a Programação
+        </div>
+        <div class="note" id="paDateInfo" style="margin: 0 0 10px"></div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 70px">Semana:</label>
+          <select
+            id="paSemSel"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          ></select>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 70px">Fábrica:</label>
+          <select
+            id="paLocalSel"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          >
+            <option value="Curitiba">Curitiba</option>
+            <option value="Vinhedo">Vinhedo</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 70px">Qtd a alocar:</label>
+          <input
+            id="paQtdInput"
+            type="number"
+            min="1"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+              text-align: right;
+              font-weight: 700;
+            "
+          />
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
+          <label class="note" style="margin: 0; min-width: 70px">Produzir em:</label>
+          <input
+            id="paDateInput"
+            type="date"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          />
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end">
+          <button id="paDateCancel" class="dlbtn">Cancelar</button>
+          <button
+            id="paDateOk"
+            class="dlbtn"
+            style="background: #16a34a; border-color: #16a34a; color: #fff"
+          >
+            Enviar
+          </button>
         </div>
       </div>
+    </div>
+    <div
+      id="apQtdBox"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 60;
+        align-items: center;
+        justify-content: center;
+      "
+    >
       <div
-        id="apQtdBox"
         style="
-          display: none;
-          position: fixed;
-          inset: 0;
-          background: rgba(15, 23, 42, 0.45);
-          z-index: 60;
-          align-items: center;
-          justify-content: center;
+          background: #fff;
+          border-radius: 14px;
+          padding: 18px 20px;
+          min-width: 340px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
         "
       >
-        <div
-          style="
-            background: #fff;
-            border-radius: 14px;
-            padding: 18px 20px;
-            min-width: 340px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-          "
-        >
-          <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
-            Programar produção
-          </div>
-          <div class="note" id="apQtdInfo" style="margin: 0 0 10px"></div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
-            <label class="note" style="margin: 0; min-width: 90px">Qtd a produzir:</label>
-            <input
-              id="apQtdInput"
-              type="number"
-              min="1"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 13px;
-                text-align: right;
-                font-weight: 700;
-              "
-            />
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
-            <label class="note" style="margin: 0; min-width: 90px">Produzir em:</label>
-            <input
-              id="apQtdData"
-              type="date"
-              style="
-                flex: 1;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 13px;
-              "
-            />
-          </div>
-          <div style="display: flex; gap: 8px; justify-content: flex-end">
-            <button id="apQtdCancel" class="dlbtn">Cancelar</button>
-            <button
-              id="apQtdOk"
-              class="dlbtn"
-              style="background: #16a34a; border-color: #16a34a; color: #fff"
-            >
-              Programar
-            </button>
-          </div>
+        <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
+          Programar produção
+        </div>
+        <div class="note" id="apQtdInfo" style="margin: 0 0 10px"></div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 90px">Qtd a produzir:</label>
+          <input
+            id="apQtdInput"
+            type="number"
+            min="1"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+              text-align: right;
+              font-weight: 700;
+            "
+          />
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
+          <label class="note" style="margin: 0; min-width: 90px">Produzir em:</label>
+          <input
+            id="apQtdData"
+            type="date"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          />
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end">
+          <button id="apQtdCancel" class="dlbtn">Cancelar</button>
+          <button
+            id="apQtdOk"
+            class="dlbtn"
+            style="background: #16a34a; border-color: #16a34a; color: #fff"
+          >
+            Programar
+          </button>
         </div>
       </div>
     </div>
