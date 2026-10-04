@@ -418,7 +418,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004202709">
+  <body data-build="b20261004203216">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -857,6 +857,20 @@
                 border: 1px solid #fecaca;
               "
             ></span>
+            <div
+              id="pokaWarn"
+              style="
+                display: none;
+                background: #fee2e2;
+                border: 2px solid #dc2626;
+                color: #991b1b;
+                font-weight: 800;
+                font-size: 13px;
+                padding: 10px 14px;
+                border-radius: 10px;
+                margin: 8px 0;
+              "
+            ></div>
           </div>
           <div
             style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 8px"
@@ -1665,6 +1679,20 @@
           Programar produção
         </div>
         <div class="note" id="apQtdInfo" style="margin: 0 0 10px"></div>
+        <div
+          id="apQtdWarn"
+          style="
+            display: none;
+            background: #fee2e2;
+            border: 2px solid #dc2626;
+            color: #991b1b;
+            font-weight: 800;
+            font-size: 12.5px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin: 0 0 10px;
+          "
+        ></div>
         <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
           <label class="note" style="margin: 0; min-width: 90px">Qtd a produzir:</label>
           <input
@@ -17534,6 +17562,63 @@
         if (sel) sel.value = window.UNID || 'C'
         box.dataset.cod = cod
         box.dataset.aprog = aProg
+        // POKA-YOKE (v0.0.207): aviso vermelho quando programar ESTE dia ultrapassaria o saldo com PV
+        const warn = document.getElementById('apQtdWarn')
+        if (warn) {
+          const saldoPv = DATA.rows
+            .filter(function (r) {
+              return r.codigo === cod
+            })
+            .reduce(function (s, r) {
+              return s + (Number(r.qtd) || 0)
+            }, 0)
+          const progDia = declDraft
+            .filter(function (d) {
+              return (
+                d.status !== 'Cancelado' && d.cod === cod && progIso(d.data) === progIso(dataIso)
+              )
+            })
+            .reduce(function (s, d) {
+              return s + (Number(d.qtd) || 0)
+            }, 0)
+          const smkt = (function () {
+            try {
+              return Math.max(0, Number(smktSaldo(cod)) || 0)
+            } catch (e) {
+              return 0
+            }
+          })()
+          const livre = Math.max(0, saldoPv - progDia - smkt)
+          if (livre <= 0) {
+            warn.style.display = 'block'
+            warn.innerHTML =
+              '⚠ SEM PEDIDO DE VENDA DISPONÍVEL para ' +
+              cod +
+              ' neste dia — saldo na carteira: ' +
+              NF.format(saldoPv) +
+              ' un · já programado neste dia: ' +
+              NF.format(progDia) +
+              ' un' +
+              (smkt > 0 ? ' · SMKT: ' + NF.format(smkt) + ' un' : '') +
+              '. O que programar aqui NÃO tem PV de destino (produção para estoque/WARD).'
+          } else if (aProg > livre) {
+            warn.style.display = 'block'
+            warn.innerHTML =
+              '⚠ SALDO PARCIAL: só ' +
+              NF.format(livre) +
+              ' un têm PV na carteira (saldo ' +
+              NF.format(saldoPv) +
+              ' − programado no dia ' +
+              NF.format(progDia) +
+              (smkt > 0 ? ' − SMKT ' + NF.format(smkt) : '') +
+              '). Programar ' +
+              NF.format(Math.round(aProg)) +
+              ' un gera excedente sem PV.'
+          } else {
+            warn.style.display = 'none'
+            warn.innerHTML = ''
+          }
+        }
         box.style.display = 'flex'
         setTimeout(function () {
           const inp = document.getElementById('apQtdInput')
@@ -18725,6 +18810,130 @@
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
         if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        ;(function () {
+          const w = document.getElementById('pokaWarn')
+          if (!w) return
+          const excessos = []
+          // 1) fósseis: declaração cujo código/PV não tem saldo na carteira (some da programação)
+          const fos = window.fosseisCache || []
+          fos.forEach(function (x) {
+            excessos.push({
+              tipo: 'fossil',
+              cod: x.cod,
+              qtd: x.qtd,
+              data: x.data,
+              motivo: x.motivo,
+            })
+          })
+          // 2) excedente: soma programada do produto no dia > saldo com PV na carteira (descontando SMKT)
+          const saldoPv = {}
+          DATA.rows.forEach(function (r) {
+            saldoPv[r.codigo] = (saldoPv[r.codigo] || 0) + (Number(r.qtd) || 0)
+          })
+          const progPorCodData = {}
+          declDaUnid().forEach(function (d) {
+            if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+            const k = d.cod + '|' + progIso(d.data)
+            progPorCodData[k] = (progPorCodData[k] || 0) + Number(d.qtd)
+          })
+          Object.keys(progPorCodData).forEach(function (k) {
+            const cod = k.split('|')[0],
+              iso = k.split('|')[1]
+            let sm = 0
+            try {
+              sm = Math.max(0, Number(smktSaldo(cod)) || 0)
+            } catch (e) {}
+            const livre = Math.max(0, saldoPv[cod] - sm)
+            const prog = progPorCodData[k]
+            if (prog > livre) {
+              const vu = (function () {
+                const rs = DATA.rows.filter(function (r) {
+                  return r.codigo === cod
+                })
+                return rs.length && rs[0].qtd ? rs[0].vtot / rs[0].qtd : 0
+              })()
+              excessos.push({
+                tipo: 'excesso',
+                cod: cod,
+                qtd: prog - livre,
+                data: iso,
+                motivo:
+                  'programado ' +
+                  NF.format(prog) +
+                  ' un, saldo com PV: ' +
+                  NF.format(livre) +
+                  ' un' +
+                  (sm > 0 ? ' (SMKT ' + NF.format(sm) + ')' : ''),
+                valor: Math.round((prog - livre) * vu),
+              })
+            }
+          })
+          if (!excessos.length) {
+            w.style.display = 'none'
+            w.innerHTML = ''
+            return
+          }
+          const fosN = excessos.filter(function (x) {
+            return x.tipo === 'fossil'
+          }).length
+          const excN = excessos.filter(function (x) {
+            return x.tipo === 'excesso'
+          })
+          const excVal = excN.reduce(function (a, x) {
+            return a + (x.valor || 0)
+          }, 0)
+          let html =
+            '<div style="font-size:14px;margin-bottom:6px">⚠ ATENÇÃO — PRODUÇÃO SEM PEDIDO DE VENDA DE DESTINO</div>'
+          if (excN.length) {
+            html +=
+              '<div style="margin-bottom:4px">• <b>' +
+              excN.length +
+              ' alocação(ões) EXCEDEM o saldo com PV</b> — excedente total: <b>' +
+              NF.format(
+                excN.reduce(function (a, x) {
+                  return a + x.qtd
+                }, 0),
+              ) +
+              ' un · R$ ' +
+              NF.format(excVal) +
+              '</b> (produção para estoque/WARD, sem PV): ' +
+              excN
+                .slice(0, 6)
+                .map(function (x) {
+                  return '<b>' + x.cod + '</b> ×' + NF.format(x.qtd) + ' em ' + dtBR(x.data)
+                })
+                .join(' · ') +
+              (excN.length > 6 ? ' …' : '') +
+              '</div>'
+          }
+          if (fosN) {
+            html +=
+              '<div>• <b>' +
+              fosN +
+              ' declaração(ões) FÓSSIL</b> (PV já faturado/sem saldo) — NÃO entram na programação: ' +
+              fos
+                .slice(0, 6)
+                .map(function (x) {
+                  return (
+                    '<b>' +
+                    x.cod +
+                    '</b> ×' +
+                    NF.format(x.qtd) +
+                    ' (' +
+                    (x.pv === '—' ? 'sem PV' : 'PV ' + x.pv) +
+                    ')'
+                  )
+                })
+                .join(' · ') +
+              (fos.length > 6 ? ' …' : '') +
+              '</div>'
+          }
+          html +=
+            '<div style="font-weight:600;font-size:11.5px;margin-top:6px;color:#7f1d1d">Nada foi bloqueado — revise se é produção para estoque intencional ou erro de alocação. Fretes e itens de revenda não têm PV por natureza.</div>'
+          w.style.display = 'block'
+          w.innerHTML = html
+        })()
         // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
         const tb = document.getElementById('tbbP')
         // editar qtd a fabricar e excluir linha (delegação — opera nas declarações do dia)
@@ -24589,7 +24798,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004202709); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004203216); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
