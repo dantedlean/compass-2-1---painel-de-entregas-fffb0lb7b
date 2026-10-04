@@ -418,7 +418,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004195850">
+  <body data-build="b20261004201508">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18380,92 +18380,8 @@
             )
           })
           .join('')
-        // v0.0.204: CALOR por dia — carga (un) da unidade ativa por dia da semana visível
-        const pbtns = document.getElementById('pbtns')
-        if (pbtns) {
-          const cargaDia = {}
-          declDaUnid().forEach(function (d) {
-            if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
-            const iso = progIso(d.data)
-            cargaDia[iso] = (cargaDia[iso] || 0) + Number(d.qtd)
-          })
-          const maxCarga = Math.max.apply(
-            null,
-            [1].concat(
-              Object.keys(cargaDia).map(function (k) {
-                return cargaDia[k]
-              }),
-            ),
-          )
-          Array.prototype.forEach.call(pbtns.children, function (b) {
-            const iso = progIso(b.getAttribute('data-date'))
-            const c = cargaDia[iso] || 0
-            const t = Math.round((c / maxCarga) * 100)
-            // cor: 0=sz, 1-33=verde, 34-66=âmbar, 67-100=vermelho (relative ao dia mais cheio da vista)
-            const bg = c <= 0 ? '#f1f5f9' : t <= 33 ? '#dcfce7' : t <= 66 ? '#fef9c3' : '#fecaca'
-            const fg = c <= 0 ? '#94a3b8' : t <= 33 ? '#166534' : t <= 66 ? '#854d0e' : '#991b1b'
-            b.style.background = bg
-            b.style.color = fg
-            b.title =
-              'Carga: ' +
-              NF.format(c) +
-              ' un' +
-              (c <= 0 ? ' — dia vazio' : '') +
-              ' · ' +
-              t +
-              '% do dia mais cheio'
-            // v0.0.204: divisão por FÁBRICA (Curitiba × Vinhedo) — mini-barras no rodapé do botão
-            const cC = declDraft
-              .filter(function (d) {
-                return (
-                  d.status !== 'Cancelado' &&
-                  progIso(d.data) === iso &&
-                  (d.local || 'C') === 'C' &&
-                  Number(d.qtd) > 0
-                )
-              })
-              .reduce(function (a, d) {
-                return a + Number(d.qtd)
-              }, 0)
-            const cV = declDraft
-              .filter(function (d) {
-                return (
-                  d.status !== 'Cancelado' &&
-                  progIso(d.data) === iso &&
-                  (d.local || 'C') === 'V' &&
-                  Number(d.qtd) > 0
-                )
-              })
-              .reduce(function (a, d) {
-                return a + Number(d.qtd)
-              }, 0)
-            let inner =
-              '<div style="font-weight:800">' +
-              b.getAttribute('data-d') +
-              ' · ' +
-              b.getAttribute('data-date') +
-              '</div>'
-            if (cC > 0 || cV > 0) {
-              const tot = cC + cV,
-                pcC = Math.round((cC / tot) * 100),
-                pcV = 100 - pcC
-              inner +=
-                '<div style="display:flex;height:6px;width:100%;border-radius:3px;overflow:hidden;margin-top:3px">' +
-                (cC > 0 ? '<div style="width:' + pcC + '%;background:#1e3a8a"></div>' : '') +
-                (cV > 0 ? '<div style="width:' + pcV + '%;background:#ca8a04"></div>' : '') +
-                '</div>' +
-                '<div style="font-size:9.5px;font-weight:700;margin-top:2px"><span style="color:#1e3a8a">C ' +
-                NF.format(cC) +
-                '</span>' +
-                (cV > 0 ? ' · <span style="color:#a16207">V ' + NF.format(cV) + '</span>' : '') +
-                '</div>'
-            }
-            b.innerHTML = inner
-            b.style.display = 'inline-block'
-            b.style.minWidth = '92px'
-            b.style.padding = '6px 10px'
-          })
-        }
+        // v0.0.204/205: CALOR por dia + mini-barras C/V (função paintProgDayButtons)
+        paintProgDayButtons()
         const fw = document.getElementById('fosseisWarn')
         if (fw) {
           const f = window.fosseisCache || []
@@ -18797,6 +18713,8 @@
             '%</span>'
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
+        // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
         // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
         const tb = document.getElementById('tbbP')
         // editar qtd a fabricar e excluir linha (delegação — opera nas declarações do dia)
@@ -19162,6 +19080,94 @@
           if (d && dt) out.push({ dia: d, data: dt, iso: progIso(dt) })
         })
         return out
+      }
+      // v0.0.205: pinta calor + mini-barras C/V nos botões de dia — chamada por renderProg E por
+      // renderProgTabela (toda edição de rascunho repinta na hora, sem precisar clicar no dia)
+      function paintProgDayButtons() {
+        const pbtns = document.getElementById('pbtns')
+        if (!pbtns || !pbtns.children.length) return
+        const cargaDia = {}
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
+          const iso = progIso(d.data)
+          cargaDia[iso] = (cargaDia[iso] || 0) + Number(d.qtd)
+        })
+        const maxCarga = Math.max.apply(
+          null,
+          [1].concat(
+            Object.keys(cargaDia).map(function (k) {
+              return cargaDia[k]
+            }),
+          ),
+        )
+        Array.prototype.forEach.call(pbtns.children, function (b) {
+          const iso = progIso(b.getAttribute('data-date'))
+          const c = cargaDia[iso] || 0
+          const t = Math.round((c / maxCarga) * 100)
+          // cor: 0=sz, 1-33=verde, 34-66=âmbar, 67-100=vermelho (relative ao dia mais cheio da vista)
+          const bg = c <= 0 ? '#f1f5f9' : t <= 33 ? '#dcfce7' : t <= 66 ? '#fef9c3' : '#fecaca'
+          const fg = c <= 0 ? '#94a3b8' : t <= 33 ? '#166534' : t <= 66 ? '#854d0e' : '#991b1b'
+          b.style.background = bg
+          b.style.color = fg
+          b.title =
+            'Carga: ' +
+            NF.format(c) +
+            ' un' +
+            (c <= 0 ? ' — dia vazio' : '') +
+            ' · ' +
+            t +
+            '% do dia mais cheio'
+          // divisão por FÁBRICA (Curitiba × Vinhedo) — mini-barras no rodapé do botão
+          const cC = declDraft
+            .filter(function (d) {
+              return (
+                d.status !== 'Cancelado' &&
+                progIso(d.data) === iso &&
+                (d.local || 'C') === 'C' &&
+                Number(d.qtd) > 0
+              )
+            })
+            .reduce(function (a, d) {
+              return a + Number(d.qtd)
+            }, 0)
+          const cV = declDraft
+            .filter(function (d) {
+              return (
+                d.status !== 'Cancelado' &&
+                progIso(d.data) === iso &&
+                (d.local || 'C') === 'V' &&
+                Number(d.qtd) > 0
+              )
+            })
+            .reduce(function (a, d) {
+              return a + Number(d.qtd)
+            }, 0)
+          let inner =
+            '<div style="font-weight:800">' +
+            b.getAttribute('data-d') +
+            ' · ' +
+            b.getAttribute('data-date') +
+            '</div>'
+          if (cC > 0 || cV > 0) {
+            const tot = cC + cV,
+              pcC = Math.round((cC / tot) * 100),
+              pcV = 100 - pcC
+            inner +=
+              '<div style="display:flex;height:6px;width:100%;border-radius:3px;overflow:hidden;margin-top:3px">' +
+              (cC > 0 ? '<div style="width:' + pcC + '%;background:#1e3a8a"></div>' : '') +
+              (cV > 0 ? '<div style="width:' + pcV + '%;background:#ca8a04"></div>' : '') +
+              '</div>' +
+              '<div style="font-size:9.5px;font-weight:700;margin-top:2px"><span style="color:#1e3a8a">Cur ' +
+              NF.format(cC) +
+              '</span>' +
+              (cV > 0 ? ' · <span style="color:#a16207">Vinh ' + NF.format(cV) + '</span>' : '') +
+              '</div>'
+          }
+          b.innerHTML = inner
+          b.style.display = 'inline-block'
+          b.style.minWidth = '92px'
+          b.style.padding = '6px 10px'
+        })
       }
       function progCopyLine(p) {
         const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
@@ -24573,7 +24579,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004195850); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004201508); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
