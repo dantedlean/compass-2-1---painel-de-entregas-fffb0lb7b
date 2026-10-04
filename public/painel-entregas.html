@@ -278,6 +278,9 @@
       tr.prow {
         cursor: pointer;
       }
+      tr.prow.smktRow td {
+        background: #fee2e2 !important;
+      }
       tr.prow.dragging {
         opacity: 0.45;
       }
@@ -418,7 +421,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004203950">
+  <body data-build="b20261004204403">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18734,9 +18737,8 @@
             return (
               '<tr class="prow' +
               (ex.ok ? ' exOK' : '') +
-              '"' +
-              trBg +
-              ' data-ix="' +
+              (smLinha > 0 ? ' smktRow' : '') +
+              '" data-ix="' +
               ix +
               '" data-cod="' +
               p.cod +
@@ -24839,7 +24841,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004203950); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004204403); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
