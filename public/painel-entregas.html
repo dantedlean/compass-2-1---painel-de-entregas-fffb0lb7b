@@ -1018,6 +1018,18 @@
                 "
               />
               <input
+                type="text"
+                id="smEntQuem"
+                placeholder="Quem deu a entrada (obrigatório)"
+                style="
+                  width: 200px;
+                  padding: 6px 10px;
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  font-size: 12.5px;
+                "
+              />
+              <input
                 type="date"
                 id="smEntData"
                 style="
@@ -18838,11 +18850,11 @@
                   NF.format(st.saiuNF) +
                   '</td><td class="exec"><input type="number" min="1" max="' +
                   st.saldo +
-                  '" placeholder="Qtd" data-m="retq" style="width:65px"><input type="text" placeholder="Motivo obrigatório" data-m="mot" style="width:130px"><button data-m="ret">Retirar</button></td><td class="exec"><input type="number" min="1" max="' +
+                  '" placeholder="Qtd" data-m="retq" style="width:65px"><input type="text" placeholder="Motivo obrigatório" data-m="mot" style="width:130px"><input type="text" placeholder="Quem deu (obrigatório)" data-m="quem" style="width:120px"><button data-m="ret">Retirar</button></td><td class="exec"><input type="number" min="1" max="' +
                   st.saldo +
                   '" placeholder="Qtd" data-m="qtd" style="width:60px"><select data-m="pv" style="width:140px">' +
                   opts +
-                  '</select><input type="text" data-m="nf" placeholder="NF opcional" style="width:85px"><button data-m="alc" ' +
+                  '</select><input type="text" data-m="nf" placeholder="NF opcional" style="width:85px"><input type="text" placeholder="Quem deu (obrigatório)" data-m="quem" style="width:120px"><button data-m="alc" ' +
                   (st.saldo > 0 ? '' : 'disabled') +
                   '>Alocar →</button></td></tr>'
                 )
@@ -18933,13 +18945,18 @@
                 cod = tr.getAttribute('data-cod')
               if (b.dataset.m === 'ret') {
                 const q = Number(tr.querySelector('[data-m=retq]').value) || 0,
-                  mot = tr.querySelector('[data-m=mot]').value.trim()
+                  mot = tr.querySelector('[data-m=mot]').value.trim(),
+                  quem = tr.querySelector('[data-m=quem]').value.trim()
                 if (q <= 0 || q > smktSaldo(cod)) {
                   alert('Quantidade inválida. Saldo: ' + NF.format(smktSaldo(cod)))
                   return
                 }
                 if (!mot) {
                   alert('Informe motivo.')
+                  return
+                }
+                if (!quem) {
+                  alert('Informe QUEM deu a saída.')
                   return
                 }
                 if (confirm('Retirar ' + NF.format(q) + ' un de ' + cod + '?')) {
@@ -18954,6 +18971,7 @@
                     motivo: mot,
                     dataSaida: dataSaida,
                     emSaida: dataSaida,
+                    quem: quem,
                   })
                   renderSmkt()
                   renderSemana()
@@ -18967,9 +18985,14 @@
               if (b.dataset.m === 'alc') {
                 const q = Number(tr.querySelector('[data-m=qtd]').value) || 0,
                   pv = tr.querySelector('[data-m=pv]').value,
-                  nf = tr.querySelector('[data-m=nf]').value.trim()
+                  nf = tr.querySelector('[data-m=nf]').value.trim(),
+                  quem = tr.querySelector('[data-m=quem]').value.trim()
                 if (!pv) {
                   alert('Escolha PV.')
+                  return
+                }
+                if (!quem) {
+                  alert('Informe QUEM deu a saída (alocação).')
                   return
                 }
                 if (q <= 0 || q > smktSaldo(cod)) {
@@ -18988,9 +19011,10 @@
                   pv: z[0],
                   cli: z[1] || '',
                   nf: nf,
-                  motivo: 'Alocação manual',
+                  motivo: 'Alocação manual — ' + quem,
                   dataSaida: dataSaida,
                   emSaida: dataSaida,
+                  quem: quem,
                 })
                 renderSmkt()
                 renderSemana()
@@ -19020,6 +19044,7 @@
         document.getElementById('smEntQtd').value = ''
         document.getElementById('smEntOrigem').value = ''
         document.getElementById('smEntPoder').value = ''
+        document.getElementById('smEntQuem').value = ''
         document.getElementById('smEntMot').value = ''
         const dt = new Date()
         document.getElementById('smEntData').value =
@@ -19043,6 +19068,7 @@
         }
         const origem = document.getElementById('smEntOrigem').value.trim(),
           poder = document.getElementById('smEntPoder').value.trim(),
+          quem = document.getElementById('smEntQuem').value.trim(),
           dataIn = document.getElementById('smEntData').value,
           mot = document.getElementById('smEntMot').value.trim()
         if (!origem) {
@@ -19051,6 +19077,10 @@
         }
         if (!poder) {
           alert('Informe EM PODER DE quem fica o produto.')
+          return
+        }
+        if (!quem) {
+          alert('Informe QUEM deu a entrada.')
           return
         }
         const dataBr = dataIn
@@ -19065,6 +19095,7 @@
           dataIso: dataIn || '',
           origemDesc: origem,
           poderDe: poder,
+          quem: quem,
         })
         smktSave(e, [])
         const h = smktHistory()
@@ -19076,6 +19107,7 @@
           motivo: mot || '',
           origem: origem,
           poderDe: poder,
+          quem: quem,
           entradaData: dataIn || dataBr,
         })
         smktHistorySave(h)
@@ -19106,18 +19138,30 @@
         return b
       }
       function toggleSmktHist(cod) {
-        const b = smktHistBox()
-        if (b._cod === cod && b.style.display === 'block') {
-          b.style.display = 'none'
-          b._cod = ''
+        const tr0 = document.querySelector('tr[data-cod][data-hist="1"]')
+        if (tr0) {
+          tr0.remove()
+        }
+        const trs = document.querySelectorAll('#tbbM tr[data-cod]')
+        let trP = null
+        for (let i = 0; i < trs.length; i++) {
+          if (trs[i].getAttribute('data-cod') === String(cod)) {
+            trP = trs[i]
+            break
+          }
+        }
+        if (!trP) {
           return
         }
+        if (trP._histOpen) {
+          trP._histOpen = false
+          return
+        }
+        trP._histOpen = true
         const h = smktHistory().filter(function (x) {
           return String(x.cod) === String(cod)
         })
         const st = smktNFStatus(cod)
-        b._cod = cod
-        b.style.display = 'block'
         const rows = h.length
           ? h
               .map(function (x) {
@@ -19126,6 +19170,14 @@
                     x.dataSaida.split('-').reverse().join('/') +
                     '</span>'
                   : ''
+                const det = [
+                  x.origem ? 'Origem: ' + x.origem : '',
+                  x.poderDe ? 'Em poder de: ' + x.poderDe : '',
+                  x.quem ? 'Quem: ' + x.quem : '',
+                  x.motivo || '',
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
                 return (
                   '<tr' +
                   (x.undone ? ' style="opacity:.5;text-decoration:line-through"' : '') +
@@ -19139,22 +19191,31 @@
                   '</td><td>' +
                   ((x.pv || '') + ' ' + (x.cli || '') + (x.nf ? ' · NF ' + x.nf : '')) +
                   '</td><td>' +
-                  (x.motivo || '') +
+                  det +
                   '</td></tr>'
                 )
               })
               .join('')
           : '<tr><td colspan="5">Sem eventos registrados para este produto.</td></tr>'
-        b.innerHTML =
-          '<div style="font-weight:800;font-size:13px;color:#92400e;margin-bottom:8px">📚 Histórico — ' +
+        const trH = document.createElement('tr')
+        trH.setAttribute('data-hist', '1')
+        trH.innerHTML =
+          '<td colspan="6" style="background:#fffbeb;padding:8px 10px"><div style="font-weight:800;font-size:12.5px;color:#92400e;margin-bottom:6px">📚 Histórico — ' +
           cod +
           ' · ' +
           descDe(cod).slice(0, 40) +
           ' <span style="color:#64748b;font-weight:600">(saldo atual ' +
           NF.format(st.saldo) +
-          ' un)</span> <button class="exRl" data-closehist="1" style="float:right;padding:2px 10px">Fechar</button></div><div class="tblwrap" style="max-height:220px"><table><thead><tr><th>Data</th><th>Evento</th><th>Qtd</th><th>PV / NF</th><th>Motivo / Origem</th></tr></thead><tbody>' +
+          ' un)</span></div><div class="tblwrap" style="max-height:220px"><table style="font-size:11.5px"><thead><tr><th>Data</th><th>Evento</th><th>Qtd</th><th>PV / NF</th><th>Motivo / Origem</th></tr></thead><tbody>' +
           rows +
-          '</tbody></table></div>'
+          '</tbody></table></div></td>'
+        trP.parentNode.insertBefore(trH, trP.nextSibling)
+        trH.addEventListener('click', function (e) {
+          if (!e.target.closest('input,select,button')) {
+            trP._histOpen = false
+            trH.remove()
+          }
+        })
       }
       window.toggleSmktHist = toggleSmktHist
       // DESFAZER: reverte um evento específico do histórico (por índice) — corrige qualquer erro.
