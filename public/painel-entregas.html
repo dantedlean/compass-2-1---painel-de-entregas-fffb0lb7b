@@ -17462,18 +17462,14 @@
         const chips = document.getElementById('progSemChips')
         if (chips) {
           const multi = allSem && allSem.checked
-          chips.style.display = multi ? 'flex' : 'none'
+          chips.style.display = multi && !window._progChipsFechado ? 'flex' : 'none'
           if (multi && !chips._bound) {
             chips._bound = true
             chips.addEventListener('click', function (e) {
               const ap = e.target.closest('[data-aplicar]')
               if (ap) {
+                window._progChipsFechado = true
                 renderProg()
-                const cb = document.getElementById('progAllSem')
-                if (cb) {
-                  cb.checked = false
-                  cb.dispatchEvent(new Event('change'))
-                }
                 return
               }
               const lp = e.target.closest('[data-limpar]')
@@ -17538,6 +17534,7 @@
           const cb = document.getElementById('progAllSem')
           if (cb)
             cb.addEventListener('change', function () {
+              window._progChipsFechado = false
               progDia = null
               progDate = null
               renderProg()
