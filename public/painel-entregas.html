@@ -442,6 +442,7 @@
     <nav class="tabnav">
       <button id="tabNf" class="on" onclick="showView('nf')">💸 Faturamento</button>
       <button id="tabEnt" onclick="showView('ent')">📅 Entregas por semana</button>
+      <button id="tabPA" onclick="showView('pa')">⚙️ Programação automática</button>
       <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
     </nav>
     <div id="viewNf" class="view on">
@@ -1357,6 +1358,132 @@
       <footer>
         FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20261004.xlsx ·
         dados: MaxiProd (data de entrega por item)
+      </footer>
+    </div>
+
+    <div id="viewProgAuto" class="view">
+      <main>
+        <div
+          class="card"
+          style="padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap"
+        >
+          <b style="font-size: 13.5px">Cenário:</b>
+          <span class="note" style="margin: 0" id="paInfo"
+            >motor de sugestão — programa a carteira respeitando datas de entrega, capacidade e
+            carga semanal</span
+          >
+        </div>
+        <div class="card" id="cardPA">
+          <h2>⚙️ Programação automática <span class="tagP">SUGESTÃO — NÃO É ORDEM</span></h2>
+          <div class="note">
+            O motor sugere quando produzir cada produto para cumprir a carteira: datas de entrega do
+            MaxiProd, trânsito até o cliente, carga por semana e capacidade diária. Nada é gravado
+            no MaxiProd — você revisa e leva o que quiser para a Programação da aba Entregas por
+            semana.
+          </div>
+          <div
+            style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0"
+          >
+            <b style="font-size: 12px; color: #334155">Período:</b>
+            <input
+              id="paIni"
+              type="date"
+              style="
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12px;
+              "
+            />
+            <span class="note" style="margin: 0">até</span>
+            <input
+              id="paFim"
+              type="date"
+              style="
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12px;
+              "
+            />
+            <label
+              class="note"
+              style="margin: 0; display: flex; align-items: center; gap: 5px; cursor: pointer"
+              >Capacidade/dia útil (Curitiba)
+              <input
+                id="paCapC"
+                type="number"
+                min="1"
+                value="40"
+                style="
+                  width: 64px;
+                  padding: 5px;
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  text-align: right;
+                "
+              />
+            </label>
+            <label
+              class="note"
+              style="margin: 0; display: flex; align-items: center; gap: 5px; cursor: pointer"
+              >Vinhedo
+              <input
+                id="paCapV"
+                type="number"
+                min="0"
+                value="0"
+                style="
+                  width: 56px;
+                  padding: 5px;
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  text-align: right;
+                "
+              />
+            </label>
+            <button
+              id="paBtn"
+              class="dlbtn"
+              style="background: #1e3a8a; border-color: #1e3a8a; color: #fff"
+            >
+              ⚙ Gerar programação
+            </button>
+            <button
+              id="paBtnAll"
+              class="dlbtn"
+              style="display: none; background: #16a34a; border-color: #16a34a; color: #fff"
+            >
+              ⬆ Levar tudo para a Programação
+            </button>
+            <button id="paBtnDl" class="dlbtn" style="display: none">
+              ⬇ Baixar sugestão (.xlsx)
+            </button>
+            <span class="note" id="paStatus" style="margin: 0; font-weight: 700"></span>
+          </div>
+          <div class="kpis" id="paKpis"></div>
+          <div class="tblwrap" style="max-height: 460px">
+            <table id="tbPA">
+              <thead>
+                <tr id="trhPA"></tr>
+              </thead>
+              <tbody id="tbbPA"></tbody>
+              <tfoot>
+                <tr id="trfPA"></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="note" style="margin-top: 8px">
+            Cada linha tem <b>⬆ Programar</b> para levar aquele produto/semana para a aba
+            Programação (entra como declaração editável, sem gravar no MaxiProd). Sugestões marcadas
+            <span class="tagF">TARDE</span> não conseguem cumprir a data de entrega — decisão sua:
+            aceitar atraso ou antecipar produção.
+          </div>
+        </div>
+      </main>
+      <footer>
+        Programação automática · sugestão gerada no navegador a partir da carteira item a item
+        (MaxiProd) · nada gravado no ERP
       </footer>
     </div>
 
@@ -21518,14 +21645,478 @@
       renderNf()
       window._nfInit = true
 
+      // ==================== ABA: PROGRAMAÇÃO AUTOMÁTICA (motor de sugestão) ====================
+      // Sugere quando produzir cada produto para cumprir a carteira: data de entrega (item, MaxiProd),
+      // trânsito até o cliente, carga já declarada na agenda e capacidade diária editável.
+      // NADA é gravado no MaxiProd — as sugestões entram na aba Programação como declarações editáveis.
+      function paDus(iniIso, fimIso) {
+        const out = []
+        const d = new Date(iniIso + 'T12:00:00')
+        const fim = new Date(fimIso + 'T12:00:00')
+        while (d <= fim) {
+          const w = d.getDay()
+          if (w > 0 && w < 6) out.push(isoD(d))
+          d.setDate(d.getDate() + 1)
+        }
+        return out
+      }
+      function paSemanaDe(iso) {
+        const d = new Date(iso + 'T12:00:00')
+        d.setDate(d.getDate() + 3)
+        const j4 = new Date(d.getFullYear(), 0, 4)
+        return 'S' + (1 + Math.round(((d - j4) / 86400000 - 3 + ((j4.getDay() + 6) % 7)) / 7))
+      }
+      function paLoadAtual() {
+        // carga já declarada na agenda (rascunho + programação da semana), por iso
+        const load = {}
+        ;((DATA.progSemana && DATA.progSemana.dias) || []).forEach(function (x) {
+          if (!x.data || x.data.length !== 5) return
+          const iso = new Date().getFullYear() + '-' + x.data.slice(3, 5) + '-' + x.data.slice(0, 2)
+          load[iso] = (load[iso] || 0) + (Number(x.qtd) || 0)
+        })
+        return load
+      }
+      function paJaDeclarado() {
+        // o que já está no rascunho (cod|iso -> qtd) para não sugerir em dobro
+        const m = {}
+        ;(Array.isArray(declDraft) ? declDraft : []).forEach(function (d) {
+          if (!d.cod || !d.data || d.status === 'Cancelado') return
+          m[d.cod + '|' + d.data] = (m[d.cod + '|' + d.data] || 0) + (Number(d.qtd) || 0)
+        })
+        return m
+      }
+      function paGerar() {
+        const ini = document.getElementById('paIni').value,
+          fim = document.getElementById('paFim').value
+        const capC = Math.max(1, Number(document.getElementById('paCapC').value) || 40)
+        const capV = Math.max(0, Number(document.getElementById('paCapV').value) || 0)
+        const st = document.getElementById('paStatus')
+        if (!ini || !fim || ini > fim) {
+          alert('Informe o período (de/até).')
+          return
+        }
+        const dus = paDus(ini, fim)
+        if (!dus.length) {
+          alert('O período não tem dias úteis.')
+          return
+        }
+        const hojeIso = isoD(new Date())
+        const start = ini < hojeIso ? hojeIso : ini
+        const load = paLoadAtual()
+        const jaDecl = paJaDeclarado()
+        const capOf = function (loc) {
+          return loc === 'V' ? capV : capC
+        }
+        // agrupa a carteira por produto
+        const prods = {}
+        DATA.rows.forEach(function (r) {
+          if (r.frete) return // frete acompanha o produto, não é programado
+          let p = prods[r.codigo]
+          if (!p) {
+            p = prods[r.codigo] = {
+              cod: r.codigo,
+              desc: r.desc,
+              qtd: 0,
+              vtot: 0,
+              rows: [],
+              localC: 0,
+              localV: 0,
+            }
+          }
+          p.qtd += Number(r.qtd) || 0
+          p.vtot += Number(r.vtot) || 0
+          p.rows.push(r)
+          if (r.local === 'Vinhedo') p.localV += Number(r.qtd) || 0
+          else p.localC += Number(r.qtd) || 0
+        })
+        const lista = Object.values(prods)
+          .map(function (p) {
+            p.local = p.localV > p.localC ? 'V' : 'C'
+            p.vu = p.qtd ? Math.round((p.vtot / p.qtd) * 100) / 100 : 0
+            // deadline = entrega mais antiga do produto; prodUntil = último dia útil de produção que ainda chega a tempo
+            const first = p.rows.slice().sort(function (a, b) {
+              return a.iso.localeCompare(b.iso)
+            })[0]
+            p.deadline = first.iso
+            p.cliFirst = first.cliente
+            const cid = cidadeDeOrig(first.cliente, p.local)
+            const tab = p.local === 'V' ? TRANSITO_VINHEDO : TRANSITO
+            p.tdu = cid ? tab[cid][0] : 0
+            let coletaMax = new Date(p.deadline + 'T12:00:00')
+            for (let i = 0; i < p.tdu; i++) coletaMax = addDU(coletaMax, -1) // recuo os dias úteis de trânsito
+            p.prodUntil = isoD(addDU(coletaMax, -1)) // produção termina no DU anterior à coleta
+            p.pvs = p.rows
+              .map(function (r) {
+                return r.pv
+              })
+              .filter(function (v, i, a) {
+                return a.indexOf(v) === i
+              })
+            return p
+          })
+          .filter(function (p) {
+            return p.qtd > 0
+          })
+        // ordena: mais urgente (prodUntil menor) primeiro, depois maior valor
+        lista.sort(function (a, b) {
+          return a.prodUntil.localeCompare(b.prodUntil) || b.vtot - a.vtot
+        })
+        const sug = []
+        let naoCabe = 0,
+          tardeQtd = 0,
+          tardeV = 0
+        lista.forEach(function (p) {
+          let need = p.qtd - (jaDecl[p.cod] ? 0 : 0) // jaDecl é por cod|iso; aqui desconta por dia abaixo
+          // desconta o que já está declarado deste produto (qualquer data) — evita sugerir em dobro
+          let ja = 0
+          Object.keys(jaDecl).forEach(function (k) {
+            if (k.indexOf(p.cod + '|') === 0) ja += jaDecl[k]
+          })
+          need = p.qtd - ja
+          if (need <= 0) return
+          const cap = capOf(p.local)
+          // dias úteis disponíveis: do início até prodUntil (janela ok) — depois, se sobrar, TARDE até o fim do período
+          const janela = dus.filter(function (d) {
+            return d >= start && d <= p.prodUntil
+          })
+          const resto = dus.filter(function (d) {
+            return d > p.prodUntil
+          })
+          let aloc = {} // iso -> qtd
+          function distribui(arr) {
+            let rest = need
+            for (let i = 0; i < arr.length && rest > 0; i++) {
+              const d = arr[i]
+              const room = cap - (load[d] || 0) - (paAlloc[d] || 0) - (aloc[d] || 0)
+              if (room <= 0) continue
+              const alvo = Math.ceil(rest / Math.max(1, arr.length - i)) // nivelamento da carga
+              const q = Math.min(room, rest, alvo)
+              if (q > 0) {
+                aloc[d] = (aloc[d] || 0) + q
+                rest -= q
+              }
+            }
+            return rest
+          }
+          let sobra = distribui(janela)
+          let tarde = false
+          if (sobra > 0 && resto.length) {
+            tarde = true
+            const s2 = distribui(resto)
+            sobra = s2
+          }
+          Object.keys(aloc).forEach(function (d) {
+            if (aloc[d] <= 0) return
+            paAlloc[d] = (paAlloc[d] || 0) + aloc[d]
+            sug.push({
+              cod: p.cod,
+              desc: p.desc,
+              qtd: aloc[d],
+              iso: d,
+              sem: paSemanaDe(d),
+              local: p.local === 'V' ? 'Vinhedo' : 'Curitiba',
+              deadline: p.deadline,
+              prodUntil: p.prodUntil,
+              tarde: tarde,
+              vu: p.vu,
+              vtot: aloc[d] * p.vu,
+              nPvs: p.pvs.length,
+              pvs: p.pvs.join(', '),
+            })
+          })
+          if (sobra > 0) {
+            naoCabe += sobra
+            tardeQtd += sobra
+            tardeV += sobra * p.vu
+          } else if (tarde) {
+            tardeQtd += need * 0
+          } // tarde já marcada nas linhas
+        })
+        sug.sort(function (a, b) {
+          return a.iso.localeCompare(b.iso) || a.cod.localeCompare(b.cod)
+        })
+        window._paSug = sug
+        window._paParams = { ini: ini, fim: fim, capC: capC, capV: capV }
+        paRender(sug, {
+          dus: dus.length,
+          naoCabe: naoCabe,
+          capC: capC,
+          capV: capV,
+          ini: ini,
+          fim: fim,
+        })
+      }
+      window.paGerar = paGerar
+      function paRender(sug, meta) {
+        const kpis = document.getElementById('paKpis')
+        const totQ = sug.reduce(function (a, s) {
+            return a + s.qtd
+          }, 0),
+          totV = sug.reduce(function (a, s) {
+            return a + s.vtot
+          }, 0)
+        const dias = new Set(
+          sug.map(function (s) {
+            return s.iso
+          }),
+        ).size
+        const tarde = sug.filter(function (s) {
+          return s.tarde
+        })
+        const tQ = tarde.reduce(function (a, s) {
+            return a + s.qtd
+          }, 0),
+          tV = tarde.reduce(function (a, s) {
+            return a + s.vtot
+          }, 0)
+        kpis.innerHTML =
+          '<div class="kpi"><div class="kl">Sugestão</div><div class="kv">' +
+          sug.length +
+          ' alocações</div></div>' +
+          '<div class="kpi"><div class="kl">Unidades a produzir</div><div class="kv">' +
+          NF.format(totQ) +
+          '</div></div>' +
+          '<div class="kpi"><div class="kl">Valor programado</div><div class="kv">' +
+          FMT.format(totV) +
+          '</div></div>' +
+          '<div class="kpi"><div class="kl">Dias úteis usados</div><div class="kv">' +
+          dias +
+          ' / ' +
+          meta.dus +
+          '</div></div>' +
+          '<div class="kpi"><div class="kl">Capacidade/dia</div><div class="kv">' +
+          meta.capC +
+          ' C · ' +
+          meta.capV +
+          ' V</div></div>' +
+          (tQ > 0
+            ? '<div class="kpi"><div class="kl" style="color:#dc2626">Fora do prazo (TARDE)</div><div class="kv" style="color:#dc2626">' +
+              NF.format(tQ) +
+              ' un · ' +
+              FMT.format(tV) +
+              '</div></div>'
+            : '') +
+          (meta.naoCabe > 0
+            ? '<div class="kpi"><div class="kl" style="color:#dc2626">Não cabe no período</div><div class="kv" style="color:#dc2626">' +
+              NF.format(meta.naoCabe) +
+              ' un</div></div>'
+            : '')
+        document.getElementById('trhPA').innerHTML =
+          '<th>Produzir em</th><th>Semana</th><th>Produto</th><th>Qtd</th><th>Valor</th><th>Local</th><th>Produzir até</th><th>Entrega mais antiga</th><th>PVs</th><th>Situação</th><th></th>'
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        document.getElementById('tbbPA').innerHTML = sug.length
+          ? sug
+              .map(function (s, i) {
+                const d = new Date(s.iso + 'T12:00:00')
+                return (
+                  '<tr' +
+                  (s.tarde ? ' style="background:#FEF2F2"' : '') +
+                  '><td><b>' +
+                  s.iso.slice(8, 10) +
+                  '/' +
+                  s.iso.slice(5, 7) +
+                  '</b> <span class="note">' +
+                  nomeDia[d.getDay()] +
+                  '</span></td>' +
+                  '<td>' +
+                  s.sem +
+                  '</td><td><div class="cod">' +
+                  s.cod +
+                  '</div><div class="dsc">' +
+                  s.desc.slice(0, 52) +
+                  '</div></td>' +
+                  '<td class="num"><b>' +
+                  NF.format(s.qtd) +
+                  '</b></td><td class="num">' +
+                  FMT.format(s.vtot) +
+                  '</td><td>' +
+                  s.local +
+                  '</td>' +
+                  '<td>' +
+                  (s.prodUntil ? s.prodUntil.slice(8, 10) + '/' + s.prodUntil.slice(5, 7) : '—') +
+                  '</td>' +
+                  '<td>' +
+                  s.deadline.slice(8, 10) +
+                  '/' +
+                  s.deadline.slice(5, 7) +
+                  '</td>' +
+                  '<td title="' +
+                  escH(s.pvs) +
+                  '">' +
+                  s.nPvs +
+                  ' PV(s)</td>' +
+                  '<td>' +
+                  (s.tarde
+                    ? '<span class="tagF">TARDE</span>'
+                    : '<span style="color:#16a34a;font-weight:700">OK</span>') +
+                  '</td>' +
+                  '<td><button class="exRl" data-pa="' +
+                  i +
+                  '" title="Levar esta alocação para a Programação (aba Entregas por semana)">⬆ Programar</button></td></tr>'
+                )
+              })
+              .join('')
+          : '<tr><td colspan="11">Sem sugestões — ajuste o período e a capacidade e gere novamente.</td></tr>'
+        document.getElementById('trfPA').innerHTML =
+          '<td>TOTAL — ' +
+          sug.length +
+          ' alocações</td><td></td><td></td><td class="num"><b>' +
+          NF.format(totQ) +
+          '</b></td><td class="num"><b>' +
+          FMT.format(totV) +
+          '</b></td><td colspan="6"></td>'
+        document.getElementById('paBtnAll').style.display = sug.length ? '' : 'none'
+        document.getElementById('paBtnDl').style.display = sug.length ? '' : 'none'
+        document.getElementById('paInfo').textContent =
+          'cenário: ' +
+          meta.ini +
+          ' a ' +
+          meta.fim +
+          ' · capacidade ' +
+          meta.capC +
+          '/dia (Curitiba) e ' +
+          meta.capV +
+          '/dia (Vinhedo) · desconta o que já está na agenda e no rascunho · fretes acompanham o produto'
+        const st = document.getElementById('paStatus')
+        if (st) st.textContent = sug.length ? sug.length + ' alocações sugeridas' : ''
+        const tb = document.getElementById('tbbPA')
+        if (tb && !tb._paBound) {
+          tb._paBound = true
+          tb.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-pa]')
+            if (!b) return
+            paLevar([window._paSug[+b.getAttribute('data-pa')]])
+          })
+        }
+      }
+      function paLevar(rows) {
+        if (!Array.isArray(declDraft)) {
+          try {
+            declDraft = declLoad()
+          } catch (e) {
+            declDraft = []
+          }
+        }
+        if (!Array.isArray(declDraft)) declDraft = []
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        let n = 0
+        rows.forEach(function (s) {
+          if (!s) return
+          const d = new Date(s.iso + 'T12:00:00')
+          declDraft.push({
+            dia: nomeDia[d.getDay()],
+            data: s.iso,
+            cod: s.cod,
+            qtd: s.qtd,
+            local: s.local === 'Vinhedo' ? 'V' : 'C',
+            pv: '',
+            id: 'PR-PA-' + Date.now() + '-' + n++,
+            obs: 'sugestão programação automática',
+            status: 'Planejado',
+          })
+        })
+        declSave()
+        progBuildFromDecls()
+        renderProg()
+        alert(
+          n +
+            ' alocação(ões) levada(s) para a Programação (aba Entregas por semana) — revise lá antes de considerar firme. Nada gravado no MaxiProd.',
+        )
+      }
+      window.paLevar = paLevar
+      function renderProgAuto() {
+        const hoje = new Date()
+        const seg = new Date(hoje)
+        seg.setDate(hoje.getDate() - hoje.getDay() + 1)
+        const iso = function (d) {
+          return (
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          )
+        }
+        const fim = new Date(seg)
+        fim.setDate(seg.getDate() + 8 * 7 - 1)
+        document.getElementById('paIni').value = iso(seg)
+        document.getElementById('paFim').value = iso(fim)
+        document.getElementById('paBtn').addEventListener('click', function () {
+          paAlloc = {}
+          paGerar()
+        })
+        document.getElementById('paBtnAll').addEventListener('click', function () {
+          const s = window._paSug || []
+          if (!s.length) return
+          if (
+            !confirm(
+              'Levar as ' +
+                s.length +
+                ' alocação(ões) da sugestão para a Programação? Você revisa lá antes de considerar firme.',
+            )
+          )
+            return
+          paLevar(s)
+        })
+        document.getElementById('paBtnDl').addEventListener('click', function () {
+          const s = window._paSug || []
+          const rows = [
+            [
+              'Produzir em',
+              'Semana',
+              'Codigo',
+              'Produto',
+              'Qtd',
+              'Valor',
+              'Local',
+              'Produzir até',
+              'Entrega mais antiga',
+              'PVs',
+              'Situação',
+            ],
+          ]
+          s.forEach(function (x) {
+            rows.push([
+              x.iso,
+              x.sem,
+              x.cod,
+              x.desc,
+              x.qtd,
+              Math.round(x.vtot * 100) / 100,
+              x.local,
+              x.prodUntil,
+              x.deadline,
+              x.pvs,
+              x.tarde ? 'TARDE' : 'OK',
+            ])
+          })
+          const wb = XLSX.utils.aoa_to_sheet(rows)
+          const wbk = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(wbk, wb, 'Sugestao')
+          XLSX.writeFile(
+            wbk,
+            'programacao_automatica_' +
+              new Date().toISOString().slice(0, 10).replace(/-/g, '') +
+              '.xlsx',
+          )
+        })
+      }
+      window.renderProgAuto = renderProgAuto
+
       // ==================== ABAS: Entregas × Carteira a Faturar ====================
       function showView(v) {
         document.getElementById('viewNf').classList.toggle('on', v === 'nf')
         document.getElementById('viewEnt').classList.toggle('on', v === 'ent')
+        document.getElementById('viewProgAuto').classList.toggle('on', v === 'pa')
         document.getElementById('viewFat').classList.toggle('on', v === 'fat')
         document.getElementById('tabNf').classList.toggle('on', v === 'nf')
         document.getElementById('tabEnt').classList.toggle('on', v === 'ent')
+        document.getElementById('tabPA').classList.toggle('on', v === 'pa')
         document.getElementById('tabFat').classList.toggle('on', v === 'fat')
+        if (v === 'pa' && !window._paInit) {
+          renderProgAuto()
+          window._paInit = true
+        }
         if (v === 'fat' && !window._fatInit) {
           renderFat()
           window._fatInit = true
