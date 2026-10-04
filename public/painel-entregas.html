@@ -421,7 +421,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004204403">
+  <body data-build="b20261004205050">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18943,7 +18943,18 @@
                       ? ' <span style="color:#991b1b">🛒 no SMKT: ' +
                         NF.format(x.smkt) +
                         ' un</span>'
-                      : '')
+                      : '') +
+                    ' <button class="exRl" data-poka-del="' +
+                    x.tipo +
+                    '|' +
+                    x.cod +
+                    '|' +
+                    x.data +
+                    '" style="padding:1px 8px;font-size:10px;background:#fff;border-color:#fecaca;color:#991b1b" title="Apaga TODAS as declarações de ' +
+                    x.cod +
+                    ' em ' +
+                    dtBR(x.data) +
+                    ' (com desfazer)">Apagar</button>'
                   )
                 })
                 .join(' · ') +
@@ -18965,7 +18976,17 @@
                     NF.format(x.qtd) +
                     ' (' +
                     (x.pv === '—' ? 'sem PV' : 'PV ' + x.pv) +
-                    ')'
+                    ') em ' +
+                    dtBR(x.data) +
+                    ' <button class="exRl" data-poka-del="fossil|' +
+                    x.cod +
+                    '|' +
+                    x.data +
+                    '" style="padding:1px 8px;font-size:10px;background:#fff;border-color:#fecaca;color:#991b1b" title="Apaga TODAS as declarações de ' +
+                    x.cod +
+                    ' em ' +
+                    dtBR(x.data) +
+                    ' (com desfazer)">Apagar</button>'
                   )
                 })
                 .join(' · ') +
@@ -18973,9 +18994,71 @@
               '</div>'
           }
           html +=
-            '<div style="font-weight:600;font-size:11.5px;margin-top:6px;color:#7f1d1d">Nada foi bloqueado — revise se é produção para estoque intencional ou erro de alocação. Fretes e itens de revenda não têm PV por natureza.</div>'
+            '<div style="font-weight:600;font-size:11.5px;margin-top:6px;color:#7f1d1d">Nada foi bloqueado — revise se é produção para estoque intencional ou erro de alocação. Fretes e itens de revenda não têm PV por natureza. "Apagar" remove a declaração do rascunho (Ctrl+Z desfaz).</div>'
           w.style.display = 'block'
           w.innerHTML = html
+        })()
+        // POKA-YOKE: botão Apagar no aviso — remove as declarações do item/dia (delegação no #pokaWarn)
+        ;(function () {
+          const w = document.getElementById('pokaWarn')
+          if (!w || w._pokaBound) return
+          w._pokaBound = true
+          w.addEventListener('click', function (e) {
+            const b = e.target.closest('[data-poka-del]')
+            if (!b) return
+            const parts = b.getAttribute('data-poka-del').split('|')
+            const tipo = parts[0],
+              cod = parts[1],
+              iso = parts[2]
+            const alvo = declDraft.filter(function (d) {
+              return d.cod === cod && progIso(d.data) === progIso(iso) && d.status !== 'Cancelado'
+            })
+            if (!alvo.length) {
+              renderProgTabela()
+              return
+            }
+            const backup = JSON.parse(JSON.stringify(alvo))
+            if (
+              !confirm(
+                'Apagar ' +
+                  cod +
+                  ' ×' +
+                  NF.format(
+                    alvo.reduce(function (s, d) {
+                      return s + (Number(d.qtd) || 0)
+                    }, 0),
+                  ) +
+                  ' un de ' +
+                  dtBR(iso) +
+                  ' do rascunho? (Ctrl+Z desfaz)',
+              )
+            )
+              return
+            declDraft = declDraft.filter(function (d) {
+              return !(
+                d.cod === cod &&
+                progIso(d.data) === progIso(iso) &&
+                d.status !== 'Cancelado'
+              )
+            })
+            window._pokaUndo = { tipo: tipo, cod: cod, iso: iso, backup: backup }
+            declSave()
+            progBuildFromDecls()
+            renderProg()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                cod +
+                ' ×' +
+                NF.format(
+                  backup.reduce(function (s, d) {
+                    return s + (Number(d.qtd) || 0)
+                  }, 0),
+                ) +
+                ' apagado de ' +
+                dtBR(iso) +
+                ' — Ctrl+Z desfaz · nada gravado no MaxiProd'
+          })
         })()
         // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
         const tb = document.getElementById('tbbP')
@@ -19288,9 +19371,22 @@
             }
           })
         }
-        // teclado: Ctrl+C copia a linha selecionada, Ctrl+V cola
+        // teclado: Ctrl+C copia a linha selecionada, Ctrl+V cola; Ctrl+Z desfaz o "Apagar" do poka-yoke
         document.addEventListener('keydown', function (e) {
-          if (!(e.ctrlKey || e.metaKey) || progProdsCache.length === 0) return
+          if (!(e.ctrlKey || e.metaKey)) return
+          if ((e.key === 'z' || e.key === 'Z') && window._pokaUndo) {
+            const u = window._pokaUndo
+            declDraft = declDraft.concat(u.backup)
+            window._pokaUndo = null
+            declSave()
+            progBuildFromDecls()
+            renderProg()
+            const st = document.getElementById('declStatus')
+            if (st) st.textContent = '↩ Desfeito: ' + u.cod + ' voltou para ' + dtBR(u.iso)
+            e.preventDefault()
+            return
+          }
+          if (progProdsCache.length === 0) return
           const sel = document.querySelector('#tbbP tr.prow.sel')
           if ((e.key === 'c' || e.key === 'C') && sel) {
             const p = progProdsCache[parseInt(sel.getAttribute('data-ix'), 10)]
@@ -24841,7 +24937,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004204403); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004205050); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
