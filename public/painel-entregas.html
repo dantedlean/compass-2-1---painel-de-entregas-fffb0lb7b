@@ -21649,6 +21649,7 @@
       // Sugere quando produzir cada produto para cumprir a carteira: data de entrega (item, MaxiProd),
       // trânsito até o cliente, carga já declarada na agenda e capacidade diária editável.
       // NADA é gravado no MaxiProd — as sugestões entram na aba Programação como declarações editáveis.
+      var paAlloc = {} // carga alocada pela sugestão corrente, por iso
       function paDus(iniIso, fimIso) {
         const out = []
         const d = new Date(iniIso + 'T12:00:00')
