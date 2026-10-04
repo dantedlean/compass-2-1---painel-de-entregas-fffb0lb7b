@@ -18806,7 +18806,7 @@
         })
         smktHistorySave(hist)
         document.getElementById('trhM').innerHTML =
-          '<th>Produto</th><th>Saldo disponível</th><th>Valor em estoque</th><th>Saída via NF</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
+          '<th>Produto</th><th>Saldo disponível</th><th>Valor unitário</th><th>Valor em estoque</th><th>Saída via NF</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
         document.getElementById('tbbM').innerHTML = active.length
           ? active
               .map(function (cod) {
@@ -18845,6 +18845,8 @@
                   '</div></td><td class="num"><b>' +
                   NF.format(st.saldo) +
                   '</b></td><td class="num">' +
+                  FMT.format(vuDe(cod)) +
+                  '</td><td class="num">' +
                   FMT.format(st.saldo * vuDe(cod)) +
                   '</td><td class="num">' +
                   NF.format(st.saiuNF) +
@@ -18860,7 +18862,7 @@
                 )
               })
               .join('')
-          : '<tr><td colspan="6">SMKT sem saldo ativo. Entradas aparecem aqui (destino 🛒 no card Programação ou botão de entrada).</td></tr>'
+          : '<tr><td colspan="7">SMKT sem saldo ativo. Entradas aparecem aqui (destino 🛒 no card Programação ou botão de entrada).</td></tr>'
         document.getElementById('trfM').innerHTML =
           '<td>' +
           active.length +
@@ -18870,7 +18872,7 @@
               return a + (Number(x.qtd) || 0)
             }, 0),
           ) +
-          '</td><td class="num">' +
+          '</td><td></td><td class="num">' +
           FMT.format(
             active.reduce(function (a, c) {
               return a + smktSaldo(c) * vuDe(c)
@@ -19200,7 +19202,7 @@
         const trH = document.createElement('tr')
         trH.setAttribute('data-hist', '1')
         trH.innerHTML =
-          '<td colspan="6" style="background:#fffbeb;padding:8px 10px"><div style="font-weight:800;font-size:12.5px;color:#92400e;margin-bottom:6px">📚 Histórico — ' +
+          '<td colspan="7" style="background:#fffbeb;padding:8px 10px"><div style="font-weight:800;font-size:12.5px;color:#92400e;margin-bottom:6px">📚 Histórico — ' +
           cod +
           ' · ' +
           descDe(cod).slice(0, 40) +
