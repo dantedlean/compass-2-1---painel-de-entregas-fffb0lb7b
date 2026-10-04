@@ -16855,6 +16855,84 @@
           ],
         },
       }
+      window.PLANO_SEMANA = {
+        S40: [
+          { cod: '403-0003', qtd: 8.0, pv: '539', desc: 'CARRINHO LOSS PREVENTION' },
+          { cod: '403-0024', qtd: 2.0, pv: '71', desc: 'CARRINHO 4 NIVEIS 800X800' },
+          { cod: '406-0001', qtd: 53.0, pv: '534', desc: 'ESCORREGADOR SOLDADO MERCADO LIVRE' },
+        ],
+        S41: [
+          {
+            cod: '404-0002',
+            qtd: 5.0,
+            pv: '503',
+            desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+          },
+          {
+            cod: '403-0019',
+            qtd: 3.0,
+            pv: '2128',
+            desc: 'Carrinho gaiola transporte de resíduos pequeno 2000 alt x 900 comp x 8',
+          },
+          {
+            cod: '403-0016',
+            qtd: 2.0,
+            pv: '2113',
+            desc: 'CARRINHO DE TRANSPORTE DIVISORIAS BRITÂNIA',
+          },
+          { cod: '412-0009', qtd: 4.0, pv: '546', desc: 'MESA DE CUBING' },
+          { cod: '412-0008', qtd: 2.0, pv: '546', desc: 'MESA DESPACHO OUPM-0003' },
+          { cod: '402-0010', qtd: 2.0, pv: '71', desc: 'BANCADA FIXA' },
+          { cod: '403-0025', qtd: 1.0, pv: '77', desc: 'CARRINHO EXTERNO' },
+          { cod: '03322', qtd: 23.0, pv: '79', desc: 'CARRINHO DE TRANSPORTE MANUAL' },
+          { cod: 'OUCP-0030', qtd: 6.0, pv: '567', desc: 'CARRINHO OUCP-0030' },
+        ],
+        S42: [
+          { cod: '416-0001', qtd: 1.0, pv: '529', desc: 'SUPORTE PARA BALANÇA' },
+          { cod: '402-0009', qtd: 4.0, pv: '459', desc: 'BANCADA MÓVEL - AXBC-0001' },
+          { cod: '401-0007', qtd: 60.0, pv: '549', desc: 'ML FLOW RACK 2X2 - V2' },
+        ],
+        S43: [{ cod: '401-0014', qtd: 49.0, pv: '549', desc: 'FLOW RACK 3X2' }],
+        S44: [
+          {
+            cod: '404-0001',
+            qtd: 84.0,
+            pv: '504',
+            desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+          },
+          { cod: 'FR0001', qtd: 1.0, pv: '2124', desc: 'FLOW RACK' },
+          { cod: '403-0011', qtd: 6.0, pv: '2134', desc: 'CARRINHO DE NOTEBOOK 900X600' },
+          { cod: '419-0001', qtd: 1.0, pv: '113', desc: 'ELEVADOR TOMBADOR - SHOPEE' },
+          {
+            cod: '403-0017',
+            qtd: 3.0,
+            pv: '2122',
+            desc: 'Carrinho Gaiola de Resíduos 1970 alt x 2000 comp. x 1000mm larg INOX',
+          },
+          {
+            cod: '403-0018',
+            qtd: 4.0,
+            pv: '2122',
+            desc: 'Carrinho Gaiola movimentação modular inox 1860 alt x 1000 comp x950mm ',
+          },
+          {
+            cod: '401-0006',
+            qtd: 48.0,
+            pv: '469',
+            desc: 'KIT INDUÇÃO - SOLDADO — PARTE 1/2 (11 PVs)',
+          },
+        ],
+        S45: [
+          { cod: 'BC0001', qtd: 1.0, pv: '82', desc: 'BANCADA FIXA' },
+          { cod: 'CR0001', qtd: 127.0, pv: '445', desc: 'CARRINHO DE TRANSPORTE MANUAL' },
+          {
+            cod: '401-0006',
+            qtd: 49.0,
+            pv: '540',
+            desc: 'KIT INDUÇÃO - SOLDADO — PARTE 2/2 (22 PVs)',
+          },
+        ],
+      }
       const FAT_URL =
         'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev/backend/v1/compass2/faturamento'
       const SEM = DATA.semanas
@@ -17134,6 +17212,90 @@
       let progDia = null,
         progDate = null
       let declDraft = []
+      // SUGESTÃO da próxima semana (semana sem declaração): semeia o rascunho editável com a
+      // fila do plano de recuperação da semana seguinte — editável como qualquer declaração.
+      window._sugAplicada = false
+      function semearSugestaoProximaSemana() {
+        if (window._sugAplicada || !DATA.progSemana || !DATA.progSemana.dias.length) return
+        const hj = new Date()
+        const dow = (hj.getDay() + 6) % 7
+        let segDate = new Date(hj)
+        segDate.setDate(segDate.getDate() - dow)
+        if (dow >= 5) {
+          segDate = new Date(hj)
+          segDate.setDate(segDate.getDate() + (7 - dow))
+        }
+        const segIso =
+          segDate.getFullYear() +
+          '-' +
+          String(segDate.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(segDate.getDate()).padStart(2, '0')
+        const temFuturo = DATA.progSemana.dias.some(function (x) {
+          const p = String(x.data).split('/')
+          const iso = p.length === 3 ? new Date().getFullYear() + '-' + p[1] + '-' + p[0] : x.data
+          return iso >= segIso
+        })
+        if (temFuturo) return // semana declarada ainda tem dias futuros — nada a semear
+        // semana alvo = próxima segunda; achar a aba do plano (S##) correspondente
+        const y = segDate.getFullYear(),
+          w = (function (d) {
+            const t = new Date(d)
+            t.setDate(t.getDate() + 3)
+            const jan4 = new Date(t.getFullYear(), 0, 4)
+            return 1 + Math.round(((t - jan4) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7)
+          })(segDate)
+        const alvo = 'S' + String(w).padStart(2, '0')
+        const linhas = window.PLANO_SEMANA && window.PLANO_SEMANA[alvo]
+        if (!linhas || !linhas.length) {
+          window._sugAplicada = true
+          return
+        }
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const diasUteis = []
+        for (let i = 0; i < 5; i++) {
+          const d = new Date(segDate)
+          d.setDate(d.getDate() + i)
+          diasUteis.push(d)
+        }
+        // distribui produtos (maior qtd primeiro) equilibrando carga nos 5 dias úteis
+        const carga = [0, 0, 0, 0, 0]
+        let n = 0
+        linhas
+          .slice()
+          .sort(function (a, b) {
+            return b.qtd - a.qtd
+          })
+          .forEach(function (L) {
+            let mi = 0
+            for (let i = 1; i < 5; i++) {
+              if (carga[i] < carga[mi]) mi = i
+            }
+            carga[mi] += L.qtd
+            const d = diasUteis[mi]
+            const iso =
+              d.getFullYear() +
+              '-' +
+              String(d.getMonth() + 1).padStart(2, '0') +
+              '-' +
+              String(d.getDate()).padStart(2, '0')
+            declDraft.push({
+              dia: nomeDia[d.getDay()],
+              data: iso,
+              cod: L.cod,
+              qtd: L.qtd,
+              local: 'C',
+              pv: L.pv || '',
+              id: 'PR-SUG-' + n++,
+              obs: 'SUGESTÃO do plano de recuperação (' + alvo + ') — confirmar',
+              status: 'Planejado',
+            })
+          })
+        if (n) {
+          declSave()
+        }
+        window._sugAplicada = true
+      }
       function renderHistSem(diasHist) {
         const card = document.getElementById('cardHistSem')
         if (!card) return
@@ -20660,6 +20822,9 @@
 
       // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
       declDraft = declLoad()
+      progBuildFromDecls()
+      // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
+      semearSugestaoProximaSemana()
       progBuildFromDecls()
 
       // ==================== SINCRONIZAÇÃO DO RASCUNHO COM O SERVIDOR (Compass 2.1 / PocketBase) ====================
