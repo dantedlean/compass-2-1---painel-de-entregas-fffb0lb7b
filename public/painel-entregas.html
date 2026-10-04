@@ -22126,6 +22126,45 @@
           )
         }
         semSel.innerHTML = opts.join('')
+        // semana ↔ data coerentes: mudar a semana leva a data para a segunda da semana (se estiver fora dela);
+        // mudar a data realinha a semana
+        semSel.addEventListener('change', function () {
+          const si = semSel.value
+          if (!si) return
+          const dt = document.getElementById('paDateInput')
+          const cur = dt.value
+          const p = si.split('-')
+          const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+          fim.setDate(fim.getDate() + 5) // seg..sáb
+          const dentro =
+            cur >= si &&
+            cur <=
+              fim.getFullYear() +
+                '-' +
+                String(fim.getMonth() + 1).padStart(2, '0') +
+                '-' +
+                String(fim.getDate()).padStart(2, '0')
+          if (!dentro) dt.value = si
+        })
+        document.getElementById('paDateInput').addEventListener('change', function () {
+          const v = this.value
+          if (!v) return
+          const x = new Date(v + 'T12:00:00')
+          const dw = (x.getDay() + 6) % 7
+          x.setDate(x.getDate() - dw)
+          const si =
+            x.getFullYear() +
+            '-' +
+            String(x.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(x.getDate()).padStart(2, '0')
+          if (
+            Array.prototype.some.call(semSel.options, function (o) {
+              return o.value === si
+            })
+          )
+            semSel.value = si
+        })
         document.getElementById('paLocalSel').value =
           s.local === 'Vinhedo' || s.local === 'V' ? 'Vinhedo' : 'Curitiba'
         box.style.display = 'flex'
