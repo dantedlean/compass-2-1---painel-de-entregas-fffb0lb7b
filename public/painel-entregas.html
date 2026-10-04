@@ -17469,12 +17469,17 @@
               const ap = e.target.closest('[data-aplicar]')
               if (ap) {
                 window._progChipsFechado = true
+                progDia = null
+                progDate = null
                 renderProg()
                 return
               }
               const lp = e.target.closest('[data-limpar]')
               if (lp) {
                 window._progSemSel = {}
+                window._progChipsFechado = false
+                progDia = null
+                progDate = null
                 renderProg()
                 return
               }
