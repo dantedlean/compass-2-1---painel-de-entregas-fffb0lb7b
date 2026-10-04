@@ -969,6 +969,23 @@
             >
               + Incluir no dia selecionado
             </button>
+            <label
+              class="note"
+              style="margin: 0"
+              title="Opcional — deixe vazio para incluir no dia selecionado"
+              >ou data:</label
+            >
+            <input
+              id="addData"
+              type="date"
+              style="
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12px;
+              "
+              title="Opcional — deixe vazio para incluir no dia selecionado"
+            />
             <button
               id="btnCleanFoss"
               class="dlbtn"
@@ -21089,7 +21106,11 @@
         inpProd.addEventListener('change', showInfoProd)
         btn.addEventListener('click', function () {
           // data do DIA SELECIONADO (botão carrega dd/mm) — não procurar pelo nome do dia na semana corrente
-          const br =
+          // se o campo "ou data" estiver preenchido, ele vence (alocar em outra data)
+          const dataAlt = document.getElementById('addData')
+            ? document.getElementById('addData').value
+            : ''
+          let br =
             typeof progDate === 'string' && progDate.length === 5
               ? progDate
               : (
@@ -21099,10 +21120,13 @@
                     })) ||
                   {}
                 ).data || ''
-          const iso =
+          let iso =
             br.length === 5
               ? new Date().getFullYear() + '-' + br.slice(3, 5) + '-' + br.slice(0, 2)
               : br
+          if (dataAlt) {
+            iso = dataAlt
+          }
           if (modo.value === 'prod') {
             const cod = (inpProd.value || '').trim().toUpperCase()
             const rs = DATA.rows.filter(function (r) {
@@ -21133,6 +21157,7 @@
             renderProg()
             inpProd.value = ''
             qtd.value = ''
+            if (document.getElementById('addData')) document.getElementById('addData').value = ''
             info.innerHTML =
               '<span style="color:#16a34a">✔ ' +
               cod +
@@ -21167,6 +21192,7 @@
           inp.value = ''
           qtd.value = ''
           pvSel = null
+          if (document.getElementById('addData')) document.getElementById('addData').value = ''
           info.innerHTML =
             '<span style="color:#16a34a">✔ Incluído em ' +
             iso.split('-').reverse().join('/') +
