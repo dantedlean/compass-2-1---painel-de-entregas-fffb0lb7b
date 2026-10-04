@@ -1640,6 +1640,7 @@
                   <th>Qtd</th>
                   <th>Valor unit.</th>
                   <th>Valor total</th>
+                  <th>Programação</th>
                 </tr>
               </thead>
               <tbody id="fAll"></tbody>
@@ -8119,6 +8120,44 @@
             prod: null,
           },
         ],
+        progMap: {
+          '404-0001': [
+            { data: '2026-09-22', qtd: 38.0, pv: '', local: 'C', status: 'Realizado' },
+            { data: '2026-09-23', qtd: 38.0, pv: '', local: 'C', status: 'Realizado' },
+            { data: '2026-09-24', qtd: 38.0, pv: '', local: 'C', status: 'Realizado' },
+            { data: '2026-09-29', qtd: 40.0, pv: '', local: 'C', status: 'Planejado' },
+            { data: '2026-09-30', qtd: 15.0, pv: '', local: 'C', status: 'Planejado' },
+            { data: '2026-10-01', qtd: 15.0, pv: '', local: 'C', status: 'Planejado' },
+            { data: '2026-10-02', qtd: 23.0, pv: '', local: 'C', status: 'Planejado' },
+          ],
+          '404-0002': [
+            { data: '2026-09-22', qtd: 1.0, pv: '', local: 'C', status: 'Realizado' },
+            { data: '2026-09-23', qtd: 3.0, pv: '', local: 'C', status: 'Realizado' },
+            { data: '2026-10-02', qtd: 2.0, pv: '', local: 'C', status: 'Planejado' },
+          ],
+          '401-0006': [{ data: '2026-09-24', qtd: 7.0, pv: '', local: 'C', status: 'Realizado' }],
+          '401-0007': [
+            { data: '2026-09-25', qtd: 15.0, pv: '549', local: 'C', status: 'Planejado' },
+            { data: '2026-09-26', qtd: 25.0, pv: '549', local: 'C', status: 'Planejado' },
+            { data: '2026-09-28', qtd: 17.0, pv: '549', local: 'C', status: 'Planejado' },
+          ],
+          '403-0016': [
+            { data: '2026-09-25', qtd: 2.0, pv: '2113', local: 'C', status: 'Planejado' },
+          ],
+          ID01598: [
+            { data: '2026-09-28', qtd: 20.0, pv: '120', local: 'C', status: 'Planejado' },
+            { data: '2026-09-30', qtd: 20.0, pv: '120', local: 'C', status: 'Planejado' },
+          ],
+          ID01778: [{ data: '2026-09-28', qtd: 1.0, pv: '120', local: 'C', status: 'Planejado' }],
+          '401-0014': [
+            { data: '2026-09-29', qtd: 15.0, pv: '549', local: 'C', status: 'Planejado' },
+            { data: '2026-09-30', qtd: 19.0, pv: '549', local: 'C', status: 'Planejado' },
+            { data: '2026-10-01', qtd: 0.0, pv: '', local: 'C', status: 'Planejado' },
+          ],
+          '406-0001': [{ data: '2026-09-30', qtd: 53.0, pv: '', local: 'V', status: 'Planejado' }],
+          ID02730: [{ data: '2026-10-01', qtd: 60.0, pv: '126', local: 'V', status: 'Planejado' }],
+          QD0001: [{ data: '2026-09-28', qtd: 3.0, pv: '85', local: 'V', status: 'Planejado' }],
+        },
         progSemana: {
           arquivo: 'artifacts/programacao_semana_corrente_20261004.xlsx',
           dias: [
@@ -23406,6 +23445,18 @@
       // carteira completa: busca + ordenação
       let fatAllQ = '',
         fatSort = { k: 'vtot', dir: -1 }
+      // programação por código: [{data,qtd,pv,local,status}] — coluna "Programação" na aba Produtos a Faturar
+      const PROGMAP = DATA.progMap || {}
+      function progLabel(r) {
+        const list = PROGMAP[r.codigo]
+        if (!list || !list.length) return ''
+        const parts = list.map(function (d) {
+          const pv = d.pv ? ' · PV ' + d.pv : ''
+          const st = d.status && d.status.toLowerCase() !== 'planejado' ? ' · ' + d.status : ''
+          return dtBR(d.data) + ' ×' + NF.format(d.qtd) + pv + st
+        })
+        return parts.join(' + ')
+      }
       function renderFatAll() {
         const q = fatAllQ.toUpperCase()
         let rs = DATA.rows.filter(
@@ -23432,6 +23483,11 @@
         document.getElementById('fAll').innerHTML = rs
           .map(function (r) {
             const vin = r.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
+            const prog = progLabel(r)
+            const plano =
+              r.semana === 'ATRASADO' && r.siPlano != null
+                ? ' <span class="tagS">Plano S' + DATA.semanas[r.siPlano].slice(1, 3) + '</span>'
+                : ''
             return (
               '<tr' +
               vin +
@@ -23463,6 +23519,11 @@
               FMT.format(r.vtot) +
               '</b>' +
               (r.prod ? ' <span class="tagP">P</span>' : '') +
+              '</td>' +
+              '<td>' +
+              (prog
+                ? '<span class="tagP">' + prog + '</span>'
+                : plano || '<span style="color:var(--mut)">—</span>') +
               '</td></tr>'
             )
           })
@@ -23485,6 +23546,7 @@
             'qtd',
             'vtot',
             'vtot',
+            'prog',
           ]
           const k = keys[ix]
           fatSort = { k: k, dir: fatSort.k === k ? -fatSort.dir : ix >= 7 ? -1 : 1 }
@@ -23507,6 +23569,7 @@
             'Qtd a faturar',
             'Valor unit.',
             'Valor total',
+            'Programação',
           ],
         ]
         DATA.rows.forEach(function (r) {
@@ -23524,6 +23587,7 @@
             r.qtd,
             Math.round((r.vtot / (r.qtd || 1)) * 100) / 100,
             r.vtot,
+            progLabel(r) || '',
           ])
         })
         const wb = XLSX.utils.aoa_to_sheet(rows)
