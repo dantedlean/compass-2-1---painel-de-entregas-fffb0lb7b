@@ -868,10 +868,22 @@
             ></select>
             <label
               style="font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer"
-              ><input type="checkbox" id="progAllSem" /> Todas as semanas (visão geral p/ ajuste em
-              lote)</label
+              ><input type="checkbox" id="progAllSem" /> Selecionar várias semanas</label
             >
           </div>
+          <div
+            id="progSemChips"
+            style="
+              display: none;
+              gap: 4px;
+              flex-wrap: wrap;
+              margin: 0 0 8px;
+              padding: 8px;
+              background: #f8fafc;
+              border: 1px solid var(--line);
+              border-radius: 10px;
+            "
+          ></div>
           <div class="wbtns" id="pbtns"></div>
           <div
             style="
@@ -17409,7 +17421,8 @@
           String(segDate.getMonth() + 1).padStart(2, '0') +
           '-' +
           String(segDate.getDate()).padStart(2, '0')
-        // ---- semanas disponíveis (para o seletor): agrupa os dias declarados + sugestão por segunda da semana ----
+        // ---- semanas disponíveis: TODAS as semanas do ano (S01-S52/53) + as que têm declaração ----
+        const anoHj = hj.getFullYear()
         const semanasMap = {}
         dias.forEach(function (x) {
           const p = isoOf(x.data).split('-')
@@ -17425,24 +17438,77 @@
             String(seg.getDate()).padStart(2, '0')
           ;(semanasMap[si] = semanasMap[si] || []).push(x)
         })
-        if (!semanasMap[segIso]) semanasMap[segIso] = []
+        // todas as segundas do ano (S01..S52/53)
+        const segJan1 = new Date(anoHj, 0, 1)
+        const dwJan = (segJan1.getDay() + 6) % 7
+        const seg1 = new Date(anoHj, 0, 1)
+        seg1.setDate(seg1.getDate() - dwJan)
+        for (let i = 0; i < 53; i++) {
+          const d = new Date(seg1)
+          d.setDate(d.getDate() + i * 7)
+          if (d.getFullYear() > anoHj) break
+          const si =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          if (!semanasMap[si]) semanasMap[si] = []
+        }
         const semKeys = Object.keys(semanasMap).sort()
-        // ---- seletor de semana + checkbox "todas" ----
+        // ---- multi-seleção de semanas (chips) ----
+        window._progSemSel = window._progSemSel || {}
+        const chips = document.getElementById('progSemChips')
+        if (chips) {
+          const multi = allSem && allSem.checked
+          chips.style.display = multi ? 'flex' : 'none'
+          if (multi && !chips._bound) {
+            chips._bound = true
+            chips.addEventListener('click', function (e) {
+              const c = e.target.closest('[data-sem]')
+              if (!c) return
+              const si = c.getAttribute('data-sem')
+              window._progSemSel[si] = !window._progSemSel[si]
+              c.classList.toggle('on')
+              renderProg()
+            })
+          }
+          if (multi) {
+            chips.innerHTML = semKeys
+              .map(function (si) {
+                const on = window._progSemSel[si]
+                const p = si.split('-')
+                const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+                fim.setDate(fim.getDate() + 4)
+                return (
+                  '<button data-sem="' +
+                  si +
+                  '" class="' +
+                  (on ? 'on' : '') +
+                  '" style="padding:3px 10px;border-radius:999px;border:1px solid ' +
+                  (on ? '#1e3a8a' : 'var(--line)') +
+                  ';background:' +
+                  (on ? '#dbeafe' : '#fff') +
+                  ';color:' +
+                  (on ? '#1e3a8a' : '#334155') +
+                  ';font-size:11.5px;font-weight:' +
+                  (on ? '700' : '500') +
+                  ';cursor:pointer">' +
+                  p[2] +
+                  '/' +
+                  p[1] +
+                  ' – ' +
+                  String(fim.getDate()).padStart(2, '0') +
+                  '/' +
+                  String(fim.getMonth() + 1).padStart(2, '0') +
+                  '</button>'
+                )
+              })
+              .join('')
+          }
+        }
+        // ---- seletor de semana (dropdown, todas as semanas do ano) ----
         const sel = document.getElementById('progSemSel')
-        const nomeMes = [
-          'jan',
-          'fev',
-          'mar',
-          'abr',
-          'mai',
-          'jun',
-          'jul',
-          'ago',
-          'set',
-          'out',
-          'nov',
-          'dez',
-        ]
         if (sel && !sel._bound) {
           sel._bound = true
           sel.addEventListener('change', function () {
@@ -17497,7 +17563,12 @@
           if (!progSemSelIso) progSemSelIso = cur
         }
         const allSem = document.getElementById('progAllSem')
-        const modoTodas = allSem && allSem.checked
+        const modoTodas =
+          allSem &&
+          allSem.checked &&
+          Object.keys(window._progSemSel).some(function (k) {
+            return window._progSemSel[k]
+          })
         // ---- dias da semana selecionada: SEMPRE os 6 dias Seg-Sáb (sábado vazio por padrão) ----
         const segSel = new Date((progSemSelIso || segIso) + 'T12:00:00')
         const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
@@ -17527,11 +17598,12 @@
         let diasHist = [],
           diasMain = diasSemana
         if (modoTodas) {
-          // visão geral: todas as semanas com linhas, agrupadas por semana (dias Seg-Sáb)
+          // visão geral: as semanas SELECIONADAS nos chips, agrupadas (dias Seg-Sáb)
           diasMain = []
           semKeys.forEach(function (si) {
+            if (!window._progSemSel[si]) return
             const p = si.split('-')
-            const seg0 = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+            const seg0 = new Date(si + 'T12:00:00')
             for (let i = 0; i < 6; i++) {
               const d = new Date(seg0)
               d.setDate(d.getDate() + i)
@@ -17548,8 +17620,7 @@
               const decl = dias.find(function (x) {
                 return isoOf(x.data) === iso
               })
-              if (decl || si === progSemSelIso)
-                diasMain.push({ dia: nomeDia[d.getDay()], data: br, iso: iso, sem: si })
+              diasMain.push({ dia: nomeDia[d.getDay()], data: br, iso: iso, sem: si })
             }
           })
         }
