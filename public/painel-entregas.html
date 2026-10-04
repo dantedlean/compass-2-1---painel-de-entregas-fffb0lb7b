@@ -22820,6 +22820,10 @@
           renderProgAuto()
           window._paInit = true
         }
+        if (v === 'ent' && !window._apInit) {
+          apInitModal()
+          window._apInit = true
+        }
         if (v === 'fat' && !window._fatInit) {
           renderFat()
           window._fatInit = true
