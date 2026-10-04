@@ -1409,7 +1409,9 @@
             <label
               class="note"
               style="margin: 0; display: flex; align-items: center; gap: 5px; cursor: pointer"
-              >Capacidade/dia útil (Curitiba)
+              title="Ligado: respeita o limite por dia. Desligado: distribui livremente pela semana menos carregada"
+            >
+              <input id="paCapOn" type="checkbox" /> Capacidade/dia útil (Curitiba)
               <input
                 id="paCapC"
                 type="number"
@@ -21689,8 +21691,15 @@
       function paGerar() {
         const ini = document.getElementById('paIni').value,
           fim = document.getElementById('paFim').value
-        const capC = Math.max(1, Number(document.getElementById('paCapC').value) || 40)
-        const capV = Math.max(0, Number(document.getElementById('paCapV').value) || 0)
+        const capOn = !!(
+          document.getElementById('paCapOn') && document.getElementById('paCapOn').checked
+        )
+        const capC = capOn
+          ? Math.max(1, Number(document.getElementById('paCapC').value) || 40)
+          : Infinity
+        const capV = capOn
+          ? Math.max(0, Number(document.getElementById('paCapV').value) || 0)
+          : Infinity
         const st = document.getElementById('paStatus')
         if (!ini || !fim || ini > fim) {
           alert('Informe o período (de/até).')
@@ -21870,12 +21879,13 @@
           return a.iso.localeCompare(b.iso) || a.cod.localeCompare(b.cod)
         })
         window._paSug = sug
-        window._paParams = { ini: ini, fim: fim, capC: capC, capV: capV }
+        window._paParams = { ini: ini, fim: fim, capC: capC, capV: capV, capOn: capOn }
         paRender(sug, {
           dus: dus.length,
           naoCabe: naoCabe,
           capC: capC,
           capV: capV,
+          capOn: capOn,
           ini: ini,
           fim: fim,
         })
@@ -21919,10 +21929,8 @@
           meta.dus +
           '</div></div>' +
           '<div class="kpi"><div class="kl">Capacidade/dia</div><div class="kv">' +
-          meta.capC +
-          ' C · ' +
-          meta.capV +
-          ' V</div></div>' +
+          (meta.capOn ? meta.capC + ' C · ' + meta.capV + ' V' : 'LIVRE (sem limite)') +
+          '</div></div>' +
           (tQ > 0
             ? '<div class="kpi"><div class="kl" style="color:#dc2626">Fora do prazo (TARDE)</div><div class="kv" style="color:#dc2626">' +
               NF.format(tQ) +
@@ -22007,10 +22015,10 @@
           ' a ' +
           meta.fim +
           ' · capacidade ' +
-          meta.capC +
-          '/dia (Curitiba) e ' +
-          meta.capV +
-          '/dia (Vinhedo) · desconta o que já está na agenda e no rascunho · fretes acompanham o produto'
+          (meta.capOn
+            ? meta.capC + '/dia (Curitiba) e ' + meta.capV + '/dia (Vinhedo)'
+            : 'LIVRE — sem limite por dia, distribui pela semana menos carregada') +
+          ' · desconta o que já está na agenda e no rascunho · fretes acompanham o produto'
         const st = document.getElementById('paStatus')
         if (st) st.textContent = sug.length ? sug.length + ' alocações sugeridas' : ''
         const tb = document.getElementById('tbbPA')
