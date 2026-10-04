@@ -1512,12 +1512,42 @@
             Enviar para a Programação
           </div>
           <div class="note" id="paDateInfo" style="margin: 0 0 10px"></div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+            <label class="note" style="margin: 0; min-width: 70px">Semana:</label>
+            <select
+              id="paSemSel"
+              style="
+                flex: 1;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 13px;
+              "
+            ></select>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+            <label class="note" style="margin: 0; min-width: 70px">Fábrica:</label>
+            <select
+              id="paLocalSel"
+              style="
+                flex: 1;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 13px;
+              "
+            >
+              <option value="Curitiba">Curitiba</option>
+              <option value="Vinhedo">Vinhedo</option>
+            </select>
+          </div>
           <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
-            <label class="note" style="margin: 0">Produzir em:</label>
+            <label class="note" style="margin: 0; min-width: 70px">Produzir em:</label>
             <input
               id="paDateInput"
               type="date"
               style="
+                flex: 1;
                 padding: 6px 10px;
                 border: 1px solid var(--line);
                 border-radius: 8px;
@@ -22042,6 +22072,62 @@
           '</b>' +
           (s.tarde ? ' <span class="tagF">TARDE</span>' : '')
         document.getElementById('paDateInput').value = s.iso
+        // Semana: todas as segundas do ano (S01..S53), pré-selecionada a da sugestão
+        const semSel = document.getElementById('paSemSel')
+        const segSug = (function (d) {
+          const x = new Date(d + 'T12:00:00')
+          const dw = (x.getDay() + 6) % 7
+          x.setDate(x.getDate() - dw)
+          return (
+            x.getFullYear() +
+            '-' +
+            String(x.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(x.getDate()).padStart(2, '0')
+          )
+        })(s.iso)
+        const ano = new Date().getFullYear()
+        const opts = []
+        const seg1 = new Date(ano, 0, 1)
+        const dw1 = (seg1.getDay() + 6) % 7
+        seg1.setDate(seg1.getDate() - dw1)
+        for (let i = 0; i < 53; i++) {
+          const d = new Date(seg1)
+          d.setDate(d.getDate() + i * 7)
+          if (d.getFullYear() > ano) break
+          const si =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          const fim = new Date(d)
+          fim.setDate(fim.getDate() + 4)
+          const t = new Date(d)
+          t.setDate(t.getDate() + 3)
+          const j4 = new Date(t.getFullYear(), 0, 4)
+          const w = 1 + Math.round(((t - j4) / 86400000 - 3 + ((j4.getDay() + 6) % 7)) / 7)
+          opts.push(
+            '<option value="' +
+              si +
+              '"' +
+              (si === segSug ? ' selected' : '') +
+              '>S' +
+              String(w).padStart(2, '0') +
+              ' · ' +
+              String(d.getDate()).padStart(2, '0') +
+              '/' +
+              String(d.getMonth() + 1).padStart(2, '0') +
+              ' – ' +
+              String(fim.getDate()).padStart(2, '0') +
+              '/' +
+              String(fim.getMonth() + 1).padStart(2, '0') +
+              '</option>',
+          )
+        }
+        semSel.innerHTML = opts.join('')
+        document.getElementById('paLocalSel').value =
+          s.local === 'Vinhedo' || s.local === 'V' ? 'Vinhedo' : 'Curitiba'
         box.style.display = 'flex'
         box.dataset.ix = ix
       }
@@ -22065,8 +22151,16 @@
             alert('Escolha a data de produção.')
             return
           }
+          const localSel = document.getElementById('paLocalSel').value
+          const semSel = document.getElementById('paSemSel').value
           box.style.display = 'none'
-          paLevar([Object.assign({}, s, { iso: nova })])
+          paLevar([
+            Object.assign({}, s, {
+              iso: nova,
+              local: localSel === 'Vinhedo' ? 'Vinhedo' : 'Curitiba',
+              sem: semSel,
+            }),
+          ])
         })
       }
       window.paInitModal = paInitModal
@@ -22092,7 +22186,7 @@
             local: s.local === 'Vinhedo' ? 'V' : 'C',
             pv: '',
             id: 'PR-PA-' + Date.now() + '-' + n++,
-            obs: 'sugestão programação automática',
+            obs: 'sugestão programação automática' + (s.sem ? ' · ' + s.sem : ''),
             status: 'Planejado',
           })
         })
