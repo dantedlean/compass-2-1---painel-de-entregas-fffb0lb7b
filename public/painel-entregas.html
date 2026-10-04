@@ -853,6 +853,25 @@
               "
             ></span>
           </div>
+          <div
+            style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 8px"
+          >
+            <b style="font-size: 12px; color: #334155">Semana:</b>
+            <select
+              id="progSemSel"
+              style="
+                padding: 5px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12px;
+              "
+            ></select>
+            <label
+              style="font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer"
+              ><input type="checkbox" id="progAllSem" /> Todas as semanas (visão geral p/ ajuste em
+              lote)</label
+            >
+          </div>
           <div class="wbtns" id="pbtns"></div>
           <div
             style="
@@ -17210,7 +17229,8 @@
 
       // ---- programação de produção da semana corrente ----
       let progDia = null,
-        progDate = null
+        progDate = null,
+        progSemSelIso = null
       let declDraft = []
       // SUGESTÃO da próxima semana (semana sem declaração): semeia o rascunho editável com a
       // fila do plano de recuperação da semana seguinte — editável como qualquer declaração.
@@ -17389,38 +17409,164 @@
           String(segDate.getMonth() + 1).padStart(2, '0') +
           '-' +
           String(segDate.getDate()).padStart(2, '0')
-        let diasHist = dias.filter(function (x) {
-          return isoOf(x.data) < segIso
+        // ---- semanas disponíveis (para o seletor): agrupa os dias declarados + sugestão por segunda da semana ----
+        const semanasMap = {}
+        dias.forEach(function (x) {
+          const p = isoOf(x.data).split('-')
+          const d0 = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+          const dw = (d0.getDay() + 6) % 7
+          const seg = new Date(d0)
+          seg.setDate(seg.getDate() - dw)
+          const si =
+            seg.getFullYear() +
+            '-' +
+            String(seg.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(seg.getDate()).padStart(2, '0')
+          ;(semanasMap[si] = semanasMap[si] || []).push(x)
         })
-        let diasMain = dias.filter(function (x) {
-          return isoOf(x.data) >= segIso
-        })
-        if (!diasMain.length) {
-          diasMain = dias
-          diasHist = []
-        } // fallback: nunca deixar o card vazio
-        const box = document.getElementById('pbtns')
-        if (!progDia) {
-          // dia atual se estiver na semana declarada; senão o primeiro dia
-          const chosen =
-            dias.find(function (x) {
-              return x.data === '25/09'
-            }) || dias[0]
-          progDia = chosen.dia
-          progDate = chosen.data
+        if (!semanasMap[segIso]) semanasMap[segIso] = []
+        const semKeys = Object.keys(semanasMap).sort()
+        // ---- seletor de semana + checkbox "todas" ----
+        const sel = document.getElementById('progSemSel')
+        const nomeMes = [
+          'jan',
+          'fev',
+          'mar',
+          'abr',
+          'mai',
+          'jun',
+          'jul',
+          'ago',
+          'set',
+          'out',
+          'nov',
+          'dez',
+        ]
+        if (sel && !sel._bound) {
+          sel._bound = true
+          sel.addEventListener('change', function () {
+            progSemSelIso = sel.value
+            progDia = null
+            progDate = null
+            renderProg()
+          })
+          const cb = document.getElementById('progAllSem')
+          if (cb)
+            cb.addEventListener('change', function () {
+              progDia = null
+              progDate = null
+              renderProg()
+            })
         }
+        if (sel) {
+          const cur = sel.value || progSemSelIso || segIso
+          sel.innerHTML = semKeys
+            .map(function (si) {
+              const p = si.split('-')
+              const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+              fim.setDate(fim.getDate() + 4)
+              const lbl =
+                'S' +
+                (function (d) {
+                  const t = new Date(d)
+                  t.setDate(t.getDate() + 3)
+                  const j4 = new Date(t.getFullYear(), 0, 4)
+                  return 1 + Math.round(((t - j4) / 86400000 - 3 + ((j4.getDay() + 6) % 7)) / 7)
+                })(new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))) +
+                ' · ' +
+                p[2] +
+                '/' +
+                p[1] +
+                ' – ' +
+                String(fim.getDate()).padStart(2, '0') +
+                '/' +
+                String(fim.getMonth() + 1).padStart(2, '0') +
+                (si === segIso ? ' (atual)' : '')
+              return (
+                '<option value="' +
+                si +
+                '"' +
+                (cur === si ? ' selected' : '') +
+                '>' +
+                lbl +
+                '</option>'
+              )
+            })
+            .join('')
+          if (!progSemSelIso) progSemSelIso = cur
+        }
+        const allSem = document.getElementById('progAllSem')
+        const modoTodas = allSem && allSem.checked
+        // ---- dias da semana selecionada: SEMPRE os 6 dias Seg-Sáb (sábado vazio por padrão) ----
+        const segSel = new Date(progSemSelIso || segIso + 'T12:00:00')
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const diasSemana = []
+        for (let i = 0; i < 6; i++) {
+          const d = new Date(segSel)
+          d.setDate(d.getDate() + i)
+          const iso =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          const br =
+            String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
+          const decl = dias.find(function (x) {
+            return isoOf(x.data) === iso
+          })
+          diasSemana.push({
+            dia: nomeDia[d.getDay()],
+            data: br,
+            iso: iso,
+            decl: !!decl,
+            vazia: !decl && i === 5,
+          })
+        }
+        let diasHist = [],
+          diasMain = diasSemana
+        if (modoTodas) {
+          // visão geral: todas as semanas com linhas, agrupadas por semana (dias Seg-Sáb)
+          diasMain = []
+          semKeys.forEach(function (si) {
+            const p = si.split('-')
+            const seg0 = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+            for (let i = 0; i < 6; i++) {
+              const d = new Date(seg0)
+              d.setDate(d.getDate() + i)
+              const iso =
+                d.getFullYear() +
+                '-' +
+                String(d.getMonth() + 1).padStart(2, '0') +
+                '-' +
+                String(d.getDate()).padStart(2, '0')
+              const br =
+                String(d.getDate()).padStart(2, '0') +
+                '/' +
+                String(d.getMonth() + 1).padStart(2, '0')
+              const decl = dias.find(function (x) {
+                return isoOf(x.data) === iso
+              })
+              if (decl || si === progSemSelIso)
+                diasMain.push({ dia: nomeDia[d.getDay()], data: br, iso: iso, sem: si })
+            }
+          })
+        }
+        const box = document.getElementById('pbtns')
         if (
-          progDate &&
+          !progDate ||
           !diasMain.some(function (x) {
             return x.data === progDate
           })
         ) {
-          progDia = null
-          progDate = null
-        }
-        if (!progDate && diasMain.length) {
-          progDia = diasMain[0].dia
-          progDate = diasMain[0].data
+          const hjBr =
+            String(hj.getDate()).padStart(2, '0') + '/' + String(hj.getMonth() + 1).padStart(2, '0')
+          const hoje = diasMain.find(function (x) {
+            return x.data === hjBr
+          })
+          progDia = (hoje || diasMain[0] || {}).dia
+          progDate = (hoje || diasMain[0] || {}).data
         }
         box.innerHTML = diasMain
           .map(function (o) {
@@ -17431,7 +17577,11 @@
               o.data +
               '" class="' +
               (o.data === progDate ? 'on' : '') +
-              '">' +
+              '"' +
+              (o.vazia
+                ? ' style="opacity:.55" title="Sábado — sempre vazio (planejamento é Seg-Sex)"'
+                : '') +
+              '>' +
               o.dia +
               ' · ' +
               o.data +
