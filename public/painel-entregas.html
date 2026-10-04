@@ -418,7 +418,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004203216">
+  <body data-build="b20261004203950">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18589,6 +18589,20 @@
             tv += p.vtot
             const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
             tex += ex.qtd || 0
+            // v0.0.208: linha PINTADA quando o produto tem saldo no SMKT (vermelho suave + selo) — regra Dante 27/09: SMKT é real e abate a programação
+            let smLinha = 0
+            try {
+              smLinha = Math.max(0, Number(smktSaldo(p.cod)) || 0)
+            } catch (e) {}
+            const trBg = smLinha > 0 ? ' style="background:#fee2e2"' : ''
+            const smSelo =
+              smLinha > 0
+                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b" title="Este produto tem ' +
+                  NF.format(smLinha) +
+                  ' un no estoque SMKT (produto pronto) — abatem a programação">🛒 SMKT ' +
+                  NF.format(smLinha) +
+                  '</span> '
+                : ''
             const pvList = Object.values(p.pvs).sort(function (x, y) {
               return parseFloat(x.pv) - parseFloat(y.pv)
             })
@@ -18720,7 +18734,9 @@
             return (
               '<tr class="prow' +
               (ex.ok ? ' exOK' : '') +
-              '" data-ix="' +
+              '"' +
+              trBg +
+              ' data-ix="' +
               ix +
               '" data-cod="' +
               p.cod +
@@ -18728,7 +18744,9 @@
               p.cod +
               '</div><div class="dsc">' +
               p.desc +
-              '</div><button class="exRl" data-p="del" data-cod="' +
+              '</div>' +
+              (smLinha > 0 ? '<div style="margin-top:3px">' + smSelo + '</div>' : '') +
+              '<button class="exRl" data-p="del" data-cod="' +
               p.cod +
               '" style="margin-top:4px;background:#fee2e2;border-color:#fecaca;color:#991b1b" title="Excluir TODAS as linhas deste produto neste dia (nada gravado no MaxiProd)">🗑 Excluir linha</button></td>' +
               '<td class="num"><input type="number" min="0" value="' +
@@ -18814,9 +18832,18 @@
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
+          const hj = new Date()
+          const hojeISO =
+            hj.getFullYear() +
+            '-' +
+            String(hj.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(hj.getDate()).padStart(2, '0')
           const excessos = []
-          // 1) fósseis: declaração cujo código/PV não tem saldo na carteira (some da programação)
-          const fos = window.fosseisCache || []
+          // 1) fósseis: declaração cujo código/PV não tem saldo na carteira (some da programação) — SÓ DE HOJE EM DIANTE (passado é histórico)
+          const fos = (window.fosseisCache || []).filter(function (x) {
+            return progIso(x.data) >= hojeISO
+          })
           fos.forEach(function (x) {
             excessos.push({
               tipo: 'fossil',
@@ -18826,7 +18853,7 @@
               motivo: x.motivo,
             })
           })
-          // 2) excedente: soma programada do produto no dia > saldo com PV na carteira (descontando SMKT)
+          // 2) excedente: soma programada do produto no dia > saldo com PV na carteira (descontando SMKT) — SÓ DE HOJE EM DIANTE
           const saldoPv = {}
           DATA.rows.forEach(function (r) {
             saldoPv[r.codigo] = (saldoPv[r.codigo] || 0) + (Number(r.qtd) || 0)
@@ -18834,6 +18861,7 @@
           const progPorCodData = {}
           declDaUnid().forEach(function (d) {
             if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+            if (progIso(d.data) < hojeISO) return // passado não entra no aviso
             const k = d.cod + '|' + progIso(d.data)
             progPorCodData[k] = (progPorCodData[k] || 0) + Number(d.qtd)
           })
@@ -18866,6 +18894,7 @@
                   ' un' +
                   (sm > 0 ? ' (SMKT ' + NF.format(sm) + ')' : ''),
                 valor: Math.round((prog - livre) * vu),
+                smkt: sm,
               })
             }
           })
@@ -18884,7 +18913,7 @@
             return a + (x.valor || 0)
           }, 0)
           let html =
-            '<div style="font-size:14px;margin-bottom:6px">⚠ ATENÇÃO — PRODUÇÃO SEM PEDIDO DE VENDA DE DESTINO</div>'
+            '<div style="font-size:14px;margin-bottom:6px">⚠ ATENÇÃO — PRODUÇÃO SEM PEDIDO DE VENDA DE DESTINO <span style="font-weight:600;font-size:11px">(considerando hoje em diante)</span></div>'
           if (excN.length) {
             html +=
               '<div style="margin-bottom:4px">• <b>' +
@@ -18901,7 +18930,19 @@
               excN
                 .slice(0, 6)
                 .map(function (x) {
-                  return '<b>' + x.cod + '</b> ×' + NF.format(x.qtd) + ' em ' + dtBR(x.data)
+                  return (
+                    '<b style="color:#991b1b">' +
+                    x.cod +
+                    '</b> ×' +
+                    NF.format(x.qtd) +
+                    ' em ' +
+                    dtBR(x.data) +
+                    (x.smkt > 0
+                      ? ' <span style="color:#991b1b">🛒 no SMKT: ' +
+                        NF.format(x.smkt) +
+                        ' un</span>'
+                      : '')
+                  )
                 })
                 .join(' · ') +
               (excN.length > 6 ? ' …' : '') +
@@ -18916,7 +18957,7 @@
                 .slice(0, 6)
                 .map(function (x) {
                   return (
-                    '<b>' +
+                    '<b style="color:#991b1b">' +
                     x.cod +
                     '</b> ×' +
                     NF.format(x.qtd) +
@@ -24798,7 +24839,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004203216); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004203950); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
