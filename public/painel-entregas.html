@@ -21987,7 +21987,7 @@
             headers: this.headers(),
             body: JSON.stringify(body),
           })
-          if (r.status === 401 || r.status === 403) {
+          if (r.status === 400 || r.status === 401 || r.status === 403) {
             this._authFail()
             return 'auth'
           }
@@ -22058,7 +22058,7 @@
             headers: this.headers(),
             body: JSON.stringify(body),
           })
-          if (r.status === 401 || r.status === 403) {
+          if (r.status === 400 || r.status === 401 || r.status === 403) {
             this._authFail()
             return 'auth'
           }
