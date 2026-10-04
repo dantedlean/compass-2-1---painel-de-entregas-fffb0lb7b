@@ -418,7 +418,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004201508">
+  <body data-build="b20261004202709">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -17919,7 +17919,8 @@
             avail[k] -= q
             left -= q
           })
-          if (left > 0)
+          if (left > 0) {
+            const vu = cand.length && cand[0].qtd ? cand[0].vtot / cand[0].qtd : 0
             out.push({
               dia: day,
               data: date,
@@ -17929,14 +17930,16 @@
               pv: d.pv || '—',
               cli: '',
               emp: '',
-              vtot: 0,
+              vtot: vu * left,
               sit: 'Sem PV associado',
               cheg: '—',
               local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+              semPv: true,
               prog_id: d.id || '',
               obs: d.obs || '',
               status: d.status || 'Planejado',
             })
+          }
         })
         DATA.progSemana.dias = out
       }
@@ -18480,6 +18483,7 @@
               cheg: a.cheg || '',
               local: a.local || 'Curitiba',
               firme: a.firme || '',
+              semPv: !!a.semPv,
             }
           p.pvs[kpv].qtd += a.qtd
           p.pvs[kpv].vtot += a.vtot
@@ -18530,12 +18534,18 @@
                   '><td class="pvtag">' +
                   v.pv +
                   '</td><td>' +
-                  v.cli +
+                  (v.semPv
+                    ? '<span style="color:#854d0e;font-weight:700" title="Excedente da declaração: não há saldo de PV na carteira para esta qtd — o valor usa o preço unitário do produto">⚠ excedente sem PV</span>'
+                    : v.cli) +
                   '</td>' +
                   '<td class="num">' +
                   NF.format(Math.round(v.qtd)) +
                   '</td><td class="num">' +
-                  FMT.format(v.vtot) +
+                  (v.semPv
+                    ? '<span style="color:#854d0e;font-weight:700">' +
+                      FMT.format(v.vtot) +
+                      '</span>'
+                    : FMT.format(v.vtot)) +
                   '</td>' +
                   '<td>' +
                   (v.cheg || '—') +
@@ -24579,7 +24589,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004201508); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004202709); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
