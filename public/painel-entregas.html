@@ -17469,6 +17469,11 @@
               const ap = e.target.closest('[data-aplicar]')
               if (ap) {
                 renderProg()
+                const cb = document.getElementById('progAllSem')
+                if (cb) {
+                  cb.checked = false
+                  cb.dispatchEvent(new Event('change'))
+                }
                 return
               }
               const lp = e.target.closest('[data-limpar]')
