@@ -17499,7 +17499,7 @@
         const allSem = document.getElementById('progAllSem')
         const modoTodas = allSem && allSem.checked
         // ---- dias da semana selecionada: SEMPRE os 6 dias Seg-Sáb (sábado vazio por padrão) ----
-        const segSel = new Date(progSemSelIso || segIso + 'T12:00:00')
+        const segSel = new Date((progSemSelIso || segIso) + 'T12:00:00')
         const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
         const diasSemana = []
         for (let i = 0; i < 6; i++) {
