@@ -18910,6 +18910,28 @@
               smktUndo(+b.getAttribute('data-undo'))
           })
         }
+        const tbW = document.getElementById('tbSmkt')
+        if (tbW && !tbW._rowBound) {
+          tbW._rowBound = true
+          tbW.addEventListener('click', function (e) {
+            if (e.target.closest('input,select,button')) return
+            const tr = e.target.closest('tr[data-cod]')
+            if (tr) toggleSmktHist(tr.getAttribute('data-cod'))
+          })
+        }
+        const cs2 = document.getElementById('cardSmkt')
+        if (cs2 && !cs2._closeBound) {
+          cs2._closeBound = true
+          cs2.addEventListener('click', function (e) {
+            if (e.target.closest('[data-closehist]')) {
+              const bx = document.getElementById('smHistItem')
+              if (bx) {
+                bx.style.display = 'none'
+                bx._cod = ''
+              }
+            }
+          })
+        }
         const tb = document.getElementById('tbbM')
         if (!tb._bound) {
           tb._bound = true
