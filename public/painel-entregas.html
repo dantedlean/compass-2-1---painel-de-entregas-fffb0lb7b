@@ -17466,46 +17466,58 @@
           if (multi && !chips._bound) {
             chips._bound = true
             chips.addEventListener('click', function (e) {
+              const ap = e.target.closest('[data-aplicar]')
+              if (ap) {
+                renderProg()
+                return
+              }
+              const lp = e.target.closest('[data-limpar]')
+              if (lp) {
+                window._progSemSel = {}
+                renderProg()
+                return
+              }
               const c = e.target.closest('[data-sem]')
               if (!c) return
               const si = c.getAttribute('data-sem')
               window._progSemSel[si] = !window._progSemSel[si]
               c.classList.toggle('on')
-              renderProg()
             })
           }
           if (multi) {
-            chips.innerHTML = semKeys
-              .map(function (si) {
-                const on = window._progSemSel[si]
-                const p = si.split('-')
-                const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
-                fim.setDate(fim.getDate() + 4)
-                return (
-                  '<button data-sem="' +
-                  si +
-                  '" class="' +
-                  (on ? 'on' : '') +
-                  '" style="padding:3px 10px;border-radius:999px;border:1px solid ' +
-                  (on ? '#1e3a8a' : 'var(--line)') +
-                  ';background:' +
-                  (on ? '#dbeafe' : '#fff') +
-                  ';color:' +
-                  (on ? '#1e3a8a' : '#334155') +
-                  ';font-size:11.5px;font-weight:' +
-                  (on ? '700' : '500') +
-                  ';cursor:pointer">' +
-                  p[2] +
-                  '/' +
-                  p[1] +
-                  ' – ' +
-                  String(fim.getDate()).padStart(2, '0') +
-                  '/' +
-                  String(fim.getMonth() + 1).padStart(2, '0') +
-                  '</button>'
-                )
-              })
-              .join('')
+            chips.innerHTML =
+              semKeys
+                .map(function (si) {
+                  const on = window._progSemSel[si]
+                  const p = si.split('-')
+                  const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+                  fim.setDate(fim.getDate() + 4)
+                  return (
+                    '<button data-sem="' +
+                    si +
+                    '" class="' +
+                    (on ? 'on' : '') +
+                    '" style="padding:3px 10px;border-radius:999px;border:1px solid ' +
+                    (on ? '#1e3a8a' : 'var(--line)') +
+                    ';background:' +
+                    (on ? '#dbeafe' : '#fff') +
+                    ';color:' +
+                    (on ? '#1e3a8a' : '#334155') +
+                    ';font-size:11.5px;font-weight:' +
+                    (on ? '700' : '500') +
+                    ';cursor:pointer">' +
+                    p[2] +
+                    '/' +
+                    p[1] +
+                    ' – ' +
+                    String(fim.getDate()).padStart(2, '0') +
+                    '/' +
+                    String(fim.getMonth() + 1).padStart(2, '0') +
+                    '</button>'
+                  )
+                })
+                .join('') +
+              '<button data-aplicar="1" style="padding:4px 14px;border-radius:999px;border:1px solid #1e3a8a;background:#1e3a8a;color:#fff;font-size:12px;font-weight:700;cursor:pointer">✓ Aplicar seleção</button><button data-limpar="1" style="padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#64748b;font-size:12px;cursor:pointer">✕ Limpar</button>'
           }
         }
         // ---- seletor de semana (dropdown, todas as semanas do ano) ----
