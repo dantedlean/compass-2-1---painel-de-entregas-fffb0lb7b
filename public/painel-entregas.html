@@ -441,7 +441,8 @@
     </header>
     <nav class="tabnav">
       <button id="tabNf" class="on" onclick="showView('nf')">💸 Faturamento</button>
-      <button id="tabEnt" onclick="showView('ent')">📅 Entregas por semana</button>
+      <button id="tabEnt" onclick="showView('ent')">📅 Curitiba — Programação</button>
+      <button id="tabEntV" onclick="showView('entv')">📅 Vinhedo — Programação</button>
       <button id="tabPA" onclick="showView('pa')">⚙️ Programação automática</button>
       <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
     </nav>
@@ -809,7 +810,10 @@
           </div>
         </div>
         <div class="card" id="cardProg">
-          <h2>Programação de produção <span class="tagP">AGENDA EDITÁVEL</span></h2>
+          <h2>
+            Programação de produção — <span id="unidLabel">Curitiba</span>
+            <span class="tagP">AGENDA EDITÁVEL</span>
+          </h2>
           <div class="note">
             Agenda por dia × PVs atendidos (atrasados priorizados). Status Planejado/Realizado
             explícito. Marque ✓ <b>Executado</b>, ajuste a <b>qtd realizada</b>, <b>Realocar</b> o
@@ -17471,7 +17475,7 @@
         const hoje = new Date()
         hoje.setDate(hoje.getDate() + 1)
         const carga = {}
-        ;(Array.isArray(declDraft) ? declDraft : []).forEach(function (d) {
+        declDaUnid().forEach(function (d) {
           if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
           carga[d.data] = (carga[d.data] || 0) + Number(d.qtd)
         })
@@ -17567,7 +17571,7 @@
           data: dataIso,
           cod: cod,
           qtd: qtd,
-          local: 'C',
+          local: window.UNID || 'C',
           pv: '',
           id: 'PR-AP-' + Date.now(),
           obs: 'programado via A Programar',
@@ -17592,10 +17596,7 @@
       window.apProgramar = apProgramar
       function renderAProg() {
         const prog = {} // codigo -> {prog: un, det: [str]}
-        ;(Array.isArray(declDraft)
-          ? declDraft
-          : (typeof declDraft !== 'undefined' && declDraft) || []
-        ).forEach(function (d) {
+        declDaUnid().forEach(function (d) {
           if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
           const o = (prog[d.cod] = prog[d.cod] || { prog: 0, det: [] })
           o.prog += Number(d.qtd)
@@ -17820,7 +17821,7 @@
         const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
         const out = []
         window.fosseisCache = []
-        declDraft.forEach(function (d) {
+        declDaUnid().forEach(function (d) {
           if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
           const dt = new Date(d.data + 'T12:00:00'),
             day = dias[dt.getDay()],
@@ -17998,7 +17999,7 @@
               data: iso,
               cod: L.cod,
               qtd: L.qtd,
-              local: 'C',
+              local: window.UNID || 'C',
               pv: L.pv || '',
               id: 'PR-SUG-' + n++,
               obs: 'SUGESTÃO do plano de recuperação (' + alvo + ') — confirmar',
@@ -19095,7 +19096,7 @@
             data: diaDest,
             cod: c.cod,
             qtd: c.qtd,
-            local: 'C',
+            local: window.UNID || 'C',
             pv: '',
             id: 'PR-CUT-' + Date.now(),
             obs: 'recortado de ' + (c.de || '?'),
@@ -19141,7 +19142,7 @@
           data: diaDest,
           cod: c.cod,
           qtd: c.qtd,
-          local: 'C',
+          local: window.UNID || 'C',
           pv: '',
           id: 'PR-COPY-' + Date.now(),
           obs: 'colado de ' + (c.de || '?'),
@@ -19196,7 +19197,7 @@
           data: dateDest,
           cod: p.cod,
           qtd: saldo,
-          local: 'C',
+          local: window.UNID || 'C',
           pv: '',
           id: 'PR-MOVE-' + Date.now(),
           obs: 'movido de ' + p.de,
@@ -19233,7 +19234,7 @@
           data: dateDest,
           cod: c.cod,
           qtd: c.qtd,
-          local: 'C',
+          local: window.UNID || 'C',
           pv: '',
           id: 'PR-CUT-' + Date.now(),
           obs: 'recortado de ' + (c.de || '?'),
@@ -21582,7 +21583,7 @@
           data: iso,
           cod: '',
           qtd: 0,
-          local: 'C',
+          local: window.UNID || 'C',
           pv: '',
           id: 'PR-EDIT-' + Date.now(),
           obs: '',
@@ -21796,7 +21797,7 @@
               data: iso,
               cod: cod,
               qtd: q,
-              local: document.getElementById('addLocal').value,
+              local: window.UNID || document.getElementById('addLocal').value,
               pv: '',
               id: 'PR-ADD-' + Date.now(),
               obs: 'incluído via produto ' + cod,
@@ -21830,7 +21831,7 @@
             data: iso,
             cod: pvSel.itens[0].codigo,
             qtd: q,
-            local: document.getElementById('addLocal').value,
+            local: window.UNID || document.getElementById('addLocal').value,
             pv: pvSel.pv,
             id: 'PR-ADD-' + Date.now(),
             obs: 'incluído via PV ' + pvSel.pv,
@@ -22727,7 +22728,7 @@
             data: s.iso,
             cod: s.cod,
             qtd: s.qtd,
-            local: s.local === 'Vinhedo' ? 'V' : 'C',
+            local: window.UNID === 'V' ? 'V' : s.local === 'Vinhedo' ? 'V' : 'C',
             pv: '',
             id: 'PR-PA-' + Date.now() + '-' + n++,
             obs: 'sugestão programação automática' + (s.sem ? ' · ' + s.sem : ''),
@@ -22825,20 +22826,31 @@
       window.renderProgAuto = renderProgAuto
 
       // ==================== ABAS: Entregas × Carteira a Faturar ====================
+      // unidade ativa nas abas de Programação: 'C' (Curitiba) ou 'V' (Vinhedo) — mesma base, filtro por local
+      window.UNID = 'C'
+      function declDaUnid() {
+        const u = window.UNID || 'C'
+        return (Array.isArray(declDraft) ? declDraft : []).filter(function (d) {
+          return (d.local || 'C') === u
+        })
+      }
       function showView(v) {
+        if (v === 'ent') window.UNID = 'C'
+        if (v === 'entv') window.UNID = 'V'
         document.getElementById('viewNf').classList.toggle('on', v === 'nf')
-        document.getElementById('viewEnt').classList.toggle('on', v === 'ent')
+        document.getElementById('viewEnt').classList.toggle('on', v === 'ent' || v === 'entv')
         document.getElementById('viewProgAuto').classList.toggle('on', v === 'pa')
         document.getElementById('viewFat').classList.toggle('on', v === 'fat')
         document.getElementById('tabNf').classList.toggle('on', v === 'nf')
         document.getElementById('tabEnt').classList.toggle('on', v === 'ent')
+        document.getElementById('tabEntV').classList.toggle('on', v === 'entv')
         document.getElementById('tabPA').classList.toggle('on', v === 'pa')
         document.getElementById('tabFat').classList.toggle('on', v === 'fat')
         if (v === 'pa' && !window._paInit) {
           renderProgAuto()
           window._paInit = true
         }
-        if (v === 'ent' && !window._apInit) {
+        if ((v === 'ent' || v === 'entv') && !window._apInit) {
           apInitModal()
           window._apInit = true
         }
@@ -22856,12 +22868,19 @@
             })
           }, 50)
         }
-        if (v === 'ent' && (gChart || tChart)) {
+        if ((v === 'ent' || v === 'entv') && (gChart || tChart)) {
           setTimeout(function () {
             if (gChart) gChart.resize()
             if (tChart) tChart.resize()
           }, 50)
         }
+        if (v === 'ent' || v === 'entv') {
+          progDia = null
+          progDate = null
+          renderProg()
+        }
+        const lbl = document.getElementById('unidLabel')
+        if (lbl) lbl.textContent = window.UNID === 'V' ? 'Vinhedo' : 'Curitiba'
       }
       window.showView = showView
 
