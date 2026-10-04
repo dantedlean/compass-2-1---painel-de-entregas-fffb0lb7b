@@ -17457,6 +17457,7 @@
         }
         const semKeys = Object.keys(semanasMap).sort()
         // ---- multi-seleção de semanas (chips) ----
+        const allSem = document.getElementById('progAllSem')
         window._progSemSel = window._progSemSel || {}
         const chips = document.getElementById('progSemChips')
         if (chips) {
@@ -17562,7 +17563,6 @@
             .join('')
           if (!progSemSelIso) progSemSelIso = cur
         }
-        const allSem = document.getElementById('progAllSem')
         const modoTodas =
           allSem &&
           allSem.checked &&
