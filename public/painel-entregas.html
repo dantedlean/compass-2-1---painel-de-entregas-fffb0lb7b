@@ -19088,7 +19088,7 @@
           return
         }
         if (c.cut) {
-          // RECORTE: transfere a qtd (já líquida do executado) e zera a origem.
+          // TRANSFERÊNCIA via Ctrl+V: mesma regra do drop — destino recebe o saldo, origem só o executado.
           declDraft.push({
             dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
               new Date(diaDest + 'T12:00:00').getDay()
@@ -19099,7 +19099,7 @@
             local: window.UNID || 'C',
             pv: '',
             id: 'PR-CUT-' + Date.now(),
-            obs: 'recortado de ' + (c.de || '?'),
+            obs: 'transferido de ' + (c.de || '?'),
             status: 'Planejado',
           })
           declDraft.forEach(function (d) {
@@ -19107,6 +19107,7 @@
             if (d.cod === c.cod && isoD0 === String(progIso(c.de)) && d.status !== 'Cancelado') {
               if (c.exQtd > 0) {
                 d.qtd = Math.min(Number(d.qtd) || 0, c.exQtd)
+                d.status = 'Realizado'
               } // mantém só o executado na origem
               else {
                 d.qtd = 0
@@ -19126,7 +19127,7 @@
               c.cod +
               ' ×' +
               c.qtd +
-              ' RECORTADO de ' +
+              ' TRANSFERIDO de ' +
               (c.de || '?').split('-').reverse().join('/') +
               ' → ' +
               destinoBR +
@@ -19207,6 +19208,8 @@
           alert('Origem e destino são o mesmo dia.')
           return
         }
+        // TRANSFERÊNCIA: destino recebe o saldo; origem fica SÓ com o executado (qtd mínima).
+        // Executado > 0 = origem vira linha de execução (qtd = exQtd, status Realizado); sem executado = origem cancelada.
         declDraft.push({
           dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
             new Date(dateDest + 'T12:00:00').getDay()
@@ -19217,9 +19220,10 @@
           local: window.UNID || 'C',
           pv: '',
           id: 'PR-CUT-' + Date.now(),
-          obs: 'recortado de ' + (c.de || '?'),
+          obs: 'transferido de ' + (c.de || '?'),
           status: 'Planejado',
         })
+        let origemTemExec = Number(c.exQtd) > 0
         declDraft.forEach(function (d) {
           if (
             d.cod === c.cod &&
@@ -19228,6 +19232,7 @@
           ) {
             if (c.exQtd > 0) {
               d.qtd = Math.min(Number(d.qtd) || 0, c.exQtd)
+              d.status = 'Realizado'
             } else {
               d.qtd = 0
               d.status = 'Cancelado'
@@ -19246,10 +19251,11 @@
             c.cod +
             ' ×' +
             c.qtd +
-            ' RECORTADO de ' +
+            ' TRANSFERIDO de ' +
             (c.de || '?').split('-').reverse().join('/') +
             ' → ' +
             destinoBR +
+            (c.exQtd ? ' · executado (' + c.exQtd + ') permanece na origem' : '') +
             ' · nada gravado no MaxiProd'
       }
       let progProdsCache = []
