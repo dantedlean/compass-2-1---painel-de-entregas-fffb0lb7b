@@ -19672,7 +19672,14 @@
         localStorage.setItem('smkt|alocs', '[]')
         if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
           localStorage.setItem('andon|smkt-rev', String(Date.now()))
-          window.ANDON_SYNC.pushSmkt(ent || [], smktHistory()).catch(function () {})
+          const p = window.ANDON_SYNC.pushSmkt(ent || [], smktHistory())
+          if (p && p.then) {
+            p.then(function (r) {
+              if (r === 'auth') andonSyncStatus()
+            }).catch(function () {
+              andonSyncStatus()
+            })
+          }
         }
       }
       function smktConsume(cod, q, evento, meta) {
@@ -21924,6 +21931,22 @@
         connected: function () {
           return !!this.token
         },
+        lastPush: null,
+        expired: false,
+        onAuthFail: null,
+        onPushed: null,
+        _authFail: function () {
+          this.token = ''
+          this.expired = true
+          try {
+            localStorage.removeItem('andon|token')
+          } catch (e) {}
+          if (this.onAuthFail) {
+            try {
+              this.onAuthFail()
+            } catch (e) {}
+          }
+        },
         headers: function () {
           return { Authorization: this.token, 'Content-Type': 'application/json' }
         },
@@ -21964,9 +21987,20 @@
             headers: this.headers(),
             body: JSON.stringify(body),
           })
+          if (r.status === 401 || r.status === 403) {
+            this._authFail()
+            return 'auth'
+          }
           if (!r.ok) {
             const t = await r.text()
             throw new Error('push falhou (' + r.status + '): ' + t.slice(0, 120))
+          }
+          this.lastPush = Date.now()
+          this.expired = false
+          if (this.onPushed) {
+            try {
+              this.onPushed()
+            } catch (e) {}
           }
           return true
         },
@@ -22024,8 +22058,19 @@
             headers: this.headers(),
             body: JSON.stringify(body),
           })
+          if (r.status === 401 || r.status === 403) {
+            this._authFail()
+            return 'auth'
+          }
           if (!r.ok) {
             throw new Error('push smkt falhou (' + r.status + ')')
+          }
+          this.lastPush = Date.now()
+          this.expired = false
+          if (this.onPushed) {
+            try {
+              this.onPushed()
+            } catch (e) {}
           }
           return true
         },
@@ -22063,6 +22108,69 @@
         }
       }
       window.andonToggleConn = andonToggleConn
+      // v0.0.200: polling multi-dispositivo — pull do servidor a cada 60s (outro dispositivo aparece ao vivo)
+      ;(function () {
+        let _pullBusy = false
+        setInterval(function () {
+          if (!ANDON_SYNC.connected() || _pullBusy) return
+          _pullBusy = true
+          Promise.resolve(ANDON_SYNC.syncFromServer())
+            .then(function (pulled) {
+              if (pulled) {
+                renderProg()
+                const st = document.getElementById('declStatus')
+                if (st)
+                  st.textContent =
+                    'Rascunho atualizado do servidor (' +
+                    new Date().toLocaleTimeString('pt-BR') +
+                    ')'
+              }
+            })
+            .catch(function () {})
+            .then(function () {
+              return ANDON_SYNC.syncSmktFromServer()
+            })
+            .then(function (pulled) {
+              if (pulled && typeof renderSmkt === 'function') {
+                renderSmkt()
+                renderSemana()
+                renderKpis()
+                renderGantt()
+                renderTimeline()
+                renderTabela()
+              }
+            })
+            .catch(function () {})
+            .finally(function () {
+              _pullBusy = false
+            })
+        }, 60000)
+        // v0.0.200: salva o rascunho no servidor ao fechar/ocultar a aba (fire-and-forget)
+        window.addEventListener('beforeunload', function () {
+          if (ANDON_SYNC.connected() && Array.isArray(declDraft) && declDraft.length) {
+            try {
+              ANDON_SYNC.push(declDraft, 'Salvo ao fechar a página')
+            } catch (e) {}
+          }
+        })
+      })()
+      function andonSyncStatus() {
+        const btn = document.getElementById('btnConn')
+        if (!btn) return
+        const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
+        if (ANDON_SYNC.expired) {
+          btn.textContent = '⚠ Sessão expirada — reconectar'
+          btn.style.background = '#fee2e2'
+          btn.style.borderColor = '#fecaca'
+          btn.style.color = '#991b1b'
+        } else if (ANDON_SYNC.connected()) {
+          btn.textContent = '🔗 ' + String(u.name || u.email || 'conectado').slice(0, 18) + ' ✓'
+          btn.style.background = ''
+          btn.style.borderColor = ''
+          btn.style.color = ''
+        }
+      }
+      window.andonSyncStatus = andonSyncStatus
       ;(function () {
         const btn = document.getElementById('btnConn')
         if (!btn) return
@@ -22071,13 +22179,14 @@
           if (ANDON_SYNC.connected()) {
             const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
             btn.style.display = ''
-            btn.textContent = '🔗 ' + String(u.name || u.email || 'conectado').slice(0, 18)
-            info.textContent = 'rascunho salvo no servidor'
+            btn.textContent = '🔗 ' + String(u.name || u.email || 'conectado').slice(0, 18) + ' ✓'
+            info.textContent = 'rascunho salvo no servidor · sync a cada 60s'
           } else {
             btn.style.display = ''
             btn.textContent = '🔗 Conectar servidor'
             info.textContent = 'rascunho só neste navegador'
           }
+          andonSyncStatus()
         }
         paint()
         const go = document.getElementById('btnConnGo')
@@ -22092,6 +22201,8 @@
           go.textContent = 'Entrando…'
           try {
             await ANDON_SYNC.login(email, pass)
+            ANDON_SYNC.expired = false
+            andonSyncStatus()
             paint()
             const st = document.getElementById('declStatus')
             if (st) st.textContent = 'Conectado ao servidor — rascunho sincronizado entre máquinas'
@@ -22120,7 +22231,13 @@
           _origDeclSave()
           if (ANDON_SYNC.connected()) {
             localStorage.setItem('andon|rev', String(Date.now()))
-            ANDON_SYNC.push(declDraft).catch(function () {})
+            const p = ANDON_SYNC.push(declDraft)
+            if (p && p.catch)
+              p.catch(function (err) {
+                if (err && err.message && err.message.indexOf('(401)') >= 0) ANDON_SYNC._authFail()
+                andonSyncStatus()
+              })
+            else if (p === 'auth') andonSyncStatus()
           }
         }
         // ao abrir: se conectado, puxa o snapshot do servidor (servidor vence a menos que o local seja mais novo)
@@ -22130,7 +22247,7 @@
               if (pulled) {
                 renderProg()
                 const st = document.getElementById('declStatus')
-                if (st) st.textContent = 'Rascunho carregado do servidor (Compass 2.1)'
+                if (st) st.textContent = 'Rascunho carregado do servidor'
               }
             })
             .catch(function () {})
@@ -22140,10 +22257,23 @@
                 renderSmkt()
                 renderSemana()
                 renderKpis()
+                renderGantt()
+                renderTimeline()
                 renderTabela()
               }
             })
             .catch(function () {})
+        }
+        // v0.0.200: status de push em tempo real no botão de conexão + indicador de sessão expirada
+        ANDON_SYNC.onPushed = function () {
+          andonSyncStatus()
+        }
+        ANDON_SYNC.onAuthFail = function () {
+          andonSyncStatus()
+          const st = document.getElementById('declStatus')
+          if (st)
+            st.textContent =
+              '⚠ Sessão do servidor expirou — clique em 🔗 para reconectar (edições seguem salvas neste navegador)'
         }
       })()
       renderProg()
