@@ -900,6 +900,18 @@
             id="progAddBar"
           >
             <b style="font-size: 12.5px">+ Incluir item:</b>
+            <select
+              id="addModo"
+              style="
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12px;
+              "
+            >
+              <option value="pv">Por PV</option>
+              <option value="prod">Por produto</option>
+            </select>
             <input
               id="addPv"
               placeholder="Nº do PV"
@@ -911,6 +923,19 @@
                 border: 1px solid var(--line);
                 border-radius: 8px;
                 font-weight: 700;
+              "
+            />
+            <input
+              id="addProd"
+              placeholder="Código do produto"
+              list="prodDigList"
+              style="
+                width: 160px;
+                padding: 6px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-weight: 700;
+                display: none;
               "
             />
             <span id="addInfo" class="note" style="flex: 1; min-width: 240px; margin: 0"
@@ -20910,8 +20935,71 @@
         const info = document.getElementById('addInfo'),
           qtd = document.getElementById('addQtd'),
           btn = document.getElementById('btnAddProg')
+        const modo = document.getElementById('addModo'),
+          inpProd = document.getElementById('addProd')
         let pvSel = null
+        // ===== datalist de produtos (mesma lista do SMKT, sem fretes) =====
+        ;(function () {
+          if (document.getElementById('prodDigList')) return
+          function ehFrete(c) {
+            const d = (descDe(c) || '').toLowerCase()
+            if (c === '00043' || /^50[1-6]-/.test(c)) return true
+            const pal = ['frete', 'caminhao', 'caminhão', 'vuc', 'carreta', 'toco', 'truck'],
+              exc = ['carrinho', 'cart', 'carro']
+            return (
+              pal.some(function (p) {
+                return d.indexOf(p) >= 0
+              }) &&
+              !exc.some(function (e) {
+                return d.indexOf(e) >= 0
+              })
+            )
+          }
+          function cmpCod(a, b) {
+            const pa = String(a).split('-'),
+              pb = String(b).split('-')
+            for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+              const na = parseInt(pa[i], 10),
+                nb = parseInt(pb[i], 10)
+              if (!isNaN(na) && !isNaN(nb) && String(na) === pa[i] && String(nb) === pb[i]) {
+                if (na !== nb) return na - nb
+              } else if (String(a) < String(b)) return -1
+              else if (String(a) > String(b)) return 1
+            }
+            return 0
+          }
+          const cods = new Set()
+          DATA.rows.forEach(function (r) {
+            if (!ehFrete(r.codigo)) cods.add(r.codigo)
+          })
+          const dl = document.createElement('datalist')
+          dl.id = 'prodDigList'
+          dl.innerHTML = Array.from(cods)
+            .sort(cmpCod)
+            .map(function (c) {
+              return '<option value="' + c + '">' + c + ' · ' + descDe(c).slice(0, 40) + '</option>'
+            })
+            .join('')
+          document.body.appendChild(dl)
+        })()
+        // troca de modo: PV ↔ produto
+        modo.addEventListener('change', function () {
+          const prod = modo.value === 'prod'
+          inp.style.display = prod ? 'none' : ''
+          inpProd.style.display = prod ? '' : 'none'
+          pvSel = null
+          inp.value = ''
+          inpProd.value = ''
+          qtd.value = ''
+          info.innerHTML = prod
+            ? 'digite o código do produto — PVs cobertos e saldo aparecem aqui'
+            : 'digite o PV — produto, cliente, saldo e entrega aparecem aqui'
+        })
         function showInfo() {
+          if (modo.value === 'prod') {
+            showInfoProd()
+            return
+          }
           const o = pvLookup(inp.value)
           if (!o) {
             pvSel = null
@@ -20948,18 +21036,56 @@
             (o.atr ? ' <span class="tagF">ATRASADO</span>' : '')
           if (!qtd.value) qtd.value = o.qtd
         }
+        function showInfoProd() {
+          const cod = (inpProd.value || '').trim().toUpperCase()
+          if (!cod) {
+            info.innerHTML = 'digite o código do produto — PVs cobertos e saldo aparecem aqui'
+            return
+          }
+          const rs = DATA.rows.filter(function (r) {
+            return r.codigo === cod
+          })
+          if (!rs.length) {
+            info.innerHTML =
+              '<span style="color:#dc2626">Código ' + cod + ' não encontrado na carteira</span>'
+            return
+          }
+          const tot = rs.reduce(function (a, r) {
+            return a + (Number(r.qtd) || 0)
+          }, 0)
+          const pvs = rs
+            .map(function (r) {
+              return (
+                'PV ' +
+                r.pv +
+                ' · ' +
+                r.cliente +
+                ' · ' +
+                NF.format(r.qtd) +
+                ' un · ' +
+                dtBR(r.iso) +
+                (r.semana === 'ATRASADO' ? ' <span class="tagF">ATRASADO</span>' : '')
+              )
+            })
+            .join(' &nbsp;|&nbsp; ')
+          info.innerHTML =
+            '<b style="color:#16a34a">' +
+            cod +
+            ' · ' +
+            descDe(cod).slice(0, 44) +
+            '</b> — saldo total <b>' +
+            NF.format(tot) +
+            ' un</b> em ' +
+            rs.length +
+            ' PV(s): ' +
+            pvs
+          if (!qtd.value) qtd.value = tot
+        }
         inp.addEventListener('input', showInfo)
         inp.addEventListener('change', showInfo)
+        inpProd.addEventListener('input', showInfoProd)
+        inpProd.addEventListener('change', showInfoProd)
         btn.addEventListener('click', function () {
-          if (!pvSel) {
-            alert('Digite um PV válido primeiro — o Andon traz os dados do item.')
-            return
-          }
-          const q = Number(qtd.value) || 0
-          if (q <= 0) {
-            alert('Informe a quantidade.')
-            return
-          }
           const dt =
             (
               (DATA.progSemana &&
@@ -20972,6 +21098,53 @@
             dt.length === 5
               ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
               : dt
+          if (modo.value === 'prod') {
+            const cod = (inpProd.value || '').trim().toUpperCase()
+            const rs = DATA.rows.filter(function (r) {
+              return r.codigo === cod
+            })
+            if (!rs.length) {
+              alert('Digite um código de produto válido primeiro — o Andon traz os PVs cobertos.')
+              return
+            }
+            const q = Number(qtd.value) || 0
+            if (q <= 0) {
+              alert('Informe a quantidade.')
+              return
+            }
+            declDraft.push({
+              dia: progDia || 'Segunda',
+              data: iso,
+              cod: cod,
+              qtd: q,
+              local: document.getElementById('addLocal').value,
+              pv: '',
+              id: 'PR-ADD-' + Date.now(),
+              obs: 'incluído via produto ' + cod,
+              status: 'Planejado',
+            })
+            declSave()
+            progBuildFromDecls()
+            renderProg()
+            inpProd.value = ''
+            qtd.value = ''
+            info.innerHTML =
+              '<span style="color:#16a34a">✔ ' +
+              cod +
+              ' incluído em ' +
+              iso.split('-').reverse().join('/') +
+              ' — nada gravado no MaxiProd</span>'
+            return
+          }
+          if (!pvSel) {
+            alert('Digite um PV válido primeiro — o Andon traz os dados do item.')
+            return
+          }
+          const q = Number(qtd.value) || 0
+          if (q <= 0) {
+            alert('Informe a quantidade.')
+            return
+          }
           declDraft.push({
             dia: progDia || 'Segunda',
             data: iso,
