@@ -17233,7 +17233,12 @@
           String(segDate.getDate()).padStart(2, '0')
         const temFuturo = DATA.progSemana.dias.some(function (x) {
           const p = String(x.data).split('/')
-          const iso = p.length === 3 ? new Date().getFullYear() + '-' + p[1] + '-' + p[0] : x.data
+          const iso =
+            p.length === 3
+              ? p[2] + '-' + p[1] + '-' + p[0]
+              : p.length === 2
+                ? hj.getFullYear() + '-' + p[1] + '-' + p[0]
+                : x.data
           return iso >= segIso
         })
         if (temFuturo) return // semana declarada ainda tem dias futuros — nada a semear
