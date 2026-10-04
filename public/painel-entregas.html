@@ -18711,6 +18711,7 @@
             declSave()
             progBuildFromDecls()
             renderProgTabela()
+            if (typeof renderAProg === 'function') renderAProg()
             const st = document.getElementById('declStatus')
             if (st)
               st.textContent =
@@ -18750,10 +18751,14 @@
             declSave()
             progBuildFromDecls()
             renderProgTabela()
+            if (typeof renderAProg === 'function') renderAProg()
             const st = document.getElementById('declStatus')
             if (st)
               st.textContent =
-                cod + ' excluído de ' + progDate + ' (rascunho local · nada gravado no MaxiProd)'
+                cod +
+                ' excluído de ' +
+                progDate +
+                ' — voltou para o card A Programar · nada gravado no MaxiProd'
           })
         }
         if (!tb._toggleBound) {
