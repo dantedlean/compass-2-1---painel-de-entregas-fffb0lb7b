@@ -955,19 +955,6 @@
                 min-width: 260px;
               "
             ></select>
-            <input
-              type="number"
-              id="smQtd"
-              min="1"
-              placeholder="Qtd"
-              style="
-                width: 80px;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 12.5px;
-              "
-            />
             <button
               id="smAdd"
               class="dlbtn"
@@ -1034,6 +1021,18 @@
                 type="date"
                 id="smEntData"
                 style="
+                  padding: 6px 10px;
+                  border: 1px solid var(--line);
+                  border-radius: 8px;
+                  font-size: 12.5px;
+                "
+              />
+              <input
+                type="text"
+                id="smEntMot"
+                placeholder="Motivo / observação (opcional)"
+                style="
+                  width: 200px;
                   padding: 6px 10px;
                   border: 1px solid var(--line);
                   border-radius: 8px;
@@ -2108,9 +2107,9 @@
        const tb=document.getElementById('tbbM');if(!tb._bound){tb._bound=true;tb.addEventListener('click',function(e){const b=e.target.closest('button[data-m]');if(!b)return;const tr=b.closest('tr[data-cod]'),cod=tr.getAttribute('data-cod');
        if(b.dataset.m==='ret'){const q=Number(tr.querySelector('[data-m=retq]').value)||0,mot=tr.querySelector('[data-m=mot]').value.trim();if(q<=0||q>smktSaldo(cod)){alert('Quantidade inválida. Saldo: '+NF.format(smktSaldo(cod)));return;}if(!mot){alert('Informe motivo.');return;}if(confirm('Retirar '+NF.format(q)+' un de '+cod+'?')){const dd=new Date();const dataSaida=dd.getFullYear()+'-'+('0'+(dd.getMonth()+1)).slice(-2)+'-'+('0'+dd.getDate()).slice(-2);smktConsume(cod,q,'Retirada manual',{motivo:mot,dataSaida:dataSaida,emSaida:dataSaida});renderSmkt();renderSemana();renderKpis();renderGantt();renderTimeline();renderTabela();}return;}
        if(b.dataset.m==='alc'){const q=Number(tr.querySelector('[data-m=qtd]').value)||0,pv=tr.querySelector('[data-m=pv]').value,nf=tr.querySelector('[data-m=nf]').value.trim();if(!pv){alert('Escolha PV.');return;}if(q<=0||q>smktSaldo(cod)){alert('Quantidade inválida. Saldo: '+NF.format(smktSaldo(cod)));return;}const z=pv.split('|');const dd=new Date();const dataSaida=dd.getFullYear()+'-'+('0'+(dd.getMonth()+1)).slice(-2)+'-'+('0'+dd.getDate()).slice(-2);smktConsume(cod,q,'Alocado em PV',{pv:z[0],cli:z[1]||'',nf:nf,motivo:'Alocação manual',dataSaida:dataSaida,emSaida:dataSaida});renderSmkt();renderSemana();renderKpis();renderGantt();renderTimeline();renderTabela();}});}}
-      document.getElementById('smAdd').addEventListener('click',function(){smktEnsureMigrated();const cod=document.getElementById('smProd').value;if(!cod){alert('Escolha o produto.');return;}const box=document.getElementById('smEntradaBox');document.getElementById('smEntProd').textContent='— '+cod+' · '+descDe(cod).slice(0,40);document.getElementById('smEntQtd').value='';document.getElementById('smEntOrigem').value='';document.getElementById('smEntPoder').value='';const dt=new Date();document.getElementById('smEntData').value=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2)+'-'+('0'+dt.getDate()).slice(-2);box.style.display=box.style.display==='none'?'block':'none';if(box.style.display==='block')document.getElementById('smEntQtd').focus();});
+      document.getElementById('smAdd').addEventListener('click',function(){smktEnsureMigrated();const cod=document.getElementById('smProd').value;if(!cod){alert('Escolha o produto.');return;}const box=document.getElementById('smEntradaBox');document.getElementById('smEntProd').textContent='— '+cod+' · '+descDe(cod).slice(0,40);document.getElementById('smEntQtd').value='';document.getElementById('smEntOrigem').value='';document.getElementById('smEntPoder').value='';document.getElementById('smEntMot').value='';const dt=new Date();document.getElementById('smEntData').value=dt.getFullYear()+'-'+('0'+(dt.getMonth()+1)).slice(-2)+'-'+('0'+dt.getDate()).slice(-2);box.style.display=box.style.display==='none'?'block':'none';if(box.style.display==='block')document.getElementById('smEntQtd').focus();});
       document.getElementById('smEntCancel').addEventListener('click',function(){document.getElementById('smEntradaBox').style.display='none';});
-      document.getElementById('smEntOk').addEventListener('click',function(){const cod=document.getElementById('smProd').value,q=Number(document.getElementById('smEntQtd').value)||0;if(!cod||q<=0){alert('Escolha produto e quantidade.');return;}const origem=document.getElementById('smEntOrigem').value.trim(),poder=document.getElementById('smEntPoder').value.trim(),dataIn=document.getElementById('smEntData').value;if(!origem){alert('Informe a ORIGEM da entrada.');return;}if(!poder){alert('Informe EM PODER DE quem fica o produto.');return;}const dataBr=dataIn?dataIn.split('-').reverse().join('/'):(new Date().toLocaleDateString('pt-BR'));const e=smktEntradas();e.push({cod:cod,qtd:q,origem:'manual',data:dataBr,dataIso:dataIn||'',origemDesc:origem,poderDe:poder});smktSave(e,[]);const h=smktHistory();h.unshift({cod:cod,qtd:q,data:dataBr,event:'Entrada manual',motivo:'Origem: '+origem+(poder?' · Em poder de: '+poder:'')});smktHistorySave(h);document.getElementById('smEntradaBox').style.display='none';renderSmkt();renderSemana();renderKpis();renderGantt();renderTimeline();renderTabela();});
+      document.getElementById('smEntOk').addEventListener('click',function(){const cod=document.getElementById('smProd').value,q=Number(document.getElementById('smEntQtd').value)||0;if(!cod||q<=0){alert('Escolha produto e quantidade.');return;}const origem=document.getElementById('smEntOrigem').value.trim(),poder=document.getElementById('smEntPoder').value.trim(),dataIn=document.getElementById('smEntData').value,mot=document.getElementById('smEntMot').value.trim();if(!origem){alert('Informe a ORIGEM da entrada.');return;}if(!poder){alert('Informe EM PODER DE quem fica o produto.');return;}const dataBr=dataIn?dataIn.split('-').reverse().join('/'):(new Date().toLocaleDateString('pt-BR'));const e=smktEntradas();e.push({cod:cod,qtd:q,origem:'manual',data:dataBr,dataIso:dataIn||'',origemDesc:origem,poderDe:poder});smktSave(e,[]);const h=smktHistory();h.unshift({cod:cod,qtd:q,data:dataBr,event:'Entrada manual',motivo:mot||'',origem:origem,poderDe:poder,entradaData:dataIn||dataBr});smktHistorySave(h);document.getElementById('smEntradaBox').style.display='none';renderSmkt();renderSemana();renderKpis();renderGantt();renderTimeline();renderTabela();});
       // CLIQUE no item do SMKT = abre o histórico filtrado do produto (abaixo da tabela)
       function smktHistBox(){let b=document.getElementById('smHistItem');if(!b){b=document.createElement('div');b.id='smHistItem';b.style.cssText='display:none;margin:10px 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fffbeb';document.getElementById('cardSmkt').appendChild(b);}return b;}
       function toggleSmktHist(cod){const b=smktHistBox();if(b._cod===cod&&b.style.display==='block'){b.style.display='none';b._cod='';return;}const h=smktHistory().filter(function(x){return String(x.cod)===String(cod);});const st=smktNFStatus(cod);b._cod=cod;b.style.display='block';const rows=h.length?h.map(function(x){const dSai=x.dataSaida?' <span style="color:#92400e" title="Data de saída">→ '+x.dataSaida.split('-').reverse().join('/')+'</span>':'';return '<tr'+(x.undone?' style="opacity:.5;text-decoration:line-through"':'')+'><td>'+x.data+dSai+'</td><td>'+x.event+'</td><td class="num">'+NF.format(x.qtd)+'</td><td>'+((x.pv||'')+' '+(x.cli||'')+(x.nf?' · NF '+x.nf:''))+'</td><td>'+(x.motivo||'')+'</td></tr>';}).join(''):'<tr><td colspan="5">Sem eventos registrados para este produto.</td></tr>';b.innerHTML='<div style="font-weight:800;font-size:13px;color:#92400e;margin-bottom:8px">📚 Histórico — '+cod+' · '+descDe(cod).slice(0,40)+' <span style="color:#64748b;font-weight:600">(saldo atual '+NF.format(st.saldo)+' un)</span> <button class="dlbtn" style="float:right;padding:2px 10px" onclick="toggleSmktHist(''+cod+'')">Fechar</button></div><div class="tblwrap" style="max-height:220px"><table><thead><tr><th>Data</th><th>Evento</th><th>Qtd</th><th>PV / NF</th><th>Motivo / Origem</th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
