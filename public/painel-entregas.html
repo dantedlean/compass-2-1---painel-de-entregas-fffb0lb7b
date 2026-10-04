@@ -20896,18 +20896,20 @@
           }
         }
         if (!Array.isArray(declDraft)) declDraft = []
-        const dt =
-          (
-            (DATA.progSemana &&
-              DATA.progSemana.dias.find(function (a) {
-                return a.dia === progDia
-              })) ||
-            {}
-          ).data || new Date().toISOString().slice(0, 10)
+        const br =
+          typeof progDate === 'string' && progDate.length === 5
+            ? progDate
+            : (
+                (DATA.progSemana &&
+                  DATA.progSemana.dias.find(function (a) {
+                    return a.dia === progDia
+                  })) ||
+                {}
+              ).data || ''
         const iso =
-          dt.length === 5
-            ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
-            : dt
+          br.length === 5
+            ? new Date().getFullYear() + '-' + br.slice(3, 5) + '-' + br.slice(0, 2)
+            : br
         declDraft.push({
           dia: progDia || 'Segunda',
           data: iso,
@@ -21086,18 +21088,21 @@
         inpProd.addEventListener('input', showInfoProd)
         inpProd.addEventListener('change', showInfoProd)
         btn.addEventListener('click', function () {
-          const dt =
-            (
-              (DATA.progSemana &&
-                DATA.progSemana.dias.find(function (a) {
-                  return a.dia === progDia
-                })) ||
-              {}
-            ).data || progDate
+          // data do DIA SELECIONADO (botão carrega dd/mm) — não procurar pelo nome do dia na semana corrente
+          const br =
+            typeof progDate === 'string' && progDate.length === 5
+              ? progDate
+              : (
+                  (DATA.progSemana &&
+                    DATA.progSemana.dias.find(function (a) {
+                      return a.dia === progDia
+                    })) ||
+                  {}
+                ).data || ''
           const iso =
-            dt.length === 5
-              ? new Date().getFullYear() + '-' + dt.slice(3, 5) + '-' + dt.slice(0, 2)
-              : dt
+            br.length === 5
+              ? new Date().getFullYear() + '-' + br.slice(3, 5) + '-' + br.slice(0, 2)
+              : br
           if (modo.value === 'prod') {
             const cod = (inpProd.value || '').trim().toUpperCase()
             const rs = DATA.rows.filter(function (r) {
