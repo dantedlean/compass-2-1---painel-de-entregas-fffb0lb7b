@@ -808,6 +808,54 @@
             >
           </div>
         </div>
+        <div class="card" id="cardAProg">
+          <h2>📋 A Programar <span class="tagF">NÃO FATURADO</span></h2>
+          <div class="note">
+            Tudo que ainda tem saldo a faturar (não saiu via NF), por produto: <b>a programar</b> =
+            saldo sem declaração de produção; <b>programado</b> = já tem declaração na
+            agenda/rascunho. O item só sai da lista quando a NF é emitida — programado mas não
+            faturado continua aqui.
+          </div>
+          <div
+            class="toolbar"
+            style="gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 8px"
+          >
+            <input
+              id="apQ"
+              type="search"
+              placeholder="Buscar código, produto ou PV…"
+              style="
+                flex: 1;
+                min-width: 200px;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12.5px;
+              "
+            />
+            <button id="btnDlAProg" class="dlbtn">⬇ Baixar Excel</button>
+          </div>
+          <div class="tblwrap" style="max-height: 340px">
+            <table id="tbAProg">
+              <thead>
+                <tr>
+                  <th>Código / Produto</th>
+                  <th>Saldo (un)</th>
+                  <th>Valor</th>
+                  <th>Programado (un)</th>
+                  <th>A programar (un)</th>
+                  <th>Programação</th>
+                  <th>Entrega mais antiga</th>
+                  <th>PVs</th>
+                </tr>
+              </thead>
+              <tbody id="tbbAProg"></tbody>
+              <tfoot>
+                <tr id="trfAProg"></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
         <div class="card" id="cardProg">
           <h2>Programação de produção <span class="tagP">AGENDA EDITÁVEL</span></h2>
           <div class="note">
@@ -1540,6 +1588,23 @@
               <option value="Curitiba">Curitiba</option>
               <option value="Vinhedo">Vinhedo</option>
             </select>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+            <label class="note" style="margin: 0; min-width: 70px">Qtd a alocar:</label>
+            <input
+              id="paQtdInput"
+              type="number"
+              min="1"
+              style="
+                flex: 1;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 13px;
+                text-align: right;
+                font-weight: 700;
+              "
+            />
           </div>
           <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
             <label class="note" style="margin: 0; min-width: 70px">Produzir em:</label>
@@ -17327,6 +17392,166 @@
       function aplicarSmktNaProgramacao(prods, dia) {
         return prods
       }
+      // ==================== CARD "A PROGRAMAR" (não faturado) ====================
+      // saldo da carteira (não saiu via NF) − programado nas declarações (agenda + rascunho)
+      let apQ = ''
+      function renderAProg() {
+        const prog = {} // codigo -> {prog: un, det: [str]}
+        ;(Array.isArray(declDraft)
+          ? declDraft
+          : (typeof declDraft !== 'undefined' && declDraft) || []
+        ).forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+          const o = (prog[d.cod] = prog[d.cod] || { prog: 0, det: [] })
+          o.prog += Number(d.qtd)
+          o.det.push(
+            dtBR(d.data) +
+              ' ×' +
+              NF.format(Number(d.qtd)) +
+              (d.pv ? ' · PV ' + d.pv : '') +
+              (d.local === 'V' ? ' · V' : ' · C') +
+              (d.status && d.status !== 'Planejado' ? ' · ' + d.status : ''),
+          )
+        })
+        const map = {}
+        DATA.rows.forEach(function (r) {
+          const o = (map[r.codigo] = map[r.codigo] || {
+            desc: r.desc,
+            frete: r.frete,
+            saldo: 0,
+            vt: 0,
+            pvs: new Set(),
+            entrega: '',
+            prog: 0,
+            det: [],
+          })
+          o.saldo += Number(r.qtd) || 0
+          o.vt += r.vtot || 0
+          o.pvs.add(r.pv + '|' + r.empresa)
+          if (!o.entrega || (r.iso && r.iso < o.entrega)) o.entrega = r.iso
+          const p = prog[r.codigo]
+          if (p) {
+            o.prog = p.prog
+            o.det = p.det
+          }
+        })
+        const q = apQ.toUpperCase()
+        const arr = Object.entries(map)
+          .map(function (e) {
+            const [cod, o] = e
+            o.aProg = Math.max(0, o.saldo - o.prog)
+            return [cod, o]
+          })
+          .filter(function (e) {
+            const [cod, o] = e
+            return o.saldo > 0 && (!q || (cod + ' ' + o.desc).toUpperCase().includes(q))
+          })
+          .sort(function (a, b) {
+            return b[1].aProg - a[1].aProg || b[1].vt - a[1].vt
+          })
+        let tS = 0,
+          tP = 0,
+          tA = 0,
+          tV = 0
+        const rows =
+          arr
+            .map(function (e) {
+              const [cod, o] = e
+              tS += o.saldo
+              tP += Math.min(o.prog, o.saldo)
+              tA += o.aProg
+              tV += o.vt
+              const progTxt = o.det.length
+                ? o.det.join(' + ')
+                : '<span style="color:var(--mut)">—</span>'
+              return (
+                '<tr><td><div class="cod">' +
+                cod +
+                (o.frete ? ' <span class="tagF">FRETE</span>' : '') +
+                '</div><div class="dsc">' +
+                o.desc.slice(0, 52) +
+                '</div></td>' +
+                '<td class="num">' +
+                NF.format(o.saldo) +
+                '</td><td class="num">' +
+                FMT.format(o.vt) +
+                '</td>' +
+                '<td class="num">' +
+                (o.prog ? NF.format(Math.min(o.prog, o.saldo)) : '—') +
+                '</td>' +
+                '<td class="num" style="font-weight:800;color:' +
+                (o.aProg > 0 ? '#b45309' : '#16a34a') +
+                '">' +
+                NF.format(o.aProg) +
+                '</td>' +
+                '<td>' +
+                progTxt +
+                '</td><td>' +
+                dtBR(o.entrega) +
+                '</td><td class="num">' +
+                o.pvs.size +
+                '</td></tr>'
+              )
+            })
+            .join('') || '<tr><td colspan="8">Nada encontrado.</td></tr>'
+        document.getElementById('tbbAProg').innerHTML = rows
+        document.getElementById('trfAProg').innerHTML =
+          '<td><b>TOTAL (' +
+          arr.length +
+          ' produtos)</b></td><td class="num"><b>' +
+          NF.format(tS) +
+          '</b></td><td class="num"><b>' +
+          FMT.format(tV) +
+          '</b></td><td class="num"><b>' +
+          NF.format(tP) +
+          '</b></td><td class="num"><b>' +
+          NF.format(tA) +
+          '</b></td><td colspan="3"></td>'
+      }
+      document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'apQ') {
+          apQ = e.target.value
+          renderAProg()
+        }
+      })
+      document.getElementById('btnDlAProg').addEventListener('click', function () {
+        const rows = [
+          [
+            'Código',
+            'Produto',
+            'Saldo (un)',
+            'Valor',
+            'Programado (un)',
+            'A programar (un)',
+            'Programação',
+            'Entrega mais antiga',
+            'PVs',
+          ],
+        ]
+        document.querySelectorAll('#tbbAProg tr').forEach(function (tr) {
+          const tds = tr.children
+          if (tds.length < 8 || tds[0].textContent.indexOf('TOTAL') === 0) return
+          rows.push([
+            tds[0].textContent.trim(),
+            '',
+            tds[1].textContent,
+            tds[2].textContent,
+            tds[3].textContent,
+            tds[4].textContent,
+            tds[5].textContent,
+            tds[6].textContent,
+            tds[7].textContent,
+          ])
+        })
+        const wb = XLSX.utils.aoa_to_sheet(rows)
+        const wbk = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wbk, wb, 'A Programar')
+        XLSX.writeFile(
+          wbk,
+          'a_programar_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx',
+        )
+      })
+
       function progBuildFromDecls() {
         if (!DATA.progSemana) return
         const avail = {}
@@ -17923,6 +18148,7 @@
           })
         })
         renderProgTabela()
+        if (typeof renderAProg === 'function') renderAProg()
       }
       function renderProgTabela() {
         const rsBase = DATA.progSemana.dias.filter(function (a) {
@@ -22072,6 +22298,7 @@
           '</b>' +
           (s.tarde ? ' <span class="tagF">TARDE</span>' : '')
         document.getElementById('paDateInput').value = s.iso
+        document.getElementById('paQtdInput').value = Math.round(s.qtd)
         // Semana: todas as segundas do ano (S01..S53), pré-selecionada a da sugestão
         const semSel = document.getElementById('paSemSel')
         const segSug = (function (d) {
@@ -22190,12 +22417,18 @@
             alert('Escolha a data de produção.')
             return
           }
+          const qtdN = Number(document.getElementById('paQtdInput').value)
+          if (!qtdN || qtdN <= 0) {
+            alert('Informe a quantidade a alocar.')
+            return
+          }
           const localSel = document.getElementById('paLocalSel').value
           const semSel = document.getElementById('paSemSel').value
           box.style.display = 'none'
           paLevar([
             Object.assign({}, s, {
               iso: nova,
+              qtd: qtdN,
               local: localSel === 'Vinhedo' ? 'Vinhedo' : 'Curitiba',
               sem: semSel,
             }),
