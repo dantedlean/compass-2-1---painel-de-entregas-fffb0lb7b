@@ -21763,20 +21763,29 @@
           return a.prodUntil.localeCompare(b.prodUntil) || b.vtot - a.vtot
         })
         const sug = []
-        let naoCabe = 0,
-          tardeQtd = 0,
-          tardeV = 0
+        let naoCabe = 0
+        // carga por semana (para escolher a semana MENOS CARREGADA — modelo do plano de recuperação)
+        const semLoad = {}
+        function addLoad(iso, q) {
+          const s = paSemanaDe(iso)
+          semLoad[s] = (semLoad[s] || 0) + q
+        }
+        Object.keys(load).forEach(function (d) {
+          addLoad(d, load[d] || 0)
+        })
+        Object.keys(paAlloc).forEach(function (d) {
+          addLoad(d, paAlloc[d] || 0)
+        })
         lista.forEach(function (p) {
-          let need = p.qtd - (jaDecl[p.cod] ? 0 : 0) // jaDecl é por cod|iso; aqui desconta por dia abaixo
           // desconta o que já está declarado deste produto (qualquer data) — evita sugerir em dobro
           let ja = 0
           Object.keys(jaDecl).forEach(function (k) {
             if (k.indexOf(p.cod + '|') === 0) ja += jaDecl[k]
           })
-          need = p.qtd - ja
+          const need = p.qtd - ja
           if (need <= 0) return
           const cap = capOf(p.local)
-          // dias úteis disponíveis: do início até prodUntil (janela ok) — depois, se sobrar, TARDE até o fim do período
+          // janela de produção: do início até prodUntil (chega a tempo); resto do período = TARDE
           const janela = dus.filter(function (d) {
             return d >= start && d <= p.prodUntil
           })
@@ -21790,8 +21799,7 @@
               const d = arr[i]
               const room = cap - (load[d] || 0) - (paAlloc[d] || 0) - (aloc[d] || 0)
               if (room <= 0) continue
-              const alvo = Math.ceil(rest / Math.max(1, arr.length - i)) // nivelamento da carga
-              const q = Math.min(room, rest, alvo)
+              const q = Math.min(room, rest)
               if (q > 0) {
                 aloc[d] = (aloc[d] || 0) + q
                 rest -= q
@@ -21799,12 +21807,41 @@
             }
             return rest
           }
-          let sobra = distribui(janela)
-          let tarde = false
-          if (sobra > 0 && resto.length) {
+          function commit() {
+            for (const d in aloc) {
+              addLoad(d, aloc[d])
+            }
+          }
+          let tarde = false,
+            sobra = 0
+          if (janela.length) {
+            // 1) tenta a SEMANA MENOS CARREGADA dentro da janela (lote inteiro — modelo aprovado)
+            const sems = {}
+            janela.forEach(function (d) {
+              const s = paSemanaDe(d)
+              ;(sems[s] = sems[s] || []).push(d)
+            })
+            const ordem = Object.keys(sems).sort(function (a, b) {
+              return (semLoad[a] || 0) - (semLoad[b] || 0) || a.localeCompare(b)
+            })
+            for (let i = 0; i < ordem.length && need > 0; i++) {
+              const rest = distribui(sems[ordem[i]])
+              if (rest < need) {
+                commit()
+                need = rest
+              }
+              if (need <= 0) break
+            }
+            sobra = need
+          } else {
+            sobra = distribui(resto)
             tarde = true
-            const s2 = distribui(resto)
-            sobra = s2
+          }
+          if (sobra > 0 && janela.length && resto.length) {
+            // não coube na janela: TARDE no resto do período
+            tarde = true
+            sobra = distribui(resto)
+            commit()
           }
           Object.keys(aloc).forEach(function (d) {
             if (aloc[d] <= 0) return
@@ -21827,11 +21864,7 @@
           })
           if (sobra > 0) {
             naoCabe += sobra
-            tardeQtd += sobra
-            tardeV += sobra * p.vu
-          } else if (tarde) {
-            tardeQtd += need * 0
-          } // tarde já marcada nas linhas
+          }
         })
         sug.sort(function (a, b) {
           return a.iso.localeCompare(b.iso) || a.cod.localeCompare(b.cod)
