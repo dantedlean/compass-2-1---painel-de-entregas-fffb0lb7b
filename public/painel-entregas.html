@@ -17630,11 +17630,19 @@
             o.det = p.det
           }
         })
+        // SMKT: produto pronto é real (regra Dante 27/09) — saldo no supermercado NÃO precisa ser programado
+        Object.keys(map).forEach(function (cod) {
+          try {
+            map[cod].smkt = Math.max(0, Number(smktSaldo(cod)) || 0)
+          } catch (e) {
+            map[cod].smkt = 0
+          }
+        })
         const q = apQ.toUpperCase()
         const arr = Object.entries(map)
           .map(function (e) {
             const [cod, o] = e
-            o.aProg = Math.max(0, o.saldo - o.prog)
+            o.aProg = Math.max(0, o.saldo - o.prog - (o.smkt || 0))
             return [cod, o]
           })
           .filter(function (e) {
@@ -17647,7 +17655,8 @@
         let tS = 0,
           tP = 0,
           tA = 0,
-          tV = 0
+          tV = 0,
+          tSm = 0
         const rows =
           arr
             .map(function (e) {
@@ -17656,9 +17665,12 @@
               tP += Math.min(o.prog, o.saldo)
               tA += o.aProg
               tV += o.vt
-              const progTxt = o.det.length
-                ? o.det.join(' + ')
-                : '<span style="color:var(--mut)">—</span>'
+              tSm += o.smkt || 0
+              const progTxt =
+                (o.det.length ? o.det.join(' + ') : '<span style="color:var(--mut)">—</span>') +
+                ((o.smkt || 0) > 0
+                  ? ' <span class="tagP">🛒 SMKT ×' + NF.format(o.smkt) + '</span>'
+                  : '')
               const sug = apSugerirData()
               const draggable =
                 o.aProg > 0
