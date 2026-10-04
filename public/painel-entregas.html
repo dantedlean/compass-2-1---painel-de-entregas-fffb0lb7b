@@ -1696,6 +1696,22 @@
             "
           />
         </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
+          <label class="note" style="margin: 0; min-width: 90px">Fábrica:</label>
+          <select
+            id="apQtdLocal"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          >
+            <option value="C">Curitiba</option>
+            <option value="V">Vinhedo</option>
+          </select>
+        </div>
         <div style="display: flex; gap: 8px; justify-content: flex-end">
           <button id="apQtdCancel" class="dlbtn">Cancelar</button>
           <button
@@ -17514,6 +17530,8 @@
           ' un</b>'
         document.getElementById('apQtdInput').value = Math.round(aProg)
         document.getElementById('apQtdData').value = dataIso
+        const sel = document.getElementById('apQtdLocal')
+        if (sel) sel.value = window.UNID || 'C'
         box.dataset.cod = cod
         box.dataset.aprog = aProg
         box.style.display = 'flex'
@@ -17538,6 +17556,8 @@
           if (!cod) return
           const qtd = Number(document.getElementById('apQtdInput').value)
           const dataIso = document.getElementById('apQtdData').value
+          const sel = document.getElementById('apQtdLocal')
+          const local = sel ? (sel.value === 'V' ? 'V' : 'C') : 'C'
           if (!qtd || qtd <= 0) {
             alert('Informe a quantidade.')
             return
@@ -17559,10 +17579,10 @@
           )
             return
           box.style.display = 'none'
-          apProgramar(cod, qtd, dataIso)
+          apProgramar(cod, qtd, dataIso, local)
         })
       }
-      function apProgramar(cod, qtd, dataIso) {
+      function apProgramar(cod, qtd, dataIso, local) {
         if (!Array.isArray(declDraft)) declDraft = []
         const d = new Date(dataIso + 'T12:00:00')
         const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
@@ -17571,7 +17591,7 @@
           data: dataIso,
           cod: cod,
           qtd: qtd,
-          local: window.UNID || 'C',
+          local: local || window.UNID || 'C',
           pv: '',
           id: 'PR-AP-' + Date.now(),
           obs: 'programado via A Programar',
@@ -17591,7 +17611,9 @@
             qtd +
             ' programado para ' +
             dataIso.split('-').reverse().join('/') +
-            ' · nada gravado no MaxiProd'
+            ' (' +
+            (local === 'V' ? 'Vinhedo' : 'Curitiba') +
+            ') · nada gravado no MaxiProd'
       }
       window.apProgramar = apProgramar
       function renderAProg() {
@@ -24406,6 +24428,42 @@
         }
         inp.value = ''
       })
+      // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
+      // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
+      // O gerador estampa o build (b20261004190414); a página aberta confere a produção a cada 5 min e
+      // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
+      ;(function () {
+        const BUILD = 'b20261004190414'
+        function checkVer() {
+          try {
+            fetch(location.pathname + '?cb=' + Date.now(), { cache: 'no-store' })
+              .then(function (r) {
+                return r.text()
+              })
+              .then(function (t) {
+                const m = t.match(/const BUILD='([^']+)'/)
+                if (m && m[1] && m[1] !== BUILD) {
+                  let bar = document.getElementById('verBar')
+                  if (!bar) {
+                    bar = document.createElement('div')
+                    bar.id = 'verBar'
+                    bar.style.cssText =
+                      'position:fixed;top:0;left:0;right:0;z-index:999;background:#b45309;color:#fff;font-size:13px;font-weight:700;padding:8px 16px;text-align:center;cursor:pointer'
+                    bar.textContent =
+                      '⬆ Nova versão disponível — clique aqui para atualizar o painel'
+                    bar.addEventListener('click', function () {
+                      location.reload(true)
+                    })
+                    document.body.appendChild(bar)
+                  }
+                  bar.style.display = 'block'
+                }
+              })
+          } catch (e) {}
+        }
+        checkVer()
+        setInterval(checkVer, 300000)
+      })()
     </script>
   </body>
 </html>
