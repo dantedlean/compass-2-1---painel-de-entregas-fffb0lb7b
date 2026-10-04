@@ -1487,6 +1487,56 @@
         Programação automática · sugestão gerada no navegador a partir da carteira item a item
         (MaxiProd) · nada gravado no ERP
       </footer>
+      <div
+        id="paDateBox"
+        style="
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.45);
+          z-index: 60;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            background: #fff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            min-width: 340px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+          "
+        >
+          <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
+            Enviar para a Programação
+          </div>
+          <div class="note" id="paDateInfo" style="margin: 0 0 10px"></div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
+            <label class="note" style="margin: 0">Produzir em:</label>
+            <input
+              id="paDateInput"
+              type="date"
+              style="
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 13px;
+              "
+            />
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end">
+            <button id="paDateCancel" class="dlbtn">Cancelar</button>
+            <button
+              id="paDateOk"
+              class="dlbtn"
+              style="background: #16a34a; border-color: #16a34a; color: #fff"
+            >
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="viewFat" class="view">
@@ -22027,10 +22077,56 @@
           tb.addEventListener('click', function (e) {
             const b = e.target.closest('button[data-pa]')
             if (!b) return
-            paLevar([window._paSug[+b.getAttribute('data-pa')]])
+            paAbrirModal(+b.getAttribute('data-pa'))
           })
         }
       }
+      function paAbrirModal(ix) {
+        const s = (window._paSug || [])[ix]
+        if (!s) return
+        const box = document.getElementById('paDateBox')
+        document.getElementById('paDateInfo').innerHTML =
+          '<b>' +
+          s.cod +
+          '</b> ' +
+          s.desc.slice(0, 40) +
+          ' · <b>' +
+          NF.format(s.qtd) +
+          ' un</b> · sugestão original: <b>' +
+          s.iso.slice(8, 10) +
+          '/' +
+          s.iso.slice(5, 7) +
+          '</b>' +
+          (s.tarde ? ' <span class="tagF">TARDE</span>' : '')
+        document.getElementById('paDateInput').value = s.iso
+        box.style.display = 'flex'
+        box.dataset.ix = ix
+      }
+      window.paAbrirModal = paAbrirModal
+      function paInitModal() {
+        const box = document.getElementById('paDateBox')
+        if (!box || box._bound) return
+        box._bound = true
+        document.getElementById('paDateCancel').addEventListener('click', function () {
+          box.style.display = 'none'
+        })
+        box.addEventListener('click', function (e) {
+          if (e.target === box) box.style.display = 'none'
+        })
+        document.getElementById('paDateOk').addEventListener('click', function () {
+          const ix = +box.dataset.ix
+          const s = (window._paSug || [])[ix]
+          if (!s) return
+          const nova = document.getElementById('paDateInput').value
+          if (!nova) {
+            alert('Escolha a data de produção.')
+            return
+          }
+          box.style.display = 'none'
+          paLevar([Object.assign({}, s, { iso: nova })])
+        })
+      }
+      window.paInitModal = paInitModal
       function paLevar(rows) {
         if (!Array.isArray(declDraft)) {
           try {
@@ -22087,6 +22183,7 @@
           paAlloc = {}
           paGerar()
         })
+        paInitModal()
         document.getElementById('paBtnAll').addEventListener('click', function () {
           const s = window._paSug || []
           if (!s.length) return
