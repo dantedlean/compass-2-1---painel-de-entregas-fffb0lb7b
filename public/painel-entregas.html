@@ -19170,7 +19170,7 @@
         }
         if (
           !confirm(
-            'Mover ' +
+            'Transferir ' +
               p.cod +
               ' ×' +
               saldo +
@@ -19178,46 +19178,26 @@
               (p.de || '?').split('-').reverse().join('/') +
               ' para ' +
               dateDest.split('-').reverse().join('/') +
-              '?',
+              '?' +
+              (ex.qtd ? ' (executado ' + ex.qtd + ' un permanece na origem)' : ''),
           )
         )
           return
-        // origem: marca o saldo como realocado para o dia de destino
-        setProgExec(p.cod, p.de, {
-          ok: ex.ok,
-          qtd: ex.qtd,
-          rl: dateDest,
-          saldo: saldo,
-          pvNovo: ex.pvNovo || null,
-          smkt: ex.smkt || null,
-        })
-        // destino: nova linha Planejado no rascunho
-        declDraft.push({
-          dia: diaDest,
-          data: dateDest,
-          cod: p.cod,
-          qtd: saldo,
-          local: window.UNID || 'C',
-          pv: '',
-          id: 'PR-MOVE-' + Date.now(),
-          obs: 'movido de ' + p.de,
-          status: 'Planejado',
-        })
-        declSave()
-        progBuildFromDecls()
-        renderDeclEditor()
-        progDia = null
-        progDate = null
-        renderProg()
-        const st = document.getElementById('declStatus')
-        if (st)
-          st.textContent =
-            p.cod +
-            ' ×' +
-            saldo +
-            ' movido para ' +
-            dateDest.split('-').reverse().join('/') +
-            ' · nada gravado no MaxiProd'
+        // TRANSFERÊNCIA (não cópia): mesma lógica do recorte — destino recebe o saldo, origem fica só com o executado
+        progDropCutTo(
+          {
+            __andon: 1,
+            cod: p.cod,
+            desc: p.desc,
+            qtd: saldo,
+            de: p.de,
+            cut: true,
+            exQtd: ex.qtd || 0,
+            exOk: !!ex.ok,
+          },
+          dateDest,
+        )
+        dragP = null
       }
       // colar vindo do botão do dia (drop de recorte) — transfere saldo e zera origem
       function progDropCutTo(c, dateDest) {
