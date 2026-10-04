@@ -21782,7 +21782,7 @@
           Object.keys(jaDecl).forEach(function (k) {
             if (k.indexOf(p.cod + '|') === 0) ja += jaDecl[k]
           })
-          const need = p.qtd - ja
+          let need = p.qtd - ja
           if (need <= 0) return
           const cap = capOf(p.local)
           // janela de produção: do início até prodUntil (chega a tempo); resto do período = TARDE
