@@ -808,54 +808,6 @@
             >
           </div>
         </div>
-        <div class="card" id="cardAProg">
-          <h2>📋 A Programar <span class="tagF">NÃO FATURADO</span></h2>
-          <div class="note">
-            Tudo que ainda tem saldo a faturar (não saiu via NF), por produto: <b>a programar</b> =
-            saldo sem declaração de produção; <b>programado</b> = já tem declaração na
-            agenda/rascunho. O item só sai da lista quando a NF é emitida — programado mas não
-            faturado continua aqui.
-          </div>
-          <div
-            class="toolbar"
-            style="gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 8px"
-          >
-            <input
-              id="apQ"
-              type="search"
-              placeholder="Buscar código, produto ou PV…"
-              style="
-                flex: 1;
-                min-width: 200px;
-                padding: 6px 10px;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                font-size: 12.5px;
-              "
-            />
-            <button id="btnDlAProg" class="dlbtn">⬇ Baixar Excel</button>
-          </div>
-          <div class="tblwrap" style="max-height: 340px">
-            <table id="tbAProg">
-              <thead>
-                <tr>
-                  <th>Código / Produto</th>
-                  <th>Saldo (un)</th>
-                  <th>Valor</th>
-                  <th>Programado (un)</th>
-                  <th>A programar (un)</th>
-                  <th>Programação</th>
-                  <th>Entrega mais antiga</th>
-                  <th>PVs</th>
-                </tr>
-              </thead>
-              <tbody id="tbbAProg"></tbody>
-              <tfoot>
-                <tr id="trfAProg"></tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
         <div class="card" id="cardProg">
           <h2>Programação de produção <span class="tagP">AGENDA EDITÁVEL</span></h2>
           <div class="note">
@@ -1053,6 +1005,56 @@
               <tbody id="tbbP"></tbody>
               <tfoot>
                 <tr id="trfP"></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="card" id="cardAProg">
+          <h2>📋 A Programar <span class="tagF">NÃO FATURADO</span></h2>
+          <div class="note">
+            Tudo que ainda tem saldo a faturar (não saiu via NF), por produto: <b>a programar</b> =
+            saldo sem declaração de produção; <b>programado</b> = já tem declaração na
+            agenda/rascunho. O item só sai da lista quando a NF é emitida — programado mas não
+            faturado continua aqui. <b>Arraste a linha até um dia acima</b> ou use o botão 📅 para
+            programar (pergunta a qtd).
+          </div>
+          <div
+            class="toolbar"
+            style="gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 8px"
+          >
+            <input
+              id="apQ"
+              type="search"
+              placeholder="Buscar código, produto ou PV…"
+              style="
+                flex: 1;
+                min-width: 200px;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 12.5px;
+              "
+            />
+            <button id="btnDlAProg" class="dlbtn">⬇ Baixar Excel</button>
+          </div>
+          <div class="tblwrap" style="max-height: 340px">
+            <table id="tbAProg">
+              <thead>
+                <tr>
+                  <th>Código / Produto</th>
+                  <th>Saldo (un)</th>
+                  <th>Valor</th>
+                  <th>Programado (un)</th>
+                  <th>A programar (un)</th>
+                  <th>Programação</th>
+                  <th>Data sugerida</th>
+                  <th>Entrega mais antiga</th>
+                  <th>PVs</th>
+                </tr>
+              </thead>
+              <tbody id="tbbAProg"></tbody>
+              <tfoot>
+                <tr id="trfAProg"></tr>
               </tfoot>
             </table>
           </div>
@@ -1628,6 +1630,74 @@
               style="background: #16a34a; border-color: #16a34a; color: #fff"
             >
               Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+      <div
+        id="apQtdBox"
+        style="
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.45);
+          z-index: 60;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            background: #fff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            min-width: 340px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+          "
+        >
+          <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
+            Programar produção
+          </div>
+          <div class="note" id="apQtdInfo" style="margin: 0 0 10px"></div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+            <label class="note" style="margin: 0; min-width: 90px">Qtd a produzir:</label>
+            <input
+              id="apQtdInput"
+              type="number"
+              min="1"
+              style="
+                flex: 1;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 13px;
+                text-align: right;
+                font-weight: 700;
+              "
+            />
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
+            <label class="note" style="margin: 0; min-width: 90px">Produzir em:</label>
+            <input
+              id="apQtdData"
+              type="date"
+              style="
+                flex: 1;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                font-size: 13px;
+              "
+            />
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end">
+            <button id="apQtdCancel" class="dlbtn">Cancelar</button>
+            <button
+              id="apQtdOk"
+              class="dlbtn"
+              style="background: #16a34a; border-color: #16a34a; color: #fff"
+            >
+              Programar
             </button>
           </div>
         </div>
@@ -17395,6 +17465,130 @@
       // ==================== CARD "A PROGRAMAR" (não faturado) ====================
       // saldo da carteira (não saiu via NF) − programado nas declarações (agenda + rascunho)
       let apQ = ''
+      // data sugerida: 1º dia útil livre a partir de amanhã (carga = declarações existentes + rascunho)
+      function apSugerirData() {
+        const hoje = new Date()
+        hoje.setDate(hoje.getDate() + 1)
+        const carga = {}
+        ;(Array.isArray(declDraft) ? declDraft : []).forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
+          carga[d.data] = (carga[d.data] || 0) + Number(d.qtd)
+        })
+        const med = Object.keys(carga).length
+          ? Object.keys(carga).reduce(function (a, k) {
+              return a + carga[k]
+            }, 0) / Object.keys(carga).length
+          : 0
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(hoje)
+          d.setDate(hoje.getDate() + i)
+          const w = d.getDay()
+          if (w === 0 || w === 6) continue
+          const iso =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          if ((carga[iso] || 0) <= med * 1.5) return iso
+        }
+        return hoje.toISOString().slice(0, 10)
+      }
+      // modal de qtd ao programar (arrasto ou botão 📅)
+      function apAbrirModal(cod, aProg, dataIso, viaDrag) {
+        const box = document.getElementById('apQtdBox')
+        if (!box) return
+        const desc = descDe(cod)
+        document.getElementById('apQtdInfo').innerHTML =
+          '<b>' +
+          cod +
+          '</b> ' +
+          (desc || '').slice(0, 44) +
+          ' · a programar: <b>' +
+          NF.format(aProg) +
+          ' un</b>'
+        document.getElementById('apQtdInput').value = Math.round(aProg)
+        document.getElementById('apQtdData').value = dataIso
+        box.dataset.cod = cod
+        box.dataset.aprog = aProg
+        box.style.display = 'flex'
+        setTimeout(function () {
+          const inp = document.getElementById('apQtdInput')
+          inp.focus()
+          inp.select()
+        }, 50)
+      }
+      function apInitModal() {
+        const box = document.getElementById('apQtdBox')
+        if (!box || box._bound) return
+        box._bound = true
+        document.getElementById('apQtdCancel').addEventListener('click', function () {
+          box.style.display = 'none'
+        })
+        box.addEventListener('click', function (e) {
+          if (e.target === box) box.style.display = 'none'
+        })
+        document.getElementById('apQtdOk').addEventListener('click', function () {
+          const cod = box.dataset.cod
+          if (!cod) return
+          const qtd = Number(document.getElementById('apQtdInput').value)
+          const dataIso = document.getElementById('apQtdData').value
+          if (!qtd || qtd <= 0) {
+            alert('Informe a quantidade.')
+            return
+          }
+          if (!dataIso) {
+            alert('Informe a data.')
+            return
+          }
+          const aProg = Number(box.dataset.aprog) || 0
+          if (
+            qtd > aProg &&
+            !confirm(
+              'Qtd (' +
+                qtd +
+                ') maior que o saldo a programar (' +
+                Math.round(aProg) +
+                '). Confirmar mesmo assim?',
+            )
+          )
+            return
+          box.style.display = 'none'
+          apProgramar(cod, qtd, dataIso)
+        })
+      }
+      function apProgramar(cod, qtd, dataIso) {
+        if (!Array.isArray(declDraft)) declDraft = []
+        const d = new Date(dataIso + 'T12:00:00')
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        declDraft.push({
+          dia: nomeDia[d.getDay()],
+          data: dataIso,
+          cod: cod,
+          qtd: qtd,
+          local: 'C',
+          pv: '',
+          id: 'PR-AP-' + Date.now(),
+          obs: 'programado via A Programar',
+          status: 'Planejado',
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            cod +
+            ' ×' +
+            qtd +
+            ' programado para ' +
+            dataIso.split('-').reverse().join('/') +
+            ' · nada gravado no MaxiProd'
+      }
+      window.apProgramar = apProgramar
       function renderAProg() {
         const prog = {} // codigo -> {prog: un, det: [str]}
         ;(Array.isArray(declDraft)
@@ -17464,13 +17658,34 @@
               const progTxt = o.det.length
                 ? o.det.join(' + ')
                 : '<span style="color:var(--mut)">—</span>'
+              const sug = apSugerirData()
+              const draggable =
+                o.aProg > 0
+                  ? ' draggable="true" data-apcod="' +
+                    cod +
+                    '" data-apqtd="' +
+                    o.aProg +
+                    '" title="Arraste até um dia acima para programar (pergunta a qtd)"'
+                  : ''
+              const btn =
+                o.aProg > 0
+                  ? '<button class="exRl" data-apbtn="' +
+                    cod +
+                    '" data-apqtd="' +
+                    o.aProg +
+                    '" title="Programar: escolhe data e qtd">📅 Programar</button>'
+                  : ''
               return (
-                '<tr><td><div class="cod">' +
+                '<tr' +
+                draggable +
+                '><td><div class="cod">' +
                 cod +
                 (o.frete ? ' <span class="tagF">FRETE</span>' : '') +
                 '</div><div class="dsc">' +
                 o.desc.slice(0, 52) +
-                '</div></td>' +
+                '</div>' +
+                btn +
+                '</td>' +
                 '<td class="num">' +
                 NF.format(o.saldo) +
                 '</td><td class="num">' +
@@ -17486,6 +17701,8 @@
                 '</td>' +
                 '<td>' +
                 progTxt +
+                '</td><td class="num" style="font-weight:700;color:#1e3a8a">' +
+                dtBR(sug) +
                 '</td><td>' +
                 dtBR(o.entrega) +
                 '</td><td class="num">' +
@@ -17493,7 +17710,7 @@
                 '</td></tr>'
               )
             })
-            .join('') || '<tr><td colspan="8">Nada encontrado.</td></tr>'
+            .join('') || '<tr><td colspan="9">Nada encontrado.</td></tr>'
         document.getElementById('tbbAProg').innerHTML = rows
         document.getElementById('trfAProg').innerHTML =
           '<td><b>TOTAL (' +
@@ -17506,8 +17723,34 @@
           NF.format(tP) +
           '</b></td><td class="num"><b>' +
           NF.format(tA) +
-          '</b></td><td colspan="3"></td>'
+          '</b></td><td colspan="4"></td>'
       }
+      // interação do card A Programar: clique no 📅, arrasto até o dia, drop pergunta a qtd
+      document.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('[data-apbtn]') : null
+        if (!b) return
+        const cod = b.getAttribute('data-apbtn')
+        const aProg = Number(b.getAttribute('data-apqtd')) || 0
+        apAbrirModal(cod, aProg, apSugerirData())
+      })
+      document.addEventListener('dragstart', function (e) {
+        const tr = e.target.closest ? e.target.closest('tr[data-apcod]') : null
+        if (!tr) return
+        window._apDrag = {
+          cod: tr.getAttribute('data-apcod'),
+          qtd: Number(tr.getAttribute('data-apqtd')) || 0,
+        }
+        try {
+          e.dataTransfer.setData('text/plain', tr.getAttribute('data-apcod'))
+        } catch (x) {}
+        e.dataTransfer.effectAllowed = 'move'
+      })
+      document.addEventListener('dragend', function () {
+        window._apDrag = null
+        Array.prototype.forEach.call(document.querySelectorAll('#pbtns button'), function (b) {
+          b.classList.remove('dropOn')
+        })
+      })
       document.addEventListener('input', function (e) {
         if (e.target && e.target.id === 'apQ') {
           apQ = e.target.value
@@ -17524,13 +17767,14 @@
             'Programado (un)',
             'A programar (un)',
             'Programação',
+            'Data sugerida',
             'Entrega mais antiga',
             'PVs',
           ],
         ]
         document.querySelectorAll('#tbbAProg tr').forEach(function (tr) {
           const tds = tr.children
-          if (tds.length < 8 || tds[0].textContent.indexOf('TOTAL') === 0) return
+          if (tds.length < 9 || tds[0].textContent.indexOf('TOTAL') === 0) return
           rows.push([
             tds[0].textContent.trim(),
             '',
@@ -17541,6 +17785,7 @@
             tds[5].textContent,
             tds[6].textContent,
             tds[7].textContent,
+            tds[8].textContent,
           ])
         })
         const wb = XLSX.utils.aoa_to_sheet(rows)
@@ -18139,6 +18384,15 @@
               b.classList.remove('dropOn')
               window.andonCut = null
               progDropCutTo(cutP, b.getAttribute('data-date'))
+              return
+            }
+            // arrasto do card A Programar: programar o produto neste dia (pergunta a qtd)
+            if (window._apDrag && window._apDrag.cod) {
+              e.preventDefault()
+              b.classList.remove('dropOn')
+              const ap = window._apDrag
+              window._apDrag = null
+              apAbrirModal(ap.cod, ap.qtd, progIso(b.getAttribute('data-date')))
               return
             }
             if (!dragP) return
@@ -22493,6 +22747,7 @@
           paGerar()
         })
         paInitModal()
+        apInitModal()
         document.getElementById('paBtnAll').addEventListener('click', function () {
           const s = window._paSug || []
           if (!s.length) return
