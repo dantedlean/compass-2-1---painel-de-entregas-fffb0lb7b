@@ -20821,6 +20821,16 @@
                 .map(function (m) {
                   return m.valor
                 })
+              var anoDuCount = 0 // dias úteis já passados no ANO (sem sáb/dom/feriados) — 1º jan até hoje
+              for (var mi = 1; mi <= curM; mi++) {
+                var dim = new Date(Date.UTC(curY, mi, 0)).getUTCDate()
+                for (var di = 1; di <= dim; di++) {
+                  var k4 = curY + '-' + ('0' + mi).slice(-2) + '-' + ('0' + di).slice(-2)
+                  if (k4 > hojeIso) break
+                  var wd = new Date(Date.UTC(curY, mi - 1, di)).getUTCDay()
+                  if (wd > 0 && wd < 6 && !FER[k4]) anoDuCount++
+                }
+              }
               var liveNfs = live.nfs.slice().sort(function (a, b) {
                 return String(b.data).localeCompare(String(a.data))
               })
@@ -20834,10 +20844,10 @@
                 mesValor: Math.round(mesValor * 100) / 100,
                 anoQtd: anoQtd,
                 anoValor: Math.round(anoValor * 100) / 100,
-                mesDiasUteis: mesDu,
-                anoDiasUteis: anoDu,
-                mediaDiaUtilMes: mesDu ? Math.round(mesValor / mesDu) : 0,
-                mediaDiaUtilAno: anoDu ? Math.round(anoValor / anoDu) : 0,
+                mesDiasUteis: mesDuVals.length,
+                anoDiasUteis: mesDuVals.length ? anoDuCount : anoDu,
+                mediaDiaUtilMes: mesDuVals.length ? Math.round(mesValor / mesDuVals.length) : 0,
+                mediaDiaUtilAno: anoDuCount ? Math.round(anoValor / anoDuCount) : 0,
                 mediaDuMes: mesDuVals.length
                   ? Math.round(
                       mesDuVals.reduce(function (a, b) {
