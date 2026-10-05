@@ -444,6 +444,11 @@
       td.exec {
         white-space: nowrap;
       }
+      td.exec select {
+        max-width: 150px;
+        font-size: 12.5px;
+        padding: 3px 4px;
+      }
       td.exec input[type='number'] {
         width: 56px;
         padding: 2px 4px;
@@ -488,7 +493,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004221048">
+  <body data-build="b20261004221133">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18785,7 +18790,7 @@
             return a.qtd > 0
           })
         document.getElementById('trhP').innerHTML =
-          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada</th><th>Situação</th><th>Exec.</th><th>Realizada</th><th>Realocar / PV</th>'
+          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada</th><th>Situação</th><th>Exec.</th><th>Realizada</th><th>Realocar</th>'
         // agrega produtos iguais no mesmo dia (mesmo modelo da tabela semanal)
         const map = {}
         rs.forEach(function (a) {
@@ -25234,7 +25239,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004221048); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004221133); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
