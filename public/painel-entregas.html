@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261005120923">
+  <body data-build="b20261005121729">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -20210,13 +20210,18 @@
         window.updHojeProg = function () {
           const el = document.getElementById('hojeProg')
           if (!el) return
+          // v0.0.231: reflete o DIA SELECIONADO na agenda (progDia/progDate) — não mais "hoje" absoluto,
+          // que divergia do card de baixo quando o usuário estava em outra semana/dia
           const hjBR =
             String(agora.getDate()).padStart(2, '0') +
             '/' +
             String(agora.getMonth() + 1).padStart(2, '0')
+          const ehHoje = typeof progDate === 'string' && progDate === hjBR
+          const alvoBR = ehHoje ? hjBR : progDate || hjBR
+          const lbl = ehHoje ? 'Hoje' : (progDia || 'Dia') + ' ' + alvoBR
           const dias = DATA.progSemana
             ? DATA.progSemana.dias.filter(function (a) {
-                return a.data === hjBR
+                return a.data === alvoBR
               })
             : []
           let prog = 0,
@@ -20224,22 +20229,17 @@
           dias.forEach(function (a) {
             prog += a.qtd || 0
           })
-          dias.forEach(function (a) {
-            const ex = getProgExec(a.cod, hjBR)
-            done += (ex && ex.qtd) || 0
-          })
-          // dedup: getProgExec é por produto+dia — somar uma vez por produto
           const vistos = {}
-          done = 0
           dias.forEach(function (a) {
             if (vistos[a.cod]) return
             vistos[a.cod] = 1
-            const ex = getProgExec(a.cod, hjBR)
+            const ex = getProgExec(a.cod, alvoBR)
             done += (ex && ex.qtd) || 0
           })
           const pct = prog > 0 ? Math.round((done / prog) * 100) : done > 0 ? 100 : 0
           el.textContent =
-            'Hoje: ' +
+            lbl +
+            ': ' +
             NF.format(Math.round(prog)) +
             ' un programadas · ' +
             NF.format(Math.round(done)) +
@@ -25398,7 +25398,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261005120923); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261005121729); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
