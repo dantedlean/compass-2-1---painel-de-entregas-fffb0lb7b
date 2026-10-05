@@ -299,7 +299,7 @@
       td .dsc {
         color: var(--mut);
         font-size: 13px;
-        max-width: 420px;
+        max-width: 340px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: normal;
@@ -488,7 +488,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004220904">
+  <body data-build="b20261004220956">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -979,11 +979,12 @@
           <div
             style="
               display: flex;
-              gap: 8px;
+              gap: 8px 14px;
               align-items: center;
               flex-wrap: wrap;
+              row-gap: 8px;
               margin: 10px 0 4px;
-              padding: 10px;
+              padding: 10px 12px;
               background: #f8fafc;
               border: 1px solid var(--line);
               border-radius: 10px;
@@ -19070,9 +19071,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -25239,7 +25239,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004220904); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004220956); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
