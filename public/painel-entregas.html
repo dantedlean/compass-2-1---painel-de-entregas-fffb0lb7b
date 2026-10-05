@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261005112624">
+  <body data-build="b20261005120923">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18785,6 +18785,18 @@
             vazioInfo.innerHTML = ''
           }
         }
+        // v0.0.230: carga do botão = declarações VÁLIDAS do dia (sem fósseis/negativas/canceladas) — igual ao card
+        const cargaDia = {}
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.cod || !d.data || !(Number(d.qtd) > 0)) return
+          if (
+            (window.fosseisCache || []).some(function (f) {
+              return f.cod === d.cod && String(f.data) === String(d.data)
+            })
+          )
+            return // fóssil não conta
+          cargaDia[d.data] = (cargaDia[d.data] || 0) + Number(d.qtd)
+        })
         box.innerHTML = diasMain
           .map(function (o) {
             return (
@@ -19788,9 +19800,16 @@
         const pbtns = document.getElementById('pbtns')
         if (!pbtns || !pbtns.children.length) return
         const cargaDia = {}
+        const fos = window.fosseisCache || []
         declDaUnid().forEach(function (d) {
           if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
           const iso = progIso(d.data)
+          if (
+            fos.some(function (f) {
+              return f.cod === d.cod && progIso(f.data) === iso
+            })
+          )
+            return // fóssil não conta (igual ao card)
           cargaDia[iso] = (cargaDia[iso] || 0) + Number(d.qtd)
         })
         const maxCarga = Math.max.apply(
@@ -19825,7 +19844,10 @@
                 d.status !== 'Cancelado' &&
                 progIso(d.data) === iso &&
                 (d.local || 'C') === 'C' &&
-                Number(d.qtd) > 0
+                Number(d.qtd) > 0 &&
+                !fos.some(function (f) {
+                  return f.cod === d.cod && progIso(f.data) === iso
+                })
               )
             })
             .reduce(function (a, d) {
@@ -19837,7 +19859,10 @@
                 d.status !== 'Cancelado' &&
                 progIso(d.data) === iso &&
                 (d.local || 'C') === 'V' &&
-                Number(d.qtd) > 0
+                Number(d.qtd) > 0 &&
+                !fos.some(function (f) {
+                  return f.cod === d.cod && progIso(f.data) === iso
+                })
               )
             })
             .reduce(function (a, d) {
@@ -22326,16 +22351,23 @@
       // ---- Edição livre da programação (rascunho local; exportável para a skill) ----
       const DECL_KEY = 'andon|programacao|draft|v049'
       function declLoad() {
+        const sanit = function (arr) {
+          return arr.filter(function (d) {
+            return !(Number(d.qtd) < 0)
+          })
+        }
         try {
           const saved = JSON.parse(localStorage.getItem(DECL_KEY) || 'null')
-          if (Array.isArray(saved)) return saved
+          if (Array.isArray(saved)) return sanit(saved)
         } catch (e) {}
-        return ((DATA.progSemana && DATA.progSemana.declaracoes) || []).map(function (d, i) {
-          return Object.assign({}, d, {
-            id: d.id || 'PR-' + String(i + 1).padStart(4, '0'),
-            status: d.status || 'Planejado',
-          })
-        })
+        return sanit(
+          ((DATA.progSemana && DATA.progSemana.declaracoes) || []).map(function (d, i) {
+            return Object.assign({}, d, {
+              id: d.id || 'PR-' + String(i + 1).padStart(4, '0'),
+              status: d.status || 'Planejado',
+            })
+          }),
+        )
       }
       function declSave() {
         try {
@@ -22396,7 +22428,15 @@
             const tr = x.closest('tr'),
               i = +tr.dataset.di
             declDraft[i][x.dataset.decl] = x.value
-            if (x.dataset.decl === 'qtd') declDraft[i].qtd = Number(x.value) || 0
+            if (x.dataset.decl === 'qtd') {
+              const v = Number(x.value) || 0
+              if (v < 0) {
+                alert('Quantidade não pode ser negativa.')
+                x.value = Math.abs(v) || ''
+                return
+              }
+              declDraft[i].qtd = v
+            }
             declSave()
             progBuildFromDecls()
             renderProgTabela()
@@ -23059,6 +23099,32 @@
             } catch (e) {}
           }
         })
+        // v0.0.230: ao GANHAR foco da aba, puxa o servidor na hora (aba em background suspende o setInterval
+        // e o outro dispositivo edita — sem isso a tela fica velha até o próximo tick)
+        function pullOnFocus() {
+          if (!ANDON_SYNC.connected() || _pullBusy) return
+          _pullBusy = true
+          Promise.resolve(ANDON_SYNC.syncFromServer())
+            .then(function (pulled) {
+              if (pulled) {
+                renderProg()
+                const st = document.getElementById('declStatus')
+                if (st)
+                  st.textContent =
+                    'Rascunho atualizado do servidor (' +
+                    new Date().toLocaleTimeString('pt-BR') +
+                    ')'
+              }
+            })
+            .catch(function () {})
+            .finally(function () {
+              _pullBusy = false
+            })
+        }
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) pullOnFocus()
+        })
+        window.addEventListener('focus', pullOnFocus)
       })()
       function andonSyncStatus() {
         const btn = document.getElementById('btnConn')
@@ -25332,7 +25398,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261005112624); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261005120923); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
