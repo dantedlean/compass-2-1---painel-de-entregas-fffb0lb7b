@@ -421,8 +421,8 @@
         background: #eff6ff;
         color: var(--acc);
         border-radius: 8px;
-        padding: 8px 14px;
-        font-size: 13.5px;
+        padding: 9px 15px;
+        font-size: 14.5px;
         font-weight: 700;
         cursor: pointer;
       }
@@ -488,7 +488,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004220956">
+  <body data-build="b20261004221048">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18060,18 +18060,13 @@
               const p = new Date(prodIso + 'T12:00:00')
               const coleta = addDU(p, 1),
                 cheg = addDU(coleta, tdu)
-              chegTxt = dtBR(isoD(cheg))
+              chegTxt = dtBR(isoD(cheg)) + (cid ? ' · ' + cid : '')
               const de = new Date(r.iso + 'T12:00:00')
               if (cheg > de) atrasado = true
             } else if (d.local === 'V') {
-              chegTxt = 'Vinhedo · cidade fora da tabela'
+              chegTxt = 'fora da tabela'
             } else {
-              chegTxt =
-                'entrega ' +
-                r.iso.slice(8, 10) +
-                '/' +
-                r.iso.slice(5, 7) +
-                ' · cidade fora da tabela'
+              chegTxt = dtBR(r.iso) + ' · fora da tabela'
             }
             out.push({
               dia: day,
@@ -18790,7 +18785,7 @@
             return a.qtd > 0
           })
         document.getElementById('trhP').innerHTML =
-          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada no cliente</th><th>Situação</th><th>Executado</th><th>Qtd realizada</th><th>Realocar / PV destino</th>'
+          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada</th><th>Situação</th><th>Exec.</th><th>Realizada</th><th>Realocar / PV</th>'
         // agrega produtos iguais no mesmo dia (mesmo modelo da tabela semanal)
         const map = {}
         rs.forEach(function (a) {
@@ -19071,9 +19066,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -25240,7 +25234,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004220956); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004221048); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
