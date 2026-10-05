@@ -493,7 +493,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004221133">
+  <body data-build="b20261004221230">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -19022,14 +19022,14 @@
               '" value="' +
               (ex.qtd || '') +
               '" placeholder="0" data-p="qtd"></td>' +
-              '<td class="exec"><button class="exRl" data-p="copy" title="Copiar linha (Ctrl+V cola como nova linha no dia selecionado ou em outro dia)">Copiar</button> <button class="exRl" data-p="cut" title="Recortar: move a qtd deste dia para onde colar (Ctrl+V). Se houver executado, transfere só o saldo">Recortar</button> <button class="exRl" data-p="push" title="Empurra o saldo (planejado − executado) para o próximo dia útil da vista — transferência direta, sem recortar/colar">Empurrar →</button>' +
+              '<td class="exec"><div style="display:grid;grid-template-columns:auto auto;gap:4px;justify-content:end"><button class="exRl" data-p="copy" title="Copiar linha (Ctrl+V cola como nova linha no dia selecionado ou em outro dia)">Copiar</button><button class="exRl" data-p="cut" title="Recortar: move a qtd deste dia para onde colar (Ctrl+V). Se houver executado, transfere só o saldo">Recortar</button><button class="exRl" data-p="push" title="Empurra o saldo (planejado − executado) para o próximo dia útil da vista — transferência direta, sem recortar/colar" style="grid-column:1/3">Empurrar →</button></div>' +
               exInfo +
               (noSmkt
-                ? '<div style="font-size:10px;color:#166534;font-weight:700;margin-top:3px">🛒 no SMKT — alocação por PV no card Supermercado · desfazer no Histórico</div>'
-                : '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px"><select data-p="pv" style="width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+                ? '<div style="font-size:10px;color:#166534;font-weight:700;margin-top:3px;max-width:170px;white-space:normal">🛒 no SMKT — alocação por PV no card Supermercado · desfazer no Histórico</div>'
+                : '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px"><select data-p="pv" style="width:160px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
                   opts +
                   '</select>' +
-                  '<input type="text" data-p="pvdig" inputmode="numeric" placeholder="ou digite o nº do PV…" list="pvDigList" style="width:170px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px" title="Digite o nº do PV — o Andon traz cliente, produto, saldo e entrega">' +
+                  '<input type="text" data-p="pvdig" inputmode="numeric" placeholder="ou digite o nº do PV…" list="pvDigList" style="width:160px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px" title="Digite o nº do PV — o Andon traz cliente, produto, saldo e entrega">' +
                   '<div data-p="pvdiginfo" style="font-size:10px;color:#1e3a8a;display:none"></div></div>' +
                   pvTrocado) +
               '</td></tr>' +
@@ -25239,7 +25239,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004221133); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004221230); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
