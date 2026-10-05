@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261005112412">
+  <body data-build="b20261005112624">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18644,8 +18644,13 @@
               )
             })
             .join('')
-          // v0.0.222: se a semana atual está VAZIA, cair automaticamente na semana anterior com declarações (evita "sumiu")
-          if (!sel.value || !progSemSelIso) {
+          // v0.0.228: se a semana selecionada está VAZIA, cair automaticamente na semana com declarações
+          // (evita "a programação sumiu") — só quando o usuário NÃO escolheu a semana manualmente nesta sessão
+          window._semEscolhida = window._semEscolhida || false
+          sel.addEventListener('change', function () {
+            window._semEscolhida = true
+          })
+          if (!window._semEscolhida) {
             let alvo = cur
             const temDecl = function (si) {
               return semanasMap[si] && semanasMap[si].length > 0
@@ -18659,7 +18664,7 @@
                 }
               }
               if (!temDecl(alvo)) {
-                for (let i = idx; i < semKeys.length; i++) {
+                for (let i = idx + 1; i < semKeys.length; i++) {
                   if (temDecl(semKeys[i])) {
                     alvo = semKeys[i]
                     break
@@ -18667,8 +18672,12 @@
                 }
               }
             }
-            progSemSelIso = alvo
-            sel.value = alvo
+            if (alvo !== cur) {
+              progSemSelIso = alvo
+              sel.value = alvo
+            } else if (!progSemSelIso) {
+              progSemSelIso = alvo
+            }
           }
         }
         const modoTodas =
@@ -25323,7 +25332,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261005112412); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261005112624); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
