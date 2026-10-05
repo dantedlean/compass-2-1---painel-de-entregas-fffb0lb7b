@@ -421,7 +421,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004211558">
+  <body data-build="b20261004213708">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -814,7 +814,7 @@
         </div>
         <div class="card" id="cardProg">
           <h2>
-            Programação de produção — <span id="unidLabel">Curitiba</span>
+            Programação firme — <span id="unidLabel">Curitiba</span>
             <span class="tagP">AGENDA EDITÁVEL</span>
           </h2>
           <div class="note">
@@ -1037,7 +1037,7 @@
             saldo sem declaração de produção; <b>programado</b> = já tem declaração na
             agenda/rascunho. O item só sai da lista quando a NF é emitida — programado mas não
             faturado continua aqui. <b>Arraste a linha até um dia acima</b> ou use o botão 📅 para
-            programar (pergunta a qtd).
+            programar na Programação firme (pergunta a qtd).
           </div>
           <div
             class="toolbar"
@@ -1321,7 +1321,8 @@
           <div class="note">
             Escolha a semana: produtos iguais somados numa linha. <b>Clique no produto</b> para
             abrir a caixa com os PVs que ele cobre (cliente, data, qtd, valor). Atrasado = fila
-            prioritária.
+            prioritária. Marque a <b>🚩 flag</b> e use <b>→ Firme</b> para enviar o produto (qtd
+            digitável) à <b>Programação firme</b>, escolhendo o dia.
           </div>
           <div class="wbtns" id="wbtns"></div>
           <div class="wbtns" id="dbtns" style="margin-top: -6px"></div>
@@ -1350,6 +1351,13 @@
               >
               <button id="btnDlSem" class="dlbtn" style="display: none">
                 ⬇ Baixar Excel (devolutiva)
+              </button>
+              <button
+                id="btnFirmaSel"
+                class="dlbtn"
+                style="display: none; background: #1e3a8a; border-color: #1e3a8a; color: #fff"
+              >
+                → Enviar p/ Programação firme
               </button>
             </div>
           </div>
@@ -1547,8 +1555,8 @@
             </table>
           </div>
           <div class="note" style="margin-top: 8px">
-            Cada linha tem <b>⬆ Programar</b> para levar aquele produto/semana para a aba
-            Programação (entra como declaração editável, sem gravar no MaxiProd). Sugestões marcadas
+            Cada linha tem <b>⬆ Programar</b> para levar aquele produto/semana para a Programação
+            firme (entra como declaração editável, sem gravar no MaxiProd). Sugestões marcadas
             <span class="tagF">TARDE</span> não conseguem cumprir a data de entrega — decisão sua:
             aceitar atraso ou antecipar produção.
           </div>
@@ -1582,7 +1590,7 @@
         "
       >
         <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
-          Enviar para a Programação
+          Enviar para a Programação firme
         </div>
         <div class="note" id="paDateInfo" style="margin: 0 0 10px"></div>
         <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
@@ -18039,6 +18047,160 @@
         DATA.progSemana.dias = out
       }
 
+      // ---- FIRME: enviar produto da tabela semanal para a Programação firme (v0.0.213) ----
+      window._firmaSel = (function () {
+        try {
+          return JSON.parse(localStorage.getItem('andon|firmaSel') || '{}')
+        } catch (e) {
+          return {}
+        }
+      })()
+      function firmaSaveSel() {
+        try {
+          localStorage.setItem('andon|firmaSel', JSON.stringify(window._firmaSel || {}))
+        } catch (e) {}
+      }
+      function firmaAbrirModal(cod, aProg) {
+        apAbrirModal(cod, aProg, apSugerirData())
+        const t = document.getElementById('apQtdInfo')
+        if (t) t.innerHTML = t.innerHTML + ' <span class="tagP">→ Programação firme</span>'
+      }
+      document.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('[data-firma]') : null
+        if (!b) return
+        e.stopPropagation()
+        const cod = b.getAttribute('data-firma')
+        // qtd sugerida = pendente do produto na semana selecionada
+        let qtd = 0
+        const tr = b.closest('tr.prow')
+        if (tr) {
+          const ix = tr.getAttribute('data-ix')
+          const tb = document.getElementById('tbbS')
+          // recupera qtd pendente agregada da semana atual via cache global
+          qtd = (window._firmaQtdCache && window._firmaQtdCache[cod]) || 0
+        }
+        if (!qtd) {
+          qtd = DATA.rows
+            .filter(function (r) {
+              return r.codigo === cod
+            })
+            .reduce(function (a, r) {
+              return a + qtdPend(r)
+            }, 0)
+        }
+        if (!qtd) {
+          alert('Sem saldo pendente para ' + cod + '.')
+          return
+        }
+        firmaAbrirModal(cod, Math.round(qtd))
+      })
+      document.addEventListener('change', function (e) {
+        const c = e.target.closest ? e.target.closest('.firmaFlag') : null
+        if (!c) return
+        const cod = c.getAttribute('data-cod')
+        window._firmaSel = window._firmaSel || {}
+        if (c.checked) window._firmaSel[cod] = 1
+        else delete window._firmaSel[cod]
+        firmaSaveSel()
+        const bs = document.getElementById('btnFirmaSel')
+        if (bs) {
+          const n = Object.keys(window._firmaSel).length
+          bs.style.display = n ? '' : 'none'
+          if (n) bs.textContent = '→ Enviar p/ Programação firme (' + n + ')'
+        }
+      })
+      document.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('#btnFirmaSel') : null
+        if (!b) return
+        const sel = Object.keys(window._firmaSel || {})
+        if (!sel.length) {
+          alert('Marque a 🚩 flag dos produtos primeiro.')
+          return
+        }
+        // envia cada produto marcado com sua qtd pendente da semana, distribuído nos dias úteis da semana selecionada
+        const seg = semanaSegunda(SEM[semSel])
+        if (!seg) {
+          alert('Semana inválida.')
+          return
+        }
+        const diasUteis = []
+        for (let i = 0; i < 5; i++) {
+          const d = new Date(seg + 'T12:00:00')
+          d.setDate(d.getDate() + i)
+          diasUteis.push(isoD(d))
+        }
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        let n = 0
+        sel.forEach(function (cod) {
+          let qtd =
+            (window._firmaQtdCache && window._firmaQtdCache[cod]) ||
+            Math.round(
+              DATA.rows
+                .filter(function (r) {
+                  return r.codigo === cod
+                })
+                .reduce(function (a, r) {
+                  return a + qtdPend(r)
+                }, 0),
+            )
+          if (qtd <= 0) return
+          // distribui pelos dias úteis (maior parte no 1º dia livre) — simples: tudo no 1º dia útil
+          const iso = diasUteis[0]
+          const d = new Date(iso + 'T12:00:00')
+          declDraft.push({
+            dia: nomeDia[d.getDay()],
+            data: iso,
+            cod: cod,
+            qtd: qtd,
+            local: window.UNID || 'C',
+            pv: '',
+            id: 'PR-FIRM-' + Date.now() + '-' + n++,
+            obs: 'enviado da tabela semanal (' + SEM[semSel] + ')',
+            status: 'Planejado',
+          })
+        })
+        if (n) {
+          declSave()
+          progBuildFromDecls()
+          renderProg()
+        }
+        window._firmaSel = {}
+        firmaSaveSel()
+        b.style.display = 'none'
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            n +
+            ' produto(s) enviado(s) à Programação firme (1º dia útil de ' +
+            SEM[semSel] +
+            ') — revise lá · nada gravado no MaxiProd'
+        showView('ent')
+      })
+      // cache das qtds pendentes por produto da semana selecionada (usado no botão → Firme e no lote)
+      ;(function () {
+        const _origRS = renderSemana
+        renderSemana = function () {
+          _origRS.apply(this, arguments)
+          try {
+            const cache = {}
+            visiveis(DATA.rows, 'chkFreteS')
+              .filter(function (r) {
+                return siOf(r) === semSel
+              })
+              .forEach(function (r) {
+                cache[r.codigo] = (cache[r.codigo] || 0) + qtdPend(r)
+              })
+            window._firmaQtdCache = cache
+            const bs = document.getElementById('btnFirmaSel')
+            if (bs) {
+              const n = Object.keys(window._firmaSel || {}).length
+              bs.style.display = n ? '' : 'none'
+              if (n) bs.textContent = '→ Enviar p/ Programação firme (' + n + ')'
+            }
+          } catch (e) {}
+        }
+      })()
+
       // ---- programação de produção da semana corrente ----
       let progDia = null,
         progDate = null,
@@ -21407,7 +21569,7 @@
             return b.vP - a.vP
           })
         document.getElementById('trhS').innerHTML =
-          '<th>Código / Produto</th><th>Qtd pendente</th><th>Produzido</th><th>Valor pendente</th><th>Entrega no cliente</th><th>PVs</th><th>Tipo</th>'
+          '<th style="width:66px">🚩 Firme</th><th>Código / Produto</th><th>Qtd pendente</th><th>Produzido</th><th>Valor pendente</th><th>Entrega no cliente</th><th>PVs</th><th>Tipo</th>'
         let tq = 0,
           tv = 0,
           tpr = 0
@@ -21526,7 +21688,7 @@
             const det =
               '<tr class="detrow" data-det="' +
               ix +
-              '"><td colspan="7"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">' +
+              '"><td colspan="8"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">' +
               '<div style="min-width:210px;flex:0 0 auto"><div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px">Visão por dia útil (coleta)</div>' +
               '<table class="mini" style="width:auto">' +
               diaRowsF +
@@ -21540,7 +21702,13 @@
               (temRig ? ' rig' : '') +
               '" data-ix="' +
               ix +
-              '"><td><div class="cod">' +
+              '"><td><div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start"><label style="font-size:10.5px;display:flex;gap:3px;align-items:center;cursor:pointer;margin:0"><input type="checkbox" class="firmaFlag" data-cod="' +
+              p.codigo +
+              '"' +
+              (window._firmaSel && window._firmaSel[p.codigo] ? ' checked' : '') +
+              ' title="Marcar para enviar à Programação firme">🚩</label><button class="exRl" data-firma="' +
+              p.codigo +
+              '" style="margin-left:0;background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a" title="Enviar à Programação firme — escolhe qtd e dia">→ Firme</button></div></td><td><div class="cod">' +
               p.codigo +
               (noPlano ? ' <span class="tagP">PLANO</span>' : '') +
               '</div><div class="dsc">' +
@@ -21571,7 +21739,7 @@
           })
           .join('')
         document.getElementById('trfS').innerHTML =
-          '<td colspan="2">TOTAL ' +
+          '<td></td><td colspan="2">TOTAL ' +
           SEM[semSel] +
           ' — ' +
           prods.length +
@@ -21591,6 +21759,7 @@
         if (!tbS._toggleBound) {
           tbS._toggleBound = true
           tbS.addEventListener('click', function (e) {
+            if (e.target.closest('[data-firma]') || e.target.closest('.firmaFlag')) return
             const tr = e.target.closest('tr.prow')
             if (!tr) return
             const ix = tr.getAttribute('data-ix')
@@ -24958,7 +25127,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004211558); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004213708); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
