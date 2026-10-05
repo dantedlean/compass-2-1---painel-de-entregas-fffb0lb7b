@@ -421,7 +421,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004213708">
+  <body data-build="b20261004215338">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -22504,6 +22504,27 @@
               alert('Informe a quantidade.')
               return
             }
+            const disp = disponivelProg(cod)
+            if (
+              q > disp &&
+              !confirm(
+                '⚠ ATENÇÃO — ' +
+                  cod +
+                  ': disponível com PV = ' +
+                  NF.format(Math.round(disp)) +
+                  ' un, você está incluindo ' +
+                  NF.format(q) +
+                  ' un. O excedente (' +
+                  NF.format(Math.round(q - disp)) +
+                  ' un) NÃO tem Pedido de Venda no MaxiProd (produção para estoque/WARD). Confirmar mesmo assim?',
+              )
+            ) {
+              info.innerHTML =
+                '<span style="color:#dc2626">✖ inclusão cancelada — ' +
+                cod +
+                ' excede o saldo com PV</span>'
+              return
+            }
             declDraft.push({
               dia: progDia || 'Segunda',
               data: iso,
@@ -25127,7 +25148,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004213708); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004215338); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
