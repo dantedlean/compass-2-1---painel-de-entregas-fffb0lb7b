@@ -421,7 +421,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004205050">
+  <body data-build="b20261004211453">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -17464,6 +17464,47 @@
             return a + Math.min(x.prod.qtd, x.qtd)
           }, 0)
       }
+      function progFuturoTotal(cod) {
+        // programado a partir de HOJE (futuro) — passado é histórico e não bloqueia a programação
+        const hj = new Date()
+        const hojeISO =
+          hj.getFullYear() +
+          '-' +
+          String(hj.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(hj.getDate()).padStart(2, '0')
+        return declDaUnid()
+          .filter(function (d) {
+            return (
+              d.status !== 'Cancelado' &&
+              d.cod === cod &&
+              Number(d.qtd) > 0 &&
+              progIso(d.data) >= hojeISO
+            )
+          })
+          .reduce(function (s, d) {
+            return s + Number(d.qtd)
+          }, 0)
+      }
+      function disponivelProg(cod) {
+        // saldo com PV − programado futuro − realizado (produção declarada/SMKT extra) — o que ainda cabe em PV
+        let done = 0,
+          sm = 0
+        try {
+          done = declaradoTotal(cod)
+        } catch (e) {}
+        try {
+          sm = Math.max(0, Number(smktExtraTotal(cod)) || 0)
+        } catch (e) {}
+        const saldoPv = DATA.rows
+          .filter(function (r) {
+            return r.codigo === cod
+          })
+          .reduce(function (s, r) {
+            return s + (Number(r.qtd) || 0)
+          }, 0)
+        return Math.max(0, saldoPv - progFuturoTotal(cod) - done - sm)
+      }
       function smktExtraTotal(cod) {
         // produção declarada já foi debitada em r.prod; só o excedente é adicional.
         return smktManualTotal(cod) + Math.max(0, smktProgramTotal(cod) - declaradoTotal(cod))
@@ -17568,55 +17609,21 @@
         // POKA-YOKE (v0.0.207): aviso vermelho quando programar ESTE dia ultrapassaria o saldo com PV
         const warn = document.getElementById('apQtdWarn')
         if (warn) {
-          const saldoPv = DATA.rows
-            .filter(function (r) {
-              return r.codigo === cod
-            })
-            .reduce(function (s, r) {
-              return s + (Number(r.qtd) || 0)
-            }, 0)
-          const progDia = declDraft
-            .filter(function (d) {
-              return (
-                d.status !== 'Cancelado' && d.cod === cod && progIso(d.data) === progIso(dataIso)
-              )
-            })
-            .reduce(function (s, d) {
-              return s + (Number(d.qtd) || 0)
-            }, 0)
-          const smkt = (function () {
-            try {
-              return Math.max(0, Number(smktSaldo(cod)) || 0)
-            } catch (e) {
-              return 0
-            }
-          })()
-          const livre = Math.max(0, saldoPv - progDia - smkt)
+          const livre = disponivelProg(cod)
           if (livre <= 0) {
             warn.style.display = 'block'
             warn.innerHTML =
               '⚠ SEM PEDIDO DE VENDA DISPONÍVEL para ' +
               cod +
-              ' neste dia — saldo na carteira: ' +
-              NF.format(saldoPv) +
-              ' un · já programado neste dia: ' +
-              NF.format(progDia) +
-              ' un' +
-              (smkt > 0 ? ' · SMKT: ' + NF.format(smkt) + ' un' : '') +
-              '. O que programar aqui NÃO tem PV de destino (produção para estoque/WARD).'
+              ' — saldo com PV já coberto (programado futuro/realizado/SMKT). Programar aqui é produção para estoque/WARD.'
           } else if (aProg > livre) {
             warn.style.display = 'block'
             warn.innerHTML =
               '⚠ SALDO PARCIAL: só ' +
-              NF.format(livre) +
-              ' un têm PV na carteira (saldo ' +
-              NF.format(saldoPv) +
-              ' − programado no dia ' +
-              NF.format(progDia) +
-              (smkt > 0 ? ' − SMKT ' + NF.format(smkt) : '') +
-              '). Programar ' +
+              NF.format(Math.round(livre)) +
+              ' un ainda têm PV na carteira. Programar ' +
               NF.format(Math.round(aProg)) +
-              ' un gera excedente sem PV.'
+              ' un gera excedente sem PV (produção para estoque/WARD).'
           } else {
             warn.style.display = 'none'
             warn.innerHTML = ''
@@ -17753,7 +17760,7 @@
         const arr = Object.entries(map)
           .map(function (e) {
             const [cod, o] = e
-            o.aProg = Math.max(0, o.saldo - o.prog - (o.smkt || 0))
+            o.aProg = disponivelProg(cod)
             return [cod, o]
           })
           .filter(function (e) {
@@ -18855,27 +18862,29 @@
               motivo: x.motivo,
             })
           })
-          // 2) excedente: soma programada do produto no dia > saldo com PV na carteira (descontando SMKT) — SÓ DE HOJE EM DIANTE
-          const saldoPv = {}
-          DATA.rows.forEach(function (r) {
-            saldoPv[r.codigo] = (saldoPv[r.codigo] || 0) + (Number(r.qtd) || 0)
-          })
-          const progPorCodData = {}
+          // 2) excedente: programado FUTURO do produto > disponível (saldo com PV − realizado − SMKT) — passado é histórico
+          const progFut = {}
           declDaUnid().forEach(function (d) {
             if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
             if (progIso(d.data) < hojeISO) return // passado não entra no aviso
-            const k = d.cod + '|' + progIso(d.data)
-            progPorCodData[k] = (progPorCodData[k] || 0) + Number(d.qtd)
+            progFut[d.cod] = (progFut[d.cod] || 0) + Number(d.qtd)
           })
-          Object.keys(progPorCodData).forEach(function (k) {
-            const cod = k.split('|')[0],
-              iso = k.split('|')[1]
-            let sm = 0
+          Object.keys(progFut).forEach(function (cod) {
+            let saldoPv = 0
+            DATA.rows.forEach(function (r) {
+              if (r.codigo === cod) saldoPv += Number(r.qtd) || 0
+            })
+            if (saldoPv <= 0) return // sem carteira = fóssil (bloco acima)
+            let done = 0,
+              sm = 0
             try {
-              sm = Math.max(0, Number(smktSaldo(cod)) || 0)
+              done = declaradoTotal(cod)
             } catch (e) {}
-            const livre = Math.max(0, saldoPv[cod] - sm)
-            const prog = progPorCodData[k]
+            try {
+              sm = Math.max(0, Number(smktExtraTotal(cod)) || 0)
+            } catch (e) {}
+            const livre = Math.max(0, saldoPv - done - sm)
+            const prog = progFut[cod]
             if (prog > livre) {
               const vu = (function () {
                 const rs = DATA.rows.filter(function (r) {
@@ -18883,18 +18892,24 @@
                 })
                 return rs.length && rs[0].qtd ? rs[0].vtot / rs[0].qtd : 0
               })()
+              let ultima = ''
+              declDaUnid().forEach(function (d) {
+                if (d.cod === cod && progIso(d.data) >= hojeISO && progIso(d.data) > ultima)
+                  ultima = progIso(d.data)
+              })
               excessos.push({
                 tipo: 'excesso',
                 cod: cod,
                 qtd: prog - livre,
-                data: iso,
+                data: ultima || '—',
                 motivo:
                   'programado ' +
                   NF.format(prog) +
-                  ' un, saldo com PV: ' +
+                  ' un (todos os dias), disponível com PV: ' +
                   NF.format(livre) +
                   ' un' +
-                  (sm > 0 ? ' (SMKT ' + NF.format(sm) + ')' : ''),
+                  (done > 0 ? ' · realizado ' + NF.format(done) : '') +
+                  (sm > 0 ? ' · SMKT ' + NF.format(sm) : ''),
                 valor: Math.round((prog - livre) * vu),
                 smkt: sm,
               })
@@ -24937,7 +24952,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004205050); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004211453); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
