@@ -12,10 +12,10 @@
         --bg: #f1f5f9;
         --card: #fff;
         --ink: #0f172a;
-        --mut: #64748b;
-        --line: #e2e8f0;
+        --mut: #475569;
+        --line: #cbd5e1;
         --red: #dc2626;
-        --acc: #2563eb;
+        --acc: #1d4ed8;
       }
       * {
         margin: 0;
@@ -26,6 +26,31 @@
       select,
       button {
         font-size: inherit;
+      }
+      /* ACESSIBILIDADE (WCAG 2.1 AA) */
+      :focus-visible {
+        outline: 3px solid #2563eb;
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      button,
+      select,
+      input[type='checkbox'] {
+        min-height: 34px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      @media (min-width: 1600px) {
+        td {
+          padding: 10px 14px;
+        }
+        table {
+          font-size: 14.5px;
+        }
       }
       input[type='text'],
       input[type='number'],
@@ -109,7 +134,7 @@
       }
       .kpis {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 14px;
         margin-bottom: 18px;
       }
@@ -134,7 +159,7 @@
         font-weight: 600;
       }
       .kpi .val {
-        font-size: 26px;
+        font-size: clamp(20px, 1.8vw, 27px);
         font-weight: 750;
         margin-top: 3px;
       }
@@ -151,7 +176,7 @@
         margin-bottom: 18px;
       }
       .card h2 {
-        font-size: 18px;
+        font-size: clamp(16px, 1.2vw, 19px);
         font-weight: 700;
         margin-bottom: 2px;
       }
@@ -277,6 +302,8 @@
         max-width: 420px;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: normal;
+        line-height: 1.35;
       }
       .tagF {
         background: #fef3c7;
@@ -361,8 +388,33 @@
         border: 1px solid var(--line);
         border-radius: 10px;
       }
+      table th:first-child,
+      table td:first-child {
+        position: sticky;
+        left: 0;
+        background: inherit;
+        z-index: 1;
+      }
+      table thead th:first-child {
+        background: #f8fafc;
+        z-index: 3;
+      }
+      tr.prow td:first-child,
+      tr.detrow td:first-child {
+        background: #fff;
+      }
+      tr.prow.smktRow td:first-child {
+        background: #fee2e2;
+      }
+      tr.exOK td:first-child {
+        background: #f0fdf4;
+      }
+      tr:hover td:first-child {
+        background: #f0f6ff;
+      }
       .num {
         font-variant-numeric: tabular-nums;
+        min-width: 72px;
       }
       .dlbtn {
         border: 1px solid var(--acc);
@@ -436,7 +488,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004220754">
+  <body data-build="b20261004220904">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -485,14 +537,14 @@
           min-width: 300px;
         }
         #viewNf .nfHero .heroTtl {
-          font-size: 11.5px;
+          font-size: 13px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 1.4px;
           color: #93c5fd;
         }
         #viewNf .nfHero .heroBig {
-          font-size: 44px;
+          font-size: 52px;
           font-weight: 800;
           line-height: 1.05;
           margin: 8px 0 6px;
@@ -500,7 +552,7 @@
           font-variant-numeric: tabular-nums;
         }
         #viewNf .nfHero .heroSub {
-          font-size: 13.5px;
+          font-size: 15px;
           color: #cbd5e1;
           font-weight: 500;
         }
@@ -509,8 +561,8 @@
           margin-top: 12px;
         }
         #viewNf .nfHero .heroYear {
-          flex: 0 0 280px;
-          min-width: 240px;
+          flex: 0 0 320px;
+          min-width: 280px;
           border-left: 1px solid rgba(255, 255, 255, 0.16);
           padding-left: 22px;
           display: flex;
@@ -518,21 +570,21 @@
           justify-content: center;
         }
         #viewNf .nfHero .heroYear .yLbl {
-          font-size: 11px;
+          font-size: 12.5px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 1px;
           color: #93c5fd;
         }
         #viewNf .nfHero .heroYear .yBig {
-          font-size: 26px;
+          font-size: 32px;
           font-weight: 800;
           margin: 4px 0;
           color: #e2e8f0;
           font-variant-numeric: tabular-nums;
         }
         #viewNf .nfHero .heroYear .ySub {
-          font-size: 12.5px;
+          font-size: 14px;
           color: #94a3b8;
         }
         @media (max-width: 760px) {
@@ -847,6 +899,7 @@
               class="dlbtn"
               style="background: #1e3a8a; border-color: #1e3a8a; color: #fff"
               onclick="progAddLine(true)"
+              aria-label="Nova linha de programação"
             >
               + Programar
             </button>
@@ -855,6 +908,7 @@
               class="dlbtn"
               onclick="smktUndo()"
               title="Desfazer a última ação no SMKT (entrada, alocação ou retirada)"
+              aria-label="Desfazer última ação"
             >
               ↩ Desfazer última ação
             </button>
@@ -1028,6 +1082,7 @@
               class="dlbtn"
               style="display: none; background: #fee2e2; border-color: #fecaca; color: #991b1b"
               title="Remove linhas do rascunho que não têm saldo na carteira (PV já faturado ou inexistente)"
+              aria-label="Remover linhas inválidas"
             >
               🧹 Remover inválidas
             </button>
@@ -1062,13 +1117,14 @@
               id="apQ"
               type="search"
               placeholder="Buscar código, produto ou PV…"
+              aria-label="Buscar no card A Programar"
               style="
                 flex: 1;
-                min-width: 200px;
-                padding: 6px 10px;
+                min-width: 240px;
+                padding: 9px 13px;
                 border: 1px solid var(--line);
                 border-radius: 8px;
-                font-size: 12.5px;
+                font-size: 14.5px;
               "
             />
             <button id="btnDlAProg" class="dlbtn">⬇ Baixar Excel</button>
@@ -1348,12 +1404,13 @@
                 type="search"
                 id="fSem"
                 placeholder="🔍 buscar PV, código ou descrição…"
+                aria-label="Buscar na tabela por PV, código ou descrição"
                 style="
-                  padding: 6px 10px;
+                  padding: 9px 13px;
                   border: 1px solid var(--line);
                   border-radius: 8px;
-                  font-size: 12.5px;
-                  min-width: 220px;
+                  font-size: 14.5px;
+                  min-width: 260px;
                 "
               />
               <div class="toggle">
@@ -19013,9 +19070,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -23755,6 +23811,24 @@
         const lbl = document.getElementById('unidLabel')
         if (lbl) lbl.textContent = window.UNID === 'V' ? 'Vinhedo' : 'Curitiba'
       }
+
+      // ACESSIBILIDADE: scope nas tabelas + labels dos inputs sem label explícito
+      ;(function () {
+        document.querySelectorAll('table th').forEach(function (th) {
+          th.setAttribute('scope', 'col')
+        })
+        const pairs = [
+          ['addPv', 'Número do PV'],
+          ['addProd', 'Código do produto'],
+          ['addQtd', 'Quantidade'],
+          ['addData', 'Data opcional'],
+        ]
+        pairs.forEach(function (p) {
+          const el = document.getElementById(p[0])
+          if (el) el.setAttribute('aria-label', p[1])
+        })
+      })()
+
       window.showView = showView
 
       // ==================== VIEW FATURAMENTO (método Compass: NFs reais MaxiProd) ====================
@@ -25164,7 +25238,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004220754); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004220904); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
