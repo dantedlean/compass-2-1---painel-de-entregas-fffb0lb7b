@@ -421,7 +421,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261004211453">
+  <body data-build="b20261004211558">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -22275,6 +22275,7 @@
               )
             })
             .join(' &nbsp;|&nbsp; ')
+          const disp = disponivelProg(cod)
           info.innerHTML =
             '<b style="color:#16a34a">' +
             cod +
@@ -22285,7 +22286,12 @@
             ' un</b> em ' +
             rs.length +
             ' PV(s): ' +
-            pvs
+            pvs +
+            ' &nbsp;|&nbsp; <b style="color:' +
+            (disp > 0 ? '#16a34a' : '#dc2626') +
+            '">disponível para programar: ' +
+            NF.format(Math.round(disp)) +
+            ' un</b>'
           if (!qtd.value) qtd.value = tot
         }
         inp.addEventListener('input', showInfo)
@@ -24952,7 +24958,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261004211453); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261004211558); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
