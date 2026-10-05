@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261005090121">
+  <body data-build="b20261005112412">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -985,6 +985,20 @@
             "
           ></div>
           <div class="wbtns" id="pbtns"></div>
+          <div
+            id="semVazioInfo"
+            style="
+              display: none;
+              background: #eff6ff;
+              border: 1px solid #bfdbfe;
+              color: #1e3a8a;
+              font-weight: 600;
+              font-size: 13px;
+              padding: 8px 12px;
+              border-radius: 10px;
+              margin: 8px 0;
+            "
+          ></div>
           <div
             style="
               display: flex;
@@ -18630,7 +18644,32 @@
               )
             })
             .join('')
-          if (!progSemSelIso) progSemSelIso = cur
+          // v0.0.222: se a semana atual está VAZIA, cair automaticamente na semana anterior com declarações (evita "sumiu")
+          if (!sel.value || !progSemSelIso) {
+            let alvo = cur
+            const temDecl = function (si) {
+              return semanasMap[si] && semanasMap[si].length > 0
+            }
+            if (!temDecl(alvo)) {
+              const idx = semKeys.indexOf(alvo)
+              for (let i = idx; i >= 0; i--) {
+                if (temDecl(semKeys[i])) {
+                  alvo = semKeys[i]
+                  break
+                }
+              }
+              if (!temDecl(alvo)) {
+                for (let i = idx; i < semKeys.length; i++) {
+                  if (temDecl(semKeys[i])) {
+                    alvo = semKeys[i]
+                    break
+                  }
+                }
+              }
+            }
+            progSemSelIso = alvo
+            sel.value = alvo
+          }
         }
         const modoTodas =
           allSem &&
@@ -18707,6 +18746,35 @@
           })
           progDia = (hoje || diasMain[0] || {}).dia
           progDate = (hoje || diasMain[0] || {}).data
+        }
+        // v0.0.222: aviso quando a semana vista NÃO tem declarações (dias claros não é bug — é semana vazia)
+        const semVazia = !dias.some(function (x) {
+          return diasMain.some(function (d) {
+            return isoOf(d.data) === isoOf(x.data)
+          })
+        })
+        const vazioInfo = document.getElementById('semVazioInfo')
+        if (vazioInfo) {
+          if (semVazia) {
+            const comDecl = semKeys.filter(function (si) {
+              return semanasMap[si].length
+            })
+            vazioInfo.innerHTML =
+              'ℹ️ Esta semana está SEM programação — os dias ficam claros (nada sumiu). Declarações existem em: ' +
+              (comDecl.length
+                ? comDecl
+                    .map(function (si) {
+                      const p = si.split('-')
+                      return p[2] + '/' + p[1]
+                    })
+                    .join(', ')
+                : 'nenhuma semana') +
+              '. Use o seletor "Semana" acima para ver outra semana.'
+            vazioInfo.style.display = 'block'
+          } else {
+            vazioInfo.style.display = 'none'
+            vazioInfo.innerHTML = ''
+          }
         }
         box.innerHTML = diasMain
           .map(function (o) {
@@ -19087,9 +19155,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -25256,7 +25323,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261005090121); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261005112412); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
