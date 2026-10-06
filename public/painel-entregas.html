@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006140044">
+  <body data-build="b20261006144954">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -20526,9 +20526,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -24725,6 +24724,22 @@
           localStorage.setItem('andon|smkt-rev', String(srvRev))
           return true
         },
+        // v0.0.240: leitura PÚBLICA do último rascunho (sem token) — modo somente visualização
+        async pullPublic() {
+          const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-draft')"
+          const url =
+            this.api +
+            '/api/collections/reprogramming_events/records?filter=' +
+            encodeURIComponent(f) +
+            '&sort=-created&perPage=1'
+          const r = await fetch(url)
+          if (!r.ok) return false
+          const d = await r.json()
+          if (!d.items || !d.items.length) return false
+          const ch = d.items[0].changes || {}
+          if (!Array.isArray(ch.draft)) return false
+          return ch.draft
+        },
       }
       window.ANDON_SYNC = ANDON_SYNC
       function andonToggleConn() {
@@ -24784,6 +24799,31 @@
         // v0.0.230: ao GANHAR foco da aba, puxa o servidor na hora (aba em background suspende o setInterval
         // e o outro dispositivo edita — sem isso a tela fica velha até o próximo tick)
         function pullOnFocus() {
+          const uvf = (function () {
+            try {
+              return JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+            } catch (e) {
+              return ''
+            }
+          })()
+          if (uvf === 'viewer') {
+            if (_pullBusy) return
+            _pullBusy = true
+            Promise.resolve(ANDON_SYNC.pullPublic())
+              .then(function (dr) {
+                if (Array.isArray(dr) && dr.length) {
+                  declDraft = dr
+                  declSave()
+                  progBuildFromDecls()
+                  renderProg()
+                }
+              })
+              .catch(function () {})
+              .finally(function () {
+                _pullBusy = false
+              })
+            return
+          }
           if (!ANDON_SYNC.connected() || _pullBusy) return
           _pullBusy = true
           Promise.resolve(ANDON_SYNC.syncFromServer())
@@ -24829,7 +24869,60 @@
         const btn = document.getElementById('btnConn')
         if (!btn) return
         const info = document.getElementById('connInfo')
+        // v0.0.240: sessão viewer restaurada do localStorage — sem token (só leitura); puxa rascunho público
+        try {
+          const uv0 = JSON.parse(localStorage.getItem('andon|user') || '{}')
+          if (uv0.role === 'viewer') {
+            try {
+              localStorage.removeItem('andon|token')
+            } catch (e) {}
+            ANDON_SYNC.token = ''
+            ;(async function () {
+              try {
+                const dr = await ANDON_SYNC.pullPublic()
+                if (Array.isArray(dr) && dr.length) {
+                  declDraft = dr
+                  declSave()
+                  progBuildFromDecls()
+                  progDia = null
+                  progDate = null
+                  renderProg()
+                  const st = document.getElementById('declStatus')
+                  if (st) st.textContent = '👁 Somente visualização — rascunho do servidor'
+                }
+              } catch (e) {}
+            })()
+          }
+        } catch (e) {}
         function paint() {
+          const uv = (function () {
+            try {
+              return JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+            } catch (e) {
+              return ''
+            }
+          })()
+          if (uv === 'viewer') {
+            const u2 = JSON.parse(localStorage.getItem('andon|user') || '{}')
+            btn.style.display = ''
+            btn.textContent =
+              '👁 ' + String(u2.name || u2.email || 'leitura').slice(0, 16) + ' · leitura'
+            btn.style.background = '#eff6ff'
+            btn.style.borderColor = '#bfdbfe'
+            btn.style.color = '#1e3a8a'
+            info.textContent = 'somente visualização — edições não gravam no servidor'
+            btn.onclick = function () {
+              if (confirm('Sair do modo somente visualização?')) {
+                try {
+                  localStorage.removeItem('andon|user')
+                } catch (e) {}
+                btn.onclick = andonToggleConn
+                paint()
+              }
+            }
+            return
+          }
+          btn.onclick = andonToggleConn
           if (ANDON_SYNC.connected()) {
             const u = JSON.parse(localStorage.getItem('andon|user') || '{}')
             btn.style.display = ''
@@ -24854,7 +24947,51 @@
           go.disabled = true
           go.textContent = 'Entrando…'
           try {
-            await ANDON_SYNC.login(email, pass)
+            const ld = await ANDON_SYNC.login(email, pass)
+            const role = (ld.record && ld.record.role) === 'admin' ? 'admin' : 'viewer'
+            if (role === 'viewer') {
+              ANDON_SYNC.token = ''
+              ANDON_SYNC.user = null
+              ANDON_SYNC.expired = false
+              try {
+                localStorage.removeItem('andon|token')
+              } catch (e) {}
+              try {
+                localStorage.setItem(
+                  'andon|user',
+                  JSON.stringify({
+                    id: ld.record.id,
+                    email: ld.record.email,
+                    name: ld.record.name || ld.record.email,
+                    role: 'viewer',
+                  }),
+                )
+              } catch (e) {}
+              andonSyncStatus()
+              paint()
+              document.getElementById('connBox').style.display = 'none'
+              let carregou = false
+              try {
+                const dr = await ANDON_SYNC.pullPublic()
+                if (Array.isArray(dr) && dr.length) {
+                  declDraft = dr
+                  declSave()
+                  progBuildFromDecls()
+                  progDia = null
+                  progDate = null
+                  renderProg()
+                  carregou = true
+                }
+              } catch (e) {}
+              const st = document.getElementById('declStatus')
+              if (st)
+                st.textContent =
+                  '👁 Somente visualização' +
+                  (carregou
+                    ? ' — rascunho do servidor carregado'
+                    : ' — edições não gravam no servidor')
+              return
+            }
             ANDON_SYNC.expired = false
             andonSyncStatus()
             paint()
@@ -27085,7 +27222,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006140044); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006144954); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''

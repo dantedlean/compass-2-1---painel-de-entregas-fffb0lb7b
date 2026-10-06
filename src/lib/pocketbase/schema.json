@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06T17:49:16.984Z",
+  "generatedAt": "2026-10-06T17:51:04.956Z",
   "collections": [
     {
       "name": "users",
@@ -437,9 +437,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "create": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+        "update": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+        "delete": "@request.auth.id != '' && @request.auth.role != 'viewer'"
       },
       "fields": [
         {
@@ -649,9 +649,9 @@
       "apiRules": {
         "list": "",
         "view": "",
-        "create": null,
-        "update": null,
-        "delete": null
+        "create": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+        "update": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+        "delete": "@request.auth.id != '' && @request.auth.role != 'viewer'"
       },
       "fields": [
         {
