@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006154958">
+  <body data-build="b20261006155627">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -10960,7 +10960,7 @@
             { label: '03/10', qtd: 0, valor: 0 },
             { label: '04/10', qtd: 0, valor: 0 },
             { label: '05/10', qtd: 4, valor: 345467.56 },
-            { label: '06/10', qtd: 0, valor: 0 },
+            { label: '06/10', qtd: 1, valor: 48246.0 },
             { label: '07/10', qtd: 0, valor: 0 },
             { label: '08/10', qtd: 0, valor: 0 },
             { label: '09/10', qtd: 0, valor: 0 },
@@ -10997,21 +10997,45 @@
             { label: '07/2026', qtd: 53, valor: 1304171.73 },
             { label: '08/2026', qtd: 56, valor: 2210976.43 },
             { label: '09/2026', qtd: 80, valor: 4057907.49 },
-            { label: '10/2026', qtd: 12, valor: 454952.6 },
+            { label: '10/2026', qtd: 13, valor: 503198.6 },
           ],
-          mesQtd: 12,
-          mesValor: 454952.6,
-          anoQtd: 390,
-          anoValor: 12158746.23,
+          mesQtd: 13,
+          mesValor: 503198.6,
+          anoQtd: 391,
+          anoValor: 12206992.23,
           mesDiasUteis: 4,
           anoDiasUteis: 192,
-          mediaDiaUtilMes: 113738,
-          mediaDiaUtilAno: 63327,
-          mediaDuMes: 113738,
-          mediaDuAno: 1215875,
-          medianaMes: 105043,
+          mediaDiaUtilMes: 125800,
+          mediaDiaUtilAno: 63578,
+          mediaDuMes: 125800,
+          mediaDuAno: 1220699,
+          medianaMes: 76645,
           medianaAno: 801290,
           nfs: [
+            {
+              nf: '2461',
+              data: '2026-10-06',
+              emp: 'DLEAN',
+              cliente: 'EBAZAR NOVA SANTA RITA',
+              cidade: 'Nova Santa Rita',
+              uf: 'RS',
+              op: 'Venda de produção do estabelecimento',
+              valor: 48246.0,
+              itens: [
+                {
+                  cod: '404-0001',
+                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+                  qtd: 12.0,
+                  valor: 35976.0,
+                },
+                {
+                  cod: '403-0011',
+                  desc: 'CARRINHO DE NOTEBOOK 900X600',
+                  qtd: 15.0,
+                  valor: 12270.0,
+                },
+              ],
+            },
             {
               nf: '815',
               data: '2026-10-05',
@@ -24621,6 +24645,10 @@
         },
         async push(draft, motivo) {
           if (!this.connected()) return false
+          // v0.0.259 (Opção B): viewer tem token (leitura autenticada) mas NÃO grava —
+          // sem este guard o push com token de viewer dá 400 e _authFail remove o token
+          // ("sessão expirada" falsa logo após o login)
+          if (document.body.classList.contains('viewerMode')) return false
           const body = {
             cycle_id: 'flrv0lcbha5hh5v',
             event_type: 'system',
@@ -24692,6 +24720,8 @@
         // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
         async pushSmkt(ent, hist, nfRes) {
           if (!this.connected()) return false
+          // v0.0.259 (Opção B): viewer não grava SMKT (mesma razão do push)
+          if (document.body.classList.contains('viewerMode')) return false
           const body = {
             cycle_id: 'flrv0lcbha5hh5v',
             event_type: 'system',
@@ -27270,7 +27300,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006154958); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006155627); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
