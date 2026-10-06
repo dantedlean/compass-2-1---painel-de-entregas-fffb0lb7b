@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006092835">
+  <body data-build="b20261006124220">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -1180,9 +1180,30 @@
           <div class="note">
             Somente entradas registradas aparecem como saldo. A ENTRADA acontece quando você marca
             destino 🛒 Supermercado no card de Programação (qtd realizada) ou pelo botão "+ Entrada
-            no SMKT". Alocar em PV remove as unidades do estoque ativo e registra o evento em
-            Histórico; retirada sem PV também é permitida e exige motivo. NFs não criam nem consomem
-            saldo do SMKT automaticamente.
+            no SMKT". <b>Semi-automático:</b> quando a NF fecha o saldo do PV no ERP, o Andon ALERTA
+            (acima) que a NF precisa de saldo — a alocação do SMKT ou da produção declarada é
+            manual, da PCP. Nada é gravado no MaxiProd.
+          </div>
+          <div
+            id="smNfAlert"
+            style="
+              display: none;
+              margin: 10px 0;
+              padding: 10px 12px;
+              background: #fee2e2;
+              border: 2px solid #dc2626;
+              border-radius: 10px;
+            "
+          >
+            <div style="font-weight: 800; font-size: 13px; color: #991b1b; margin-bottom: 4px">
+              ⚠ NF EMITIDA PRECISA DE SALDO — alocação pendente (semi-automático)
+            </div>
+            <div class="note" style="margin-bottom: 8px">
+              A NF fechou o saldo do PV no ERP e ele saiu da carteira. Antes de desconsiderar: o
+              produto pronto já existe (SMKT ou produção declarada da Programação firme) e precisa
+              ser ALOCADO a este PV. Nada é gravado no MaxiProd — registro de controle no Andon.
+            </div>
+            <div id="smNfAlertBody"></div>
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
             <select
@@ -1855,6 +1876,103 @@
             style="background: #16a34a; border-color: #16a34a; color: #fff"
           >
             Programar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="rlpvBox"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 60;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          border-radius: 14px;
+          padding: 18px 20px;
+          min-width: 400px;
+          max-width: 540px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+        "
+      >
+        <div style="font-weight: 800; font-size: 14px; color: #1e3a8a; margin-bottom: 6px">
+          Realocar PV — mesma produção, outro destino
+        </div>
+        <div class="note" id="rlpvInfo" style="margin: 0 0 10px"></div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 100px">PV destino:</label>
+          <select
+            id="rlpvSel"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          ></select>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 100px">ou digite o nº:</label>
+          <input
+            id="rlpvDig"
+            inputmode="numeric"
+            placeholder="nº do PV…"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+            "
+          />
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px">
+          <label class="note" style="margin: 0; min-width: 100px">Qtd a realocar:</label>
+          <input
+            id="rlpvQtd"
+            type="number"
+            min="1"
+            style="
+              flex: 1;
+              padding: 6px 10px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              font-size: 13px;
+              text-align: right;
+              font-weight: 700;
+            "
+          />
+        </div>
+        <div
+          class="note"
+          id="rlpvWarn"
+          style="
+            display: none;
+            background: #fef9c3;
+            color: #854d0e;
+            font-weight: 700;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin: 0 0 10px;
+          "
+        ></div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end">
+          <button id="rlpvCancel" class="dlbtn">Cancelar</button>
+          <button
+            id="rlpvOk"
+            class="dlbtn"
+            style="background: #1e3a8a; border-color: #1e3a8a; color: #fff"
+          >
+            Realocar
           </button>
         </div>
       </div>
@@ -18499,6 +18617,369 @@
             ') · nada gravado no MaxiProd'
       }
       window.apProgramar = apProgramar
+      // ==================== REALOCAÇÃO MANUAL DE PV (06/10, v0.0.235) ====================
+      // Regra Dante: a mudança manual de alocação só entre PVs que TÊM saldo a entregar do produto.
+      // A produção não muda — muda o DESTINO das unidades de um PV de origem para um PV de destino.
+      // Registro: localStorage 'rlpv|<cod>|<de>|<para>' = {qtd, quando} — consultado por progBuildFromDecls.
+      function rlpvRegs(cod) {
+        try {
+          const raw = JSON.parse(localStorage.getItem('rlpv|' + String(cod)) || '[]')
+          return Array.isArray(raw) ? raw : []
+        } catch (e) {
+          return []
+        }
+      }
+      function rlpvSave(cod, regs) {
+        try {
+          localStorage.setItem('rlpv|' + String(cod), JSON.stringify(regs || []))
+        } catch (e) {}
+        try {
+          rlpvCache = rlpvAllLoad()
+        } catch (e) {}
+        if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
+          localStorage.setItem('andon|rlpv-rev', String(Date.now()))
+          try {
+            window.ANDON_SYNC.pushRlpv(String(cod), regs || []).catch(function () {})
+          } catch (e) {}
+        }
+      }
+      // saldo a entregar do PV (linha da carteira) MENOS o que já foi realocado para fora dele
+      function pvSaldoAposRealoc(pv, cod) {
+        const rs = DATA.rows.filter(function (r) {
+          return String(r.pv) === String(pv) && r.codigo === cod
+        })
+        const saldo = rs.reduce(function (a, r) {
+          return a + (Number(r.qtd) || 0)
+        }, 0)
+        const fora = rlpvRegs(cod)
+          .filter(function (x) {
+            return String(x.de) === String(pv)
+          })
+          .reduce(function (a, x) {
+            return a + (Number(x.qtd) || 0)
+          }, 0)
+        return { saldo: saldo, fora: fora, livre: Math.max(0, saldo - fora) }
+      }
+      function pvRealocadoDe(pv, cod) {
+        return rlpvRegs(cod)
+          .filter(function (x) {
+            return String(x.para) === String(pv)
+          })
+          .reduce(function (a, x) {
+            return a + (Number(x.qtd) || 0)
+          }, 0)
+      }
+      // PVs com saldo a entregar do produto (destinos possíveis) — regra Dante
+      function rlpvDestinos(cod, pvOrigem) {
+        const regs = rlpvRegs(cod)
+        const agg = {}
+        DATA.rows.forEach(function (r) {
+          if (r.codigo !== cod) return
+          const k = String(r.pv)
+          const o = (agg[k] = agg[k] || {
+            pv: k,
+            cli: r.cliente,
+            emp: r.empresa,
+            saldo: 0,
+            iso: r.iso,
+            atr: false,
+          })
+          o.saldo += Number(r.qtd) || 0
+          if (r.iso && (!o.iso || r.iso < o.iso)) o.iso = r.iso
+          if (r.semana === 'ATRASADO') o.atr = true
+        })
+        const de = String(pvOrigem)
+        return Object.values(agg)
+          .filter(function (o) {
+            return o.pv !== de
+          })
+          .map(function (o) {
+            const para = regs
+              .filter(function (x) {
+                return String(x.para) === o.pv
+              })
+              .reduce(function (a, x) {
+                return a + (Number(x.qtd) || 0)
+              }, 0)
+            const fora = regs
+              .filter(function (x) {
+                return String(x.de) === o.pv
+              })
+              .reduce(function (a, x) {
+                return a + (Number(x.qtd) || 0)
+              }, 0)
+            return Object.assign(o, { livre: Math.max(0, o.saldo - fora), realoc: para })
+          })
+          .filter(function (o) {
+            return o.livre > 0
+          })
+          .sort(function (a, b) {
+            return a.iso.localeCompare(b.iso)
+          })
+      }
+      function pvTagDe(cod, pv) {
+        const o = DATA.rows.find(function (r) {
+          return String(r.pv) === String(pv) && r.codigo === cod
+        })
+        return o ? String(o.cliente || '').slice(0, 26) : ''
+      }
+      function rlpvAbrirModal(cod, pvDe, qtdMax) {
+        const box = document.getElementById('rlpvBox')
+        if (!box) return
+        document.getElementById('rlpvInfo').innerHTML =
+          '<b>' +
+          cod +
+          '</b> ' +
+          descDe(cod).slice(0, 40) +
+          ' · origem <b>PV ' +
+          pvDe +
+          '</b> (' +
+          pvTagDe(cod, pvDe) +
+          ') · a realocar: <b>' +
+          NF.format(Math.round(qtdMax)) +
+          ' un</b>'
+        const sel = document.getElementById('rlpvSel')
+        const destinos = rlpvDestinos(cod, pvDe)
+        sel.innerHTML =
+          '<option value="">— escolha o PV destino —</option>' +
+          destinos
+            .map(function (o) {
+              return (
+                '<option value="' +
+                o.pv +
+                '|' +
+                o.cli +
+                '">PV ' +
+                o.pv +
+                ' · ' +
+                o.cli.slice(0, 26) +
+                ' · saldo ' +
+                NF.format(o.livre) +
+                ' un' +
+                (o.atr ? ' · ATRASADO' : '') +
+                ' · entrega ' +
+                dtBR(o.iso) +
+                '</option>'
+              )
+            })
+            .join('')
+        document.getElementById('rlpvDig').value = ''
+        document.getElementById('rlpvQtd').value = Math.round(qtdMax)
+        const w = document.getElementById('rlpvWarn')
+        if (!destinos.length) {
+          w.style.display = 'block'
+          w.textContent =
+            'Nenhum outro PV tem saldo a entregar deste produto — realocação indisponível (regra: só entre PVs com saldo).'
+        } else {
+          w.style.display = 'none'
+          w.textContent = ''
+        }
+        box.dataset.cod = cod
+        box.dataset.pvde = pvDe
+        box.dataset.qtdmax = Math.round(qtdMax)
+        box.style.display = 'flex'
+        setTimeout(function () {
+          sel.focus()
+        }, 50)
+      }
+      function rlpvInitModal() {
+        const box = document.getElementById('rlpvBox')
+        if (!box || box._bound) return
+        box._bound = true
+        document.getElementById('rlpvCancel').addEventListener('click', function () {
+          box.style.display = 'none'
+        })
+        box.addEventListener('click', function (e) {
+          if (e.target === box) box.style.display = 'none'
+        })
+        // digitar o nº do PV: valida contra os destinos possíveis (regra: só PVs com saldo)
+        document.getElementById('rlpvDig').addEventListener('input', function () {
+          const q = this.value.trim()
+          const w = document.getElementById('rlpvWarn')
+          if (!q) {
+            w.style.display = 'none'
+            return
+          }
+          const o = pvLookup(q)
+          const ok =
+            o &&
+            o.itens.some(function (r) {
+              return r.codigo === box.dataset.cod
+            }) &&
+            String(o.pv) !== String(box.dataset.pvde)
+          if (!ok) {
+            w.style.display = 'block'
+            w.textContent =
+              'PV ' +
+              q +
+              ' não é destino válido: não tem saldo a entregar do produto ' +
+              box.dataset.cod +
+              ' (ou é o próprio PV de origem).'
+          } else {
+            w.style.display = 'none'
+          }
+        })
+        document.getElementById('rlpvOk').addEventListener('click', function () {
+          const cod = box.dataset.cod,
+            pvDe = box.dataset.pvde,
+            qtdMax = Number(box.dataset.qtdmax) || 0
+          if (!cod || !pvDe) return
+          const qtd = Number(document.getElementById('rlpvQtd').value) || 0
+          if (qtd <= 0) {
+            alert('Informe a quantidade.')
+            return
+          }
+          if (qtd > qtdMax) {
+            alert('Qtd maior que o saldo do PV ' + pvDe + ' (' + NF.format(qtdMax) + ' un).')
+            return
+          }
+          let pvPara = ''
+          const dig = document.getElementById('rlpvDig').value.trim()
+          const sel = document.getElementById('rlpvSel').value
+          if (dig) {
+            const o = pvLookup(dig)
+            const ok =
+              o &&
+              o.itens.some(function (r) {
+                return r.codigo === cod
+              }) &&
+              String(o.pv) !== String(pvDe)
+            if (!ok) {
+              alert(
+                'PV ' +
+                  dig +
+                  ' não é destino válido — só PVs com saldo a entregar do produto ' +
+                  cod +
+                  ' (regra).',
+              )
+              return
+            }
+            pvPara = String(o.pv)
+          } else if (sel) {
+            pvPara = sel.split('|')[0]
+          } else {
+            alert('Escolha o PV destino (lista ou digite o nº).')
+            return
+          }
+          const dest = rlpvDestinos(cod, pvDe).find(function (o) {
+            return String(o.pv) === String(pvPara)
+          })
+          if (!dest) {
+            alert('PV ' + pvPara + ' sem saldo a entregar deste produto — realocação indisponível.')
+            return
+          }
+          if (qtd > dest.livre) {
+            alert(
+              'PV ' +
+                pvPara +
+                ' tem só ' +
+                NF.format(dest.livre) +
+                ' un de saldo livre — realocação limitada a isso.',
+            )
+            return
+          }
+          const regs = rlpvRegs(cod)
+          regs.push({
+            de: String(pvDe),
+            para: String(pvPara),
+            qtd: qtd,
+            quando: new Date().toISOString(),
+          })
+          rlpvSave(cod, regs)
+          box.style.display = 'none'
+          progBuildFromDecls()
+          renderProgTabela()
+          renderKpis()
+          renderGantt()
+          renderTimeline()
+          renderTabela()
+          const st = document.getElementById('declStatus')
+          if (st)
+            st.textContent =
+              'PV ' +
+              pvDe +
+              ' → PV ' +
+              pvPara +
+              ': ' +
+              NF.format(qtd) +
+              ' un realocadas (' +
+              cod +
+              ') · produção não muda · nada gravado no MaxiProd'
+          alert(
+            'Realocado: ' +
+              NF.format(qtd) +
+              ' un do PV ' +
+              pvDe +
+              ' → PV ' +
+              pvPara +
+              ' (' +
+              cod +
+              '). A produção continua igual — mudou só o destino. Ctrl+Z desfaz.',
+          )
+        })
+      }
+      // Ctrl+Z desfaz a última realocação
+      document.addEventListener('keydown', function (e) {
+        if (!(e.ctrlKey && (e.key === 'z' || e.key === 'Z'))) return
+        if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))
+          return
+        const cod = window._rlpvLastCod
+        if (!cod) return
+        const regs = rlpvRegs(cod)
+        if (!regs.length) return
+        const ult = regs[regs.length - 1]
+        if (
+          !confirm(
+            'Desfazer a última realocação de ' +
+              cod +
+              '? PV ' +
+              ult.de +
+              ' → PV ' +
+              ult.para +
+              ' · ' +
+              NF.format(ult.qtd) +
+              ' un',
+          )
+        )
+          return
+        regs.pop()
+        rlpvSave(cod, regs)
+        window._rlpvLastCod = null
+        progBuildFromDecls()
+        renderProgTabela()
+        renderKpis()
+        renderGantt()
+        renderTimeline()
+        renderTabela()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Realocação desfeita — PV ' + ult.de + ' voltou a ter as ' + NF.format(ult.qtd) + ' un'
+      })
+
+      window._rlpvCache = (function () {
+        try {
+          return JSON.parse(localStorage.getItem('rlpv|all') || '{}')
+        } catch (e) {
+          return {}
+        }
+      })()
+      function rlpvAllLoad() {
+        // carrega as realocações de TODOS os códigos (localStorage) para o cache da sessão
+        const all = {}
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k && k.indexOf('rlpv|') === 0 && k !== 'rlpv|all') {
+              const cod = k.slice(5)
+              const a = JSON.parse(localStorage.getItem(k) || '[]')
+              if (Array.isArray(a) && a.length) all[cod] = a
+            }
+          }
+        } catch (e) {}
+        return all
+      }
+      let rlpvCache = rlpvAllLoad()
       function renderAProg() {
         const prog = {} // codigo -> {prog: un, det: [str]}
         declDaUnid().forEach(function (d) {
@@ -18819,6 +19300,63 @@
             })
           }
         })
+        // REALOCAÇÃO MANUAL DE PV (v0.0.235): move qtd entre PVs da MESMA declaração (mesma
+        // data+produto) — a produção continua igual, muda só o destino. Regra Dante: só entre
+        // PVs com saldo a entregar do produto. PV de origem pode zerar (fica sem linha).
+        try {
+          const porData = {}
+          out.forEach(function (a) {
+            if (a.semPv || !a.pv || a.pv === '—') return
+            const k = a.data + '|' + a.cod
+            ;(porData[k] = porData[k] || []).push(a)
+          })
+          Object.keys(rlpvCache || {}).forEach(function (cod) {
+            ;(rlpvCache[cod] || []).forEach(function (g) {
+              const list = porData[g.data + '|' + g.cod]
+              if (!list || !list.length) return
+              let need = Number(g.qtd) || 0
+              for (let i = list.length - 1; i >= 0 && need > 0; i--) {
+                const a = list[i]
+                if (String(a.pv) !== String(g.de)) continue
+                const t = Math.min(need, a.qtd)
+                if (t <= 0) continue
+                const vu = a.qtd > 0 ? a.vtot / a.qtd : vuDe(a.cod) || 0
+                a.qtd -= t
+                need -= t
+                a.vtot = vu * a.qtd
+                const dest = list.find(function (x) {
+                  return String(x.pv) === String(g.para)
+                })
+                if (dest) {
+                  const vu2 = dest.qtd > 0 ? dest.vtot / dest.qtd : vu
+                  dest.qtd += t
+                  dest.vtot = vu2 * dest.qtd
+                } else {
+                  list.push({
+                    dia: a.dia,
+                    data: a.data,
+                    cod: a.cod,
+                    desc: a.desc,
+                    qtd: t,
+                    pv: String(g.para),
+                    cli: pvTagDe(a.cod, g.para),
+                    emp: '',
+                    vtot: t * (vuDe(a.cod) || 0),
+                    sit: a.sit,
+                    cheg: '—',
+                    local: a.local,
+                    firme: a.firme || '',
+                    cidade: '',
+                    prog_id: a.prog_id || '',
+                    obs: (a.obs || '') + ' · realocado de PV ' + g.de,
+                    status: a.status || 'Planejado',
+                  })
+                }
+                if (a.qtd <= 0.0001) list.splice(i, 1)
+              }
+            })
+          })
+        } catch (e) {}
         DATA.progSemana.dias = out
       }
 
@@ -19678,6 +20216,20 @@
                   (v.atr
                     ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
                     : '<span class="tagP">em dia</span>') +
+                  '</td>' +
+                  '<td class="exec">' +
+                  (v.semPv
+                    ? ''
+                    : '<button class="exRl" data-rlpv="' +
+                      v.pv +
+                      '" data-cod="' +
+                      p.cod +
+                      '" title="Mudar a alocação deste PV para outro PV com saldo do mesmo produto — a produção não muda">→ Realocar PV</button>' +
+                      (pvRealocadoDe(v.pv, p.cod) > 0
+                        ? '<div style="font-size:10px;color:#1e3a8a;font-weight:700;margin-top:3px">+' +
+                          NF.format(pvRealocadoDe(v.pv, p.cod)) +
+                          ' un realocadas p/ cá</div>'
+                        : '')) +
                   '</td></tr>'
                 )
               })
@@ -19724,7 +20276,7 @@
               '<tr class="detrow" data-det="' +
               ix +
               '"><td colspan="9"><table class="mini">' +
-              '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Local</th><th>Situação</th></tr>' +
+              '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Local</th><th>Situação</th><th>Realocar</th></tr>' +
               pvRows +
               '</table></td></tr>'
             const chegs = [
@@ -20196,6 +20748,34 @@
                 ' excluído de ' +
                 progDate +
                 ' — voltou para o card A Programar · nada gravado no MaxiProd'
+          })
+          // REALOCAÇÃO DE PV (v0.0.235): botão na caixa de PVs do card Programação
+          tb.addEventListener('click', function (e) {
+            const b2 = e.target.closest ? e.target.closest('button[data-rlpv]') : null
+            if (!b2) return
+            e.stopPropagation()
+            const pvDe = b2.getAttribute('data-rlpv')
+            const cod = b2.getAttribute('data-cod')
+            if (!pvDe || !cod || !progDate) return
+            const pd = String(progDate).split('/')
+            const yy = new Date().getFullYear()
+            const progIso =
+              pd.length === 3
+                ? pd[2] + '-' + pd[1] + '-' + pd[0]
+                : pd.length === 2
+                  ? yy + '-' + pd[1] + '-' + pd[0]
+                  : progDate
+            // linhas de progSemana.dias usam data dd/mm (igual a progDate) — comparar em dd/mm
+            const linha = (DATA.progSemana.dias || []).find(function (a) {
+              return a.cod === cod && a.data === progDate && String(a.pv) === String(pvDe)
+            })
+            const qtdMax = linha ? linha.qtd : 0
+            if (qtdMax <= 0) {
+              alert('Sem unidades do PV ' + pvDe + ' programadas neste dia.')
+              return
+            }
+            window._rlpvLastCod = cod
+            rlpvAbrirModal(cod, pvDe, qtdMax)
           })
         }
         if (!tb._toggleBound) {
@@ -21327,7 +21907,10 @@
         localStorage.setItem('smkt|v3-migrated', '1')
       }
       function smktNFStatus(cod) {
-        // Estoque SMKT só muda por ação manual: entrada, alocação ou retirada. NF não cria nem consome saldo automaticamente.
+        // SEMI-AUTOMÁTICO (v0.0.236, regra Dante 06/10): a NF NÃO consome o saldo sozinha.
+        // Quando a NF fecha o saldo do PV no ERP (ele sai da carteira), o Andon ALERTA:
+        // "NF precisa de saldo" — a alocação (do SMKT ou da produção declarada) é manual, da PCP.
+        // Registros de alerta resolvido ficam em 'smkt|nf-resolvido' = [{cod,pv,nf,qtd,fonte,data}].
         const ent = smktEntradas()
           .filter(function (x) {
             return String(x.cod) === String(cod)
@@ -21335,7 +21918,61 @@
           .reduce(function (a, x) {
             return a + (Number(x.qtd) || 0)
           }, 0)
-        return { ent: ent, saiuNF: 0, detNF: [], alocado: 0, saldo: Math.max(0, ent), alocs: [] }
+        const detNF = []
+        let pend = 0
+        try {
+          const resolv = smktNfResolvidos()
+          nfLista().forEach(function (n) {
+            ;(Array.isArray(n.itens) ? n.itens : []).forEach(function (i) {
+              if (String(i.cod) !== String(cod)) return
+              const pv = String(i.pv || '')
+              // pendente: NF fechou o PV na carteira (não existe mais linha com saldo para ele)
+              const naCarteira = DATA.rows.some(function (r) {
+                return String(r.pv) === pv && r.codigo === cod
+              })
+              if (naCarteira) return // PV ainda tem saldo — a NF foi parcial, saiu sozinho
+              const jaResolvido = resolv.some(function (x) {
+                return (
+                  String(x.cod) === String(cod) &&
+                  String(x.pv) === pv &&
+                  String(x.nf) === String(n.nf)
+                )
+              })
+              const usado = Number(i.qtd) || 0
+              if (jaResolvido) return
+              detNF.push({ nf: String(n.nf), pv: pv, qtd: usado, data: n.data || '', usado: usado })
+              pend += usado
+            })
+          })
+        } catch (e) {}
+        return {
+          ent: ent,
+          saiuNF: 0,
+          detNF: detNF,
+          alocado: 0,
+          saldo: Math.max(0, ent),
+          alocs: [],
+          pendNF: pend,
+        }
+      }
+      function smktNfResolvidos() {
+        try {
+          const a = JSON.parse(localStorage.getItem('smkt|nf-resolvido') || '[]')
+          return Array.isArray(a) ? a : []
+        } catch (e) {
+          return []
+        }
+      }
+      function smktNfResolvidoSave(a) {
+        try {
+          localStorage.setItem('smkt|nf-resolvido', JSON.stringify(a || []))
+        } catch (e) {}
+        if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
+          localStorage.setItem('andon|smkt-rev', String(Date.now()))
+          try {
+            window.ANDON_SYNC.pushSmkt(smktEntradas(), smktHistory(), a || []).catch(function () {})
+          } catch (e) {}
+        }
       }
       function smktSaldo(cod) {
         return smktNFStatus(cod).saldo
@@ -21428,50 +22065,243 @@
             .filter(function (c) {
               return !ehFrete(c)
             })
-        const seenNF = new Set(
-          hist
-            .filter(function (x) {
-              return x.event === 'Consumo via NF'
-            })
-            .map(function (x) {
-              return String(x.key || '')
-            }),
-        )
-        Array.from(
-          new Set(
-            ents
-              .map(function (x) {
-                return x.cod
-              })
-              .concat(
-                nfLista().flatMap(function (n) {
-                  return (n.itens || []).map(function (i) {
-                    return i.cod
-                  })
-                }),
-              ),
-          ),
-        ).forEach(function (c) {
-          smktNFStatus(c).detNF.forEach(function (n) {
-            const key = String(n.nf) + '|' + String(n.pv) + '|' + String(c)
-            if (n.usado > 0 && !seenNF.has(key)) {
-              hist.unshift({
-                key: key,
-                data: n.data || new Date().toLocaleDateString('pt-BR'),
-                cod: String(c),
-                qtd: n.usado,
-                event: 'Consumo via NF',
-                pv: n.pv,
-                nf: n.nf,
-                motivo: 'Consumo sobre saldo manual confirmado',
-              })
-              seenNF.add(key)
-            }
-          })
-        })
         smktHistorySave(hist)
+        // SEMI-AUTOMÁTICO (v0.0.236): alerta de NF pendente de saldo — NF fechou o PV no ERP
+        // (ele saiu da carteira) e o produto pronto precisa ser ALOCADO: do SMKT ou da produção
+        // declarada da Programação firme. Alocação é manual da PCP — nada automático.
+        ;(function () {
+          const box = document.getElementById('smNfAlert')
+          if (!box) return
+          const body = document.getElementById('smNfAlertBody')
+          const pend = []
+          const vistos = new Set()
+          try {
+            nfLista().forEach(function (n) {
+              ;(Array.isArray(n.itens) ? n.itens : []).forEach(function (i) {
+                const pv = String(i.pv || '')
+                const cod = String(i.cod || '')
+                if (!cod || ehFrete(cod)) return
+                if (
+                  DATA.rows.some(function (r) {
+                    return String(r.pv) === pv && r.codigo === cod
+                  })
+                )
+                  return
+                const key = cod + '|' + pv + '|' + String(n.nf)
+                if (vistos.has(key)) return
+                vistos.add(key)
+                if (
+                  smktNfResolvidos().some(function (x) {
+                    return (
+                      String(x.cod) === cod && String(x.pv) === pv && String(x.nf) === String(n.nf)
+                    )
+                  })
+                )
+                  return
+                const st = smktNFStatus(cod)
+                const det = st.detNF.find(function (x) {
+                  return String(x.nf) === String(n.nf) && String(x.pv) === pv
+                }) || { nf: String(n.nf), pv: pv, qtd: Number(i.qtd) || 0, data: n.data || '' }
+                pend.push({ cod: cod, pend: Number(i.qtd) || 0, det: [det], foraCarteira: true })
+              })
+            })
+          } catch (e) {}
+          if (!pend.length) {
+            box.style.display = 'none'
+            return
+          }
+          box.style.display = 'block'
+          const smktSaldoDe = function (c) {
+            try {
+              return smktSaldo(c)
+            } catch (e) {
+              return 0
+            }
+          }
+          const progDe = function (c) {
+            let t = 0
+            ;((DATA.progSemana && DATA.progSemana.dias) || []).forEach(function (a) {
+              if (a.cod === c) t += a.qtd
+            })
+            return t
+          }
+          body.innerHTML =
+            pend
+              .slice(0, 12)
+              .map(function (p) {
+                const sb = smktSaldoDe(p.cod),
+                  pg = progDe(p.cod)
+                const det = p.det
+                  .map(function (d) {
+                    return (
+                      'NF ' +
+                      d.nf +
+                      ' (' +
+                      (d.data || '').split('-').reverse().join('/') +
+                      ') · PV ' +
+                      d.pv +
+                      ' ×' +
+                      NF.format(d.qtd)
+                    )
+                  })
+                  .join(' + ')
+                const cobreSm = sb >= p.pend,
+                  cobrePg = pg >= p.pend
+                const btn =
+                  '<button class="exRl" data-nfalc="' +
+                  p.cod +
+                  '" title="Alocar do estoque SMKT para o PV da NF">🛒 Alocar do SMKT</button>' +
+                  '<button class="exRl" data-nfprog="' +
+                  p.cod +
+                  '" title="Marcar como resolvido pela produção declarada da Programação firme">🏭 Resolvido pela produção</button>'
+                const sit = cobreSm
+                  ? '<span class="tagP">coberto pelo SMKT</span>'
+                  : cobrePg
+                    ? '<span class="tagS">coberto pela produção</span>'
+                    : '<span class="tagF" style="background:#fee2e2;color:#991b1b">saldo insuficiente nos dois</span>'
+                return (
+                  '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #fecaca"><div style="min-width:200px"><div class="cod">' +
+                  p.cod +
+                  '</div><div class="dsc">' +
+                  descDe(p.cod).slice(0, 40) +
+                  '</div></div>' +
+                  '<div style="min-width:250px;font-size:12px">' +
+                  det +
+                  '</div>' +
+                  '<div style="min-width:110px;font-size:12px">Falta alocar: <b>' +
+                  NF.format(p.pend) +
+                  ' un</b></div>' +
+                  '<div style="min-width:190px;font-size:12px">🛒 SMKT: ' +
+                  NF.format(sb) +
+                  ' un · 🏭 produção: ' +
+                  NF.format(pg) +
+                  ' un ' +
+                  sit +
+                  '</div>' +
+                  '<div style="display:flex;gap:6px">' +
+                  btn +
+                  '</div></div>'
+                )
+              })
+              .join('') +
+            (pend.length > 12
+              ? '<div class="note" style="margin-top:6px">+' +
+                (pend.length - 12) +
+                ' produtos pendentes…</div>'
+              : '')
+        })()
+        // ações do alerta: alocar do SMKT / marcar resolvido pela produção (delegação)
+        ;(function () {
+          const box = document.getElementById('smNfAlert')
+          if (!box || box._actBound) return
+          box._actBound = true
+          box.addEventListener('click', function (e) {
+            const a = e.target.closest ? e.target.closest('button[data-nfalc]') : null
+            const p = e.target.closest ? e.target.closest('button[data-nfprog]') : null
+            if (!a && !p) return
+            const cod = (a || p).getAttribute('data-nfalc') || (a || p).getAttribute('data-nfprog')
+            const resolv = smktNfResolvidos()
+            const st = smktNFStatus(cod)
+            const pend = st.detNF.filter(function (x) {
+              return !resolv.some(function (y) {
+                return String(y.cod) === cod && String(y.pv) === x.pv && String(y.nf) === x.nf
+              })
+            })
+            if (!pend.length) return
+            const alvo = pend[0]
+            if (a) {
+              const saldo = smktSaldo(cod)
+              if (saldo <= 0) {
+                alert(
+                  'SMKT sem saldo de ' +
+                    cod +
+                    '. Use "🏭 Resolvido pela produção" ou registre uma entrada.',
+                )
+                return
+              }
+              const q = Math.min(saldo, alvo.qtd)
+              if (
+                !confirm(
+                  'Alocar ' +
+                    NF.format(q) +
+                    ' un de ' +
+                    cod +
+                    ' do SMKT para o PV ' +
+                    alvo.pv +
+                    ' (NF ' +
+                    alvo.nf +
+                    ')?',
+                )
+              )
+                return
+              smktConsume(cod, q, 'Alocado em PV (NF)', {
+                pv: alvo.pv,
+                nf: alvo.nf,
+                motivo: 'Alocação semi-automática — NF fechou o PV no ERP',
+                quem: 'PCP',
+                dataSaida: new Date().toLocaleDateString('pt-BR'),
+              })
+              resolv.push({
+                cod: cod,
+                pv: alvo.pv,
+                nf: alvo.nf,
+                qtd: q,
+                fonte: 'smkt',
+                data: new Date().toLocaleDateString('pt-BR'),
+              })
+              smktNfResolvidoSave(resolv)
+            } else {
+              const pg = ((DATA.progSemana && DATA.progSemana.dias) || [])
+                .filter(function (x) {
+                  return x.cod === cod
+                })
+                .reduce(function (s, x) {
+                  return s + x.qtd
+                }, 0)
+              if (pg <= 0) {
+                alert(
+                  'Sem produção declarada de ' +
+                    cod +
+                    ' na Programação firme. Programe na aba de Programação e volte aqui.',
+                )
+                return
+              }
+              if (
+                !confirm(
+                  'Marcar NF ' +
+                    alvo.nf +
+                    ' (PV ' +
+                    alvo.pv +
+                    ', ' +
+                    NF.format(alvo.qtd) +
+                    ' un de ' +
+                    cod +
+                    ') como resolvida pela PRODUÇÃO declarada (' +
+                    NF.format(pg) +
+                    ' un programadas)? O alerta sai da lista. Nada é gravado no MaxiProd.',
+                )
+              )
+                return
+              resolv.push({
+                cod: cod,
+                pv: alvo.pv,
+                nf: alvo.nf,
+                qtd: alvo.qtd,
+                fonte: 'prog',
+                data: new Date().toLocaleDateString('pt-BR'),
+              })
+              smktNfResolvidoSave(resolv)
+            }
+            renderSmkt()
+            renderProgTabela()
+            renderKpis()
+            renderGantt()
+            renderTimeline()
+            renderTabela()
+          })
+        })()
         document.getElementById('trhM').innerHTML =
-          '<th>Produto</th><th>Saldo disponível</th><th>Valor unitário</th><th>Valor em estoque</th><th>Saída via NF</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
+          '<th>Produto</th><th>Saldo disponível</th><th>Valor unitário</th><th>Valor em estoque</th><th>NF pendente</th><th>Retirada manual</th><th>Alocação em PV + NF</th>'
         document.getElementById('tbbM').innerHTML = active.length
           ? active
               .map(function (cod) {
@@ -21500,6 +22330,12 @@
                       )
                     })
                     .join('')
+                const pendTag =
+                  st.pendNF > 0
+                    ? '<span class="tagF" style="background:#fee2e2;color:#991b1b" title="NF fechou o PV no ERP e o produto pronto ainda não foi alocado — veja o alerta acima">⚠ ' +
+                      NF.format(st.pendNF) +
+                      ' un</span>'
+                    : '<span style="color:var(--mut)">—</span>'
                 return (
                   '<tr data-cod="' +
                   cod +
@@ -21514,7 +22350,7 @@
                   '</td><td class="num">' +
                   FMT.format(st.saldo * vuDe(cod)) +
                   '</td><td class="num">' +
-                  NF.format(st.saiuNF) +
+                  pendTag +
                   '</td><td class="exec"><input type="number" min="1" max="' +
                   st.saldo +
                   '" placeholder="Qtd" data-m="retq" style="width:65px"><input type="text" placeholder="Motivo obrigatório" data-m="mot" style="width:130px"><input type="text" placeholder="Quem deu (obrigatório)" data-m="quem" style="width:120px"><button data-m="ret">Retirar</button></td><td class="exec"><input type="number" min="1" max="' +
@@ -21543,7 +22379,13 @@
               return a + smktSaldo(c) * vuDe(c)
             }, 0),
           ) +
-          '</td><td colspan="3"></td>'
+          '</td><td class="num"><b>' +
+          NF.format(
+            active.reduce(function (a, c) {
+              return a + (smktNFStatus(c).pendNF || 0)
+            }, 0),
+          ) +
+          '</b></td><td colspan="2"></td>'
         document.getElementById('tbbSmktHist').innerHTML =
           hist
             .map(function (x, hi) {
@@ -23537,6 +24379,8 @@
       // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
       declDraft = declLoad()
       progBuildFromDecls()
+      rlpvInitModal()
+      apInitModal()
       // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
       semearSugestaoProximaSemana()
       progBuildFromDecls()
@@ -23664,7 +24508,7 @@
           return true
         },
         // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
-        async pushSmkt(ent, hist) {
+        async pushSmkt(ent, hist, nfRes) {
           if (!this.connected()) return false
           const body = {
             cycle_id: 'flrv0lcbha5hh5v',
@@ -23672,7 +24516,12 @@
             occurred_at: new Date().toISOString(),
             reason: 'SMKT Andon — entradas + histórico',
             source: 'andon-smkt',
-            changes: { entradas: ent || [], historico: hist || [], rev: Date.now() },
+            changes: {
+              entradas: ent || [],
+              historico: hist || [],
+              rev: Date.now(),
+              nfResolvidos: nfRes || null,
+            },
             before_snapshot: { field: 'andon_smkt', value: 'v' + Date.now() },
           }
           const r = await fetch(this.api + '/api/collections/reprogramming_events/records', {
@@ -23716,6 +24565,8 @@
           localStorage.setItem('smkt|entradas', JSON.stringify(ch.entradas))
           if (Array.isArray(ch.historico))
             localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
+          if (Array.isArray(ch.nfResolvidos))
+            localStorage.setItem('smkt|nf-resolvido', JSON.stringify(ch.nfResolvidos))
           localStorage.setItem('andon|smkt-rev', String(srvRev))
           return true
         },
@@ -24624,6 +25475,11 @@
         }
         if (v === 'nf' && !window._nfInit) {
           renderNf()
+        }
+        if ((v === 'ent' || v === 'entv') && !window._rlpvInit) {
+          rlpvInitModal()
+          window._rlpvInit = true
+          rlpvCache = rlpvAllLoad()
         }
         if (v === 'nf' && window._nfCharts) {
           setTimeout(function () {
@@ -26074,7 +26930,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006092835); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006124220); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
