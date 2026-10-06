@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006152528">
+  <body data-build="b20261006154626">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -20530,9 +20530,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -24555,43 +24554,8 @@
       rlpvInitModal()
       apInitModal()
       viewerUISet()
-      // v0.0.253: sem login = leitura — carrega rascunho e SMKT PÚBLICOS do servidor.
-      // DEFERIDO via setTimeout: ANDON_SYNC só é declarado mais adiante no script —
-      // referência direta aqui (TDZ) matava o script INTEIRO em silêncio (v0.0.248-252).
-      setTimeout(function () {
-        try {
-          const ub = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
-          if (ub === 'admin') return
-          if (!(window.ANDON_SYNC && window.ANDON_SYNC.connected())) {
-            ;(async function () {
-              try {
-                const dr = await window.ANDON_SYNC.pullPublic()
-                if (Array.isArray(dr) && dr.length) {
-                  declDraft = dr
-                  declSave()
-                  progBuildFromDecls()
-                  progDia = null
-                  progDate = null
-                  renderProg()
-                }
-              } catch (e) {}
-            })()
-            ;(async function () {
-              try {
-                const ok = await window.ANDON_SYNC.pullSmktPublic()
-                if (ok && typeof renderSmkt === 'function') {
-                  renderSmkt()
-                  renderSemana()
-                  renderKpis()
-                  renderGantt()
-                  renderTimeline()
-                  renderTabela()
-                }
-              } catch (e) {}
-            })()
-          }
-        } catch (e) {}
-      }, 300)
+      // v0.0.256 (Opção B): leitura da agenda/SMKT exige LOGIN — anônimo vê só carteira/
+      // faturamento/semanas (dados estáticos); agenda carrega só para quem conecta.
       // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
       semearSugestaoProximaSemana()
       progBuildFromDecls()
@@ -24862,44 +24826,8 @@
         let _pullBusy = false
         setInterval(function () {
           if (_pullBusy) return
-          const uvp = (function () {
-            try {
-              return JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
-            } catch (e) {
-              return ''
-            }
-          })()
-          if (uvp === 'viewer' || !uvp) {
-            _pullBusy = true
-            Promise.resolve(ANDON_SYNC.pullPublic())
-              .then(function (dr) {
-                if (Array.isArray(dr) && dr.length) {
-                  declDraft = dr
-                  declSave()
-                  progBuildFromDecls()
-                  renderProg()
-                }
-              })
-              .catch(function () {})
-              .then(function () {
-                return ANDON_SYNC.pullSmktPublic()
-              })
-              .then(function (ok) {
-                if (ok && typeof renderSmkt === 'function') {
-                  renderSmkt()
-                  renderSemana()
-                  renderKpis()
-                  renderGantt()
-                  renderTimeline()
-                  renderTabela()
-                }
-              })
-              .catch(function () {})
-              .finally(function () {
-                _pullBusy = false
-              })
-            return
-          }
+          // v0.0.256 (Opção B): sem branch especial — viewer conecta com token (path padrão);
+          // anônimo não conecta e não lê a agenda (leitura exige login)
           if (!ANDON_SYNC.connected() || _pullBusy) return
           _pullBusy = true
           Promise.resolve(ANDON_SYNC.syncFromServer())
@@ -24935,6 +24863,7 @@
         }, 60000)
         // v0.0.200: salva o rascunho no servidor ao fechar/ocultar a aba (fire-and-forget)
         window.addEventListener('beforeunload', function () {
+          if (document.body.classList.contains('viewerMode')) return // viewer não grava (Opção B: tem token)
           if (ANDON_SYNC.connected() && Array.isArray(declDraft) && declDraft.length) {
             try {
               ANDON_SYNC.push(declDraft, 'Salvo ao fechar a página')
@@ -24944,45 +24873,8 @@
         // v0.0.230: ao GANHAR foco da aba, puxa o servidor na hora (aba em background suspende o setInterval
         // e o outro dispositivo edita — sem isso a tela fica velha até o próximo tick)
         function pullOnFocus() {
-          const uvf = (function () {
-            try {
-              return JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
-            } catch (e) {
-              return ''
-            }
-          })()
-          if (uvf === 'viewer' || !uvf) {
-            if (_pullBusy) return
-            _pullBusy = true
-            Promise.resolve(ANDON_SYNC.pullPublic())
-              .then(function (dr) {
-                if (Array.isArray(dr) && dr.length) {
-                  declDraft = dr
-                  declSave()
-                  progBuildFromDecls()
-                  renderProg()
-                }
-              })
-              .catch(function () {})
-              .then(function () {
-                return ANDON_SYNC.pullSmktPublic()
-              })
-              .then(function (ok) {
-                if (ok && typeof renderSmkt === 'function') {
-                  renderSmkt()
-                  renderSemana()
-                  renderKpis()
-                  renderGantt()
-                  renderTimeline()
-                  renderTabela()
-                }
-              })
-              .catch(function () {})
-              .finally(function () {
-                _pullBusy = false
-              })
-            return
-          }
+          // v0.0.256 (Opção B): viewer/anônimo seguem o path padrão (leitura exige login)
+          if (!ANDON_SYNC.connected() || _pullBusy) return
           if (!ANDON_SYNC.connected() || _pullBusy) return
           _pullBusy = true
           Promise.resolve(ANDON_SYNC.syncFromServer())
@@ -25028,44 +24920,8 @@
         const btn = document.getElementById('btnConn')
         if (!btn) return
         const info = document.getElementById('connInfo')
-        // v0.0.240: sessão viewer restaurada do localStorage — sem token (só leitura); puxa rascunho público
-        try {
-          const uv0 = JSON.parse(localStorage.getItem('andon|user') || '{}')
-          if (uv0.role === 'viewer') {
-            try {
-              localStorage.removeItem('andon|token')
-            } catch (e) {}
-            ANDON_SYNC.token = ''
-            ;(async function () {
-              try {
-                const dr = await ANDON_SYNC.pullPublic()
-                if (Array.isArray(dr) && dr.length) {
-                  declDraft = dr
-                  declSave()
-                  progBuildFromDecls()
-                  progDia = null
-                  progDate = null
-                  renderProg()
-                  const st = document.getElementById('declStatus')
-                  if (st) st.textContent = '👁 Somente visualização — rascunho do servidor'
-                }
-              } catch (e) {}
-            })()
-            ;(async function () {
-              try {
-                const ok = await ANDON_SYNC.pullSmktPublic()
-                if (ok && typeof renderSmkt === 'function') {
-                  renderSmkt()
-                  renderSemana()
-                  renderKpis()
-                  renderGantt()
-                  renderTimeline()
-                  renderTabela()
-                }
-              } catch (e) {}
-            })()
-          }
-        } catch (e) {}
+        // v0.0.256 (Opção B): sessão viewer restaurada COM token (leitura exige login);
+        // o carregamento usa o bloco genérico "connected" (syncFromServer/syncSmktFromServer)
         function paint() {
           const uv = (function () {
             try {
@@ -25087,7 +24943,9 @@
               if (confirm('Sair do modo somente visualização?')) {
                 try {
                   localStorage.removeItem('andon|user')
+                  localStorage.removeItem('andon|token')
                 } catch (e) {}
+                ANDON_SYNC.token = ''
                 btn.onclick = andonToggleConn
                 paint()
               }
@@ -25125,12 +24983,8 @@
             const ld = await ANDON_SYNC.login(email, pass)
             const role = (ld.record && ld.record.role) === 'admin' ? 'admin' : 'viewer'
             if (role === 'viewer') {
-              ANDON_SYNC.token = ''
-              ANDON_SYNC.user = null
-              ANDON_SYNC.expired = false
-              try {
-                localStorage.removeItem('andon|token')
-              } catch (e) {}
+              // v0.0.256 (Opção B): viewer MANTÉM o token — leitura da agenda exige login;
+              // escrita continua bloqueada (RLS admin-only + guard viewerMode)
               try {
                 localStorage.setItem(
                   'andon|user',
@@ -25144,18 +24998,25 @@
               } catch (e) {}
               andonSyncStatus()
               paint()
+              viewerUISet()
               document.getElementById('connBox').style.display = 'none'
               let carregou = false
               try {
-                const dr = await ANDON_SYNC.pullPublic()
-                if (Array.isArray(dr) && dr.length) {
-                  declDraft = dr
-                  declSave()
-                  progBuildFromDecls()
-                  progDia = null
-                  progDate = null
+                const pulled = await ANDON_SYNC.syncFromServer()
+                if (pulled) {
                   renderProg()
                   carregou = true
+                }
+              } catch (e) {}
+              try {
+                const ps = await ANDON_SYNC.syncSmktFromServer()
+                if (ps && typeof renderSmkt === 'function') {
+                  renderSmkt()
+                  renderSemana()
+                  renderKpis()
+                  renderGantt()
+                  renderTimeline()
+                  renderTabela()
                 }
               } catch (e) {}
               const st = document.getElementById('declStatus')
@@ -25165,20 +25026,6 @@
                   (carregou
                     ? ' — rascunho do servidor carregado'
                     : ' — edições não gravam no servidor')
-              viewerUISet()
-              ;(async function () {
-                try {
-                  const ok = await ANDON_SYNC.pullSmktPublic()
-                  if (ok && typeof renderSmkt === 'function') {
-                    renderSmkt()
-                    renderSemana()
-                    renderKpis()
-                    renderGantt()
-                    renderTimeline()
-                    renderTabela()
-                  }
-                } catch (e) {}
-              })()
               return
             }
             ANDON_SYNC.expired = false
@@ -27415,7 +27262,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006152528); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006154626); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
