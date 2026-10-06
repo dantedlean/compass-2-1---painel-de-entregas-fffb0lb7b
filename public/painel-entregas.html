@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006151306">
+  <body data-build="b20261006151418">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -24032,6 +24032,13 @@
             return !(Number(d.qtd) < 0)
           })
         }
+        // v0.0.248: sem login / viewer começa VAZIO — dados vêm do pull público do servidor
+        try {
+          const u = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+          if (u !== 'admin') return []
+        } catch (e) {
+          return []
+        }
         try {
           const saved = JSON.parse(localStorage.getItem(DECL_KEY) || 'null')
           if (Array.isArray(saved)) return sanit(saved)
@@ -27394,7 +27401,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006151306); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006151418); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
