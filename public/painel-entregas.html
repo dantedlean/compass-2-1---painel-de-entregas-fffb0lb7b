@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006090019">
+  <body data-build="b20261006092835">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18399,13 +18399,17 @@
             warn.innerHTML =
               '⚠ SEM PEDIDO DE VENDA DISPONÍVEL para ' +
               cod +
+              ' — ' +
+              descDe(cod) +
               ' — saldo com PV já coberto (programado futuro/realizado/SMKT). Programar aqui é produção para estoque/WARD.'
           } else if (aProg > livre) {
             warn.style.display = 'block'
             warn.innerHTML =
               '⚠ SALDO PARCIAL: só ' +
               NF.format(Math.round(livre)) +
-              ' un ainda têm PV na carteira. Programar ' +
+              ' un ainda têm PV na carteira (' +
+              descDe(cod) +
+              '). Programar ' +
               NF.format(Math.round(aProg)) +
               ' un gera excedente sem PV (produção para estoque/WARD).'
           } else {
@@ -19958,7 +19962,9 @@
                   return (
                     '<b style="color:#991b1b">' +
                     x.cod +
-                    '</b> ×' +
+                    '</b> — ' +
+                    descDe(x.cod) +
+                    ' ×' +
                     NF.format(x.qtd) +
                     ' em ' +
                     dtBR(x.data) +
@@ -19995,7 +20001,9 @@
                   return (
                     '<b style="color:#991b1b">' +
                     x.cod +
-                    '</b> ×' +
+                    '</b> — ' +
+                    descDe(x.cod) +
+                    ' ×' +
                     NF.format(x.qtd) +
                     ' (' +
                     (x.pv === '—' ? 'sem PV' : 'PV ' + x.pv) +
@@ -26066,7 +26074,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006090019); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006092835); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
