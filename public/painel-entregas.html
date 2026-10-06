@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006151418">
+  <body data-build="b20261006151617">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -24822,7 +24822,7 @@
         // v0.0.248: modo leitura é o DEFAULT (Dante 06/10: navegador novo entrava em edição) —
         // só usuário admin EXPLICITAMENTE logado edita; sem login ou viewer = leitura
         document.body.classList.toggle('viewerMode', uv !== 'admin')
-        if (uv !== 'viewer' || document.getElementById('viewerCSS')) return
+        if (uv === 'admin' || document.getElementById('viewerCSS')) return
         const st = document.createElement('style')
         st.id = 'viewerCSS'
         st.textContent = [
@@ -27401,7 +27401,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006151418); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006151617); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
