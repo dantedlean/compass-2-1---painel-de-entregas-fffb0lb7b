@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006155627">
+  <body data-build="b20261006160121">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -24639,6 +24639,7 @@
               id: d.record.id,
               email: d.record.email,
               name: d.record.name || d.record.email,
+              role: d.record.role || '',
             }),
           )
           return d
@@ -24829,6 +24830,8 @@
         try {
           uv = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
         } catch (e) {}
+        // sessão legada: token salvo antes de o role existir — só dante/pcp tinham token
+        if (!uv && (localStorage.getItem('andon|token') || '')) uv = 'admin'
         // v0.0.248: modo leitura é o DEFAULT (Dante 06/10: navegador novo entrava em edição) —
         // só usuário admin EXPLICITAMENTE logado edita; sem login ou viewer = leitura
         document.body.classList.toggle('viewerMode', uv !== 'admin')
@@ -27300,7 +27303,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006155627); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006160121); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
