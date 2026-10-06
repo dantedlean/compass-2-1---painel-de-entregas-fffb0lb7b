@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006124220">
+  <body data-build="b20261006125031">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18883,6 +18883,7 @@
             de: String(pvDe),
             para: String(pvPara),
             qtd: qtd,
+            data: box.dataset.data || progDate || '',
             quando: new Date().toISOString(),
           })
           rlpvSave(cod, regs)
@@ -19305,6 +19306,7 @@
         // PVs com saldo a entregar do produto. PV de origem pode zerar (fica sem linha).
         try {
           const porData = {}
+          const novos = []
           out.forEach(function (a) {
             if (a.semPv || !a.pv || a.pv === '—') return
             const k = a.data + '|' + a.cod
@@ -19332,7 +19334,7 @@
                   dest.qtd += t
                   dest.vtot = vu2 * dest.qtd
                 } else {
-                  list.push({
+                  novos.push({
                     dia: a.dia,
                     data: a.data,
                     cod: a.cod,
@@ -19356,6 +19358,10 @@
               }
             })
           })
+          if (novos.length)
+            novos.forEach(function (n) {
+              out.push(n)
+            })
         } catch (e) {}
         DATA.progSemana.dias = out
       }
@@ -20775,6 +20781,8 @@
               return
             }
             window._rlpvLastCod = cod
+            box = document.getElementById('rlpvBox')
+            box.dataset.data = progDate // dd/mm da declaração — a realocação move dentro do MESMO dia
             rlpvAbrirModal(cod, pvDe, qtdMax)
           })
         }
@@ -26930,7 +26938,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006124220); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006125031); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
