@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006150224">
+  <body data-build="b20261006151035">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -20530,9 +20530,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -24541,6 +24540,35 @@
       rlpvInitModal()
       apInitModal()
       viewerUISet()
+      // v0.0.248: sem login = leitura — carrega rascunho e SMKT PÚBLICOS do servidor
+      if (!ANDON_SYNC.connected()) {
+        ;(async function () {
+          try {
+            const dr = await ANDON_SYNC.pullPublic()
+            if (Array.isArray(dr) && dr.length) {
+              declDraft = dr
+              declSave()
+              progBuildFromDecls()
+              progDia = null
+              progDate = null
+              renderProg()
+            }
+          } catch (e) {}
+        })()
+        ;(async function () {
+          try {
+            const ok = await ANDON_SYNC.pullSmktPublic()
+            if (ok && typeof renderSmkt === 'function') {
+              renderSmkt()
+              renderSemana()
+              renderKpis()
+              renderGantt()
+              renderTimeline()
+              renderTabela()
+            }
+          } catch (e) {}
+        })()
+      }
       // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
       semearSugestaoProximaSemana()
       progBuildFromDecls()
@@ -24777,7 +24805,9 @@
         try {
           uv = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
         } catch (e) {}
-        document.body.classList.toggle('viewerMode', uv === 'viewer')
+        // v0.0.248: modo leitura é o DEFAULT (Dante 06/10: navegador novo entrava em edição) —
+        // só usuário admin EXPLICITAMENTE logado edita; sem login ou viewer = leitura
+        document.body.classList.toggle('viewerMode', uv !== 'admin')
         if (uv !== 'viewer' || document.getElementById('viewerCSS')) return
         const st = document.createElement('style')
         st.id = 'viewerCSS'
@@ -24816,7 +24846,7 @@
               return ''
             }
           })()
-          if (uvp === 'viewer') {
+          if (uvp === 'viewer' || !uvp) {
             _pullBusy = true
             Promise.resolve(ANDON_SYNC.pullPublic())
               .then(function (dr) {
@@ -24898,7 +24928,7 @@
               return ''
             }
           })()
-          if (uvf === 'viewer') {
+          if (uvf === 'viewer' || !uvf) {
             if (_pullBusy) return
             _pullBusy = true
             Promise.resolve(ANDON_SYNC.pullPublic())
@@ -27357,7 +27387,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006150224); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006151035); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
