@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006151617">
+  <body data-build="b20261006151732">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -25093,8 +25093,11 @@
             info.textContent = 'rascunho salvo no servidor · sync a cada 60s'
           } else {
             btn.style.display = ''
-            btn.textContent = '🔗 Conectar servidor'
-            info.textContent = 'rascunho só neste navegador'
+            btn.textContent = '👁 Leitura — Entrar p/ editar'
+            btn.style.background = '#eff6ff'
+            btn.style.borderColor = '#bfdbfe'
+            btn.style.color = '#1e3a8a'
+            info.textContent = 'modo leitura — dados do servidor · clique para entrar (admin edita)'
           }
           andonSyncStatus()
         }
@@ -27401,7 +27404,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006151617); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006151732); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
