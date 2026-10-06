@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261005200022">
+  <body data-build="b20261006090019">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -804,7 +804,7 @@
       <footer>
         Faturamento · método Compass: NFs de SAÍDA EMITIDAS (venda/serviço/prestação) · valor =
         valorTotal da NF · fonte MaxiProd GraphQL · gerado em
-        artifacts/entregas_por_semana_itens_20261005.xlsx
+        artifacts/entregas_por_semana_itens_20261006.xlsx
       </footer>
     </div>
     <div id="viewEnt" class="view">
@@ -1531,7 +1531,7 @@
         </div>
       </main>
       <footer>
-        FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20261005.xlsx ·
+        FRIDA · Dlean — gerado a partir de artifacts/entregas_por_semana_itens_20261006.xlsx ·
         dados: MaxiProd (data de entrega por item)
       </footer>
     </div>
@@ -1972,13 +1972,13 @@
       <footer>
         Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
         nível do item · fretes (50x/00043) marcados · fonte
-        artifacts/entregas_por_semana_itens_20261005.xlsx
+        artifacts/entregas_por_semana_itens_20261006.xlsx
       </footer>
     </div>
 
     <script>
       const DATA = {
-        gerado: 'artifacts/entregas_por_semana_itens_20261005.xlsx',
+        gerado: 'artifacts/entregas_por_semana_itens_20261006.xlsx',
         semanas: [
           'Atrasado',
           'S40 · 28.09-02.10',
@@ -7364,6 +7364,57 @@
             prod: null,
           },
           {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '401-0016',
+            desc: 'FLOW RACK 3X2 ROLETES - SVC',
+            pv: '627',
+            cliente: 'EBAZAR VARGINHA',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 28755.64,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '412-0014',
+            desc: 'MESA BUFFER - SVC',
+            pv: '627',
+            cliente: 'EBAZAR VARGINHA',
+            empresa: 'DTEKT',
+            qtd: 2.0,
+            vtot: 7560.0,
+            frete: false,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
+            data: '23/10',
+            iso: '2026-10-23',
+            semana: '2026-W43',
+            codigo: '502-0003-10',
+            desc: 'BELO HORIZONTE-MG TOCO/TRUCK - MERCADO LIVRE',
+            pv: '627',
+            cliente: 'EBAZAR VARGINHA',
+            empresa: 'DTEKT',
+            qtd: 1.0,
+            vtot: 9300.0,
+            frete: true,
+            local: 'Curitiba',
+            si: 4,
+            siPlano: null,
+            prod: null,
+          },
+          {
             data: '28/10',
             iso: '2026-10-28',
             semana: '2026-W44',
@@ -8584,6 +8635,7 @@
             { data: '2026-09-25', qtd: 15.0, pv: '549', local: 'C', status: 'Planejado' },
             { data: '2026-09-26', qtd: 25.0, pv: '549', local: 'C', status: 'Planejado' },
             { data: '2026-09-28', qtd: 17.0, pv: '549', local: 'C', status: 'Planejado' },
+            { data: '2026-10-07', qtd: 15.0, pv: '', local: 'C', status: 'Planejado' },
           ],
           '403-0016': [
             { data: '2026-09-25', qtd: 2.0, pv: '2113', local: 'C', status: 'Planejado' },
@@ -8602,10 +8654,13 @@
           '401-0014': [
             { data: '2026-10-01', qtd: 19.0, pv: '', local: 'C', status: 'Planejado' },
             { data: '2026-10-05', qtd: 12.0, pv: '', local: 'C', status: 'Planejado' },
+            { data: '2026-10-06', qtd: 20.0, pv: '', local: 'C', status: 'Planejado' },
           ],
+          '412-0014': [{ data: '2026-10-06', qtd: 6.0, pv: '', local: 'C', status: 'Planejado' }],
+          ID01556: [{ data: '2026-10-06', qtd: 35.0, pv: '124', local: 'C', status: 'Planejado' }],
         },
         progSemana: {
-          arquivo: 'artifacts/programacao_semana_corrente_20261005.xlsx',
+          arquivo: 'artifacts/programacao_semana_corrente_20261006.xlsx',
           dias: [
             {
               dia: 'Terça',
@@ -9265,6 +9320,90 @@
               cheg: 'entrega 26/09 · cidade fora da tabela de trânsito',
               local: 'Curitiba',
             },
+            {
+              dia: 'Terça',
+              data: '06/10',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 6.0,
+              pv: '549',
+              cli: 'EBAZAR CONTAGEM XMG1',
+              emp: 'DTEKT',
+              vtot: 52986.18000000001,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'entrega 02/10 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '06/10',
+              cod: '401-0014',
+              desc: 'FLOW RACK 3X2',
+              qtd: 7.0,
+              pv: '569',
+              cli: 'EBAZAR GOV CELSO RAMOS BRXSC2',
+              emp: 'DTEKT',
+              vtot: 62016.64,
+              sit: 'em dia (2026-W48)',
+              cheg: 'entrega 27/11 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '06/10',
+              cod: '412-0014',
+              desc: 'MESA BUFFER - SVC',
+              qtd: 3.0,
+              pv: '600',
+              cli: 'EBAZAR CURITIBA 2',
+              emp: 'DTEKT',
+              vtot: 11340.0,
+              sit: 'em dia (2026-W41)',
+              cheg: 'entrega 09/10 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '06/10',
+              cod: '412-0014',
+              desc: 'MESA BUFFER - SVC',
+              qtd: 3.0,
+              pv: '601',
+              cli: 'EBAZAR CURITIBA 2',
+              emp: 'DTEKT',
+              vtot: 11340.0,
+              sit: 'em dia (2026-W41)',
+              cheg: 'entrega 09/10 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Terça',
+              data: '06/10',
+              cod: 'ID01556',
+              desc: 'BANCADA PACKING MONO - SHOPEE',
+              qtd: 13.0,
+              pv: '124',
+              cli: 'SHOPEE CONTAGEM',
+              emp: 'SLEAN',
+              vtot: 36810.15,
+              sit: 'em dia (2026-W41)',
+              cheg: 'entrega 09/10 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
+            {
+              dia: 'Quarta',
+              data: '07/10',
+              cod: '401-0007',
+              desc: 'ML FLOW RACK 2X2 - V2',
+              qtd: 3.0,
+              pv: '526',
+              cli: 'EBAZAR BAURU',
+              emp: 'DTEKT',
+              vtot: 19864.17,
+              sit: 'ATRASADO (recuperação)',
+              cheg: 'entrega 27/08 · cidade fora da tabela de trânsito',
+              local: 'Curitiba',
+            },
           ],
           declaracoes: [
             {
@@ -9619,8 +9758,52 @@
               obs: 'incluído via produto 404-0001',
               status: 'Planejado',
             },
+            {
+              dia: 'Terça',
+              data: '2026-10-06',
+              cod: '401-0014',
+              qtd: 20.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-ADD-1791282997792',
+              obs: 'incluído via produto 401-0014',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Terça',
+              data: '2026-10-06',
+              cod: '412-0014',
+              qtd: 6.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-ADD-1791283103130',
+              obs: 'incluído via produto 412-0014',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Terça',
+              data: '2026-10-06',
+              cod: 'ID01556',
+              qtd: 35.0,
+              local: 'C',
+              pv: '124',
+              id: 'PR-ADD-1791284309272',
+              obs: 'incluído via PV 124',
+              status: 'Planejado',
+            },
+            {
+              dia: 'Quarta',
+              data: '2026-10-07',
+              cod: '401-0007',
+              qtd: 15.0,
+              local: 'C',
+              pv: '',
+              id: 'PR-CUT-1791286738353',
+              obs: 'transferido de 06/10',
+              status: 'Planejado',
+            },
           ],
-          declHash: '4c8c46c09eda',
+          declHash: '678a6ca6ae87',
         },
         rigidas: [
           {
@@ -10125,117 +10308,9 @@
           },
         ],
         nfBaixadas: {
-          gerado: '2026-10-05T20:00:20.801932',
-          janela: ['2026-09-25', '2026-10-05'],
+          gerado: '2026-10-06T09:00:17.289951',
+          janela: ['2026-09-26', '2026-10-06'],
           nfs: [
-            {
-              nf: '793',
-              data: '2026-09-25',
-              emp: 'DTEKT',
-              itens: [
-                { pv: '549', cod: '401-0006', desc: 'KIT INDUÇÃO - SOLDADO', qtd: 7.0 },
-                {
-                  pv: '549',
-                  cod: '502-0003-11',
-                  desc: 'BELO HORIZONTE-MG CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
-            {
-              nf: '794',
-              data: '2026-09-25',
-              emp: 'DTEKT',
-              itens: [
-                {
-                  pv: '554',
-                  cod: '404-0002',
-                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
-                  qtd: 3.0,
-                },
-                {
-                  pv: '554',
-                  cod: '404-0001',
-                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-                  qtd: 22.0,
-                },
-                {
-                  pv: '554',
-                  cod: '504-0007-11',
-                  desc: 'JÃO PESSOA-PB CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
-            {
-              nf: '795',
-              data: '2026-09-25',
-              emp: 'DTEKT',
-              itens: [
-                {
-                  pv: '554',
-                  cod: '404-0002',
-                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
-                  qtd: 1.0,
-                },
-                {
-                  pv: '554',
-                  cod: '404-0001',
-                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-                  qtd: 5.0,
-                },
-                {
-                  pv: '554',
-                  cod: '504-0007-11',
-                  desc: 'JÃO PESSOA-PB CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
-            {
-              nf: '796',
-              data: '2026-09-25',
-              emp: 'DTEKT',
-              itens: [
-                {
-                  pv: '554',
-                  cod: '404-0002',
-                  desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
-                  qtd: 1.0,
-                },
-                {
-                  pv: '554',
-                  cod: '404-0001',
-                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-                  qtd: 3.0,
-                },
-                {
-                  pv: '554',
-                  cod: '504-0007-11',
-                  desc: 'JÃO PESSOA-PB CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
-            {
-              nf: '797',
-              data: '2026-09-25',
-              emp: 'DTEKT',
-              itens: [
-                {
-                  pv: '554',
-                  cod: '404-0001',
-                  desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
-                  qtd: 6.0,
-                },
-                {
-                  pv: '554',
-                  cod: '504-0007-11',
-                  desc: 'JÃO PESSOA-PB CARRETA - MERCADO LIVRE',
-                  qtd: 1.0,
-                },
-              ],
-            },
             {
               nf: '798',
               data: '2026-09-26',
@@ -10636,12 +10711,12 @@
               ],
             },
           ],
-          nfCount: 34,
+          nfCount: 29,
         },
         nfFat: {
           mesLabel: '10/2026',
           ano: 2026,
-          hoje: '2026-10-05',
+          hoje: '2026-10-06',
           daily: [
             { label: '01/10', qtd: 3, valor: 4442.0 },
             { label: '02/10', qtd: 5, valor: 105043.04 },
@@ -10691,11 +10766,11 @@
           mesValor: 454952.6,
           anoQtd: 390,
           anoValor: 12158746.23,
-          mesDiasUteis: 3,
-          anoDiasUteis: 191,
-          mediaDiaUtilMes: 151651,
-          mediaDiaUtilAno: 63658,
-          mediaDuMes: 151651,
+          mesDiasUteis: 4,
+          anoDiasUteis: 192,
+          mediaDiaUtilMes: 113738,
+          mediaDiaUtilAno: 63327,
+          mediaDuMes: 113738,
           mediaDuAno: 1215875,
           medianaMes: 105043,
           medianaAno: 801290,
@@ -25991,7 +26066,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261005200022); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006090019); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
