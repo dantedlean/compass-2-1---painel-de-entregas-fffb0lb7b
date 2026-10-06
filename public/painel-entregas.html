@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006145757">
+  <body data-build="b20261006150224">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -20530,9 +20530,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -24746,6 +24745,27 @@
           if (!Array.isArray(ch.draft)) return false
           return ch.draft
         },
+        // v0.0.245: leitura PÚBLICA do SMKT (sem token) — modo somente visualização
+        async pullSmktPublic() {
+          const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-smkt')"
+          const url =
+            this.api +
+            '/api/collections/reprogramming_events/records?filter=' +
+            encodeURIComponent(f) +
+            '&sort=-created&perPage=1'
+          const r = await fetch(url)
+          if (!r.ok) return false
+          const d = await r.json()
+          if (!d.items || !d.items.length) return false
+          const ch = d.items[0].changes || {}
+          if (!Array.isArray(ch.entradas)) return false
+          localStorage.setItem('smkt|entradas', JSON.stringify(ch.entradas))
+          if (Array.isArray(ch.historico))
+            localStorage.setItem('smkt|historico', JSON.stringify(ch.historico))
+          if (Array.isArray(ch.nfResolvidos))
+            localStorage.setItem('smkt|nf-resolvido', JSON.stringify(ch.nfResolvidos))
+          return true
+        },
       }
       window.ANDON_SYNC = ANDON_SYNC
       // ==================== MODO SOMENTE VISUALIZAÇÃO (v0.0.244) ====================
@@ -24787,6 +24807,45 @@
       ;(function () {
         let _pullBusy = false
         setInterval(function () {
+          if (_pullBusy) return
+          const uvp = (function () {
+            try {
+              return JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+            } catch (e) {
+              return ''
+            }
+          })()
+          if (uvp === 'viewer') {
+            _pullBusy = true
+            Promise.resolve(ANDON_SYNC.pullPublic())
+              .then(function (dr) {
+                if (Array.isArray(dr) && dr.length) {
+                  declDraft = dr
+                  declSave()
+                  progBuildFromDecls()
+                  renderProg()
+                }
+              })
+              .catch(function () {})
+              .then(function () {
+                return ANDON_SYNC.pullSmktPublic()
+              })
+              .then(function (ok) {
+                if (ok && typeof renderSmkt === 'function') {
+                  renderSmkt()
+                  renderSemana()
+                  renderKpis()
+                  renderGantt()
+                  renderTimeline()
+                  renderTabela()
+                }
+              })
+              .catch(function () {})
+              .finally(function () {
+                _pullBusy = false
+              })
+            return
+          }
           if (!ANDON_SYNC.connected() || _pullBusy) return
           _pullBusy = true
           Promise.resolve(ANDON_SYNC.syncFromServer())
@@ -24848,6 +24907,20 @@
                   declSave()
                   progBuildFromDecls()
                   renderProg()
+                }
+              })
+              .catch(function () {})
+              .then(function () {
+                return ANDON_SYNC.pullSmktPublic()
+              })
+              .then(function (ok) {
+                if (ok && typeof renderSmkt === 'function') {
+                  renderSmkt()
+                  renderSemana()
+                  renderKpis()
+                  renderGantt()
+                  renderTimeline()
+                  renderTabela()
                 }
               })
               .catch(function () {})
@@ -24921,6 +24994,19 @@
                   renderProg()
                   const st = document.getElementById('declStatus')
                   if (st) st.textContent = '👁 Somente visualização — rascunho do servidor'
+                }
+              } catch (e) {}
+            })()
+            ;(async function () {
+              try {
+                const ok = await ANDON_SYNC.pullSmktPublic()
+                if (ok && typeof renderSmkt === 'function') {
+                  renderSmkt()
+                  renderSemana()
+                  renderKpis()
+                  renderGantt()
+                  renderTimeline()
+                  renderTabela()
                 }
               } catch (e) {}
             })()
@@ -25023,6 +25109,19 @@
                     ? ' — rascunho do servidor carregado'
                     : ' — edições não gravam no servidor')
               viewerUISet()
+              ;(async function () {
+                try {
+                  const ok = await ANDON_SYNC.pullSmktPublic()
+                  if (ok && typeof renderSmkt === 'function') {
+                    renderSmkt()
+                    renderSemana()
+                    renderKpis()
+                    renderGantt()
+                    renderTimeline()
+                    renderTabela()
+                  }
+                } catch (e) {}
+              })()
               return
             }
             ANDON_SYNC.expired = false
@@ -27257,7 +27356,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006145757); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006150224); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
