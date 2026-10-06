@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006144954">
+  <body data-build="b20261006145757">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -19255,6 +19255,10 @@
         apAbrirModal(cod, aProg, apSugerirData())
       })
       document.addEventListener('dragstart', function (e) {
+        if (document.body.classList.contains('viewerMode')) {
+          e.preventDefault()
+          return
+        }
         const tr = e.target.closest ? e.target.closest('tr[data-apcod]') : null
         if (!tr) return
         window._apDrag = {
@@ -20526,9 +20530,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -24536,6 +24539,7 @@
       progBuildFromDecls()
       rlpvInitModal()
       apInitModal()
+      viewerUISet()
       // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
       semearSugestaoProximaSemana()
       progBuildFromDecls()
@@ -24743,6 +24747,32 @@
         },
       }
       window.ANDON_SYNC = ANDON_SYNC
+      // ==================== MODO SOMENTE VISUALIZAÇÃO (v0.0.244) ====================
+      // role viewer: vê TODAS as abas com dados ao vivo; controles de edição escondidos;
+      // servidor NÃO grava (RLS migration 0007) e o app nem tenta (token removido no login).
+      function viewerUISet() {
+        let uv = ''
+        try {
+          uv = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+        } catch (e) {}
+        document.body.classList.toggle('viewerMode', uv === 'viewer')
+        if (uv !== 'viewer' || document.getElementById('viewerCSS')) return
+        const st = document.createElement('style')
+        st.id = 'viewerCSS'
+        st.textContent = [
+          'body.viewerMode #progAddBar,body.viewerMode #btnProgNew,body.viewerMode #btnUndoTop,',
+          'body.viewerMode #btnFirmaSel,body.viewerMode #smAdd,body.viewerMode #smEntradaBox,',
+          'body.viewerMode #paBtnAll{display:none!important}',
+          'body.viewerMode .exec{visibility:hidden}',
+          'body.viewerMode #tbbP button[data-p=del],body.viewerMode #tbbAProg button[data-apbtn],',
+          'body.viewerMode #tbbP .detrow button[data-rlpv],body.viewerMode #tbbS button[data-firma],',
+          'body.viewerMode #tbbS .firmaFlag,body.viewerMode #tbbS button.exRl,',
+          'body.viewerMode #smNfAlert button.exRl,body.viewerMode #tbbSmktHist button[data-undo]{display:none!important}',
+        ].join('')
+        document.head.appendChild(st)
+      }
+      window.viewerUISet = viewerUISet
+      setInterval(viewerUISet, 2000)
       function andonToggleConn() {
         const box = document.getElementById('connBox')
         box.style.display = box.style.display === 'none' ? 'flex' : 'none'
@@ -24991,6 +25021,7 @@
                   (carregou
                     ? ' — rascunho do servidor carregado'
                     : ' — edições não gravam no servidor')
+              viewerUISet()
               return
             }
             ANDON_SYNC.expired = false
@@ -25018,9 +25049,11 @@
           }
         })
         // hook global: toda declSave() empurra o rascunho ao servidor (fire-and-forget)
+        // modo viewer: NÃO empurra (RLS bloquearia — evita erro 400 em silêncio)
         const _origDeclSave = declSave
         declSave = function () {
           _origDeclSave()
+          if (document.body.classList.contains('viewerMode')) return
           if (ANDON_SYNC.connected()) {
             localStorage.setItem('andon|rev', String(Date.now()))
             const p = ANDON_SYNC.push(declDraft)
@@ -27223,7 +27256,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006144954); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006145757); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
