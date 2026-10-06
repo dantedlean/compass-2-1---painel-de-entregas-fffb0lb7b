@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006125031">
+  <body data-build="b20261006133700">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -18880,6 +18880,7 @@
           }
           const regs = rlpvRegs(cod)
           regs.push({
+            cod: String(cod),
             de: String(pvDe),
             para: String(pvPara),
             qtd: qtd,
@@ -20406,9 +20407,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -26939,7 +26939,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006125031); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006133700); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
