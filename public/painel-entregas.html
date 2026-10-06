@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006151035">
+  <body data-build="b20261006151306">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -24046,6 +24046,13 @@
         )
       }
       function declSave() {
+        // v0.0.248: sem login NÃO persiste local (leitura) — só admin grava
+        try {
+          const u = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+          if (u !== 'admin') return
+        } catch (e) {
+          return
+        }
         try {
           localStorage.setItem(DECL_KEY, JSON.stringify(declDraft))
         } catch (e) {}
@@ -27387,7 +27394,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006151035); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006151306); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
