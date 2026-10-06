@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006151732">
+  <body data-build="b20261006152324">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -24554,35 +24554,43 @@
       rlpvInitModal()
       apInitModal()
       viewerUISet()
-      // v0.0.248: sem login = leitura — carrega rascunho e SMKT PÚBLICOS do servidor
-      if (!ANDON_SYNC.connected()) {
-        ;(async function () {
-          try {
-            const dr = await ANDON_SYNC.pullPublic()
-            if (Array.isArray(dr) && dr.length) {
-              declDraft = dr
-              declSave()
-              progBuildFromDecls()
-              progDia = null
-              progDate = null
-              renderProg()
-            }
-          } catch (e) {}
-        })()
-        ;(async function () {
-          try {
-            const ok = await ANDON_SYNC.pullSmktPublic()
-            if (ok && typeof renderSmkt === 'function') {
-              renderSmkt()
-              renderSemana()
-              renderKpis()
-              renderGantt()
-              renderTimeline()
-              renderTabela()
-            }
-          } catch (e) {}
-        })()
-      }
+      // v0.0.253: sem login = leitura — carrega rascunho e SMKT PÚBLICOS do servidor.
+      // DEFERIDO via setTimeout: ANDON_SYNC só é declarado mais adiante no script —
+      // referência direta aqui (TDZ) matava o script INTEIRO em silêncio (v0.0.248-252).
+      setTimeout(function () {
+        try {
+          const ub = JSON.parse(localStorage.getItem('andon|user') || '{}').role || ''
+          if (ub === 'admin') return
+          if (!(window.ANDON_SYNC && window.ANDON_SYNC.connected())) {
+            ;(async function () {
+              try {
+                const dr = await window.ANDON_SYNC.pullPublic()
+                if (Array.isArray(dr) && dr.length) {
+                  declDraft = dr
+                  declSave()
+                  progBuildFromDecls()
+                  progDia = null
+                  progDate = null
+                  renderProg()
+                }
+              } catch (e) {}
+            })()
+            ;(async function () {
+              try {
+                const ok = await window.ANDON_SYNC.pullSmktPublic()
+                if (ok && typeof renderSmkt === 'function') {
+                  renderSmkt()
+                  renderSemana()
+                  renderKpis()
+                  renderGantt()
+                  renderTimeline()
+                  renderTabela()
+                }
+              } catch (e) {}
+            })()
+          }
+        } catch (e) {}
+      }, 300)
       // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
       semearSugestaoProximaSemana()
       progBuildFromDecls()
@@ -27404,7 +27412,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006151732); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006152324); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
