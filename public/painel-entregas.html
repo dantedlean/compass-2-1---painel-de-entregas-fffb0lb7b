@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006154626">
+  <body data-build="b20261006154958">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -20105,20 +20105,27 @@
         const vazioInfo = document.getElementById('semVazioInfo')
         if (vazioInfo) {
           if (semVazia) {
-            const comDecl = semKeys.filter(function (si) {
-              return semanasMap[si].length
-            })
-            vazioInfo.innerHTML =
-              'ℹ️ Esta semana está SEM programação — os dias ficam claros (nada sumiu). Declarações existem em: ' +
-              (comDecl.length
-                ? comDecl
-                    .map(function (si) {
-                      const p = si.split('-')
-                      return p[2] + '/' + p[1]
-                    })
-                    .join(', ')
-                : 'nenhuma semana') +
-              '. Use o seletor "Semana" acima para ver outra semana.'
+            const _sync = window.ANDON_SYNC
+            const _con = !!(_sync && _sync.connected())
+            if (!_con) {
+              vazioInfo.innerHTML =
+                '👁 Modo leitura — a programação firme aparece após ENTRAR (botão "Leitura — Entrar p/ editar"). A leitura da agenda exige login.'
+            } else {
+              const comDecl = semKeys.filter(function (si) {
+                return semanasMap[si].length
+              })
+              vazioInfo.innerHTML =
+                'ℹ️ Esta semana está SEM programação — os dias ficam claros (nada sumiu). Declarações existem em: ' +
+                (comDecl.length
+                  ? comDecl
+                      .map(function (si) {
+                        const p = si.split('-')
+                        return p[2] + '/' + p[1]
+                      })
+                      .join(', ')
+                  : 'nenhuma semana') +
+                '. Use o seletor "Semana" acima para ver outra semana.'
+            }
             vazioInfo.style.display = 'block'
           } else {
             vazioInfo.style.display = 'none'
@@ -20530,9 +20537,8 @@
         }
         if (typeof window.updHojeProg === 'function') window.updHojeProg()
         // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
-        if (typeof paintProgDayButtons === 'function')
-          paintProgDayButtons()
-          // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
         ;(function () {
           const w = document.getElementById('pokaWarn')
           if (!w) return
@@ -24672,7 +24678,7 @@
           // conflito: prevalece o mais recente (rev = epoch no push)
           const locRev = Number(localStorage.getItem('andon|rev') || 0)
           const srvRev = Number((ev.changes && ev.changes.rev) || 0)
-          if (locRev > srvRev) {
+          if (locRev > srvRev && !document.body.classList.contains('viewerMode')) {
             this.push(declDraft, 'Rascunho local mais novo — reenviado ao servidor').catch(
               function () {},
             )
@@ -24965,7 +24971,8 @@
             btn.style.background = '#eff6ff'
             btn.style.borderColor = '#bfdbfe'
             btn.style.color = '#1e3a8a'
-            info.textContent = 'modo leitura — dados do servidor · clique para entrar (admin edita)'
+            info.textContent =
+              'modo leitura — agenda exige login · clique para entrar (admin edita)'
           }
           andonSyncStatus()
         }
@@ -27263,7 +27270,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006154626); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006154958); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
