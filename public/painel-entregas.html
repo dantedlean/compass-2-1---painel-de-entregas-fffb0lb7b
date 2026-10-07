@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006234413">
+  <body data-build="b20261006234513">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -27413,6 +27413,7 @@
                 }
                 return n
               }
+              var hojeIso = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10)
               var daily_series = [],
                 monthly_series = []
               for (var dd = 1; dd <= lastDay; dd++) {
@@ -27502,7 +27503,6 @@
                 var n = s2.length
                 return n % 2 ? s2[(n - 1) / 2] : (s2[n / 2 - 1] + s2[n / 2]) / 2
               }
-              var hojeIso = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10)
               var mesDuVals = []
               for (var dd2 = 1; dd2 <= lastDay; dd2++) {
                 var k3 = curY + '-' + ('0' + curM).slice(-2) + '-' + ('0' + dd2).slice(-2)
