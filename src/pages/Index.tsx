@@ -22,6 +22,24 @@ const Index = () => {
     }
   }, [])
 
+  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    try {
+      const iframe = e.currentTarget
+      const doc = iframe.contentDocument || iframe.contentWindow?.document
+      if (!doc) return
+
+      // Injeta o script de correção de colagem e versão caso ainda não tenha sido injetado
+      if (!doc.getElementById('fix-paste-script')) {
+        const s = doc.createElement('script')
+        s.id = 'fix-paste-script'
+        s.src = '/painel-fix.js?v=0.1.02'
+        doc.head.appendChild(s)
+      }
+    } catch {
+      // Ignora erro cross-origin se houver
+    }
+  }
+
   return (
     <div className="w-screen h-screen m-0 p-0 overflow-hidden bg-background">
       <iframe
@@ -29,6 +47,7 @@ const Index = () => {
         title="Painel de Entregas — Dlean"
         className="w-full h-full border-0 block m-0 p-0"
         allow="clipboard-read; clipboard-write; fullscreen"
+        onLoad={handleIframeLoad}
       />
     </div>
   )

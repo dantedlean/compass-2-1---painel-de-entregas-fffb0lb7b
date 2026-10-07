@@ -2,39 +2,57 @@
 // Injetado transparentemente para garantir que os campos de login (e-mail e senha)
 // aceitem colagem, digitação e preenchimento automático sem interferência de listeners globais.
 
-(function () {
+;(function () {
   function fixLoginPaste() {
     const connEmail = document.getElementById('connEmail')
     const connPass = document.getElementById('connPass')
 
-    if (connEmail) {
+    if (connEmail && !connEmail.hasAttribute('data-paste-fixed')) {
+      connEmail.setAttribute('data-paste-fixed', 'true')
       connEmail.setAttribute('autocomplete', 'username')
       connEmail.setAttribute('name', 'username')
       connEmail.style.userSelect = 'text'
       connEmail.style.webkitUserSelect = 'text'
-      connEmail.addEventListener('paste', function (e) {
-        e.stopPropagation()
-      }, true)
-      connEmail.addEventListener('keydown', function (e) {
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+      connEmail.addEventListener(
+        'paste',
+        function (e) {
           e.stopPropagation()
-        }
-      }, true)
+        },
+        true,
+      )
+      connEmail.addEventListener(
+        'keydown',
+        function (e) {
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+            e.stopPropagation()
+          }
+        },
+        true,
+      )
     }
 
-    if (connPass) {
+    if (connPass && !connPass.hasAttribute('data-paste-fixed')) {
+      connPass.setAttribute('data-paste-fixed', 'true')
       connPass.setAttribute('autocomplete', 'current-password')
       connPass.setAttribute('name', 'password')
       connPass.style.userSelect = 'text'
       connPass.style.webkitUserSelect = 'text'
-      connPass.addEventListener('paste', function (e) {
-        e.stopPropagation()
-      }, true)
-      connPass.addEventListener('keydown', function (e) {
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+      connPass.addEventListener(
+        'paste',
+        function (e) {
           e.stopPropagation()
-        }
-      }, true)
+        },
+        true,
+      )
+      connPass.addEventListener(
+        'keydown',
+        function (e) {
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+            e.stopPropagation()
+          }
+        },
+        true,
+      )
     }
 
     // Atualiza versão no cabeçalho e rodapés das views
@@ -73,12 +91,12 @@
           (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) ||
           (act && (act.tagName === 'INPUT' || act.tagName === 'TEXTAREA' || act.isContentEditable))
         if (isInput) {
-          // Permite ação nativa do navegador
+          // Permite ação nativa do navegador parando propagação para listeners de bolha/captura tardia
           e.stopPropagation()
         }
       }
     },
-    true
+    true,
   )
 
   window.addEventListener(
@@ -93,7 +111,7 @@
         e.stopPropagation()
       }
     },
-    true
+    true,
   )
 
   if (document.readyState === 'loading') {
