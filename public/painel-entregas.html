@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006235838">
+  <body data-build="b20261007000957">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -744,14 +744,46 @@
       <main>
         <div id="nfHero"></div>
         <div class="card">
-          <h2>Faturamento por dia — <span id="nfMesLbl">mês atual</span></h2>
-          <div class="note">Barras = valor faturado (R$) · linhas tracejadas = média e mediana</div>
-          <div id="chNfDia" style="width: 100%; height: 280px"></div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+              margin-bottom: 4px;
+              gap: 12px;
+              flex-wrap: wrap;
+            "
+          >
+            <h2 style="font-size: 13px; font-weight: 700; margin: 0; color: #334155">
+              Faturamento por dia — <span id="nfMesLbl">mês atual</span>
+            </h2>
+            <div style="font-size: 11.5px; color: #64748b">
+              Total no mês: <b id="nfTotMes" style="color: #0f766e">—</b>
+              <span style="color: #cbd5e1">•</span> Média:
+              <b id="nfMedMes" style="color: #b45309">—</b>/dia útil
+            </div>
+          </div>
+          <div id="chNfDia" style="width: 100%; height: 270px"></div>
         </div>
         <div class="card">
-          <h2>Faturamento por mês — <span id="nfAnoLbl">ano atual</span></h2>
-          <div class="note">Barras = valor faturado (R$) · linhas tracejadas = média e mediana</div>
-          <div id="chNfMes" style="width: 100%; height: 300px"></div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+              margin-bottom: 4px;
+              gap: 12px;
+              flex-wrap: wrap;
+            "
+          >
+            <h2 style="font-size: 13px; font-weight: 700; margin: 0; color: #334155">
+              Faturamento por mês — <span id="nfAnoLbl">ano atual</span>
+            </h2>
+            <div style="font-size: 11.5px; color: #64748b">
+              Total: <b id="nfTotAno" style="color: #0f766e">—</b>
+            </div>
+          </div>
+          <div id="chNfMes" style="width: 100%; height: 290px"></div>
           <div
             id="nfFormula"
             style="font-size: 12px; color: #64748b; padding: 8px 4px 0; line-height: 1.5"
@@ -27664,6 +27696,12 @@
         document.getElementById('nfMesLbl').textContent = nf.mesLabel
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
+        var tm = document.getElementById('nfTotMes')
+        if (tm) tm.textContent = F0.format(nf.mesValor) + ' · ' + nf.mesQtd + ' NFs'
+        var mmX = document.getElementById('nfMedMes')
+        if (mmX) mmX.textContent = F0.format(mMes)
+        var ta = document.getElementById('nfTotAno')
+        if (ta) ta.textContent = F0.format(nf.anoValor) + ' · ' + nf.anoQtd + ' NFs'
         const c1 = echarts.init(document.getElementById('chNfDia'))
         function mkLbl(nome, cor, val, dist) {
           return {
@@ -27751,7 +27789,7 @@
         var mAno = nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
         var medAno = nf.medianaAno !== undefined ? nf.medianaAno : 0
         c2.setOption({
-          grid: { left: 66, right: 150, top: 34, bottom: 40 },
+          grid: { left: 56, right: 30, top: 30, bottom: 40 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -27764,21 +27802,21 @@
             data: nf.monthly.map(function (m) {
               return m.label
             }),
-            axisLabel: { fontSize: 11 },
-            axisTick: { alignWithLabel: true },
+            axisLabel: { fontSize: 10, color: '#64748b', interval: 1 },
+            axisLine: { lineStyle: { color: '#e2e8f0' } },
+            axisTick: { show: false },
           },
-          yAxis: [
-            {
-              type: 'value',
-              name: 'R$',
-              axisLabel: {
-                formatter: function (v) {
-                  return (v / 1000000).toFixed(1) + 'M'
-                },
+          yAxis: {
+            type: 'value',
+            axisLabel: {
+              fontSize: 10,
+              color: '#64748b',
+              formatter: function (v) {
+                return (v / 1000000).toFixed(1) + 'M'
               },
-              splitLine: { lineStyle: { color: '#eef2f7' } },
             },
-          ],
+            splitLine: { lineStyle: { color: '#eef2f7', type: [3, 3] } },
+          },
           series: [
             {
               name: 'Valor',
@@ -27786,24 +27824,20 @@
               data: nf.monthly.map(function (m) {
                 return m.valor
               }),
-              barMaxWidth: 84,
-              barCategoryGap: '18%',
-              itemStyle: { color: '#2563eb', borderRadius: [4, 4, 0, 0] },
-              label: {
-                show: true,
-                position: 'top',
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#1e3a8a',
-                formatter: function (p) {
-                  return p.value > 0 ? (p.value / 1000000).toFixed(1).replace('.', ',') + 'M' : ''
-                },
-              },
+              barWidth: 29,
+              itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
             },
             mAno === medAno
-              ? mkLbl('Média = Mediana', '#92400e', mAno)
-              : mkLbl('Média/mês', '#f59e0b', mAno),
-            mAno === medAno ? null : mkLbl('Mediana', '#dc2626', medAno),
+              ? null
+              : {
+                  name: 'Média/mês',
+                  type: 'line',
+                  data: nf.monthly.map(function () {
+                    return mAno
+                  }),
+                  symbol: 'none',
+                  lineStyle: { color: '#f59e0b', width: 1.5, type: [4, 4] },
+                },
           ].filter(Boolean),
         })
         window._nfCharts = [sp, c1, c2]
