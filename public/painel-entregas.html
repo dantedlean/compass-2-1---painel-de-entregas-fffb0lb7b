@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006200029">
+  <body data-build="b20261006223437">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -1195,15 +1195,37 @@
               border-radius: 10px;
             "
           >
-            <div style="font-weight: 800; font-size: 13px; color: #991b1b; margin-bottom: 4px">
-              ⚠ NF EMITIDA PRECISA DE SALDO — alocação pendente (semi-automático)
+            <div
+              id="smNfAlertHead"
+              role="button"
+              tabindex="0"
+              aria-expanded="false"
+              title="Clique para abrir/fechar"
+              style="
+                cursor: pointer;
+                user-select: none;
+                font-weight: 800;
+                font-size: 13px;
+                color: #991b1b;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              "
+            >
+              <span id="smNfAlertArrow" style="display: inline-block; transition: transform 0.15s"
+                >▸</span
+              >
+              <span>⚠ NF EMITIDA PRECISA DE SALDO — alocação pendente (semi-automático)</span>
+              <span id="smNfAlertCount" style="font-weight: 700"></span>
             </div>
-            <div class="note" style="margin-bottom: 8px">
-              A NF fechou o saldo do PV no ERP e ele saiu da carteira. Antes de desconsiderar: o
-              produto pronto já existe (SMKT ou produção declarada da Programação firme) e precisa
-              ser ALOCADO a este PV. Nada é gravado no MaxiProd — registro de controle no Andon.
+            <div id="smNfAlertDetail" style="display: none; margin-top: 8px">
+              <div class="note" style="margin-bottom: 8px">
+                A NF fechou o saldo do PV no ERP e ele saiu da carteira. Antes de desconsiderar: o
+                produto pronto já existe (SMKT ou produção declarada da Programação firme) e precisa
+                ser ALOCADO a este PV. Nada é gravado no MaxiProd — registro de controle no Andon.
+              </div>
+              <div id="smNfAlertBody"></div>
             </div>
-            <div id="smNfAlertBody"></div>
           </div>
           <div class="toolbar" style="gap: 10px; flex-wrap: wrap; align-items: center">
             <select
@@ -24128,6 +24150,14 @@
             return
           }
           box.style.display = 'block'
+          const cnt = document.getElementById('smNfAlertCount')
+          if (cnt)
+            cnt.textContent =
+              ' · ' + pend.length + ' produto' + (pend.length > 1 ? 's' : '') + ' — clique para ver'
+          const det = document.getElementById('smNfAlertDetail')
+          if (det) det.style.display = 'none'
+          const arr = document.getElementById('smNfAlertArrow')
+          if (arr) arr.style.transform = ''
           const smktSaldoDe = function (c) {
             try {
               return smktSaldo(c)
@@ -24214,6 +24244,16 @@
           if (!box || box._actBound) return
           box._actBound = true
           box.addEventListener('click', function (e) {
+            const hd = e.target.closest ? e.target.closest('#smNfAlertHead') : null
+            if (hd) {
+              const det = document.getElementById('smNfAlertDetail')
+              const arr = document.getElementById('smNfAlertArrow')
+              const abr = det && det.style.display === 'none'
+              if (det) det.style.display = abr ? 'block' : 'none'
+              if (arr) arr.style.transform = abr ? 'rotate(90deg)' : ''
+              hd.setAttribute('aria-expanded', abr ? 'true' : 'false')
+              return
+            }
             const a = e.target.closest ? e.target.closest('button[data-nfalc]') : null
             const p = e.target.closest ? e.target.closest('button[data-nfprog]') : null
             if (!a && !p) return
@@ -29132,7 +29172,7 @@
       })
       // ==================== v0.0.202: AUTO-DETECÇÃO DE VERSÃO VELHA (cache CDN) ====================
       // Sintoma do incidente 04/10: Dante com versão antiga em cache — botão Programar sem modal.
-      // O gerador estampa o build (b20261006200029); a página aberta confere a produção a cada 5 min e
+      // O gerador estampa o build (b20261006223437); a página aberta confere a produção a cada 5 min e
       // avisa (barra no topo) quando a versão publicada é mais nova. Recarrega com Ctrl+F5.
       ;(function () {
         const BUILD = document.body.getAttribute('data-build') || ''
