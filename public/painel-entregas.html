@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261007000957">
+  <body data-build="b20261007001110">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -27696,12 +27696,6 @@
         document.getElementById('nfMesLbl').textContent = nf.mesLabel
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
-        var tm = document.getElementById('nfTotMes')
-        if (tm) tm.textContent = F0.format(nf.mesValor) + ' · ' + nf.mesQtd + ' NFs'
-        var mmX = document.getElementById('nfMedMes')
-        if (mmX) mmX.textContent = F0.format(mMes)
-        var ta = document.getElementById('nfTotAno')
-        if (ta) ta.textContent = F0.format(nf.anoValor) + ' · ' + nf.anoQtd + ' NFs'
         const c1 = echarts.init(document.getElementById('chNfDia'))
         function mkLbl(nome, cor, val, dist) {
           return {
@@ -27840,6 +27834,12 @@
                 },
           ].filter(Boolean),
         })
+        var tm = document.getElementById('nfTotMes')
+        if (tm) tm.textContent = F0.format(nf.mesValor) + ' · ' + nf.mesQtd + ' NFs'
+        var mmX = document.getElementById('nfMedMes')
+        if (mmX) mmX.textContent = F0.format(mMes)
+        var ta = document.getElementById('nfTotAno')
+        if (ta) ta.textContent = F0.format(nf.anoValor) + ' · ' + nf.anoQtd + ' NFs'
         window._nfCharts = [sp, c1, c2]
         var nfFoot = document.getElementById('nfFormula')
         if (nfFoot) {
