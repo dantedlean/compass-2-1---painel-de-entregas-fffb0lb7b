@@ -15,26 +15,46 @@ const Index = () => {
     document.body.style.overflow = 'hidden'
     document.body.style.margin = '0'
 
+    // Polling ativo no iframe para injetar antes e durante a inicialização do DOM
+    const interval = setInterval(() => {
+      const iframe = document.querySelector('iframe')
+      if (iframe) {
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow?.document
+          if (doc) injectFixIntoDoc(doc)
+        } catch {
+          // ignore
+        }
+      }
+    }, 500)
+
     return () => {
+      clearInterval(interval)
       document.title = prevTitle
       document.body.style.overflow = prevOverflow
       document.body.style.margin = prevMargin
     }
   }, [])
 
-  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+  const injectFixIntoDoc = (doc: Document) => {
     try {
-      const iframe = e.currentTarget
-      const doc = iframe.contentDocument || iframe.contentWindow?.document
-      if (!doc) return
-
-      // Injeta o script de correção de colagem e versão caso ainda não tenha sido injetado
       if (!doc.getElementById('fix-paste-script')) {
         const s = doc.createElement('script')
         s.id = 'fix-paste-script'
         s.src = '/painel-fix.js?v=0.1.02'
         doc.head.appendChild(s)
       }
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    try {
+      const iframe = e.currentTarget
+      const doc = iframe.contentDocument || iframe.contentWindow?.document
+      if (!doc) return
+      injectFixIntoDoc(doc)
     } catch {
       // Ignora erro cross-origin se houver
     }

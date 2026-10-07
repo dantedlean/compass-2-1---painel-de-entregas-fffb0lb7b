@@ -1326,24 +1326,67 @@ export default function Compass2() {
           </p>
           <form className="mt-8 space-y-4" onSubmit={login}>
             <label className="block text-sm text-slate-300">
-              E-mail
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none focus:ring-2 focus:ring-cyan-400"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
+              E-mail ou Usuário
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none focus:ring-2 focus:ring-cyan-400"
+                  type="text"
+                  autoComplete="username"
+                  name="username"
+                  placeholder="analista.projetos@painel.local ou analista_projetos"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-3 py-3 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                  onClick={async () => {
+                    try {
+                      if (navigator.clipboard?.readText) {
+                        const t = await navigator.clipboard.readText()
+                        if (t) setEmail(t.trim())
+                      }
+                    } catch {
+                      // bloqueado
+                    }
+                  }}
+                  title="Colar e-mail ou usuário"
+                >
+                  📋 Colar
+                </button>
+              </div>
             </label>
             <label className="block text-sm text-slate-300">
               Senha
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none focus:ring-2 focus:ring-cyan-400"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none focus:ring-2 focus:ring-cyan-400"
+                  type="password"
+                  autoComplete="current-password"
+                  name="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-3 py-3 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                  onClick={async () => {
+                    try {
+                      if (navigator.clipboard?.readText) {
+                        const t = await navigator.clipboard.readText()
+                        if (t) setPassword(t.trim())
+                      }
+                    } catch {
+                      // bloqueado
+                    }
+                  }}
+                  title="Colar senha"
+                >
+                  📋 Colar
+                </button>
+              </div>
             </label>
             {error && (
               <p className="rounded-lg border border-red-900 bg-red-950/50 p-3 text-sm text-red-200">
