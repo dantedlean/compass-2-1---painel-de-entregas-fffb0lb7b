@@ -41,7 +41,7 @@ const Index = () => {
       if (!doc.getElementById('fix-paste-script')) {
         const s = doc.createElement('script')
         s.id = 'fix-paste-script'
-        s.src = '/painel-fix.js?v=0.1.02'
+        s.src = '/painel-fix.js?v=0.1.03'
         doc.head.appendChild(s)
       }
     } catch {

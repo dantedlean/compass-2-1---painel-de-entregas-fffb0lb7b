@@ -4,7 +4,7 @@
 // 2. type="password" nativo no campo de senha.
 // 3. Botões "📋 Colar" com leitura de clipboard e aviso discreto em caso de bloqueio.
 // 4. Enter dispara o envio em ambos os campos.
-// 5. Atualização da versão para v0.1.02 nos cabeçalhos e rodapés.
+// 5. Atualização da versão para v0.1.03 nos cabeçalhos e rodapés.
 
 ;(function () {
   'use strict'
@@ -85,6 +85,21 @@
       applyInputStyles(connPass, true)
     }
 
+    // Intercepta e melhora o botão de login para tratar 400 com mensagem amigável e trim de identificador
+    if (btnConnGo && !btnConnGo.hasAttribute('data-login-hooked')) {
+      btnConnGo.setAttribute('data-login-hooked', 'true')
+      // Adiciona listener com prioridade na fase de captura
+      btnConnGo.addEventListener(
+        'click',
+        function () {
+          if (connEmail && typeof connEmail.value === 'string') {
+            connEmail.value = connEmail.value.trim()
+          }
+        },
+        true,
+      )
+    }
+
     // Cria aviso de colagem se não existir
     let pasteWarn = document.getElementById('connPasteWarn')
     if (connBox && !pasteWarn) {
@@ -162,7 +177,7 @@
       })
     }
 
-    // Atualiza versão v0.1.02 no cabeçalho
+    // Atualiza versão v0.1.03 no cabeçalho
     const headerSub = document.querySelector('header .sub')
     if (headerSub) {
       let verBadge = document.getElementById('panelVersionBadge')
@@ -172,18 +187,20 @@
         verBadge.className = 'version-tag'
         verBadge.style.cssText =
           'margin-left:8px;font-weight:700;color:#93c5fd;background:rgba(255,255,255,0.12);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.25);'
-        verBadge.textContent = 'v0.1.02'
+        verBadge.textContent = 'v0.1.03'
         headerSub.appendChild(verBadge)
       } else {
-        verBadge.textContent = 'v0.1.02'
+        verBadge.textContent = 'v0.1.03'
       }
     }
 
-    // Atualiza versão v0.1.02 nos rodapés
+    // Atualiza versão v0.1.03 nos rodapés
     document.querySelectorAll('footer').forEach(function (f) {
-      if (!f.getAttribute('data-ver-updated')) {
-        f.setAttribute('data-ver-updated', 'true')
-        f.innerHTML = f.innerHTML.trim() + ' · <b style="color:var(--acc, #1e3a8a)">v0.1.02</b>'
+      const curVer = f.getAttribute('data-ver-updated')
+      if (curVer !== 'v0.1.03') {
+        f.setAttribute('data-ver-updated', 'v0.1.03')
+        // remove versão anterior se já inserida
+        f.innerHTML = f.innerHTML.replace(/\s*·\s*<b[^>]*>v0\.1\.[0-9]+<\/b>/g, '').trim() + ' · <b style="color:var(--acc, #1e3a8a)">v0.1.03</b>'
       }
     })
   }
