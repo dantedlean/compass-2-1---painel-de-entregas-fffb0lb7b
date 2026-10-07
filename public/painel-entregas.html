@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261007001201">
+  <body data-build="b20261007002311">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -763,7 +763,7 @@
               <b id="nfMedMes" style="color: #b45309">—</b>/dia útil
             </div>
           </div>
-          <div id="chNfDia" style="width: 100%; height: 270px"></div>
+          <div id="chNfDia" style="width: 100%; height: 130px"></div>
         </div>
         <div class="card">
           <div
@@ -783,7 +783,7 @@
               Total: <b id="nfTotAno" style="color: #0f766e">—</b>
             </div>
           </div>
-          <div id="chNfMes" style="width: 100%; height: 290px"></div>
+          <div id="chNfMes" style="width: 100%; height: 150px"></div>
           <div
             id="nfFormula"
             style="font-size: 12px; color: #64748b; padding: 8px 4px 0; line-height: 1.5"
@@ -27697,112 +27697,83 @@
         document.getElementById('nfAnoLbl').textContent = nf.ano
         document.getElementById('nfTblAno').textContent = nf.ano
         const c1 = echarts.init(document.getElementById('chNfDia'))
-        function mkLbl(nome, cor, val, dist) {
-          return {
-            name: nome,
-            type: 'line',
-            data: nf.daily.map(function () {
-              return val
-            }),
-            symbol: 'none',
-            lineStyle: { color: cor, width: 2, type: 'dashed' },
-            itemStyle: { color: cor },
-            tooltip: { show: false },
-            endLabel: {
-              show: true,
-              formatter: nome + ' ' + F0.format(val),
-              color: cor,
-              fontSize: 11,
-              fontWeight: 'bold',
-              backgroundColor: 'rgba(255,255,255,.85)',
-              padding: [2, 4],
-              borderRadius: 3,
-              distance: dist || 4,
-            },
-          }
+        // padrão Compass (projeto C): mês inteiro compacto, barras finas, média tracejada amber
+        var mmCur = parseInt(nf.mesLabel.slice(0, 2), 10),
+          yyCur = nf.ano
+        var lastDayCur = new Date(Date.UTC(yyCur, mmCur, 0)).getUTCDate()
+        var byDay = {}
+        nf.daily.forEach(function (d) {
+          byDay[d.label.slice(0, 2)] = d
+        })
+        var dailyFull = []
+        for (var dd = 1; dd <= lastDayCur; dd++) {
+          var lbl = ('0' + dd).slice(-2) + '/' + ('0' + mmCur).slice(-2)
+          var o = byDay[('0' + dd).slice(-2)]
+          dailyFull.push(
+            o
+              ? { label: lbl, dia: String(dd), qtd: o.qtd, valor: o.valor }
+              : { label: lbl, dia: String(dd), qtd: 0, valor: 0 },
+          )
         }
         var mMes = nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes
-        var medMes = nf.medianaMes !== undefined ? nf.medianaMes : 0
+        var fmtY = function (v) {
+          if (v >= 1e6) return 'R$ ' + (v / 1e6).toFixed(1).replace('.', ',') + 'mi'
+          if (v >= 1e3) return 'R$ ' + Math.round(v / 1e3) + 'mil'
+          return 'R$ ' + v
+        }
         c1.setOption({
-          grid: { left: 56, right: 30, top: 30, bottom: 44 },
+          grid: { left: 8, right: 8, top: 14, bottom: 22, containLabel: true },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
-              var d = nf.daily[ps[0].dataIndex]
+              var d = dailyFull[ps[0].dataIndex]
               return d.label + '<br/>' + F0.format(d.valor) + ' · ' + d.qtd + ' NFs'
             },
           },
           xAxis: {
             type: 'category',
-            data: nf.daily.map(function (d) {
-              return d.label
+            data: dailyFull.map(function (d) {
+              return d.dia
             }),
-            axisLabel: { fontSize: 10, color: '#64748b', interval: 2 },
-            axisLine: { lineStyle: { color: '#e2e8f0' } },
+            axisLabel: { fontSize: 10, interval: 2, showMaxLabel: true },
             axisTick: { show: false },
+            axisLine: { lineStyle: { color: '#e2e8f0' } },
           },
           yAxis: {
             type: 'value',
-            axisLabel: {
-              fontSize: 10,
-              color: '#64748b',
-              formatter: function (v) {
-                return (v / 1000).toFixed(0) + 'k'
-              },
-            },
-            splitLine: { lineStyle: { color: '#eef2f7', type: [3, 3] } },
+            axisLabel: { fontSize: 10, formatter: fmtY, margin: 6 },
+            splitLine: { lineStyle: { color: '#eef2f7' } },
           },
           series: [
             {
               name: 'Valor',
               type: 'bar',
-              data: nf.daily.map(function (d) {
+              data: dailyFull.map(function (d) {
                 return d.valor
               }),
-              barWidth: 12,
+              barCategoryGap: '25%',
               itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
-            },
-            {
-              name: 'Média',
-              type: 'line',
-              data: nf.daily.map(function () {
-                return mMes
-              }),
-              symbol: 'none',
-              lineStyle: { color: '#f59e0b', width: 1.5, type: [4, 4] },
               markLine: {
                 silent: true,
                 symbol: 'none',
+                data: [{ yAxis: mMes }],
+                lineStyle: { color: '#f59e0b', type: 'dashed', width: 1.5 },
                 label: {
                   show: true,
-                  position: 'insideEndTop',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: '#b45309',
-                  formatter: 'Média: ' + F0.format(mMes) + '/dia',
+                  position: 'insideMiddleTop',
+                  formatter: 'Média: ' + F0.format(Math.round(mMes)) + '/dia',
+                  color: '#d97706',
+                  fontSize: 10,
+                  fontWeight: 'bold',
                 },
-                lineStyle: { color: '#f59e0b', width: 1.5, type: [4, 4] },
-                data: [{ yAxis: mMes }],
               },
             },
-            mMes === medMes
-              ? null
-              : {
-                  name: 'Mediana',
-                  type: 'line',
-                  data: nf.daily.map(function () {
-                    return medMes
-                  }),
-                  symbol: 'none',
-                  lineStyle: { color: '#dc2626', width: 1.5, type: [4, 4], opacity: 0.9 },
-                },
-          ].filter(Boolean),
+          ],
         })
         const c2 = echarts.init(document.getElementById('chNfMes'))
         var mAno = nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
-        var medAno = nf.medianaAno !== undefined ? nf.medianaAno : 0
         c2.setOption({
-          grid: { left: 56, right: 30, top: 30, bottom: 40 },
+          grid: { left: 8, right: 8, top: 14, bottom: 22, containLabel: true },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -27815,20 +27786,14 @@
             data: nf.monthly.map(function (m) {
               return m.label
             }),
-            axisLabel: { fontSize: 10, color: '#64748b', interval: 1 },
-            axisLine: { lineStyle: { color: '#e2e8f0' } },
+            axisLabel: { fontSize: 10 },
             axisTick: { show: false },
+            axisLine: { lineStyle: { color: '#e2e8f0' } },
           },
           yAxis: {
             type: 'value',
-            axisLabel: {
-              fontSize: 10,
-              color: '#64748b',
-              formatter: function (v) {
-                return (v / 1000000).toFixed(1) + 'M'
-              },
-            },
-            splitLine: { lineStyle: { color: '#eef2f7', type: [3, 3] } },
+            axisLabel: { fontSize: 10, formatter: fmtY, margin: 6 },
+            splitLine: { lineStyle: { color: '#eef2f7' } },
           },
           series: [
             {
@@ -27837,28 +27802,41 @@
               data: nf.monthly.map(function (m) {
                 return m.valor
               }),
-              barWidth: 29,
+              barCategoryGap: '25%',
               itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
-            },
-            mAno === medAno
-              ? null
-              : {
-                  name: 'Média/mês',
-                  type: 'line',
-                  data: nf.monthly.map(function () {
-                    return mAno
-                  }),
-                  symbol: 'none',
-                  lineStyle: { color: '#f59e0b', width: 1.5, type: [4, 4] },
+              label: {
+                show: true,
+                position: 'top',
+                fontSize: 9.5,
+                fontWeight: 600,
+                color: '#1e3a8a',
+                formatter: function (p) {
+                  return p.value > 0 ? (p.value / 1e6).toFixed(1).replace('.', ',') + 'M' : ''
                 },
-          ].filter(Boolean),
+              },
+              markLine: {
+                silent: true,
+                symbol: 'none',
+                data: [{ yAxis: mAno }],
+                lineStyle: { color: '#f59e0b', type: 'dashed', width: 1.5 },
+                label: {
+                  show: true,
+                  position: 'insideMiddleTop',
+                  formatter: 'Média: ' + F0.format(Math.round(mAno)) + '/mês',
+                  color: '#d97706',
+                  fontSize: 10,
+                  fontWeight: 'bold',
+                },
+              },
+            },
+          ],
         })
-        var tm = document.getElementById('nfTotMes')
-        if (tm) tm.textContent = F0.format(nf.mesValor) + ' · ' + nf.mesQtd + ' NFs'
-        var mmX = document.getElementById('nfMedMes')
-        if (mmX) mmX.textContent = F0.format(mMes)
-        var ta = document.getElementById('nfTotAno')
-        if (ta) ta.textContent = F0.format(nf.anoValor) + ' · ' + nf.anoQtd + ' NFs'
+        var elT1 = document.getElementById('nfTotMes')
+        if (elT1) elT1.textContent = F0.format(nf.mesValor)
+        var elM1 = document.getElementById('nfMedMes')
+        if (elM1) elM1.textContent = F0.format(mMes)
+        var elT2 = document.getElementById('nfTotAno')
+        if (elT2) elT2.textContent = F0.format(nf.anoValor) + ' · ' + nf.anoQtd + ' NFs'
         window._nfCharts = [sp, c1, c2]
         var nfFoot = document.getElementById('nfFormula')
         if (nfFoot) {
