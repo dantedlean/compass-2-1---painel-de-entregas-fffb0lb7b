@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006231452">
+  <body data-build="b20261006231806">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -19988,6 +19988,3300 @@
             },
           ],
         },
+      }
+
+      window.PLANO_SEMANA = {
+        S40: [
+          { cod: '403-0003', qtd: 8.0, pv: '539', desc: 'CARRINHO LOSS PREVENTION' },
+          { cod: '403-0024', qtd: 2.0, pv: '71', desc: 'CARRINHO 4 NIVEIS 800X800' },
+          { cod: '406-0001', qtd: 53.0, pv: '534', desc: 'ESCORREGADOR SOLDADO MERCADO LIVRE' },
+        ],
+        S41: [
+          {
+            cod: '404-0002',
+            qtd: 5.0,
+            pv: '503',
+            desc: 'ESTEIRA DE ROLETES SOLDADA MOVEL - 4000x1500 - MATILDE - V2',
+          },
+          {
+            cod: '403-0019',
+            qtd: 3.0,
+            pv: '2128',
+            desc: 'Carrinho gaiola transporte de resíduos pequeno 2000 alt x 900 comp x 8',
+          },
+          {
+            cod: '403-0016',
+            qtd: 2.0,
+            pv: '2113',
+            desc: 'CARRINHO DE TRANSPORTE DIVISORIAS BRITÂNIA',
+          },
+          { cod: '412-0009', qtd: 4.0, pv: '546', desc: 'MESA DE CUBING' },
+          { cod: '412-0008', qtd: 2.0, pv: '546', desc: 'MESA DESPACHO OUPM-0003' },
+          { cod: '402-0010', qtd: 2.0, pv: '71', desc: 'BANCADA FIXA' },
+          { cod: '403-0025', qtd: 1.0, pv: '77', desc: 'CARRINHO EXTERNO' },
+          { cod: '03322', qtd: 23.0, pv: '79', desc: 'CARRINHO DE TRANSPORTE MANUAL' },
+          { cod: 'OUCP-0030', qtd: 6.0, pv: '567', desc: 'CARRINHO OUCP-0030' },
+        ],
+        S42: [
+          { cod: '416-0001', qtd: 1.0, pv: '529', desc: 'SUPORTE PARA BALANÇA' },
+          { cod: '402-0009', qtd: 4.0, pv: '459', desc: 'BANCADA MÓVEL - AXBC-0001' },
+          { cod: '401-0007', qtd: 60.0, pv: '549', desc: 'ML FLOW RACK 2X2 - V2' },
+        ],
+        S43: [{ cod: '401-0014', qtd: 49.0, pv: '549', desc: 'FLOW RACK 3X2' }],
+        S44: [
+          {
+            cod: '404-0001',
+            qtd: 84.0,
+            pv: '504',
+            desc: 'ESTEIRA DE ROLETES 800 X 2000 - BERENICE',
+          },
+          { cod: 'FR0001', qtd: 1.0, pv: '2124', desc: 'FLOW RACK' },
+          { cod: '403-0011', qtd: 6.0, pv: '2134', desc: 'CARRINHO DE NOTEBOOK 900X600' },
+          { cod: '419-0001', qtd: 1.0, pv: '113', desc: 'ELEVADOR TOMBADOR - SHOPEE' },
+          {
+            cod: '403-0017',
+            qtd: 3.0,
+            pv: '2122',
+            desc: 'Carrinho Gaiola de Resíduos 1970 alt x 2000 comp. x 1000mm larg INOX',
+          },
+          {
+            cod: '403-0018',
+            qtd: 4.0,
+            pv: '2122',
+            desc: 'Carrinho Gaiola movimentação modular inox 1860 alt x 1000 comp x950mm ',
+          },
+          {
+            cod: '401-0006',
+            qtd: 48.0,
+            pv: '469',
+            desc: 'KIT INDUÇÃO - SOLDADO — PARTE 1/2 (11 PVs)',
+          },
+        ],
+        S45: [
+          { cod: 'BC0001', qtd: 1.0, pv: '82', desc: 'BANCADA FIXA' },
+          { cod: 'CR0001', qtd: 127.0, pv: '445', desc: 'CARRINHO DE TRANSPORTE MANUAL' },
+          {
+            cod: '401-0006',
+            qtd: 49.0,
+            pv: '540',
+            desc: 'KIT INDUÇÃO - SOLDADO — PARTE 2/2 (22 PVs)',
+          },
+        ],
+      }
+      const FAT_URL =
+        'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev/backend/v1/compass2/faturamento'
+      const SEM = DATA.semanas
+      const FMT = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        maximumFractionDigits: 0,
+      })
+      const NF = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
+      let modo = 'valor'
+      let semSel = 1 // primeira semana futura (0 = Atrasado)
+      let visaoSemana = 'sem' // 'sem' = semana inteira | 'dia' = por dia útil
+      let diaSel = null
+
+      function setVisaoSemana(v) {
+        visaoSemana = v
+        document.getElementById('vSem').classList.toggle('on', v === 'sem')
+        document.getElementById('vDia').classList.toggle('on', v === 'dia')
+        if (v === 'dia' && !diaSel) diaSel = hojeDiaNome()
+        renderDias() // re-renderiza os botões de dia
+        renderSemana()
+      }
+      function hojeDiaNome() {
+        return (
+          ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+            new Date().getDay()
+          ] || 'Segunda'
+        )
+      }
+      // dia da semana (nome) a partir da ISO da linha — dentro da semana ISO de semSel
+      function diaNomeDe(iso) {
+        if (!iso) return ''
+        const d = new Date(iso + 'T12:00:00')
+        return ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][d.getDay()]
+      }
+      let cenario = 'plano' // fonte única: datas do ERP (toggle ERP×planilha removido 25/09 — ERP atualizado)
+      const CORES = [
+        '#dc2626',
+        '#2563eb',
+        '#0ea5e9',
+        '#14b8a6',
+        '#22c55e',
+        '#eab308',
+        '#f97316',
+        '#a855f7',
+        '#ec4899',
+        '#64748b',
+      ]
+
+      function val(qtd, vtot) {
+        return modo === 'valor' ? vtot : qtd
+      }
+      function fmtV(v) {
+        return modo === 'valor'
+          ? 'R$ ' + NF.format(Math.round(v))
+          : NF.format(Math.round(v)) + ' un'
+      }
+      function fmtK(v) {
+        return modo === 'valor'
+          ? 'R$ ' + NF.format(Math.round(v / 1000)) + 'k'
+          : NF.format(Math.round(v)) + ' un'
+      }
+      function visiveis(arr, chkId) {
+        const inc = document.getElementById(chkId).checked
+        return arr.filter(function (r) {
+          return inc || !r.frete
+        })
+      }
+      // semana efetiva da linha conforme o cenário
+      // semana efetiva da linha: ERP com overlay do plano de recuperação para atrasados (fonte única; toggle removido)
+      function siOf(r) {
+        return r.siPlano != null ? r.siPlano : r.si
+      }
+      function temPlano() {
+        return DATA.rows.some(function (r) {
+          return r.siPlano != null || r.semanaErp
+        })
+      }
+      // produção declarada: qtd pendente e qtd produzida da linha
+      // alocações do SMKT consomem saldo do PV na carteira (modelo WARD: produto pronto atende o PV)
+      function smktAlocadoEm(pv, cod) {
+        return smktAlocs()
+          .filter(function (x) {
+            return x.cod === cod && String(x.pv) === String(pv)
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+      }
+      // O movimento para o SMKT é consumo da programação. Alocar depois em um PV
+      // apenas muda a destinação do pronto — não desconta a mesma unidade duas vezes.
+      function smktManualTotal(cod) {
+        return smktEntradas()
+          .filter(function (x) {
+            return x.cod === cod && String(x.origem || '').indexOf('prog:') !== 0
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+      }
+      function smktProgramTotal(cod) {
+        // entradas com origem 'prog:' = entrada criada pela alocação SMKT no card principal
+        return smktEntradas()
+          .filter(function (x) {
+            return x.cod === cod && String(x.origem || '').indexOf('prog:') === 0
+          })
+          .reduce(function (a, x) {
+            return a + x.qtd
+          }, 0)
+      }
+      function declaradoTotal(cod) {
+        return DATA.rows
+          .filter(function (x) {
+            return x.codigo === cod && x.prod
+          })
+          .reduce(function (a, x) {
+            return a + Math.min(x.prod.qtd, x.qtd)
+          }, 0)
+      }
+      function progFuturoTotal(cod) {
+        // programado a partir de HOJE (futuro) — passado é histórico e não bloqueia a programação
+        const hj = new Date()
+        const hojeISO =
+          hj.getFullYear() +
+          '-' +
+          String(hj.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(hj.getDate()).padStart(2, '0')
+        return declDaUnid()
+          .filter(function (d) {
+            return (
+              d.status !== 'Cancelado' &&
+              d.cod === cod &&
+              Number(d.qtd) > 0 &&
+              progIso(d.data) >= hojeISO
+            )
+          })
+          .reduce(function (s, d) {
+            return s + Number(d.qtd)
+          }, 0)
+      }
+      function disponivelProg(cod) {
+        // saldo com PV − programado futuro − realizado (produção declarada/SMKT extra) — o que ainda cabe em PV
+        let done = 0,
+          sm = 0
+        try {
+          done = declaradoTotal(cod)
+        } catch (e) {}
+        try {
+          sm = Math.max(0, Number(smktExtraTotal(cod)) || 0)
+        } catch (e) {}
+        const saldoPv = DATA.rows
+          .filter(function (r) {
+            return r.codigo === cod
+          })
+          .reduce(function (s, r) {
+            return s + (Number(r.qtd) || 0)
+          }, 0)
+        return Math.max(0, saldoPv - progFuturoTotal(cod) - done - sm)
+      }
+      function smktExtraTotal(cod) {
+        // produção declarada já foi debitada em r.prod; só o excedente é adicional.
+        return smktManualTotal(cod) + Math.max(0, smktProgramTotal(cod) - declaradoTotal(cod))
+      }
+      function smktExtraForRow(r) {
+        let restante = smktExtraTotal(r.codigo)
+        if (restante <= 0) return 0
+        for (let i = 0; i < DATA.rows.length; i++) {
+          const x = DATA.rows[i]
+          if (x.codigo !== r.codigo) continue
+          const base = x.prod ? Math.max(0, x.qtd - x.prod.qtd) : x.qtd
+          const uso = Math.min(restante, base)
+          if (x === r) return uso
+          restante -= uso
+          if (restante <= 0) return 0
+        }
+        return 0
+      }
+      function qtdPend(r) {
+        const base = r.prod ? Math.max(0, r.qtd - r.prod.qtd) : r.qtd
+        return Math.max(0, base - smktExtraForRow(r))
+      }
+      function qtdProd(r) {
+        const declarado = r.prod ? Math.min(r.prod.qtd, r.qtd) : 0
+        return Math.min(r.qtd, declarado + smktExtraForRow(r))
+      }
+      function vPend(r) {
+        return r.vtot * (r.qtd ? qtdPend(r) / r.qtd : 0)
+      }
+      function vProd(r) {
+        return r.vtot * (r.qtd ? qtdProd(r) / r.qtd : 0)
+      }
+      // toggle Cenário removido (25/09): fonte única = datas do ERP (31 datas firmes gravadas no MaxiProd)
+      ;(function () {
+        const nRig = DATA.rows.filter(function (r) {
+          return r.semanaErp
+        }).length
+        const nAtr = DATA.rows.filter(function (r) {
+          return r.siPlano != null
+        }).length
+        document.getElementById('planoInfo').textContent =
+          'datas do MaxiProd (item) · ' +
+          nRig +
+          ' linhas da fila de datas firmes já gravadas no ERP' +
+          (nAtr ? ' · ' + nAtr + ' atrasados remapeados pelo plano de recuperação' : '')
+      })()
+
+      function aplicarSmktNaProgramacao(prods, dia) {
+        return prods
+      }
+      // ==================== CARD "A PROGRAMAR" (não faturado) ====================
+      // saldo da carteira (não saiu via NF) − programado nas declarações (agenda + rascunho)
+      let apQ = ''
+      // data sugerida: 1º dia útil livre a partir de amanhã (carga = declarações existentes + rascunho)
+      function apSugerirData() {
+        const hoje = new Date()
+        hoje.setDate(hoje.getDate() + 1)
+        const carga = {}
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
+          carga[d.data] = (carga[d.data] || 0) + Number(d.qtd)
+        })
+        const med = Object.keys(carga).length
+          ? Object.keys(carga).reduce(function (a, k) {
+              return a + carga[k]
+            }, 0) / Object.keys(carga).length
+          : 0
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(hoje)
+          d.setDate(hoje.getDate() + i)
+          const w = d.getDay()
+          if (w === 0 || w === 6) continue
+          const iso =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          if ((carga[iso] || 0) <= med * 1.5) return iso
+        }
+        return hoje.toISOString().slice(0, 10)
+      }
+      // modal de qtd ao programar (arrasto ou botão 📅)
+      function apAbrirModal(cod, aProg, dataIso, viaDrag) {
+        const box = document.getElementById('apQtdBox')
+        if (!box) return
+        const desc = descDe(cod)
+        document.getElementById('apQtdInfo').innerHTML =
+          '<b>' +
+          cod +
+          '</b> ' +
+          (desc || '').slice(0, 44) +
+          ' · a programar: <b>' +
+          NF.format(aProg) +
+          ' un</b>'
+        document.getElementById('apQtdInput').value = Math.round(aProg)
+        document.getElementById('apQtdData').value = dataIso
+        const sel = document.getElementById('apQtdLocal')
+        if (sel) sel.value = window.UNID || 'C'
+        box.dataset.cod = cod
+        box.dataset.aprog = aProg
+        // POKA-YOKE (v0.0.207): aviso vermelho quando programar ESTE dia ultrapassaria o saldo com PV
+        const warn = document.getElementById('apQtdWarn')
+        if (warn) {
+          const livre = disponivelProg(cod)
+          if (livre <= 0) {
+            warn.style.display = 'block'
+            warn.innerHTML =
+              '⚠ SEM PEDIDO DE VENDA DISPONÍVEL para ' +
+              cod +
+              ' — ' +
+              descDe(cod) +
+              ' — saldo com PV já coberto (programado futuro/realizado/SMKT). Programar aqui é produção para estoque/WARD.'
+          } else if (aProg > livre) {
+            warn.style.display = 'block'
+            warn.innerHTML =
+              '⚠ SALDO PARCIAL: só ' +
+              NF.format(Math.round(livre)) +
+              ' un ainda têm PV na carteira (' +
+              descDe(cod) +
+              '). Programar ' +
+              NF.format(Math.round(aProg)) +
+              ' un gera excedente sem PV (produção para estoque/WARD).'
+          } else {
+            warn.style.display = 'none'
+            warn.innerHTML = ''
+          }
+        }
+        box.style.display = 'flex'
+        setTimeout(function () {
+          const inp = document.getElementById('apQtdInput')
+          inp.focus()
+          inp.select()
+        }, 50)
+      }
+      function apInitModal() {
+        const box = document.getElementById('apQtdBox')
+        if (!box || box._bound) return
+        box._bound = true
+        document.getElementById('apQtdCancel').addEventListener('click', function () {
+          box.style.display = 'none'
+        })
+        box.addEventListener('click', function (e) {
+          if (e.target === box) box.style.display = 'none'
+        })
+        document.getElementById('apQtdOk').addEventListener('click', function () {
+          const cod = box.dataset.cod
+          if (!cod) return
+          const qtd = Number(document.getElementById('apQtdInput').value)
+          const dataIso = document.getElementById('apQtdData').value
+          const sel = document.getElementById('apQtdLocal')
+          const local = sel ? (sel.value === 'V' ? 'V' : 'C') : 'C'
+          if (!qtd || qtd <= 0) {
+            alert('Informe a quantidade.')
+            return
+          }
+          if (!dataIso) {
+            alert('Informe a data.')
+            return
+          }
+          const aProg = Number(box.dataset.aprog) || 0
+          if (
+            qtd > aProg &&
+            !confirm(
+              'Qtd (' +
+                qtd +
+                ') maior que o saldo a programar (' +
+                Math.round(aProg) +
+                '). Confirmar mesmo assim?',
+            )
+          )
+            return
+          box.style.display = 'none'
+          apProgramar(cod, qtd, dataIso, local)
+        })
+      }
+      function apProgramar(cod, qtd, dataIso, local) {
+        if (!Array.isArray(declDraft)) declDraft = []
+        const d = new Date(dataIso + 'T12:00:00')
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        declDraft.push({
+          dia: nomeDia[d.getDay()],
+          data: dataIso,
+          cod: cod,
+          qtd: qtd,
+          local: local || window.UNID || 'C',
+          pv: '',
+          id: 'PR-AP-' + Date.now(),
+          obs: 'programado via A Programar',
+          status: 'Planejado',
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            cod +
+            ' ×' +
+            qtd +
+            ' programado para ' +
+            dataIso.split('-').reverse().join('/') +
+            ' (' +
+            (local === 'V' ? 'Vinhedo' : 'Curitiba') +
+            ') · nada gravado no MaxiProd'
+      }
+      window.apProgramar = apProgramar
+      // ==================== REALOCAÇÃO MANUAL DE PV (06/10, v0.0.235) ====================
+      // Regra Dante: a mudança manual de alocação só entre PVs que TÊM saldo a entregar do produto.
+      // A produção não muda — muda o DESTINO das unidades de um PV de origem para um PV de destino.
+      // Registro: localStorage 'rlpv|<cod>|<de>|<para>' = {qtd, quando} — consultado por progBuildFromDecls.
+      function rlpvRegs(cod) {
+        try {
+          const raw = JSON.parse(localStorage.getItem('rlpv|' + String(cod)) || '[]')
+          return Array.isArray(raw) ? raw : []
+        } catch (e) {
+          return []
+        }
+      }
+      function rlpvSave(cod, regs) {
+        try {
+          localStorage.setItem('rlpv|' + String(cod), JSON.stringify(regs || []))
+        } catch (e) {}
+        try {
+          rlpvCache = rlpvAllLoad()
+        } catch (e) {}
+        if (window.ANDON_SYNC && window.ANDON_SYNC.connected()) {
+          localStorage.setItem('andon|rlpv-rev', String(Date.now()))
+          try {
+            window.ANDON_SYNC.pushRlpv(String(cod), regs || []).catch(function () {})
+          } catch (e) {}
+        }
+      }
+      // saldo a entregar do PV (linha da carteira) MENOS o que já foi realocado para fora dele
+      function pvSaldoAposRealoc(pv, cod) {
+        const rs = DATA.rows.filter(function (r) {
+          return String(r.pv) === String(pv) && r.codigo === cod
+        })
+        const saldo = rs.reduce(function (a, r) {
+          return a + (Number(r.qtd) || 0)
+        }, 0)
+        const fora = rlpvRegs(cod)
+          .filter(function (x) {
+            return String(x.de) === String(pv)
+          })
+          .reduce(function (a, x) {
+            return a + (Number(x.qtd) || 0)
+          }, 0)
+        return { saldo: saldo, fora: fora, livre: Math.max(0, saldo - fora) }
+      }
+      function pvRealocadoDe(pv, cod) {
+        return rlpvRegs(cod)
+          .filter(function (x) {
+            return String(x.para) === String(pv)
+          })
+          .reduce(function (a, x) {
+            return a + (Number(x.qtd) || 0)
+          }, 0)
+      }
+      // PVs com saldo a entregar do produto (destinos possíveis) — regra Dante
+      function rlpvDestinos(cod, pvOrigem) {
+        const regs = rlpvRegs(cod)
+        const agg = {}
+        DATA.rows.forEach(function (r) {
+          if (r.codigo !== cod) return
+          const k = String(r.pv)
+          const o = (agg[k] = agg[k] || {
+            pv: k,
+            cli: r.cliente,
+            emp: r.empresa,
+            saldo: 0,
+            iso: r.iso,
+            atr: false,
+          })
+          o.saldo += Number(r.qtd) || 0
+          if (r.iso && (!o.iso || r.iso < o.iso)) o.iso = r.iso
+          if (r.semana === 'ATRASADO') o.atr = true
+        })
+        const de = String(pvOrigem)
+        return Object.values(agg)
+          .filter(function (o) {
+            return o.pv !== de
+          })
+          .map(function (o) {
+            const para = regs
+              .filter(function (x) {
+                return String(x.para) === o.pv
+              })
+              .reduce(function (a, x) {
+                return a + (Number(x.qtd) || 0)
+              }, 0)
+            const fora = regs
+              .filter(function (x) {
+                return String(x.de) === o.pv
+              })
+              .reduce(function (a, x) {
+                return a + (Number(x.qtd) || 0)
+              }, 0)
+            return Object.assign(o, { livre: Math.max(0, o.saldo - fora), realoc: para })
+          })
+          .filter(function (o) {
+            return o.livre > 0
+          })
+          .sort(function (a, b) {
+            return a.iso.localeCompare(b.iso)
+          })
+      }
+      function pvTagDe(cod, pv) {
+        const o = DATA.rows.find(function (r) {
+          return String(r.pv) === String(pv) && r.codigo === cod
+        })
+        return o ? String(o.cliente || '').slice(0, 26) : ''
+      }
+      function rlpvAbrirModal(cod, pvDe, qtdMax) {
+        const box = document.getElementById('rlpvBox')
+        if (!box) return
+        document.getElementById('rlpvInfo').innerHTML =
+          '<b>' +
+          cod +
+          '</b> ' +
+          descDe(cod).slice(0, 40) +
+          ' · origem <b>PV ' +
+          pvDe +
+          '</b> (' +
+          pvTagDe(cod, pvDe) +
+          ') · a realocar: <b>' +
+          NF.format(Math.round(qtdMax)) +
+          ' un</b>'
+        const sel = document.getElementById('rlpvSel')
+        const destinos = rlpvDestinos(cod, pvDe)
+        sel.innerHTML =
+          '<option value="">— escolha o PV destino —</option>' +
+          destinos
+            .map(function (o) {
+              return (
+                '<option value="' +
+                o.pv +
+                '|' +
+                o.cli +
+                '">PV ' +
+                o.pv +
+                ' · ' +
+                o.cli.slice(0, 26) +
+                ' · saldo ' +
+                NF.format(o.livre) +
+                ' un' +
+                (o.atr ? ' · ATRASADO' : '') +
+                ' · entrega ' +
+                dtBR(o.iso) +
+                '</option>'
+              )
+            })
+            .join('')
+        document.getElementById('rlpvDig').value = ''
+        document.getElementById('rlpvQtd').value = Math.round(qtdMax)
+        const w = document.getElementById('rlpvWarn')
+        if (!destinos.length) {
+          w.style.display = 'block'
+          w.textContent =
+            'Nenhum outro PV tem saldo a entregar deste produto — realocação indisponível (regra: só entre PVs com saldo).'
+        } else {
+          w.style.display = 'none'
+          w.textContent = ''
+        }
+        box.dataset.cod = cod
+        box.dataset.pvde = pvDe
+        box.dataset.qtdmax = Math.round(qtdMax)
+        box.style.display = 'flex'
+        setTimeout(function () {
+          sel.focus()
+        }, 50)
+      }
+      function rlpvInitModal() {
+        const box = document.getElementById('rlpvBox')
+        if (!box || box._bound) return
+        box._bound = true
+        document.getElementById('rlpvCancel').addEventListener('click', function () {
+          box.style.display = 'none'
+        })
+        box.addEventListener('click', function (e) {
+          if (e.target === box) box.style.display = 'none'
+        })
+        // digitar o nº do PV: valida contra os destinos possíveis (regra: só PVs com saldo)
+        document.getElementById('rlpvDig').addEventListener('input', function () {
+          const q = this.value.trim()
+          const w = document.getElementById('rlpvWarn')
+          if (!q) {
+            w.style.display = 'none'
+            return
+          }
+          const o = pvLookup(q)
+          const ok =
+            o &&
+            o.itens.some(function (r) {
+              return r.codigo === box.dataset.cod
+            }) &&
+            String(o.pv) !== String(box.dataset.pvde)
+          if (!ok) {
+            w.style.display = 'block'
+            w.textContent =
+              'PV ' +
+              q +
+              ' não é destino válido: não tem saldo a entregar do produto ' +
+              box.dataset.cod +
+              ' (ou é o próprio PV de origem).'
+          } else {
+            w.style.display = 'none'
+          }
+        })
+        document.getElementById('rlpvOk').addEventListener('click', function () {
+          const cod = box.dataset.cod,
+            pvDe = box.dataset.pvde,
+            qtdMax = Number(box.dataset.qtdmax) || 0
+          if (!cod || !pvDe) return
+          const qtd = Number(document.getElementById('rlpvQtd').value) || 0
+          if (qtd <= 0) {
+            alert('Informe a quantidade.')
+            return
+          }
+          if (qtd > qtdMax) {
+            alert('Qtd maior que o saldo do PV ' + pvDe + ' (' + NF.format(qtdMax) + ' un).')
+            return
+          }
+          let pvPara = ''
+          const dig = document.getElementById('rlpvDig').value.trim()
+          const sel = document.getElementById('rlpvSel').value
+          if (dig) {
+            const o = pvLookup(dig)
+            const ok =
+              o &&
+              o.itens.some(function (r) {
+                return r.codigo === cod
+              }) &&
+              String(o.pv) !== String(pvDe)
+            if (!ok) {
+              alert(
+                'PV ' +
+                  dig +
+                  ' não é destino válido — só PVs com saldo a entregar do produto ' +
+                  cod +
+                  ' (regra).',
+              )
+              return
+            }
+            pvPara = String(o.pv)
+          } else if (sel) {
+            pvPara = sel.split('|')[0]
+          } else {
+            alert('Escolha o PV destino (lista ou digite o nº).')
+            return
+          }
+          const dest = rlpvDestinos(cod, pvDe).find(function (o) {
+            return String(o.pv) === String(pvPara)
+          })
+          if (!dest) {
+            alert('PV ' + pvPara + ' sem saldo a entregar deste produto — realocação indisponível.')
+            return
+          }
+          if (qtd > dest.livre) {
+            alert(
+              'PV ' +
+                pvPara +
+                ' tem só ' +
+                NF.format(dest.livre) +
+                ' un de saldo livre — realocação limitada a isso.',
+            )
+            return
+          }
+          const regs = rlpvRegs(cod)
+          regs.push({
+            cod: String(cod),
+            de: String(pvDe),
+            para: String(pvPara),
+            qtd: qtd,
+            data: box.dataset.data || progDate || '',
+            quando: new Date().toISOString(),
+          })
+          rlpvSave(cod, regs)
+          box.style.display = 'none'
+          progBuildFromDecls()
+          renderProgTabela()
+          renderKpis()
+          renderGantt()
+          renderTimeline()
+          renderTabela()
+          const st = document.getElementById('declStatus')
+          if (st)
+            st.textContent =
+              'PV ' +
+              pvDe +
+              ' → PV ' +
+              pvPara +
+              ': ' +
+              NF.format(qtd) +
+              ' un realocadas (' +
+              cod +
+              ') · produção não muda · nada gravado no MaxiProd'
+          alert(
+            'Realocado: ' +
+              NF.format(qtd) +
+              ' un do PV ' +
+              pvDe +
+              ' → PV ' +
+              pvPara +
+              ' (' +
+              cod +
+              '). A produção continua igual — mudou só o destino. Ctrl+Z desfaz.',
+          )
+        })
+      }
+      // Ctrl+Z desfaz a última realocação
+      document.addEventListener('keydown', function (e) {
+        if (!(e.ctrlKey && (e.key === 'z' || e.key === 'Z'))) return
+        if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))
+          return
+        const cod = window._rlpvLastCod
+        if (!cod) return
+        const regs = rlpvRegs(cod)
+        if (!regs.length) return
+        const ult = regs[regs.length - 1]
+        if (
+          !confirm(
+            'Desfazer a última realocação de ' +
+              cod +
+              '? PV ' +
+              ult.de +
+              ' → PV ' +
+              ult.para +
+              ' · ' +
+              NF.format(ult.qtd) +
+              ' un',
+          )
+        )
+          return
+        regs.pop()
+        rlpvSave(cod, regs)
+        window._rlpvLastCod = null
+        progBuildFromDecls()
+        renderProgTabela()
+        renderKpis()
+        renderGantt()
+        renderTimeline()
+        renderTabela()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Realocação desfeita — PV ' + ult.de + ' voltou a ter as ' + NF.format(ult.qtd) + ' un'
+      })
+
+      window._rlpvCache = (function () {
+        try {
+          return JSON.parse(localStorage.getItem('rlpv|all') || '{}')
+        } catch (e) {
+          return {}
+        }
+      })()
+      function rlpvAllLoad() {
+        // carrega as realocações de TODOS os códigos (localStorage) para o cache da sessão
+        const all = {}
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k && k.indexOf('rlpv|') === 0 && k !== 'rlpv|all') {
+              const cod = k.slice(5)
+              const a = JSON.parse(localStorage.getItem(k) || '[]')
+              if (Array.isArray(a) && a.length) all[cod] = a
+            }
+          }
+        } catch (e) {}
+        return all
+      }
+      let rlpvCache = rlpvAllLoad()
+      function renderAProg() {
+        const prog = {} // codigo -> {prog: un, det: [str]}
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+          const o = (prog[d.cod] = prog[d.cod] || { prog: 0, det: [] })
+          o.prog += Number(d.qtd)
+          o.det.push(
+            dtBR(d.data) +
+              ' ×' +
+              NF.format(Number(d.qtd)) +
+              (d.pv ? ' · PV ' + d.pv : '') +
+              (d.local === 'V' ? ' · V' : ' · C') +
+              (d.status && d.status !== 'Planejado' ? ' · ' + d.status : ''),
+          )
+        })
+        const map = {}
+        DATA.rows.forEach(function (r) {
+          const o = (map[r.codigo] = map[r.codigo] || {
+            desc: r.desc,
+            frete: r.frete,
+            saldo: 0,
+            vt: 0,
+            pvs: new Set(),
+            entrega: '',
+            prog: 0,
+            det: [],
+          })
+          o.saldo += Number(r.qtd) || 0
+          o.vt += r.vtot || 0
+          o.pvs.add(r.pv + '|' + r.empresa)
+          if (!o.entrega || (r.iso && r.iso < o.entrega)) o.entrega = r.iso
+          const p = prog[r.codigo]
+          if (p) {
+            o.prog = p.prog
+            o.det = p.det
+          }
+        })
+        // SMKT: produto pronto é real (regra Dante 27/09) — saldo no supermercado NÃO precisa ser programado
+        Object.keys(map).forEach(function (cod) {
+          try {
+            map[cod].smkt = Math.max(0, Number(smktSaldo(cod)) || 0)
+          } catch (e) {
+            map[cod].smkt = 0
+          }
+        })
+        const q = apQ.toUpperCase()
+        const arr = Object.entries(map)
+          .map(function (e) {
+            const [cod, o] = e
+            o.aProg = disponivelProg(cod)
+            return [cod, o]
+          })
+          .filter(function (e) {
+            const [cod, o] = e
+            return o.saldo > 0 && (!q || (cod + ' ' + o.desc).toUpperCase().includes(q))
+          })
+          .sort(function (a, b) {
+            return b[1].aProg - a[1].aProg || b[1].vt - a[1].vt
+          })
+        let tS = 0,
+          tP = 0,
+          tA = 0,
+          tV = 0,
+          tSm = 0
+        const rows =
+          arr
+            .map(function (e) {
+              const [cod, o] = e
+              tS += o.saldo
+              tP += Math.min(o.prog, o.saldo)
+              tA += o.aProg
+              tV += o.vt
+              tSm += o.smkt || 0
+              const progTxt =
+                (o.det.length ? o.det.join(' + ') : '<span style="color:var(--mut)">—</span>') +
+                ((o.smkt || 0) > 0
+                  ? ' <span class="tagP">🛒 SMKT ×' + NF.format(o.smkt) + '</span>'
+                  : '')
+              const sug = apSugerirData()
+              const draggable =
+                o.aProg > 0
+                  ? ' draggable="true" data-apcod="' +
+                    cod +
+                    '" data-apqtd="' +
+                    o.aProg +
+                    '" title="Arraste até um dia acima para programar (pergunta a qtd)"'
+                  : ''
+              const btn =
+                o.aProg > 0
+                  ? '<button class="exRl" data-apbtn="' +
+                    cod +
+                    '" data-apqtd="' +
+                    o.aProg +
+                    '" title="Programar: escolhe data e qtd">📅 Programar</button>'
+                  : ''
+              return (
+                '<tr' +
+                draggable +
+                '><td><div class="cod">' +
+                cod +
+                (o.frete ? ' <span class="tagF">FRETE</span>' : '') +
+                '</div><div class="dsc">' +
+                o.desc.slice(0, 52) +
+                '</div>' +
+                btn +
+                '</td>' +
+                '<td class="num">' +
+                NF.format(o.saldo) +
+                '</td><td class="num">' +
+                FMT.format(o.vt) +
+                '</td>' +
+                '<td class="num">' +
+                (o.prog ? NF.format(Math.min(o.prog, o.saldo)) : '—') +
+                '</td>' +
+                '<td class="num" style="font-weight:800;color:' +
+                (o.aProg > 0 ? '#b45309' : '#16a34a') +
+                '">' +
+                NF.format(o.aProg) +
+                '</td>' +
+                '<td>' +
+                progTxt +
+                '</td><td class="num" style="font-weight:700;color:#1e3a8a">' +
+                dtBR(sug) +
+                '</td><td>' +
+                dtBR(o.entrega) +
+                '</td><td class="num">' +
+                o.pvs.size +
+                '</td></tr>'
+              )
+            })
+            .join('') || '<tr><td colspan="9">Nada encontrado.</td></tr>'
+        document.getElementById('tbbAProg').innerHTML = rows
+        document.getElementById('trfAProg').innerHTML =
+          '<td><b>TOTAL (' +
+          arr.length +
+          ' produtos)</b></td><td class="num"><b>' +
+          NF.format(tS) +
+          '</b></td><td class="num"><b>' +
+          FMT.format(tV) +
+          '</b></td><td class="num"><b>' +
+          NF.format(tP) +
+          '</b></td><td class="num"><b>' +
+          NF.format(tA) +
+          '</b></td><td colspan="4"></td>'
+      }
+      // interação do card A Programar: clique no 📅, arrasto até o dia, drop pergunta a qtd
+      document.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('[data-apbtn]') : null
+        if (!b) return
+        const cod = b.getAttribute('data-apbtn')
+        const aProg = Number(b.getAttribute('data-apqtd')) || 0
+        apAbrirModal(cod, aProg, apSugerirData())
+      })
+      document.addEventListener('dragstart', function (e) {
+        if (document.body.classList.contains('viewerMode')) {
+          e.preventDefault()
+          return
+        }
+        const tr = e.target.closest ? e.target.closest('tr[data-apcod]') : null
+        if (!tr) return
+        window._apDrag = {
+          cod: tr.getAttribute('data-apcod'),
+          qtd: Number(tr.getAttribute('data-apqtd')) || 0,
+        }
+        try {
+          e.dataTransfer.setData('text/plain', tr.getAttribute('data-apcod'))
+        } catch (x) {}
+        e.dataTransfer.effectAllowed = 'move'
+      })
+      document.addEventListener('dragend', function () {
+        window._apDrag = null
+        Array.prototype.forEach.call(document.querySelectorAll('#pbtns button'), function (b) {
+          b.classList.remove('dropOn')
+        })
+      })
+      document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'apQ') {
+          apQ = e.target.value
+          renderAProg()
+        }
+      })
+      document.getElementById('btnDlAProg').addEventListener('click', function () {
+        const rows = [
+          [
+            'Código',
+            'Produto',
+            'Saldo (un)',
+            'Valor',
+            'Programado (un)',
+            'A programar (un)',
+            'Programação',
+            'Data sugerida',
+            'Entrega mais antiga',
+            'PVs',
+          ],
+        ]
+        document.querySelectorAll('#tbbAProg tr').forEach(function (tr) {
+          const tds = tr.children
+          if (tds.length < 9 || tds[0].textContent.indexOf('TOTAL') === 0) return
+          rows.push([
+            tds[0].textContent.trim(),
+            '',
+            tds[1].textContent,
+            tds[2].textContent,
+            tds[3].textContent,
+            tds[4].textContent,
+            tds[5].textContent,
+            tds[6].textContent,
+            tds[7].textContent,
+            tds[8].textContent,
+          ])
+        })
+        const wb = XLSX.utils.aoa_to_sheet(rows)
+        const wbk = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wbk, wb, 'A Programar')
+        XLSX.writeFile(
+          wbk,
+          'a_programar_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.xlsx',
+        )
+      })
+
+      function progBuildFromDecls() {
+        if (!DATA.progSemana) return
+        const avail = {}
+        DATA.rows.forEach(function (r) {
+          const k = r.codigo + '|' + r.pv + '|' + r.empresa
+          avail[k] = (avail[k] || 0) + Number(r.qtd || 0)
+        })
+        const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const out = []
+        window.fosseisCache = []
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+          const dt = new Date(d.data + 'T12:00:00'),
+            day = dias[dt.getDay()],
+            date = d.data.slice(8, 10) + '/' + d.data.slice(5, 7)
+          let left = Number(d.qtd)
+          let cand = DATA.rows
+            .filter(function (r) {
+              return r.codigo === d.cod && (!d.pv || String(r.pv) === String(d.pv))
+            })
+            .sort(function (a, b) {
+              return a.iso.localeCompare(b.iso)
+            })
+          // POKA-YOKE: declaração sem NENHUM saldo correspondente na carteira = fóssil (PV já faturado ou inexistente) — não vira linha fantasma
+          if (!cand.length) {
+            window.fosseisCache.push({
+              cod: d.cod,
+              qtd: Number(d.qtd),
+              pv: d.pv || '—',
+              data: d.data,
+              motivo: d.pv
+                ? 'PV ' + d.pv + ' faturado/sem saldo — NF já saiu?'
+                : 'código sem saldo na carteira',
+            })
+            return
+          }
+          const prodIso = d.data // coleta real parte da PRODUÇÃO declarada (1º DU após), não da entrega
+          cand.forEach(function (r) {
+            const k = r.codigo + '|' + r.pv + '|' + r.empresa,
+              q = Math.min(left, avail[k] || 0)
+            if (q <= 0) return
+            // chegada prevista = coleta (1º DU após a produção) + trânsito; atrasado quando chega DEPOIS da entrega
+            let atrasado = r.semana === 'ATRASADO'
+            let chegTxt
+            const cid = cidadeDeOrig(r.cliente, d.local)
+            const tab = d.local === 'V' ? TRANSITO_VINHEDO : TRANSITO
+            const tdu = cid ? tab[cid][0] : null
+            if (tdu) {
+              const p = new Date(prodIso + 'T12:00:00')
+              const coleta = addDU(p, 1),
+                cheg = addDU(coleta, tdu)
+              chegTxt = dtBR(isoD(cheg)) + (cid ? ' · ' + cid : '')
+              const de = new Date(r.iso + 'T12:00:00')
+              if (cheg > de) atrasado = true
+            } else if (d.local === 'V') {
+              chegTxt = 'fora da tabela'
+            } else {
+              chegTxt = dtBR(r.iso) + ' · fora da tabela'
+            }
+            out.push({
+              dia: day,
+              data: date,
+              cod: d.cod,
+              desc: r.desc,
+              qtd: q,
+              pv: String(r.pv),
+              cli: r.cliente,
+              emp: r.empresa,
+              vtot: r.qtd ? (r.vtot * q) / r.qtd : 0,
+              sit: atrasado ? 'ATRASADO' : 'em dia',
+              cheg: chegTxt,
+              local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+              firme: r.iso,
+              cidade: cid || '',
+              prog_id: d.id || '',
+              obs: d.obs || '',
+              status: d.status || 'Planejado',
+            })
+            avail[k] -= q
+            left -= q
+          })
+          if (left > 0) {
+            const vu = cand.length && cand[0].qtd ? cand[0].vtot / cand[0].qtd : 0
+            out.push({
+              dia: day,
+              data: date,
+              cod: d.cod,
+              desc: descDe(d.cod),
+              qtd: left,
+              pv: d.pv || '—',
+              cli: '',
+              emp: '',
+              vtot: vu * left,
+              sit: 'Sem PV associado',
+              cheg: '—',
+              local: d.local === 'V' ? 'Vinhedo' : 'Curitiba',
+              semPv: true,
+              prog_id: d.id || '',
+              obs: d.obs || '',
+              status: d.status || 'Planejado',
+            })
+          }
+        })
+        // REALOCAÇÃO MANUAL DE PV (v0.0.235): move qtd entre PVs da MESMA declaração (mesma
+        // data+produto) — a produção continua igual, muda só o destino. Regra Dante: só entre
+        // PVs com saldo a entregar do produto. PV de origem pode zerar (fica sem linha).
+        try {
+          const porData = {}
+          const novos = []
+          out.forEach(function (a) {
+            if (a.semPv || !a.pv || a.pv === '—') return
+            const k = a.data + '|' + a.cod
+            ;(porData[k] = porData[k] || []).push(a)
+          })
+          Object.keys(rlpvCache || {}).forEach(function (cod) {
+            ;(rlpvCache[cod] || []).forEach(function (g) {
+              const list = porData[g.data + '|' + g.cod]
+              if (!list || !list.length) return
+              let need = Number(g.qtd) || 0
+              for (let i = list.length - 1; i >= 0 && need > 0; i--) {
+                const a = list[i]
+                if (String(a.pv) !== String(g.de)) continue
+                const t = Math.min(need, a.qtd)
+                if (t <= 0) continue
+                const vu = a.qtd > 0 ? a.vtot / a.qtd : vuDe(a.cod) || 0
+                a.qtd -= t
+                need -= t
+                a.vtot = vu * a.qtd
+                const dest = list.find(function (x) {
+                  return String(x.pv) === String(g.para)
+                })
+                if (dest) {
+                  const vu2 = dest.qtd > 0 ? dest.vtot / dest.qtd : vu
+                  dest.qtd += t
+                  dest.vtot = vu2 * dest.qtd
+                } else {
+                  novos.push({
+                    dia: a.dia,
+                    data: a.data,
+                    cod: a.cod,
+                    desc: a.desc,
+                    qtd: t,
+                    pv: String(g.para),
+                    cli: pvTagDe(a.cod, g.para),
+                    emp: '',
+                    vtot: t * (vuDe(a.cod) || 0),
+                    sit: a.sit,
+                    cheg: '—',
+                    local: a.local,
+                    firme: a.firme || '',
+                    cidade: '',
+                    prog_id: a.prog_id || '',
+                    obs: (a.obs || '') + ' · realocado de PV ' + g.de,
+                    status: a.status || 'Planejado',
+                  })
+                }
+                if (a.qtd <= 0.0001) list.splice(i, 1)
+              }
+            })
+          })
+          if (novos.length)
+            novos.forEach(function (n) {
+              out.push(n)
+            })
+        } catch (e) {}
+        DATA.progSemana.dias = out
+      }
+
+      // ---- FIRME: enviar produto da tabela semanal para a Programação firme (v0.0.213) ----
+      window._firmaSel = (function () {
+        try {
+          return JSON.parse(localStorage.getItem('andon|firmaSel') || '{}')
+        } catch (e) {
+          return {}
+        }
+      })()
+      function firmaSaveSel() {
+        try {
+          localStorage.setItem('andon|firmaSel', JSON.stringify(window._firmaSel || {}))
+        } catch (e) {}
+      }
+      function firmaAbrirModal(cod, aProg) {
+        apAbrirModal(cod, aProg, apSugerirData())
+        const t = document.getElementById('apQtdInfo')
+        if (t) t.innerHTML = t.innerHTML + ' <span class="tagP">→ Programação firme</span>'
+      }
+      document.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('[data-firma]') : null
+        if (!b) return
+        e.stopPropagation()
+        const cod = b.getAttribute('data-firma')
+        // qtd sugerida = pendente do produto na semana selecionada
+        let qtd = 0
+        const tr = b.closest('tr.prow')
+        if (tr) {
+          const ix = tr.getAttribute('data-ix')
+          const tb = document.getElementById('tbbS')
+          // recupera qtd pendente agregada da semana atual via cache global
+          qtd = (window._firmaQtdCache && window._firmaQtdCache[cod]) || 0
+        }
+        if (!qtd) {
+          qtd = DATA.rows
+            .filter(function (r) {
+              return r.codigo === cod
+            })
+            .reduce(function (a, r) {
+              return a + qtdPend(r)
+            }, 0)
+        }
+        if (!qtd) {
+          alert('Sem saldo pendente para ' + cod + '.')
+          return
+        }
+        firmaAbrirModal(cod, Math.round(qtd))
+      })
+      document.addEventListener('change', function (e) {
+        const c = e.target.closest ? e.target.closest('.firmaFlag') : null
+        if (!c) return
+        const cod = c.getAttribute('data-cod')
+        window._firmaSel = window._firmaSel || {}
+        if (c.checked) window._firmaSel[cod] = 1
+        else delete window._firmaSel[cod]
+        firmaSaveSel()
+        const bs = document.getElementById('btnFirmaSel')
+        if (bs) {
+          const n = Object.keys(window._firmaSel).length
+          bs.style.display = n ? '' : 'none'
+          if (n) bs.textContent = '→ Enviar p/ Programação firme (' + n + ')'
+        }
+      })
+      document.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('#btnFirmaSel') : null
+        if (!b) return
+        const sel = Object.keys(window._firmaSel || {})
+        if (!sel.length) {
+          alert('Marque a 🚩 flag dos produtos primeiro.')
+          return
+        }
+        // envia cada produto marcado com sua qtd pendente da semana, distribuído nos dias úteis da semana selecionada
+        const seg = semanaSegunda(SEM[semSel])
+        if (!seg) {
+          alert('Semana inválida.')
+          return
+        }
+        const diasUteis = []
+        for (let i = 0; i < 5; i++) {
+          const d = new Date(seg + 'T12:00:00')
+          d.setDate(d.getDate() + i)
+          diasUteis.push(isoD(d))
+        }
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        let n = 0
+        sel.forEach(function (cod) {
+          let qtd =
+            (window._firmaQtdCache && window._firmaQtdCache[cod]) ||
+            Math.round(
+              DATA.rows
+                .filter(function (r) {
+                  return r.codigo === cod
+                })
+                .reduce(function (a, r) {
+                  return a + qtdPend(r)
+                }, 0),
+            )
+          if (qtd <= 0) return
+          // distribui pelos dias úteis (maior parte no 1º dia livre) — simples: tudo no 1º dia útil
+          const iso = diasUteis[0]
+          const d = new Date(iso + 'T12:00:00')
+          declDraft.push({
+            dia: nomeDia[d.getDay()],
+            data: iso,
+            cod: cod,
+            qtd: qtd,
+            local: window.UNID || 'C',
+            pv: '',
+            id: 'PR-FIRM-' + Date.now() + '-' + n++,
+            obs: 'enviado da tabela semanal (' + SEM[semSel] + ')',
+            status: 'Planejado',
+          })
+        })
+        if (n) {
+          declSave()
+          progBuildFromDecls()
+          renderProg()
+        }
+        window._firmaSel = {}
+        firmaSaveSel()
+        b.style.display = 'none'
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            n +
+            ' produto(s) enviado(s) à Programação firme (1º dia útil de ' +
+            SEM[semSel] +
+            ') — revise lá · nada gravado no MaxiProd'
+        showView('ent')
+      })
+      // cache das qtds pendentes por produto da semana selecionada (usado no botão → Firme e no lote)
+      ;(function () {
+        const _origRS = renderSemana
+        renderSemana = function () {
+          _origRS.apply(this, arguments)
+          try {
+            const cache = {}
+            visiveis(DATA.rows, 'chkFreteS')
+              .filter(function (r) {
+                return siOf(r) === semSel
+              })
+              .forEach(function (r) {
+                cache[r.codigo] = (cache[r.codigo] || 0) + qtdPend(r)
+              })
+            window._firmaQtdCache = cache
+            const bs = document.getElementById('btnFirmaSel')
+            if (bs) {
+              const n = Object.keys(window._firmaSel || {}).length
+              bs.style.display = n ? '' : 'none'
+              if (n) bs.textContent = '→ Enviar p/ Programação firme (' + n + ')'
+            }
+          } catch (e) {}
+        }
+      })()
+
+      // ---- programação de produção da semana corrente ----
+      let progDia = null,
+        progDate = null,
+        progSemSelIso = null
+      let declDraft = []
+      // SUGESTÃO da próxima semana (semana sem declaração): semeia o rascunho editável com a
+      // fila do plano de recuperação da semana seguinte — editável como qualquer declaração.
+      window._sugAplicada = false
+      function semearSugestaoProximaSemana() {
+        if (window._sugAplicada || !DATA.progSemana || !DATA.progSemana.dias.length) return
+        const hj = new Date()
+        const dow = (hj.getDay() + 6) % 7
+        let segDate = new Date(hj)
+        segDate.setDate(segDate.getDate() - dow)
+        if (dow >= 5) {
+          segDate = new Date(hj)
+          segDate.setDate(segDate.getDate() + (7 - dow))
+        }
+        const segIso =
+          segDate.getFullYear() +
+          '-' +
+          String(segDate.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(segDate.getDate()).padStart(2, '0')
+        const temFuturo = DATA.progSemana.dias.some(function (x) {
+          const p = String(x.data).split('/')
+          const iso =
+            p.length === 3
+              ? p[2] + '-' + p[1] + '-' + p[0]
+              : p.length === 2
+                ? hj.getFullYear() + '-' + p[1] + '-' + p[0]
+                : x.data
+          return iso >= segIso
+        })
+        if (temFuturo) return // semana declarada ainda tem dias futuros — nada a semear
+        // semana alvo = próxima segunda; achar a aba do plano (S##) correspondente
+        const y = segDate.getFullYear(),
+          w = (function (d) {
+            const t = new Date(d)
+            t.setDate(t.getDate() + 3)
+            const jan4 = new Date(t.getFullYear(), 0, 4)
+            return 1 + Math.round(((t - jan4) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7)
+          })(segDate)
+        const alvo = 'S' + String(w).padStart(2, '0')
+        const linhas = window.PLANO_SEMANA && window.PLANO_SEMANA[alvo]
+        if (!linhas || !linhas.length) {
+          window._sugAplicada = true
+          return
+        }
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const diasUteis = []
+        for (let i = 0; i < 5; i++) {
+          const d = new Date(segDate)
+          d.setDate(d.getDate() + i)
+          diasUteis.push(d)
+        }
+        // distribui produtos (maior qtd primeiro) equilibrando carga nos 5 dias úteis
+        const carga = [0, 0, 0, 0, 0]
+        let n = 0
+        linhas
+          .slice()
+          .sort(function (a, b) {
+            return b.qtd - a.qtd
+          })
+          .forEach(function (L) {
+            let mi = 0
+            for (let i = 1; i < 5; i++) {
+              if (carga[i] < carga[mi]) mi = i
+            }
+            carga[mi] += L.qtd
+            const d = diasUteis[mi]
+            const iso =
+              d.getFullYear() +
+              '-' +
+              String(d.getMonth() + 1).padStart(2, '0') +
+              '-' +
+              String(d.getDate()).padStart(2, '0')
+            declDraft.push({
+              dia: nomeDia[d.getDay()],
+              data: iso,
+              cod: L.cod,
+              qtd: L.qtd,
+              local: window.UNID || 'C',
+              pv: L.pv || '',
+              id: 'PR-SUG-' + n++,
+              obs: 'SUGESTÃO do plano de recuperação (' + alvo + ') — confirmar',
+              status: 'Planejado',
+            })
+          })
+        if (n) {
+          declSave()
+        }
+        window._sugAplicada = true
+      }
+      function renderHistSem(diasHist) {
+        const card = document.getElementById('cardHistSem')
+        if (!card) return
+        if (!diasHist || !diasHist.length) {
+          card.style.display = 'none'
+          return
+        }
+        card.style.display = ''
+        const byDate = {}
+        diasHist.forEach(function (x) {
+          ;(byDate[x.data] = byDate[x.data] || []).push(x)
+        })
+        const datas = Object.keys(byDate).sort()
+        let html = ''
+        datas.forEach(function (dt) {
+          const linhas = byDate[dt]
+          const tot = linhas.reduce(function (s, x) {
+            return s + (x.qtd || 0)
+          }, 0)
+          html +=
+            '<tr style="background:#f1f5f9"><td colspan="6" style="font-weight:800">' +
+            dt +
+            ' · ' +
+            linhas[0].dia +
+            ' — ' +
+            linhas.length +
+            ' linha(s), ' +
+            Math.round(tot) +
+            ' un</td></tr>'
+          linhas.forEach(function (a) {
+            html +=
+              '<tr><td>' +
+              a.dia +
+              '</td><td>' +
+              a.cod +
+              ' · ' +
+              String(a.desc || '').slice(0, 35) +
+              '</td><td class="num">' +
+              NF.format(Math.round(a.qtd || 0)) +
+              '</td><td>' +
+              (a.pv || '—') +
+              '</td><td>' +
+              (a.cli || '—') +
+              '</td><td>' +
+              (a.sit || '') +
+              '</td></tr>'
+          })
+        })
+        document.getElementById('tbbHistSem').innerHTML =
+          html || '<tr><td colspan="6">Sem histórico.</td></tr>'
+      }
+      function renderProg() {
+        const card = document.getElementById('cardProg')
+        if (!DATA.progSemana || !DATA.progSemana.dias.length) {
+          card.style.display = 'none'
+          return
+        }
+        card.style.display = ''
+        const hj = new Date()
+        const dow = (hj.getDay() + 6) % 7 // hj ANTES de isoOf (era usado antes de existir)
+        function isoOf(dt) {
+          const p = String(dt).split('/')
+          if (p.length === 3) return p[2] + '-' + p[1] + '-' + p[0]
+          if (p.length === 2) return String(hj.getFullYear()) + '-' + p[1] + '-' + p[0]
+          return dt
+        }
+        const dias = [
+          ...new Map(
+            DATA.progSemana.dias.map(function (a) {
+              return [a.data + '|' + a.dia, a]
+            }),
+          ).values(),
+        ].sort(function (a, b) {
+          return isoOf(a.data).localeCompare(isoOf(b.data))
+        })
+        // semana corrente começa na segunda; dias anteriores viram histórico (card no final, recolhido)
+        let segDate = new Date(hj)
+        segDate.setDate(segDate.getDate() - dow) // segunda da semana corrente
+        if (dow >= 5) {
+          segDate = new Date(hj)
+          segDate.setDate(segDate.getDate() + (7 - dow))
+        } // sáb/dom: próxima segunda
+        const segIso =
+          segDate.getFullYear() +
+          '-' +
+          String(segDate.getMonth() + 1).padStart(2, '0') +
+          '-' +
+          String(segDate.getDate()).padStart(2, '0')
+        // ---- semanas disponíveis: TODAS as semanas do ano (S01-S52/53) + as que têm declaração ----
+        const anoHj = hj.getFullYear()
+        const semanasMap = {}
+        dias.forEach(function (x) {
+          const p = isoOf(x.data).split('-')
+          const d0 = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+          const dw = (d0.getDay() + 6) % 7
+          const seg = new Date(d0)
+          seg.setDate(seg.getDate() - dw)
+          const si =
+            seg.getFullYear() +
+            '-' +
+            String(seg.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(seg.getDate()).padStart(2, '0')
+          ;(semanasMap[si] = semanasMap[si] || []).push(x)
+        })
+        // todas as segundas do ano (S01..S52/53)
+        const segJan1 = new Date(anoHj, 0, 1)
+        const dwJan = (segJan1.getDay() + 6) % 7
+        const seg1 = new Date(anoHj, 0, 1)
+        seg1.setDate(seg1.getDate() - dwJan)
+        for (let i = 0; i < 53; i++) {
+          const d = new Date(seg1)
+          d.setDate(d.getDate() + i * 7)
+          if (d.getFullYear() > anoHj) break
+          const si =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          if (!semanasMap[si]) semanasMap[si] = []
+        }
+        const semKeys = Object.keys(semanasMap).sort()
+        // ---- multi-seleção de semanas (chips) ----
+        const allSem = document.getElementById('progAllSem')
+        window._progSemSel = window._progSemSel || {}
+        const chips = document.getElementById('progSemChips')
+        if (chips) {
+          const multi = allSem && allSem.checked
+          chips.style.display = multi && !window._progChipsFechado ? 'flex' : 'none'
+          if (multi && !chips._bound) {
+            chips._bound = true
+            chips.addEventListener('click', function (e) {
+              const ap = e.target.closest('[data-aplicar]')
+              if (ap) {
+                window._progChipsFechado = true
+                progDia = null
+                progDate = null
+                renderProg()
+                return
+              }
+              const lp = e.target.closest('[data-limpar]')
+              if (lp) {
+                window._progSemSel = {}
+                window._progChipsFechado = false
+                progDia = null
+                progDate = null
+                renderProg()
+                return
+              }
+              const c = e.target.closest('[data-sem]')
+              if (!c) return
+              const si = c.getAttribute('data-sem')
+              window._progSemSel[si] = !window._progSemSel[si]
+            })
+          }
+          if (multi) {
+            chips.innerHTML =
+              semKeys
+                .map(function (si) {
+                  const on = window._progSemSel[si]
+                  const p = si.split('-')
+                  const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+                  fim.setDate(fim.getDate() + 4)
+                  return (
+                    '<button data-sem="' +
+                    si +
+                    '" class="' +
+                    (on ? 'on' : '') +
+                    '" style="padding:3px 10px;border-radius:999px;border:1px solid ' +
+                    (on ? '#1e3a8a' : 'var(--line)') +
+                    ';background:' +
+                    (on ? '#dbeafe' : '#fff') +
+                    ';color:' +
+                    (on ? '#1e3a8a' : '#334155') +
+                    ';font-size:11.5px;font-weight:' +
+                    (on ? '700' : '500') +
+                    ';cursor:pointer">' +
+                    p[2] +
+                    '/' +
+                    p[1] +
+                    ' – ' +
+                    String(fim.getDate()).padStart(2, '0') +
+                    '/' +
+                    String(fim.getMonth() + 1).padStart(2, '0') +
+                    '</button>'
+                  )
+                })
+                .join('') +
+              '<button data-aplicar="1" style="padding:4px 14px;border-radius:999px;border:1px solid #1e3a8a;background:#1e3a8a;color:#fff;font-size:12px;font-weight:700;cursor:pointer">✓ Aplicar seleção</button><button data-limpar="1" style="padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#64748b;font-size:12px;cursor:pointer">✕ Limpar</button>'
+          }
+        }
+        // ---- seletor de semana (dropdown, todas as semanas do ano) ----
+        const sel = document.getElementById('progSemSel')
+        if (sel && !sel._bound) {
+          sel._bound = true
+          sel.addEventListener('change', function () {
+            progSemSelIso = sel.value
+            progDia = null
+            progDate = null
+            renderProg()
+          })
+          const cb = document.getElementById('progAllSem')
+          if (cb)
+            cb.addEventListener('change', function () {
+              window._progChipsFechado = false
+              progDia = null
+              progDate = null
+              renderProg()
+            })
+        }
+        if (sel) {
+          const cur = sel.value || progSemSelIso || segIso
+          sel.innerHTML = semKeys
+            .map(function (si) {
+              const p = si.split('-')
+              const fim = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+              fim.setDate(fim.getDate() + 4)
+              const lbl =
+                'S' +
+                (function (d) {
+                  const t = new Date(d)
+                  t.setDate(t.getDate() + 3)
+                  const j4 = new Date(t.getFullYear(), 0, 4)
+                  return 1 + Math.round(((t - j4) / 86400000 - 3 + ((j4.getDay() + 6) % 7)) / 7)
+                })(new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))) +
+                ' · ' +
+                p[2] +
+                '/' +
+                p[1] +
+                ' – ' +
+                String(fim.getDate()).padStart(2, '0') +
+                '/' +
+                String(fim.getMonth() + 1).padStart(2, '0') +
+                (si === segIso ? ' (atual)' : '')
+              return (
+                '<option value="' +
+                si +
+                '"' +
+                (cur === si ? ' selected' : '') +
+                '>' +
+                lbl +
+                '</option>'
+              )
+            })
+            .join('')
+          // v0.0.228: se a semana selecionada está VAZIA, cair automaticamente na semana com declarações
+          // (evita "a programação sumiu") — só quando o usuário NÃO escolheu a semana manualmente nesta sessão
+          window._semEscolhida = window._semEscolhida || false
+          sel.addEventListener('change', function () {
+            window._semEscolhida = true
+          })
+          if (!window._semEscolhida) {
+            let alvo = cur
+            const temDecl = function (si) {
+              return semanasMap[si] && semanasMap[si].length > 0
+            }
+            if (!temDecl(alvo)) {
+              const idx = semKeys.indexOf(alvo)
+              for (let i = idx; i >= 0; i--) {
+                if (temDecl(semKeys[i])) {
+                  alvo = semKeys[i]
+                  break
+                }
+              }
+              if (!temDecl(alvo)) {
+                for (let i = idx + 1; i < semKeys.length; i++) {
+                  if (temDecl(semKeys[i])) {
+                    alvo = semKeys[i]
+                    break
+                  }
+                }
+              }
+            }
+            if (alvo !== cur) {
+              progSemSelIso = alvo
+              sel.value = alvo
+            } else if (!progSemSelIso) {
+              progSemSelIso = alvo
+            }
+          }
+        }
+        const modoTodas =
+          allSem &&
+          allSem.checked &&
+          Object.keys(window._progSemSel).some(function (k) {
+            return window._progSemSel[k]
+          })
+        // ---- dias da semana selecionada: SEMPRE os 6 dias Seg-Sáb (sábado vazio por padrão) ----
+        const segSel = new Date((progSemSelIso || segIso) + 'T12:00:00')
+        const nomeDia = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+        const diasSemana = []
+        for (let i = 0; i < 6; i++) {
+          const d = new Date(segSel)
+          d.setDate(d.getDate() + i)
+          const iso =
+            d.getFullYear() +
+            '-' +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(d.getDate()).padStart(2, '0')
+          const br =
+            String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
+          const decl = dias.find(function (x) {
+            return isoOf(x.data) === iso
+          })
+          diasSemana.push({
+            dia: nomeDia[d.getDay()],
+            data: br,
+            iso: iso,
+            decl: !!decl,
+            vazia: !decl && i === 5,
+          })
+        }
+        let diasHist = [],
+          diasMain = diasSemana
+        if (modoTodas) {
+          // visão geral: as semanas SELECIONADAS nos chips, agrupadas (dias Seg-Sáb)
+          diasMain = []
+          semKeys.forEach(function (si) {
+            if (!window._progSemSel[si]) return
+            const p = si.split('-')
+            const seg0 = new Date(si + 'T12:00:00')
+            for (let i = 0; i < 6; i++) {
+              const d = new Date(seg0)
+              d.setDate(d.getDate() + i)
+              const iso =
+                d.getFullYear() +
+                '-' +
+                String(d.getMonth() + 1).padStart(2, '0') +
+                '-' +
+                String(d.getDate()).padStart(2, '0')
+              const br =
+                String(d.getDate()).padStart(2, '0') +
+                '/' +
+                String(d.getMonth() + 1).padStart(2, '0')
+              const decl = dias.find(function (x) {
+                return isoOf(x.data) === iso
+              })
+              diasMain.push({ dia: nomeDia[d.getDay()], data: br, iso: iso, sem: si })
+            }
+          })
+        }
+        const box = document.getElementById('pbtns')
+        if (
+          !progDate ||
+          !diasMain.some(function (x) {
+            return x.data === progDate
+          })
+        ) {
+          const hjBr =
+            String(hj.getDate()).padStart(2, '0') + '/' + String(hj.getMonth() + 1).padStart(2, '0')
+          const hoje = diasMain.find(function (x) {
+            return x.data === hjBr
+          })
+          progDia = (hoje || diasMain[0] || {}).dia
+          progDate = (hoje || diasMain[0] || {}).data
+        }
+        // v0.0.222: aviso quando a semana vista NÃO tem declarações (dias claros não é bug — é semana vazia)
+        const semVazia = !dias.some(function (x) {
+          return diasMain.some(function (d) {
+            return isoOf(d.data) === isoOf(x.data)
+          })
+        })
+        const vazioInfo = document.getElementById('semVazioInfo')
+        if (vazioInfo) {
+          if (semVazia) {
+            const _sync = window.ANDON_SYNC
+            const _con = !!(_sync && _sync.connected())
+            if (!_con) {
+              vazioInfo.innerHTML =
+                '👁 Modo leitura — a programação firme aparece após ENTRAR (botão "Leitura — Entrar p/ editar"). A leitura da agenda exige login.'
+            } else {
+              const comDecl = semKeys.filter(function (si) {
+                return semanasMap[si].length
+              })
+              vazioInfo.innerHTML =
+                'ℹ️ Esta semana está SEM programação — os dias ficam claros (nada sumiu). Declarações existem em: ' +
+                (comDecl.length
+                  ? comDecl
+                      .map(function (si) {
+                        const p = si.split('-')
+                        return p[2] + '/' + p[1]
+                      })
+                      .join(', ')
+                  : 'nenhuma semana') +
+                '. Use o seletor "Semana" acima para ver outra semana.'
+            }
+            vazioInfo.style.display = 'block'
+          } else {
+            vazioInfo.style.display = 'none'
+            vazioInfo.innerHTML = ''
+          }
+        }
+        // v0.0.230: carga do botão = declarações VÁLIDAS do dia (sem fósseis/negativas/canceladas) — igual ao card
+        const cargaDia = {}
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.cod || !d.data || !(Number(d.qtd) > 0)) return
+          if (
+            (window.fosseisCache || []).some(function (f) {
+              return f.cod === d.cod && String(f.data) === String(d.data)
+            })
+          )
+            return // fóssil não conta
+          cargaDia[d.data] = (cargaDia[d.data] || 0) + Number(d.qtd)
+        })
+        box.innerHTML = diasMain
+          .map(function (o) {
+            return (
+              '<button data-d="' +
+              o.dia +
+              '" data-date="' +
+              o.data +
+              '" class="' +
+              (o.data === progDate ? 'on' : '') +
+              '"' +
+              (o.vazia
+                ? ' style="opacity:.55" title="Sábado — sempre vazio (planejamento é Seg-Sex)"'
+                : '') +
+              '>' +
+              o.dia +
+              ' · ' +
+              o.data +
+              '</button>'
+            )
+          })
+          .join('')
+        // v0.0.204/205: CALOR por dia + mini-barras C/V (função paintProgDayButtons)
+        paintProgDayButtons()
+        const fw = document.getElementById('fosseisWarn')
+        if (fw) {
+          const f = window.fosseisCache || []
+          fw.style.display = f.length ? '' : 'none'
+          fw.textContent =
+            '⚠ ' + f.length + ' declaração(ões) sem cobertura (PV faturado?) — não entraram no card'
+          fw.title = f
+            .map(function (x) {
+              return x.cod + ' ×' + x.qtd + ' · ' + x.motivo
+            })
+            .join(' | ')
+        }
+        if (typeof renderHistSem === 'function') renderHistSem(diasHist)
+        Array.prototype.forEach.call(box.children, function (b) {
+          b.addEventListener('click', function () {
+            progDia = b.getAttribute('data-d')
+            progDate = b.getAttribute('data-date')
+            Array.prototype.forEach.call(box.children, function (x) {
+              x.classList.remove('on')
+            })
+            b.classList.add('on')
+            renderProgTabela()
+          })
+          // soltar a linha arrastada neste dia = reprogramar para ele
+          b.addEventListener('dragover', function (e) {
+            if (!dragP) return
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+            b.classList.add('dropOn')
+          })
+          b.addEventListener('dragleave', function () {
+            b.classList.remove('dropOn')
+          })
+          b.addEventListener('drop', function (e) {
+            // recorte (Ctrl+X / botão Recortar) tem prioridade sobre o arrasto
+            const cutP =
+              typeof window.andonCut === 'object' && window.andonCut ? window.andonCut : null
+            if (cutP) {
+              e.preventDefault()
+              b.classList.remove('dropOn')
+              window.andonCut = null
+              progDropCutTo(cutP, b.getAttribute('data-date'))
+              return
+            }
+            // arrasto do card A Programar: programar o produto neste dia (pergunta a qtd)
+            if (window._apDrag && window._apDrag.cod) {
+              e.preventDefault()
+              b.classList.remove('dropOn')
+              const ap = window._apDrag
+              window._apDrag = null
+              apAbrirModal(ap.cod, ap.qtd, progIso(b.getAttribute('data-date')))
+              return
+            }
+            if (!dragP) return
+            e.preventDefault()
+            b.classList.remove('dropOn')
+            progMoveTo(b.getAttribute('data-d'), b.getAttribute('data-date'))
+          })
+        })
+        renderProgTabela()
+        if (typeof renderAProg === 'function') renderAProg()
+      }
+      function renderProgTabela() {
+        const rsBase = DATA.progSemana.dias.filter(function (a) {
+          return a.dia === progDia && a.data === progDate
+        })
+        // Entrada no SMKT já está em produto pronto: não continua como demanda no card principal.
+        const rs = rsBase
+          .map(function (a) {
+            return Object.assign({}, a)
+          })
+          .filter(function (a) {
+            return a.qtd > 0
+          })
+        document.getElementById('trhP').innerHTML =
+          '<th>Código / Produto</th><th>Qtd</th><th>Valor</th><th>PVs</th><th>Chegada</th><th>Situação</th><th>Exec.</th><th>Realizada</th><th>Realocar</th>'
+        // agrega produtos iguais no mesmo dia (mesmo modelo da tabela semanal)
+        const map = {}
+        rs.forEach(function (a) {
+          let p = map[a.cod]
+          if (!p) {
+            p = map[a.cod] = { cod: a.cod, desc: a.desc, qtd: 0, vtot: 0, pvs: {}, atrasado: false }
+          }
+          p.qtd += a.qtd
+          p.vtot += a.vtot
+          const atr = a.sit.indexOf('ATRASADO') >= 0
+          if (atr) p.atrasado = true
+          const kpv = String(a.pv) + '|' + a.cli
+          if (!p.pvs[kpv])
+            p.pvs[kpv] = {
+              pv: a.pv,
+              cli: a.cli,
+              qtd: 0,
+              vtot: 0,
+              atr: false,
+              cheg: a.cheg || '',
+              local: a.local || 'Curitiba',
+              firme: a.firme || '',
+              semPv: !!a.semPv,
+            }
+          p.pvs[kpv].qtd += a.qtd
+          p.pvs[kpv].vtot += a.vtot
+          if (atr) p.pvs[kpv].atr = true
+        })
+        const prods = aplicarSmktNaProgramacao(
+          Object.values(map).sort(function (x, y) {
+            return y.vtot - x.vtot
+          }),
+          progDate,
+        )
+        let tq = 0,
+          tv = 0,
+          tex = 0
+        document.getElementById('tbbP').innerHTML = prods
+          .map(function (p, ix) {
+            tq += p.qtd
+            tv += p.vtot
+            const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+            tex += ex.qtd || 0
+            // v0.0.208: linha PINTADA quando o produto tem saldo no SMKT (vermelho suave + selo) — regra Dante 27/09: SMKT é real e abate a programação
+            let smLinha = 0
+            try {
+              smLinha = Math.max(0, Number(smktSaldo(p.cod)) || 0)
+            } catch (e) {}
+            const trBg = smLinha > 0 ? ' style="background:#fee2e2"' : ''
+            const smSelo =
+              smLinha > 0
+                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b" title="Este produto tem ' +
+                  NF.format(smLinha) +
+                  ' un no estoque SMKT (produto pronto) — abatem a programação">🛒 SMKT ' +
+                  NF.format(smLinha) +
+                  '</span> '
+                : ''
+            const pvList = Object.values(p.pvs).sort(function (x, y) {
+              return parseFloat(x.pv) - parseFloat(y.pv)
+            })
+            const pvRows = pvList
+              .map(function (v) {
+                const vin = v.local === 'Vinhedo' ? ' style="background:#FFF9C4"' : ''
+                // v0.0.204: entrega FIRME (data do cliente no ERP) + alerta quando a chegada estimada estoura
+                let fir = ''
+                if (v.firme) {
+                  const est = v.cheg && v.cheg.indexOf('/') > 0
+                  const estIso = est ? progIso(v.cheg) : null
+                  const late = est && estIso && estIso > v.firme
+                  fir = est
+                    ? late
+                      ? ' <span class="tagF" style="background:#fee2e2;color:#991b1b" title="Chegada estimada DEPOIS da entrega firme">⚠ firme ' +
+                        dtBR(v.firme) +
+                        '</span>'
+                      : ' <span class="tagP" style="font-size:9.5px" title="Chegada estimada antes da entrega firme">firme ' +
+                        dtBR(v.firme) +
+                        '</span>'
+                    : ' <span class="tagF" style="background:#fef9c3;color:#854d0e">firme ' +
+                      dtBR(v.firme) +
+                      '</span>'
+                }
+                return (
+                  '<tr' +
+                  vin +
+                  '><td class="pvtag">' +
+                  v.pv +
+                  '</td><td>' +
+                  (v.semPv
+                    ? '<span style="color:#854d0e;font-weight:700" title="Excedente da declaração: não há saldo de PV na carteira para esta qtd — o valor usa o preço unitário do produto">⚠ excedente sem PV</span>'
+                    : v.cli) +
+                  '</td>' +
+                  '<td class="num">' +
+                  NF.format(Math.round(v.qtd)) +
+                  '</td><td class="num">' +
+                  (v.semPv
+                    ? '<span style="color:#854d0e;font-weight:700">' +
+                      FMT.format(v.vtot) +
+                      '</span>'
+                    : FMT.format(v.vtot)) +
+                  '</td>' +
+                  '<td>' +
+                  (v.cheg || '—') +
+                  fir +
+                  '</td><td>' +
+                  v.local +
+                  '</td>' +
+                  '<td>' +
+                  (v.atr
+                    ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                    : '<span class="tagP">em dia</span>') +
+                  '</td>' +
+                  '<td class="exec">' +
+                  (v.semPv
+                    ? ''
+                    : '<button class="exRl" data-rlpv="' +
+                      v.pv +
+                      '" data-cod="' +
+                      p.cod +
+                      '" title="Mudar a alocação deste PV para outro PV com saldo do mesmo produto — a produção não muda">→ Realocar PV</button>' +
+                      (pvRealocadoDe(v.pv, p.cod) > 0
+                        ? '<div style="font-size:10px;color:#1e3a8a;font-weight:700;margin-top:3px">+' +
+                          NF.format(pvRealocadoDe(v.pv, p.cod)) +
+                          ' un realocadas p/ cá</div>'
+                        : '')) +
+                  '</td></tr>'
+                )
+              })
+              .join('')
+            // opções de troca de PV: outros PVs do mesmo produto na carteira (supermercado: destino flexível)
+            const outrosPVs = DATA.rows
+              .filter(function (r) {
+                return r.codigo === p.cod && !p.pvs[String(r.pv) + '|' + r.cli]
+              })
+              .sort(function (a, b) {
+                return b.vtot - a.vtot
+              })
+              .slice(0, 40)
+            // SMKT: alocação por PV acontece só no card Supermercado (NF ou manual) — aqui sem PV.
+            const noSmkt = ex.smkt > 0
+            const opts = noSmkt
+              ? ''
+              : '<option value="">PV atual (' +
+                pvList
+                  .map(function (v) {
+                    return v.pv
+                  })
+                  .join('/') +
+                ')</option>' +
+                '<option value="__SMKT__">🛒 Supermercado (produto pronto)</option>' +
+                outrosPVs
+                  .map(function (r) {
+                    return (
+                      '<option value="' +
+                      r.pv +
+                      '|' +
+                      r.cliente +
+                      '">' +
+                      r.pv +
+                      ' · ' +
+                      r.cliente.slice(0, 22) +
+                      ' (' +
+                      NF.format(r.qtd) +
+                      ' un)</option>'
+                    )
+                  })
+                  .join('')
+            const det =
+              '<tr class="detrow" data-det="' +
+              ix +
+              '"><td colspan="9"><table class="mini">' +
+              '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Local</th><th>Situação</th><th>Realocar</th></tr>' +
+              pvRows +
+              '</table></td></tr>'
+            const chegs = [
+              ...new Set(
+                pvList
+                  .map(function (v) {
+                    return v.cheg
+                  })
+                  .filter(Boolean),
+              ),
+            ]
+            const chegTxt = chegs.length
+              ? chegs.length === 1
+                ? chegs[0]
+                : chegs[0] + ' … ' + chegs[chegs.length - 1]
+              : '—'
+            const exInfo = ex.rl
+              ? '<div style="font-size:10px;color:#92400e;font-weight:700;margin-top:3px">→ ' +
+                ex.rl +
+                ' (' +
+                NF.format(ex.saldo) +
+                ' un)</div>'
+              : ''
+            const pvTrocado = ex.pvNovo
+              ? '<div style="font-size:10px;color:#1e3a8a;font-weight:700;margin-top:3px">PV ' +
+                ex.pvNovo.split('|')[0] +
+                '</div>'
+              : ''
+            return (
+              '<tr class="prow' +
+              (ex.ok ? ' exOK' : '') +
+              (smLinha > 0 ? ' smktRow' : '') +
+              '" data-ix="' +
+              ix +
+              '" data-cod="' +
+              p.cod +
+              '" draggable="true" title="Arraste até um dia acima para reprogramar · Ctrl+C copia · Ctrl+V cola como nova linha"><td><div class="cod">' +
+              p.cod +
+              '</div><div class="dsc">' +
+              p.desc +
+              '</div>' +
+              (smLinha > 0 ? '<div style="margin-top:3px">' + smSelo + '</div>' : '') +
+              '<button class="exRl" data-p="del" data-cod="' +
+              p.cod +
+              '" style="margin-top:4px;background:#fee2e2;border-color:#fecaca;color:#991b1b" title="Excluir TODAS as linhas deste produto neste dia (nada gravado no MaxiProd)">🗑 Excluir linha</button></td>' +
+              '<td class="num"><input type="number" min="0" value="' +
+              Math.round(p.qtd) +
+              '" data-p="editqtd" data-cod="' +
+              p.cod +
+              '" style="width:74px;text-align:right;padding:3px;border:1px solid var(--line);border-radius:6px;font-weight:700" title="Editar qtd a fabricar — ajusta as linhas deste produto no dia"></td>' +
+              '<td class="num">' +
+              FMT.format(p.vtot) +
+              '</td>' +
+              '<td class="num">' +
+              pvList.length +
+              ' PV' +
+              (pvList.length > 1 ? 's' : '') +
+              '</td>' +
+              '<td>' +
+              chegTxt +
+              '</td>' +
+              '<td>' +
+              (p.atrasado
+                ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>'
+                : '<span class="tagP">em dia</span>') +
+              '</td>' +
+              '<td class="exec"><input type="checkbox" data-p="ok" ' +
+              (ex.ok ? 'checked' : '') +
+              '></td>' +
+              '<td class="exec"><input type="number" min="0" max="' +
+              p.qtd +
+              '" value="' +
+              (ex.qtd || '') +
+              '" placeholder="0" data-p="qtd"></td>' +
+              '<td class="exec"><div style="display:grid;grid-template-columns:auto auto;gap:4px;justify-content:end"><button class="exRl" data-p="copy" title="Copiar linha (Ctrl+V cola como nova linha no dia selecionado ou em outro dia)">Copiar</button><button class="exRl" data-p="cut" title="Recortar: move a qtd deste dia para onde colar (Ctrl+V). Se houver executado, transfere só o saldo">Recortar</button><button class="exRl" data-p="push" title="Empurra o saldo (planejado − executado) para o próximo dia útil da vista — transferência direta, sem recortar/colar" style="grid-column:1/3">Empurrar →</button></div>' +
+              exInfo +
+              (noSmkt
+                ? '<div style="font-size:10px;color:#166534;font-weight:700;margin-top:3px;max-width:170px;white-space:normal">🛒 no SMKT — alocação por PV no card Supermercado · desfazer no Histórico</div>'
+                : '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px"><select data-p="pv" style="width:160px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px">' +
+                  opts +
+                  '</select>' +
+                  '<input type="text" data-p="pvdig" inputmode="numeric" placeholder="ou digite o nº do PV…" list="pvDigList" style="width:160px;font-size:11px;padding:3px;border:1px solid var(--line);border-radius:6px" title="Digite o nº do PV — o Andon traz cliente, produto, saldo e entrega">' +
+                  '<div data-p="pvdiginfo" style="font-size:10px;color:#1e3a8a;display:none"></div></div>' +
+                  pvTrocado) +
+              '</td></tr>' +
+              det
+            )
+          })
+          .join('')
+        document.getElementById('trfP').innerHTML =
+          '<td>TOTAL ' +
+          progDia +
+          ' — ' +
+          prods.length +
+          ' produtos</td>' +
+          '<td class="num">' +
+          NF.format(Math.round(tq)) +
+          '</td><td class="num">' +
+          FMT.format(tv) +
+          '</td><td colspan="3"></td>' +
+          '<td></td><td class="num">' +
+          NF.format(tex) +
+          '</td><td></td>'
+        document.getElementById('pbtns').setAttribute('data-prods', prods.length)
+        // % programado × realizado do dia
+        const pctEl = document.getElementById('progPct')
+        if (pctEl) {
+          const base = tq || 0,
+            done = tex || 0
+          const pct = base > 0 ? Math.round((done / base) * 100) : done > 0 ? 100 : 0
+          pctEl.innerHTML =
+            'Programado ' +
+            NF.format(Math.round(base)) +
+            ' un · Realizado ' +
+            NF.format(Math.round(done)) +
+            ' un · <span style="color:' +
+            (pct >= 100 ? '#16a34a' : pct >= 50 ? '#b45309' : '#dc2626') +
+            '">' +
+            pct +
+            '%</span>'
+        }
+        if (typeof window.updHojeProg === 'function') window.updHojeProg()
+        // v0.0.205: toda edição de rascunho repinta os botões de dia (calor + barras C/V) na hora
+        if (typeof paintProgDayButtons === 'function') paintProgDayButtons()
+        // POKA-YOKE (v0.0.207): aviso vermelho GRANDE — produção sem PV de destino (não bloqueia)
+        ;(function () {
+          const w = document.getElementById('pokaWarn')
+          if (!w) return
+          const hj = new Date()
+          const hojeISO =
+            hj.getFullYear() +
+            '-' +
+            String(hj.getMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(hj.getDate()).padStart(2, '0')
+          const excessos = []
+          // 1) fósseis: declaração cujo código/PV não tem saldo na carteira (some da programação) — SÓ DE HOJE EM DIANTE (passado é histórico)
+          const fos = (window.fosseisCache || []).filter(function (x) {
+            return progIso(x.data) >= hojeISO
+          })
+          fos.forEach(function (x) {
+            excessos.push({
+              tipo: 'fossil',
+              cod: x.cod,
+              qtd: x.qtd,
+              data: x.data,
+              motivo: x.motivo,
+            })
+          })
+          // 2) excedente: programado FUTURO do produto > disponível (saldo com PV − realizado − SMKT) — passado é histórico
+          const progFut = {}
+          declDaUnid().forEach(function (d) {
+            if (d.status === 'Cancelado' || !d.cod || !d.data || Number(d.qtd) <= 0) return
+            if (progIso(d.data) < hojeISO) return // passado não entra no aviso
+            progFut[d.cod] = (progFut[d.cod] || 0) + Number(d.qtd)
+          })
+          Object.keys(progFut).forEach(function (cod) {
+            let saldoPv = 0
+            DATA.rows.forEach(function (r) {
+              if (r.codigo === cod) saldoPv += Number(r.qtd) || 0
+            })
+            if (saldoPv <= 0) return // sem carteira = fóssil (bloco acima)
+            let done = 0,
+              sm = 0
+            try {
+              done = declaradoTotal(cod)
+            } catch (e) {}
+            try {
+              sm = Math.max(0, Number(smktExtraTotal(cod)) || 0)
+            } catch (e) {}
+            const livre = Math.max(0, saldoPv - done - sm)
+            const prog = progFut[cod]
+            if (prog > livre) {
+              const vu = (function () {
+                const rs = DATA.rows.filter(function (r) {
+                  return r.codigo === cod
+                })
+                return rs.length && rs[0].qtd ? rs[0].vtot / rs[0].qtd : 0
+              })()
+              let ultima = ''
+              declDaUnid().forEach(function (d) {
+                if (d.cod === cod && progIso(d.data) >= hojeISO && progIso(d.data) > ultima)
+                  ultima = progIso(d.data)
+              })
+              excessos.push({
+                tipo: 'excesso',
+                cod: cod,
+                qtd: prog - livre,
+                data: ultima || '—',
+                motivo:
+                  'programado ' +
+                  NF.format(prog) +
+                  ' un (todos os dias), disponível com PV: ' +
+                  NF.format(livre) +
+                  ' un' +
+                  (done > 0 ? ' · realizado ' + NF.format(done) : '') +
+                  (sm > 0 ? ' · SMKT ' + NF.format(sm) : ''),
+                valor: Math.round((prog - livre) * vu),
+                smkt: sm,
+              })
+            }
+          })
+          if (!excessos.length) {
+            w.style.display = 'none'
+            w.innerHTML = ''
+            return
+          }
+          const fosN = excessos.filter(function (x) {
+            return x.tipo === 'fossil'
+          }).length
+          const excN = excessos.filter(function (x) {
+            return x.tipo === 'excesso'
+          })
+          const excVal = excN.reduce(function (a, x) {
+            return a + (x.valor || 0)
+          }, 0)
+          let html =
+            '<div style="font-size:14px;margin-bottom:6px">⚠ ATENÇÃO — PRODUÇÃO SEM PEDIDO DE VENDA DE DESTINO <span style="font-weight:600;font-size:11px">(considerando hoje em diante)</span></div>'
+          if (excN.length) {
+            html +=
+              '<div style="margin-bottom:4px">• <b>' +
+              excN.length +
+              ' alocação(ões) EXCEDEM o saldo com PV</b> — excedente total: <b>' +
+              NF.format(
+                excN.reduce(function (a, x) {
+                  return a + x.qtd
+                }, 0),
+              ) +
+              ' un · R$ ' +
+              NF.format(excVal) +
+              '</b> (produção para estoque/WARD, sem PV): ' +
+              excN
+                .slice(0, 6)
+                .map(function (x) {
+                  return (
+                    '<b style="color:#991b1b">' +
+                    x.cod +
+                    '</b> — ' +
+                    descDe(x.cod) +
+                    ' ×' +
+                    NF.format(x.qtd) +
+                    ' em ' +
+                    dtBR(x.data) +
+                    (x.smkt > 0
+                      ? ' <span style="color:#991b1b">🛒 no SMKT: ' +
+                        NF.format(x.smkt) +
+                        ' un</span>'
+                      : '') +
+                    ' <button class="exRl" data-poka-del="' +
+                    x.tipo +
+                    '|' +
+                    x.cod +
+                    '|' +
+                    x.data +
+                    '" style="padding:1px 8px;font-size:10px;background:#fff;border-color:#fecaca;color:#991b1b" title="Apaga TODAS as declarações de ' +
+                    x.cod +
+                    ' em ' +
+                    dtBR(x.data) +
+                    ' (com desfazer)">Apagar</button>'
+                  )
+                })
+                .join(' · ') +
+              (excN.length > 6 ? ' …' : '') +
+              '</div>'
+          }
+          if (fosN) {
+            html +=
+              '<div>• <b>' +
+              fosN +
+              ' declaração(ões) FÓSSIL</b> (PV já faturado/sem saldo) — NÃO entram na programação: ' +
+              fos
+                .slice(0, 6)
+                .map(function (x) {
+                  return (
+                    '<b style="color:#991b1b">' +
+                    x.cod +
+                    '</b> — ' +
+                    descDe(x.cod) +
+                    ' ×' +
+                    NF.format(x.qtd) +
+                    ' (' +
+                    (x.pv === '—' ? 'sem PV' : 'PV ' + x.pv) +
+                    ') em ' +
+                    dtBR(x.data) +
+                    ' <button class="exRl" data-poka-del="fossil|' +
+                    x.cod +
+                    '|' +
+                    x.data +
+                    '" style="padding:1px 8px;font-size:10px;background:#fff;border-color:#fecaca;color:#991b1b" title="Apaga TODAS as declarações de ' +
+                    x.cod +
+                    ' em ' +
+                    dtBR(x.data) +
+                    ' (com desfazer)">Apagar</button>'
+                  )
+                })
+                .join(' · ') +
+              (fos.length > 6 ? ' …' : '') +
+              '</div>'
+          }
+          html +=
+            '<div style="font-weight:600;font-size:11.5px;margin-top:6px;color:#7f1d1d">Nada foi bloqueado — revise se é produção para estoque intencional ou erro de alocação. Fretes e itens de revenda não têm PV por natureza. "Apagar" remove a declaração do rascunho (Ctrl+Z desfaz).</div>'
+          w.style.display = 'block'
+          w.innerHTML = html
+        })()
+        // POKA-YOKE: botão Apagar no aviso — remove as declarações do item/dia (delegação no #pokaWarn)
+        ;(function () {
+          const w = document.getElementById('pokaWarn')
+          if (!w || w._pokaBound) return
+          w._pokaBound = true
+          w.addEventListener('click', function (e) {
+            const b = e.target.closest('[data-poka-del]')
+            if (!b) return
+            const parts = b.getAttribute('data-poka-del').split('|')
+            const tipo = parts[0],
+              cod = parts[1],
+              iso = parts[2]
+            const alvo = declDraft.filter(function (d) {
+              return d.cod === cod && progIso(d.data) === progIso(iso) && d.status !== 'Cancelado'
+            })
+            if (!alvo.length) {
+              renderProgTabela()
+              return
+            }
+            const backup = JSON.parse(JSON.stringify(alvo))
+            if (
+              !confirm(
+                'Apagar ' +
+                  cod +
+                  ' ×' +
+                  NF.format(
+                    alvo.reduce(function (s, d) {
+                      return s + (Number(d.qtd) || 0)
+                    }, 0),
+                  ) +
+                  ' un de ' +
+                  dtBR(iso) +
+                  ' do rascunho? (Ctrl+Z desfaz)',
+              )
+            )
+              return
+            declDraft = declDraft.filter(function (d) {
+              return !(
+                d.cod === cod &&
+                progIso(d.data) === progIso(iso) &&
+                d.status !== 'Cancelado'
+              )
+            })
+            window._pokaUndo = { tipo: tipo, cod: cod, iso: iso, backup: backup }
+            declSave()
+            progBuildFromDecls()
+            renderProg()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                cod +
+                ' ×' +
+                NF.format(
+                  backup.reduce(function (s, d) {
+                    return s + (Number(d.qtd) || 0)
+                  }, 0),
+                ) +
+                ' apagado de ' +
+                dtBR(iso) +
+                ' — Ctrl+Z desfaz · nada gravado no MaxiProd'
+          })
+        })()
+        // toggle: clique no produto abre/fecha a caixa com os PVs (delegação — nunca fica preso aberto)
+        const tb = document.getElementById('tbbP')
+        // editar qtd a fabricar e excluir linha (delegação — opera nas declarações do dia)
+        if (!tb._editBound) {
+          tb._editBound = true
+          tb.addEventListener('change', function (e) {
+            const inp = e.target.closest('input[data-p="editqtd"]')
+            if (!inp) return
+            const cod = inp.getAttribute('data-cod')
+            const nova = Number(inp.value) || 0
+            const pd = String(progDate).split('/')
+            const yy = new Date().getFullYear()
+            const progIso =
+              pd.length === 3
+                ? pd[2] + '-' + pd[1] + '-' + pd[0]
+                : pd.length === 2
+                  ? yy + '-' + pd[1] + '-' + pd[0]
+                  : progDate // dd/mm → ISO
+            const alvo =
+              typeof declDraft !== 'undefined'
+                ? declDraft.filter(function (d) {
+                    return d.cod === cod && d.data === progIso
+                  })
+                : []
+            if (!alvo.length) {
+              alert('Sem declaração editável para ' + cod + ' neste dia.')
+              renderProgTabela()
+              return
+            }
+            const atual = alvo.reduce(function (s, d) {
+              return s + (Number(d.qtd) || 0)
+            }, 0)
+            if (nova === atual) return
+            if (nova <= 0) {
+              if (!confirm('Remover as linhas de ' + cod + ' deste dia?')) {
+                renderProgTabela()
+                return
+              }
+            }
+            // rateio proporcional: mantém os PVs, ajusta as qtds
+            let acc = 0
+            alvo.forEach(function (d, i) {
+              if (nova <= 0) {
+                d.qtd = 0
+                d.status = 'Cancelado'
+                return
+              }
+              const q =
+                i === alvo.length - 1
+                  ? nova - acc
+                  : Math.round((nova * (Number(d.qtd) || 0)) / atual)
+              d.qtd = q
+              acc += q
+            })
+            declSave()
+            progBuildFromDecls()
+            renderProgTabela()
+            if (typeof renderAProg === 'function') renderAProg()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                cod +
+                ': qtd do dia ' +
+                atual +
+                ' → ' +
+                nova +
+                ' (rascunho local · nada gravado no MaxiProd)'
+          })
+          tb.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-p="del"]')
+            if (!b) return
+            const cod = b.getAttribute('data-cod')
+            const pd = String(progDate).split('/')
+            const yy = new Date().getFullYear()
+            const progIso =
+              pd.length === 3
+                ? pd[2] + '-' + pd[1] + '-' + pd[0]
+                : pd.length === 2
+                  ? yy + '-' + pd[1] + '-' + pd[0]
+                  : progDate // dd/mm → ISO
+            if (
+              !confirm(
+                'Excluir TODAS as linhas de ' +
+                  cod +
+                  ' deste dia? A carteira MaxiProd não será alterada.',
+              )
+            )
+              return
+            declDraft.forEach(function (d) {
+              if (d.cod === cod && d.data === progIso) {
+                d.qtd = 0
+                d.status = 'Cancelado'
+              }
+            })
+            declSave()
+            progBuildFromDecls()
+            renderProgTabela()
+            if (typeof renderAProg === 'function') renderAProg()
+            const st = document.getElementById('declStatus')
+            if (st)
+              st.textContent =
+                cod +
+                ' excluído de ' +
+                progDate +
+                ' — voltou para o card A Programar · nada gravado no MaxiProd'
+          })
+          // REALOCAÇÃO DE PV (v0.0.235): botão na caixa de PVs do card Programação
+          tb.addEventListener('click', function (e) {
+            const b2 = e.target.closest ? e.target.closest('button[data-rlpv]') : null
+            if (!b2) return
+            e.stopPropagation()
+            const pvDe = b2.getAttribute('data-rlpv')
+            const cod = b2.getAttribute('data-cod')
+            if (!pvDe || !cod || !progDate) return
+            const pd = String(progDate).split('/')
+            const yy = new Date().getFullYear()
+            const progIso =
+              pd.length === 3
+                ? pd[2] + '-' + pd[1] + '-' + pd[0]
+                : pd.length === 2
+                  ? yy + '-' + pd[1] + '-' + pd[0]
+                  : progDate
+            // linhas de progSemana.dias usam data dd/mm (igual a progDate) — comparar em dd/mm
+            const linha = (DATA.progSemana.dias || []).find(function (a) {
+              return a.cod === cod && a.data === progDate && String(a.pv) === String(pvDe)
+            })
+            const qtdMax = linha ? linha.qtd : 0
+            if (qtdMax <= 0) {
+              alert('Sem unidades do PV ' + pvDe + ' programadas neste dia.')
+              return
+            }
+            window._rlpvLastCod = cod
+            box = document.getElementById('rlpvBox')
+            box.dataset.data = progDate // dd/mm da declaração — a realocação move dentro do MESMO dia
+            rlpvAbrirModal(cod, pvDe, qtdMax)
+          })
+        }
+        if (!tb._toggleBound) {
+          tb._toggleBound = true
+          tb.addEventListener('click', function (e) {
+            if (
+              e.target.closest('td.exec') ||
+              e.target.closest('input') ||
+              e.target.closest('select') ||
+              e.target.closest('button')
+            )
+              return
+            const tr = e.target.closest('tr.prow')
+            if (!tr) return
+            const ix = tr.getAttribute('data-ix')
+            const det = tb.querySelector('tr.detrow[data-det="' + ix + '"]')
+            const open = tr.classList.contains('sel')
+            Array.prototype.forEach.call(tb.querySelectorAll('tr.detrow'), function (d) {
+              d.style.display = 'none'
+            })
+            Array.prototype.forEach.call(tb.querySelectorAll('tr.prow'), function (x) {
+              x.classList.remove('sel')
+            })
+            if (det && !open) {
+              det.style.display = ''
+              tr.classList.add('sel')
+            }
+          })
+        }
+        Array.prototype.forEach.call(document.querySelectorAll('#tbbP tr.detrow'), function (d) {
+          d.style.display = 'none'
+        })
+        // eventos de execução (delegação em #tbbP)
+        if (!tb._execBound) {
+          tb._execBound = true
+          tb.addEventListener('change', function (e) {
+            const inp = e.target
+            if (!inp.matches || !inp.matches('#tbbP input[data-p], #tbbP select[data-p]')) return
+            const tr = inp.closest('tr')
+            const ix = parseInt(tr.getAttribute('data-ix'), 10)
+            const p = progProdsCache[ix]
+            if (!p) return
+            const prev = getProgExec(p.cod, progDate) || {}
+            const ok = tr.querySelector('input[data-p=ok]').checked
+            const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0
+            const pvSel = tr.querySelector('select[data-p=pv]').value
+            // DESTINO SMKT (decisão Dante 26/09 00h05): o produto vai para o estoque de prontos e
+            // a alocação por PV acontece LÁ (automática pela NF emitida ou manual no card Supermercado).
+            // O card principal não aloca por PV nesta linha — só o botão Desfazer (no histórico) reverte.
+            if (pvSel === '__SMKT__') {
+              const qSmkt = qtd > 0 ? qtd : prev.smkt || 0
+              if (qSmkt > 0) {
+                const ents = smktEntradas()
+                const k = String(p.cod) + '|' + progDate
+                const jaTem = ents
+                  .filter(function (x) {
+                    return String(x.origem || '') === 'prog:' + k
+                  })
+                  .reduce(function (a, x) {
+                    return a + (Number(x.qtd) || 0)
+                  }, 0)
+                if (jaTem < qSmkt) {
+                  ents.push({
+                    cod: String(p.cod),
+                    qtd: qSmkt - jaTem,
+                    origem: 'prog:' + k,
+                    data: new Date().toLocaleDateString('pt-BR'),
+                  })
+                  smktSave(ents, [])
+                  const h = smktHistory()
+                  h.unshift({
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    cod: String(p.cod),
+                    qtd: qSmkt - jaTem,
+                    event: 'Entrada via programação (destino SMKT)',
+                    pv: '',
+                    nf: '',
+                    motivo: 'Alocação marcada no card principal — dia ' + progDate,
+                  })
+                  smktHistorySave(h)
+                }
+              }
+              setProgExec(p.cod, progDate, {
+                ok: ok,
+                qtd: qtd,
+                rl: prev.rl,
+                saldo: prev.saldo,
+                pvNovo: null,
+                smkt: qSmkt > 0 ? qSmkt : null,
+              })
+              renderSmkt()
+              renderProgTabela()
+              alert(
+                'Entrada registrada no estoque SMKT: ' +
+                  p.cod +
+                  ' ×' +
+                  NF.format(qSmkt) +
+                  ' (dia ' +
+                  progDate +
+                  '). A alocação por PV acontece no card Supermercado — automática pela NF emitida ou manual.',
+              )
+              return
+            }
+            setProgExec(p.cod, progDate, {
+              ok: ok,
+              qtd: qtd,
+              rl: prev.rl,
+              saldo: prev.saldo,
+              pvNovo: pvSel || null,
+              smkt: prev.smkt || null,
+            })
+            renderProgTabela()
+          })
+          tb.addEventListener('click', function (e) {
+            const btn = e.target
+            if (!btn.matches || !btn.matches('#tbbP .exRl')) return
+            const tr = btn.closest('tr')
+            const ix = parseInt(tr.getAttribute('data-ix'), 10)
+            const p = progProdsCache[ix]
+            if (!p) return
+            if (btn.getAttribute('data-p') === 'copy') {
+              progCopyLine(p)
+              return
+            }
+            if (btn.getAttribute('data-p') === 'cut') {
+              progCutLine(p)
+              return
+            }
+            const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+            const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+            if (saldo <= 0) {
+              alert('Nada a realocar — a qtd realizada cobre o planejado.')
+              return
+            }
+            // v0.0.204: EMPURRAR para o próximo dia útil (ação direta, sem recortar/colar)
+            if (btn.getAttribute('data-p') === 'push') {
+              const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+              const idx = dias.indexOf(progDia)
+              const prox = idx >= 0 && idx < 5 ? dias[idx + 1] : 'Segunda'
+              const proxDate = diasDaVista().find(function (x) {
+                return x.dia === prox
+              })
+              progDropCutTo(
+                {
+                  __andon: 1,
+                  cod: p.cod,
+                  desc: p.desc,
+                  qtd: saldo,
+                  de: progDate,
+                  cut: true,
+                  exQtd: ex.qtd || 0,
+                  exOk: !!ex.ok,
+                },
+                proxDate ? proxDate.iso : progDate,
+              )
+              return
+            }
+            const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+            const idx = dias.indexOf(progDia)
+            const nova = idx >= 0 && idx < 4 ? dias[idx + 1] : 'Segunda' // próximo dia útil da semana
+            setProgExec(p.cod, progDate, {
+              ok: ex.ok,
+              qtd: ex.qtd,
+              rl: nova,
+              saldo: saldo,
+              pvNovo: ex.pvNovo || null,
+            })
+            renderProgTabela()
+          })
+          // ARRASTAR A LINHA ATÉ O BOTÃO DO DIA (reprogramar com o mouse) — usa a dragP GLOBAL
+          tb.addEventListener('dragstart', function (e) {
+            const tr = e.target.closest('tr.prow')
+            if (!tr) return
+            const ix = parseInt(tr.getAttribute('data-ix'), 10)
+            const p = progProdsCache[ix]
+            if (!p) return
+            const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+            dragP = { cod: p.cod, desc: p.desc, qtd: p.qtd, vtot: p.vtot, de: progDate, ex: ex }
+            tr.classList.add('dragging')
+            try {
+              e.dataTransfer.setData('text/plain', p.cod)
+            } catch (x) {}
+            e.dataTransfer.effectAllowed = 'move'
+          })
+          tb.addEventListener('dragend', function (e) {
+            const tr = e.target.closest('tr.prow')
+            if (tr) tr.classList.remove('dragging')
+            Array.prototype.forEach.call(document.querySelectorAll('#pbtns button'), function (b) {
+              b.classList.remove('dropOn')
+            })
+            dragP = null
+          })
+          // COLAR LINHA COPIADA (Ctrl+V na tabela) — cópia cria linha nova; recorte transfere e zera a origem
+          tb.addEventListener('paste', function (e) {
+            const t = (e.clipboardData || window.clipboardData).getData('text')
+            const c = progParseCopied(t)
+            if (c) {
+              e.preventDefault()
+              if (c.cut) {
+                progDropCutTo(c, progDate)
+              } else {
+                progPasteLine(c, progDate)
+              }
+            }
+          })
+        }
+        // teclado: Ctrl+C copia a linha selecionada, Ctrl+V cola; Ctrl+Z desfaz o "Apagar" do poka-yoke
+        document.addEventListener('keydown', function (e) {
+          if (!(e.ctrlKey || e.metaKey)) return
+          if ((e.key === 'z' || e.key === 'Z') && window._pokaUndo) {
+            const u = window._pokaUndo
+            declDraft = declDraft.concat(u.backup)
+            window._pokaUndo = null
+            declSave()
+            progBuildFromDecls()
+            renderProg()
+            const st = document.getElementById('declStatus')
+            if (st) st.textContent = '↩ Desfeito: ' + u.cod + ' voltou para ' + dtBR(u.iso)
+            e.preventDefault()
+            return
+          }
+          if (progProdsCache.length === 0) return
+          const sel = document.querySelector('#tbbP tr.prow.sel')
+          if ((e.key === 'c' || e.key === 'C') && sel) {
+            const p = progProdsCache[parseInt(sel.getAttribute('data-ix'), 10)]
+            if (p) {
+              progCopyLine(p)
+              e.preventDefault()
+            }
+          }
+        })
+        document.addEventListener('paste', function (e) {
+          if (
+            progProdsCache.length === 0 ||
+            (e.target.closest &&
+              (e.target.closest('input') ||
+                e.target.closest('textarea') ||
+                e.target.closest('select')))
+          )
+            return
+          const t = (e.clipboardData || window.clipboardData).getData('text')
+          const c = progParseCopied(t)
+          if (c) {
+            e.preventDefault()
+            if (c.cut) {
+              progDropCutTo(c, progDate)
+            } else {
+              progPasteLine(c, progDate)
+            }
+          }
+        })
+      }
+      // ---- copiar/colar e mover linha (card principal) ----
+      function progIso(d) {
+        // aceita ISO (2026-09-30) ou dd/mm (30/09) — devolve ISO
+        if (!d) return ''
+        if (d.length === 5) {
+          const p = d.split('/')
+          return new Date().getFullYear() + '-' + p[1] + '-' + p[0]
+        }
+        return d
+      }
+      // v0.0.204: dias renderizados na vista atual (para o botão Empurrar achar o próximo dia)
+      function diasDaVista() {
+        const box = document.getElementById('pbtns')
+        const out = []
+        if (!box) return out
+        Array.prototype.forEach.call(box.children, function (b) {
+          const d = b.getAttribute('data-d'),
+            dt = b.getAttribute('data-date')
+          if (d && dt) out.push({ dia: d, data: dt, iso: progIso(dt) })
+        })
+        return out
+      }
+      // v0.0.205: pinta calor + mini-barras C/V nos botões de dia — chamada por renderProg E por
+      // renderProgTabela (toda edição de rascunho repinta na hora, sem precisar clicar no dia)
+      function paintProgDayButtons() {
+        const pbtns = document.getElementById('pbtns')
+        if (!pbtns || !pbtns.children.length) return
+        const cargaDia = {}
+        const fos = window.fosseisCache || []
+        declDaUnid().forEach(function (d) {
+          if (d.status === 'Cancelado' || !d.data || Number(d.qtd) <= 0) return
+          const iso = progIso(d.data)
+          if (
+            fos.some(function (f) {
+              return f.cod === d.cod && progIso(f.data) === iso
+            })
+          )
+            return // fóssil não conta (igual ao card)
+          cargaDia[iso] = (cargaDia[iso] || 0) + Number(d.qtd)
+        })
+        const maxCarga = Math.max.apply(
+          null,
+          [1].concat(
+            Object.keys(cargaDia).map(function (k) {
+              return cargaDia[k]
+            }),
+          ),
+        )
+        Array.prototype.forEach.call(pbtns.children, function (b) {
+          const iso = progIso(b.getAttribute('data-date'))
+          const c = cargaDia[iso] || 0
+          const t = Math.round((c / maxCarga) * 100)
+          // cor: 0=sz, 1-33=verde, 34-66=âmbar, 67-100=vermelho (relative ao dia mais cheio da vista)
+          const bg = c <= 0 ? '#f1f5f9' : t <= 33 ? '#dcfce7' : t <= 66 ? '#fef9c3' : '#fecaca'
+          const fg = c <= 0 ? '#94a3b8' : t <= 33 ? '#166534' : t <= 66 ? '#854d0e' : '#991b1b'
+          b.style.background = bg
+          b.style.color = fg
+          b.title =
+            'Carga: ' +
+            NF.format(c) +
+            ' un' +
+            (c <= 0 ? ' — dia vazio' : '') +
+            ' · ' +
+            t +
+            '% do dia mais cheio'
+          // divisão por FÁBRICA (Curitiba × Vinhedo) — mini-barras no rodapé do botão
+          const cC = declDraft
+            .filter(function (d) {
+              return (
+                d.status !== 'Cancelado' &&
+                progIso(d.data) === iso &&
+                (d.local || 'C') === 'C' &&
+                Number(d.qtd) > 0 &&
+                !fos.some(function (f) {
+                  return f.cod === d.cod && progIso(f.data) === iso
+                })
+              )
+            })
+            .reduce(function (a, d) {
+              return a + Number(d.qtd)
+            }, 0)
+          const cV = declDraft
+            .filter(function (d) {
+              return (
+                d.status !== 'Cancelado' &&
+                progIso(d.data) === iso &&
+                (d.local || 'C') === 'V' &&
+                Number(d.qtd) > 0 &&
+                !fos.some(function (f) {
+                  return f.cod === d.cod && progIso(f.data) === iso
+                })
+              )
+            })
+            .reduce(function (a, d) {
+              return a + Number(d.qtd)
+            }, 0)
+          let inner =
+            '<div style="font-weight:800">' +
+            b.getAttribute('data-d') +
+            ' · ' +
+            b.getAttribute('data-date') +
+            '</div>'
+          if (cC > 0 || cV > 0) {
+            const tot = cC + cV,
+              pcC = Math.round((cC / tot) * 100),
+              pcV = 100 - pcC
+            inner +=
+              '<div style="display:flex;height:6px;width:100%;border-radius:3px;overflow:hidden;margin-top:3px">' +
+              (cC > 0 ? '<div style="width:' + pcC + '%;background:#1e3a8a"></div>' : '') +
+              (cV > 0 ? '<div style="width:' + pcV + '%;background:#ca8a04"></div>' : '') +
+              '</div>' +
+              '<div style="font-size:9.5px;font-weight:700;margin-top:2px"><span style="color:#1e3a8a">Cur ' +
+              NF.format(cC) +
+              '</span>' +
+              (cV > 0 ? ' · <span style="color:#a16207">Vinh ' + NF.format(cV) + '</span>' : '') +
+              '</div>'
+          }
+          b.innerHTML = inner
+          b.style.display = 'inline-block'
+          b.style.minWidth = '92px'
+          b.style.padding = '6px 10px'
+        })
+      }
+      function progCopyLine(p) {
+        const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+        const payload = {
+          __andon: 1,
+          cod: p.cod,
+          desc: p.desc,
+          qtd: p.qtd,
+          de: progDate,
+          cut: false,
+          exQtd: ex.qtd || 0,
+        }
+        const txt = JSON.stringify(payload)
+        // estado setado SINCRONAMENTE (não depende da promise do clipboard)
+        progCopied = payload
+        progCopiedTxt = txt
+        window.andonCut = null
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Copiado: ' +
+            p.cod +
+            ' ×' +
+            p.qtd +
+            ' (' +
+            progDate +
+            ') — Ctrl+V para colar como nova linha ou arraste até outro dia'
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText)
+            navigator.clipboard.writeText(txt).catch(function () {})
+        } catch (x) {}
+      }
+      // RECORTE: move a qtd do dia para onde colar. Com executado, transfere SÓ O SALDO (regra Dante 28/09).
+      function progCutLine(p) {
+        const ex = getProgExec(p.cod, progDate) || { ok: false, qtd: 0 }
+        const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+        if (saldo <= 0) {
+          alert('Nada a recortar — a qtd realizada cobre o planejado deste dia.')
+          return
+        }
+        const payload = {
+          __andon: 1,
+          cod: p.cod,
+          desc: p.desc,
+          qtd: saldo,
+          de: progDate,
+          cut: true,
+          exQtd: ex.qtd || 0,
+          exOk: !!ex.ok,
+        }
+        const txt = JSON.stringify(payload)
+        // estado setado SINCRONAMENTE (não depende da promise do clipboard)
+        progCopied = payload
+        progCopiedTxt = txt
+        window.andonCut = payload
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            'Recortado: ' +
+            p.cod +
+            ' ×' +
+            saldo +
+            ' de ' +
+            progDate +
+            (ex.qtd ? ' (executado ' + ex.qtd + ' fica no dia)' : '') +
+            ' — Ctrl+V no dia destino'
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText)
+            navigator.clipboard.writeText(txt).catch(function () {})
+        } catch (x) {}
+      }
+      function progParseCopied(t) {
+        if (!t) return null
+        try {
+          const o = JSON.parse(t)
+          if (o && o.__andon === 1 && o.cod) return o
+        } catch (x) {}
+        return null
+      }
+      function progPasteLine(c, diaDest) {
+        diaDest = progIso(diaDest)
+        if (!diaDest) {
+          alert('Escolha um dia primeiro.')
+          return
+        }
+        const destinoBR = diaDest.split('-').reverse().join('/')
+        if (String(diaDest) === String(progIso(c.de))) {
+          alert('Origem e destino são o mesmo dia.')
+          return
+        }
+        if (c.cut) {
+          // TRANSFERÊNCIA via Ctrl+V: mesma regra do drop — destino recebe o saldo, origem só o executado.
+          declDraft.push({
+            dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+              new Date(diaDest + 'T12:00:00').getDay()
+            ],
+            data: diaDest,
+            cod: c.cod,
+            qtd: c.qtd,
+            local: window.UNID || 'C',
+            pv: '',
+            id: 'PR-CUT-' + Date.now(),
+            obs: 'transferido de ' + (c.de || '?'),
+            status: 'Planejado',
+          })
+          declDraft.forEach(function (d) {
+            const isoD0 = progIso(d.data)
+            if (d.cod === c.cod && isoD0 === String(progIso(c.de)) && d.status !== 'Cancelado') {
+              if (c.exQtd > 0) {
+                d.qtd = Math.min(Number(d.qtd) || 0, c.exQtd)
+                d.status = 'Realizado'
+              } // mantém só o executado na origem
+              else {
+                d.qtd = 0
+                d.status = 'Cancelado'
+              }
+            }
+          })
+          declSave()
+          progBuildFromDecls()
+          renderDeclEditor()
+          progDia = null
+          progDate = null
+          renderProg()
+          const st = document.getElementById('declStatus')
+          if (st)
+            st.textContent =
+              c.cod +
+              ' ×' +
+              c.qtd +
+              ' TRANSFERIDO de ' +
+              (c.de || '?').split('-').reverse().join('/') +
+              ' → ' +
+              destinoBR +
+              (c.exQtd ? ' · executado (' + c.exQtd + ') permanece na origem' : '') +
+              ' · nada gravado no MaxiProd'
+          return
+        }
+        // CÓPIA: cola como nova linha (mantém a origem intacta)
+        declDraft.push({
+          dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+            new Date(diaDest + 'T12:00:00').getDay()
+          ],
+          data: diaDest,
+          cod: c.cod,
+          qtd: c.qtd,
+          local: window.UNID || 'C',
+          pv: '',
+          id: 'PR-COPY-' + Date.now(),
+          obs: 'colado de ' + (c.de || '?'),
+          status: 'Planejado',
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st) st.textContent = 'Linha colada em ' + destinoBR + ' · nada gravado no MaxiProd'
+      }
+      // mover a linha arrastada para o dia do botão-alvo
+      function progMoveTo(diaDest, dateDest) {
+        dateDest = progIso(dateDest)
+        if (!dragP) return
+        const p = dragP
+        const ex = p.ex || {}
+        const saldo = Math.max(0, p.qtd - (ex.qtd || 0))
+        if (saldo <= 0) {
+          alert('Nada a mover — a qtd realizada cobre o planejado.')
+          return
+        }
+        if (
+          !confirm(
+            'Transferir ' +
+              p.cod +
+              ' ×' +
+              saldo +
+              ' un de ' +
+              (p.de || '?').split('-').reverse().join('/') +
+              ' para ' +
+              dateDest.split('-').reverse().join('/') +
+              '?' +
+              (ex.qtd ? ' (executado ' + ex.qtd + ' un permanece na origem)' : ''),
+          )
+        )
+          return
+        // TRANSFERÊNCIA (não cópia): mesma lógica do recorte — destino recebe o saldo, origem fica só com o executado
+        progDropCutTo(
+          {
+            __andon: 1,
+            cod: p.cod,
+            desc: p.desc,
+            qtd: saldo,
+            de: p.de,
+            cut: true,
+            exQtd: ex.qtd || 0,
+            exOk: !!ex.ok,
+          },
+          dateDest,
+        )
+        dragP = null
+      }
+      // colar vindo do botão do dia (drop de recorte) — transfere saldo e zera origem
+      function progDropCutTo(c, dateDest) {
+        dateDest = progIso(dateDest)
+        const destinoBR = dateDest.split('-').reverse().join('/')
+        if (String(dateDest) === String(progIso(c.de))) {
+          alert('Origem e destino são o mesmo dia.')
+          return
+        }
+        // TRANSFERÊNCIA: destino recebe o saldo; origem fica SÓ com o executado (qtd mínima).
+        // Executado > 0 = origem vira linha de execução (qtd = exQtd, status Realizado); sem executado = origem cancelada.
+        declDraft.push({
+          dia: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+            new Date(dateDest + 'T12:00:00').getDay()
+          ],
+          data: dateDest,
+          cod: c.cod,
+          qtd: c.qtd,
+          local: window.UNID || 'C',
+          pv: '',
+          id: 'PR-CUT-' + Date.now(),
+          obs: 'transferido de ' + (c.de || '?'),
+          status: 'Planejado',
+        })
+        let origemTemExec = Number(c.exQtd) > 0
+        declDraft.forEach(function (d) {
+          if (
+            d.cod === c.cod &&
+            progIso(d.data) === String(progIso(c.de)) &&
+            d.status !== 'Cancelado'
+          ) {
+            if (c.exQtd > 0) {
+              d.qtd = Math.min(Number(d.qtd) || 0, c.exQtd)
+              d.status = 'Realizado'
+            } else {
+              d.qtd = 0
+              d.status = 'Cancelado'
+            }
+          }
+        })
+        declSave()
+        progBuildFromDecls()
+        renderDeclEditor()
+        progDia = null
+        progDate = null
+        renderProg()
+        const st = document.getElementById('declStatus')
+        if (st)
+          st.textContent =
+            c.cod +
+            ' ×' +
+            c.qtd +
+            ' TRANSFERIDO de ' +
+            (c.de || '?').split('-').reverse().join('/') +
+            ' → ' +
+            destinoBR +
+            (c.exQtd ? ' · executado (' + c.exQtd + ') permanece na origem' : '') +
+            ' · nada gravado no MaxiProd'
+      }
+      let progProdsCache = []
+      const _origRPT = renderProgTabela
+      renderProgTabela = function () {
+        // cache dos produtos agregados do dia para os handlers
+        const rsBase = DATA.progSemana.dias.filter(function (a) {
+          return a.dia === progDia && a.data === progDate
+        })
+        const rs = rsBase
+          .map(function (a) {
+            return Object.assign({}, a)
+          })
+          .filter(function (a) {
+            return a.qtd > 0
+          })
+        const map = {}
+        rs.forEach(function (a) {
+          let p = map[a.cod]
+          if (!p) {
+            p = map[a.cod] = { cod: a.cod, desc: a.desc, qtd: 0, vtot: 0, pvs: {}, atrasado: false }
+          }
+          p.qtd += a.qtd
+          p.vtot += a.vtot
+        })
+        progProdsCache = aplicarSmktNaProgramacao(
+          Object.values(map).sort(function (x, y) {
+            return y.vtot - x.vtot
+          }),
+          progDate,
+        )
+        _origRPT()
       }
 
       // ==================== CARD HOJE: semana + dia atual ====================
