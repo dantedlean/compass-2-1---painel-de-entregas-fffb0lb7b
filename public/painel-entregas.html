@@ -497,7 +497,7 @@
       }
     </style>
   </head>
-  <body data-build="b20261006233733">
+  <body data-build="b20261006234413">
     <header>
       <div style="display: flex; align-items: center; gap: 16px">
         <img
@@ -27417,6 +27417,7 @@
                 monthly_series = []
               for (var dd = 1; dd <= lastDay; dd++) {
                 var k = curY + '-' + ('0' + curM).slice(-2) + '-' + ('0' + dd).slice(-2)
+                if (k > hojeIso) continue
                 var o = daily[k] || { q: 0, v: 0 }
                 daily_series.push({
                   label: ('0' + dd).slice(-2) + '/' + ('0' + curM).slice(-2),
@@ -27691,7 +27692,7 @@
         var mMes = nf.mediaDuMes !== undefined ? nf.mediaDuMes : nf.mediaDiaUtilMes
         var medMes = nf.medianaMes !== undefined ? nf.medianaMes : 0
         c1.setOption({
-          grid: { left: 66, right: 150, top: 26, bottom: 60 },
+          grid: { left: 66, right: 150, top: 34, bottom: 56 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -27704,7 +27705,8 @@
             data: nf.daily.map(function (d) {
               return d.label
             }),
-            axisLabel: { rotate: 45, fontSize: 10 },
+            axisLabel: { rotate: 45, fontSize: 10.5 },
+            axisTick: { alignWithLabel: true },
           },
           yAxis: [
             {
@@ -27725,7 +27727,19 @@
               data: nf.daily.map(function (d) {
                 return d.valor
               }),
-              itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
+              barMaxWidth: 30,
+              barCategoryGap: '35%',
+              itemStyle: { color: '#2563eb', borderRadius: [4, 4, 0, 0] },
+              label: {
+                show: true,
+                position: 'top',
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: '#1e3a8a',
+                formatter: function (p) {
+                  return p.value > 0 ? Math.round(p.value / 1000) + 'k' : ''
+                },
+              },
             },
             mMes === medMes
               ? mkLbl('Média = Mediana', '#92400e', mMes)
@@ -27737,7 +27751,7 @@
         var mAno = nf.mediaDuAno !== undefined ? nf.mediaDuAno : nf.mediaDiaUtilAno
         var medAno = nf.medianaAno !== undefined ? nf.medianaAno : 0
         c2.setOption({
-          grid: { left: 66, right: 150, top: 26, bottom: 40 },
+          grid: { left: 66, right: 150, top: 34, bottom: 40 },
           tooltip: {
             trigger: 'axis',
             formatter: function (ps) {
@@ -27750,6 +27764,8 @@
             data: nf.monthly.map(function (m) {
               return m.label
             }),
+            axisLabel: { fontSize: 11 },
+            axisTick: { alignWithLabel: true },
           },
           yAxis: [
             {
@@ -27770,7 +27786,19 @@
               data: nf.monthly.map(function (m) {
                 return m.valor
               }),
-              itemStyle: { color: '#2563eb', borderRadius: [3, 3, 0, 0] },
+              barMaxWidth: 44,
+              barCategoryGap: '40%',
+              itemStyle: { color: '#2563eb', borderRadius: [4, 4, 0, 0] },
+              label: {
+                show: true,
+                position: 'top',
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#1e3a8a',
+                formatter: function (p) {
+                  return p.value > 0 ? (p.value / 1000000).toFixed(1).replace('.', ',') + 'M' : ''
+                },
+              },
             },
             mAno === medAno
               ? mkLbl('Média = Mediana', '#92400e', mAno)
