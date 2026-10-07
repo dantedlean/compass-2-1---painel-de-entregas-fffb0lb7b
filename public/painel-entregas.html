@@ -10897,16 +10897,17 @@
           .map(function (n) {
             const itens = (Array.isArray(n.itens) ? n.itens : [])
               .map(function (i) {
+                const ds = String(i.desc || descDe(i.cod) || '').slice(0, 34)
                 return (
                   '<span style="white-space:nowrap;margin:2px 6px 2px 0;display:inline-block"><b class="pvtag">' +
                   i.pv +
                   '</b> ' +
                   i.cod +
-                  ' <span class="dsc">' +
-                  descDe(i.cod) +
-                  '</span> ×' +
+                  ' ×' +
                   NF.format(i.qtd) +
-                  '</span>'
+                  ' <span class="dsc" style="color:var(--mut)">' +
+                  ds +
+                  '</span></span>'
                 )
               })
               .join('')
