@@ -523,7 +523,8 @@
       <button id="tabEnt" onclick="showView('ent')">📅 Curitiba — Programação</button>
       <button id="tabEntV" onclick="showView('entv')">📅 Vinhedo — Programação</button>
       <button id="tabPA" onclick="showView('pa')">⚙️ Programação automática</button>
-      <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
+            <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
+      <button id="tabHH" onclick="showView('hh')">🏭 Andon — Produção hora a hora</button>
     </nav>
     <div id="viewNf" class="view on">
       <style>
@@ -2145,7 +2146,50 @@
         Carteira a Faturar · regra: PVs aprovados com saldo a faturar &gt; 0 · data de entrega no
         nível do item · fretes (50x/00043) marcados · fonte
         artifacts/entregas_por_semana_itens_20261006.xlsx
-      </footer>
+    </div>
+
+    <div id="viewHH" class="view">
+      <style>
+        #viewHH .hhBar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+        #viewHH .hhBar select,#viewHH .hhBar button{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;color:var(--ink);cursor:pointer}
+        #viewHH .hhBar button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+        #viewHH .hhNote{font-size:13.5px;color:var(--mut);margin:4px 0 10px}
+        #viewHH .hhGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px}
+        #viewHH .hhCell{border:1.5px solid var(--line);border-radius:10px;padding:10px 8px;min-height:112px;background:#fff}
+        #viewHH .hhNow{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end}
+        #viewHH .hhNow .big{font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+        #viewHH .hhNow .lbl{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#93c5fd}
+        #viewHH .hhNow .sub{font-size:14px;color:#cbd5e1}
+        #viewHH .hhChart{height:260px;margin:6px 0 4px}
+        #viewHH .hhTbl th,#viewHH .hhTbl td{font-size:14px}
+        #viewHH .badgeOk{background:#dcfce7;color:#166534;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
+        #viewHH .badgeLate{background:#fee2e2;color:#991b1b;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
+        @media(max-width:900px){#viewHH .hhGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      </style>
+      <main>
+        <div class="hhNow" id="hhNow"></div>
+        <div class="hhBar">
+          <span class="hhNote">Registro rápido por hora:</span>
+          <select id="hhSelProd"></select>
+          <select id="hhSelHora"></select>
+          <input id="hhQtd" type="number" min="0" step="1" placeholder="Qtd" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;width:110px" aria-label="Quantidade produzida na hora">
+          <button id="hhBtnAdd" class="primary">＋ Registrar</button>
+          <span class="hhNote" id="hhMsg" style="display:none"></span>
+        </div>
+        <div class="hhNote">Apontamento rápido no chão (sem login = modo leitura; conectar no 🔗 para registrar). Integração com o kiosk do Pulso: fase 2.</div>
+        <div class="hhGrid" id="hhGrid"></div>
+        <div class="card">
+          <h2>Produção do dia — hora a hora</h2>
+          <div class="hhChart" id="hhChart"></div>
+        </div>
+        <div class="card">
+          <h2>Detalhe por hora</h2>
+          <div class="tblwrap">
+            <table class="hhTbl" id="hhTbl"><thead><tr><th>Hora</th><th>Produzido</th><th>Meta</th><th>Situação</th><th style="text-align:left">Produtos</th></tr></thead><tbody id="hhTb"></tbody></table>
+          </div>
+        </div>
+      </main>
+      <footer>Andon hora a hora · meta por hora derivada da Programação firme · fonte: apontamentos rápidos (coleção andon_hh) · fase 2: kiosk do Pulso em tempo real</footer>
     </div>
 
     <script>
@@ -28834,6 +28878,156 @@
       })()
     </script>
 
+    <script>
+
+// ==================== ABA ANDON — PRODUÇÃO HORA A HORA (v1) ====================
+// Dante 07/10: acompanhar a produção hora a hora na fábrica. MVP: apontamento rápido
+// por hora + meta derivada da Programação firme (declDraft). NADA do que funciona foi alterado.
+const HH_API = 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev';
+const HH_HORA_INI = 7, HH_HORA_FIM = 18; // 7h-17h (janela da fábrica)
+let hhApont = []; // {data, hora, cod, desc, qtd}
+let hhChart = null;
+let hhRevLocal = 0;
+function hhHojeIso(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function hhMetaDoDia(iso){
+  // meta por hora = soma das declarações Planejado do dia / nº de horas da janela (por fábrica separada depois)
+  let tot=0, porLocal={C:0,V:0};
+  (Array.isArray(declDraft)?declDraft:[]).forEach(function(d){
+    if(d.status==='Cancelado') return;
+    if(String(d.data)!==iso) return;
+    const q=Number(d.qtd)||0; if(q<=0) return;
+    tot+=q; porLocal[(d.local||'C')]+=q;
+  });
+  const nH=Math.max(1,HH_HORA_FIM-HH_HORA_INI);
+  return {total:tot, porHora:tot/nH, C:porLocal.C, V:porLocal.V, nH:nH};
+}
+function hhProdNaHora(iso,hora){
+  let q=0, itens={};
+  hhApont.forEach(function(a){ if(a.data===iso && Number(a.hora)===hora){ q+=Number(a.qtd)||0; const k=a.cod; itens[k]=(itens[k]||0)+Number(a.qtd); } });
+  return {qtd:q, itens:itens};
+}
+function hhSave(){
+  try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); }catch(e){}
+  hhRevLocal=Date.now();
+  if(window.ANDON_SYNC && window.ANDON_SYNC.connected() && !document.body.classList.contains('viewerMode')){
+    try{
+      fetch(HH_API+'/api/collections/andon_hh/records', {
+        method:'POST',
+        headers:{'Authorization':window.ANDON_SYNC.token, 'Content-Type':'application/json'},
+        body: JSON.stringify({event_type:'system', occurred_at:new Date().toISOString(), reason:'Apontamento hora a hora', source:'andon-hh', changes:{apontamentos:hhApont, rev:hhRevLocal}})
+      }).then(function(r){ if(r.status===400||r.status===401||r.status===403){ window.ANDON_SYNC._authFail(); } return r.ok?r.json():null; }).then(function(rr){
+        if(rr && hhMsgEl){ hhFlash('✔ Registrado e salvo no servidor'); }
+      }).catch(function(){ if(hhMsgEl) hhFlash('⚠ Registrado localmente (servidor indisponível)'); });
+    }catch(e){}
+  } else if(hhMsgEl){ hhFlash('✔ Registrado (local — conecte no 🔗 para sincronizar)'); }
+}
+function hhFlash(t){ const m=document.getElementById('hhMsg'); if(!m) return; m.textContent=t; m.style.display=''; setTimeout(function(){ m.style.display='none'; }, 3500); }
+function hhLoad(){
+  // carrega do servidor (público) e faz merge com local
+  try{ const l=JSON.parse(localStorage.getItem('hh|apont')||'[]'); if(Array.isArray(l)) hhApont=l; }catch(e){}
+  fetch(HH_API+'/api/collections/andon_hh/records?sort=-created&perPage=1').then(function(r){ return r.ok?r.json():null; }).then(function(d){
+    if(!d || !d.items || !d.items.length) return;
+    const ch=d.items[0].changes||{};
+    if(!Array.isArray(ch.apontamentos)) return;
+    const srv=ch.apontamentos, srvRev=Number(ch.rev||0);
+    if(srvRev>hhRevLocal){ hhApont=srv; hhRevLocal=srvRev; try{ localStorage.setItem('hh|apont', JSON.stringify(srv)); }catch(e){} }
+    if(document.getElementById('viewHH').classList.contains('on')) hhRender();
+  }).catch(function(){});
+}
+function hhRender(){
+  const iso=hhHojeIso();
+  const meta=hhMetaDoDia(iso);
+  // hero
+  let tot=0; hhApont.forEach(function(a){ if(a.data===iso) tot+=Number(a.qtd)||0; });
+  const now=new Date(); const hNow=now.getHours();
+  const nowEl=document.getElementById('hhNow');
+  if(nowEl){
+    const pct=meta.total>0?Math.round(100*tot/meta.total):0;
+    nowEl.innerHTML='<div><div class="lbl">Produção de hoje ('+dtBR(iso)+')</div><div class="big">'+tot+' <span style="font-size:20px;font-weight:600">/ '+meta.total+' un</span></div><div class="sub">'+pct+'% da programação firme'+(meta.C?(' · Curitiba '+meta.C):(meta.V?(' · Vinhedo '+meta.V):''))+'</div></div>'+
+      '<div><div class="lbl">Hora corrente</div><div class="big">'+String(hNow).padStart(2,'0')+'h</div><div class="sub">'+(hNow>=HH_HORA_INI&&hNow<HH_HORA_FIM?'jornada em curso':'fora da janela 7h-17h')+'</div></div>';
+  }
+  // grid de células por hora
+  const grid=document.getElementById('hhGrid'); if(!grid) return;
+  let cells='';
+  for(let h=HH_HORA_INI; h<HH_HORA_FIM; h++){
+    const p=hhProdNaHora(iso,h);
+    const alvo=meta.porHora;
+    let cls='#e2e8f0', bg='#f8fafc';
+    if(h===hNow){ bg='#e0e7ff'; cls='#4338ca'; }
+    else if(p.qtd>0){ bg='#dcfce7'; cls='#166534'; }
+    cells+='<div class="hhCell" style="background:'+bg+'"><div style="font-size:13px;font-weight:700;color:'+cls+'">'+String(h).padStart(2,'0')+'h</div>'+
+      '<div style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;margin:4px 0">'+p.qtd+'</div>'+
+      '<div style="font-size:12px;color:var(--mut)">meta '+Math.round(alvo)+'</div>'+
+      (Object.keys(p.itens).length?('<div style="font-size:11.5px;color:var(--mut);margin-top:4px">'+Object.keys(p.itens).map(function(k){return escH(k)+' ×'+p.itens[k];}).slice(0,3).join(' · ')+'</div>'):'')+
+      '</div>';
+  }
+  grid.innerHTML=cells;
+  // gráfico
+  const el=document.getElementById('hhChart');
+  if(el && window.echarts){
+    const labels=[], vals=[], metas=[];
+    for(let h=HH_HORA_INI; h<HH_HORA_FIM; h++){ labels.push(String(h).padStart(2,'0')+'h'); vals.push(hhProdNaHora(iso,h).qtd); metas.push(Math.round(meta.porHora)); }
+    if(hhChart){ hhChart.dispose(); hhChart=null; }
+    hhChart=echarts.init(el);
+    hhChart.setOption({grid:{left:44,right:14,top:26,bottom:26},tooltip:{trigger:'axis'},
+      xAxis:{type:'category',data:labels,axisLabel:{fontSize:12},axisLine:{lineStyle:{color:'#94a3b8'}}},
+      yAxis:{type:'value',axisLabel:{fontSize:12},splitLine:{lineStyle:{type:'dashed',color:'#e2e8f0'}}},
+      series:[{name:'Produzido',type:'bar',data:vals,barCategoryGap:'25%',itemStyle:{color:'#3b82f6',borderRadius:[4,4,0,0]},
+        markLine:{symbol:'none',data:[{yAxis:Math.round(meta.porHora),lineStyle:{color:'#f59e0b',type:'dashed'},label:{formatter:'Meta/h: '+Math.round(meta.porHora),position:'insideMiddleTop',color:'#b45309',fontWeight:700}}]}}]});
+  }
+  // tabela
+  const tb=document.getElementById('hhTb'); if(!tb) return;
+  let rows='';
+  for(let h=HH_HORA_INI; h<HH_HORA_FIM; h++){
+    const p=hhProdNaHora(iso,h);
+    const mHora=Math.round(meta.porHora);
+    const sit=p.qtd<=0?'<span class="badgeLate">sem registro</span>':(p.qtd>=mHora?'<span class="badgeOk">meta ok</span>':'<span class="badgeLate">abaixo da meta</span>');
+    rows+='<tr><td>'+String(h).padStart(2,'0')+'h</td><td>'+p.qtd+'</td><td>'+mHora+'</td><td>'+sit+'</td><td style="text-align:left">'+(Object.keys(p.itens).length?escH(Object.keys(p.itens).map(function(k){return k+' ×'+p.itens[k];}).join(' · ')):'—')+'</td></tr>';
+  }
+  tb.innerHTML=rows;
+  // selects
+  const sp=document.getElementById('hhSelProd');
+  if(sp && !sp.options.length){
+    const cods={};
+    (Array.isArray(declDraft)?declDraft:[]).forEach(function(d){ if(d.cod&&!cods[d.cod])cods[d.cod]=descDe(d.cod); });
+    DATA.rows.forEach(function(r){ if(!r.frete&&!cods[r.codigo])cods[r.codigo]=r.desc; });
+    Object.keys(cods).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}).forEach(function(k){ const o=document.createElement('option'); o.value=k; o.textContent=k+' — '+String(cods[k]).slice(0,30); sp.appendChild(o); });
+  }
+  const sh=document.getElementById('hhSelHora');
+  if(sh && !sh.options.length){ for(let h=HH_HORA_INI;h<HH_HORA_FIM;h++){ const o=document.createElement('option'); o.value=String(h); o.textContent=String(h).padStart(2,'0')+'h'; sh.appendChild(o); } }
+}
+function hhInit(){
+  const btn=document.getElementById('hhBtnAdd'); if(!btn) return;
+  btn.addEventListener('click', function(){
+    if(document.body.classList.contains('viewerMode')){ hhFlash('⚠ modo leitura — conecte no 🔗 para registrar'); return; }
+    const cod=(document.getElementById('hhSelProd')||{}).value;
+    const hora=(document.getElementById('hhSelHora')||{}).value;
+    const qtd=Number((document.getElementById('hhQtd')||{}).value)||0;
+    if(!cod||!hora||qtd<=0){ hhFlash('⚠ informe produto, hora e quantidade'); return; }
+    const iso=hhHojeIso();
+    hhApont.push({data:iso, hora:String(hora), cod:cod, qtd:qtd, ts:new Date().toISOString()});
+    hhSave(); hhRender();
+    const qi=document.getElementById('hhQtd'); if(qi) qi.value='';
+  });
+  // auto-refresh do relógio a cada 60s
+  setInterval(function(){ const v=document.getElementById('viewHH'); if(v&&v.classList.contains('on')) hhRender(); }, 60000);
+  hhLoad();
+}
+window.hhInit = hhInit;
+window.hhRender = hhRender;
+// hook no showView: renderiza a aba na primeira abertura
+(function(){
+  const _sv = window.showView;
+  window.showView = function(v){
+    const r = _sv(v);
+    if(v==='hh' && !window._hhInit){ window._hhInit=true; try{ hhInit(); }catch(e){} }
+    if(v==='hh'){ try{ hhRender(); }catch(e){} }
+    return r;
+  };
+})();
+
+    </script>
+
     <script
       type="module"
       src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"
@@ -28841,5 +29035,6 @@
       data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}'
       crossorigin="anonymous"
     ></script>
-  </body>
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
 </html>

@@ -3,7 +3,8 @@
 // (onBootstrap roda APÓS as migrações — onServe não existe no jsvm do Skip):
 // - LEITURA da agenda/SMKT (reprogramming_events) exige LOGIN (Opção B — Dante 06/10 15h41);
 // - faturamento_nfs continua PÚBLICO de leitura (aba Faturamento ao vivo);
-// - ESCRITA continua admin-only (migration 0008) — nada é tocado aqui.
+// - andon_hh PÚBLICO de leitura (aba Andon hora a hora — TV da fábrica sem login; Dante 07/10);
+// - ESCRITA continua admin-only (migration 0008 + 0012) — nada é tocado aqui.
 onBootstrap((e) => {
   e.next()
   const R_AUTH = "@request.auth.id != ''"
@@ -21,6 +22,14 @@ onBootstrap((e) => {
       nfs.listRule = ''
       nfs.viewRule = ''
       $app.save(nfs)
+    }
+  } catch (_) {}
+  try {
+    const hh = $app.findCollectionByNameOrId('andon_hh')
+    if (hh.listRule !== '' || hh.viewRule !== '') {
+      hh.listRule = ''
+      hh.viewRule = ''
+      $app.save(hh)
     }
   } catch (_) {}
 })
