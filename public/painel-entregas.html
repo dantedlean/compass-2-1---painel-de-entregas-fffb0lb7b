@@ -573,6 +573,13 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
 #viewHH .hhTbl th,#viewHH .hhTbl td{font-size:14px}
 #viewHH .badgeOk{background:#dcfce7;color:#166534;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
 #viewHH .badgeLate{background:#fee2e2;color:#991b1b;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
+#viewHH .hhTvBtn{margin-left:auto}
+body.hhTv .tabnav,body.hhTv header,body.hhTv footer{display:none!important}
+body.hhTv #viewHH .hhNow .big{font-size:72px}
+body.hhTv #viewHH .hhNow .lbl{font-size:16px}
+body.hhTv #viewHH .hhCell{min-height:150px}
+body.hhTv #viewHH .hhCell div:nth-child(2){font-size:34px}
+body.hhTv #viewHH .hhChart{height:380px}
 @media(max-width:900px){#viewHH .hhGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 <main>
@@ -4087,6 +4094,31 @@ function hhInit(){
   setInterval(function(){ const v=document.getElementById('viewHH'); if(v&&v.classList.contains('on')) hhRender(); }, 60000);
   hhLoad();
 }
+// ── MODO TV (Dante 08/10): fullscreen + esconde nav/header; ESC ou clique sai ──
+function hhTvToggle(){
+  const b=document.body;
+  const on=b.classList.toggle('hhTv');
+  const bt=document.getElementById('hhTvBtn');
+  if(bt) bt.textContent=on?'✕ Sair da TV':'⛶ TV';
+  try{
+    if(on && document.documentElement.requestFullscreen && !document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+    else if(!on && document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(function(){}); }
+  }catch(e){}
+  try{ hhRender(); }catch(e){}
+}
+(function(){
+  const v=document.getElementById('viewHH'); if(!v || document.getElementById('hhTvBtn')) return;
+  const bar=v.querySelector('.hhBar');
+  if(!bar) return;
+  const bt=document.createElement('button');
+  bt.id='hhTvBtn'; bt.className='hhTvBtn'; bt.textContent='⛶ TV';
+  bt.setAttribute('aria-label','Modo TV (tela cheia)');
+  bt.addEventListener('click', hhTvToggle);
+  bar.appendChild(bt);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && document.body.classList.contains('hhTv')) hhTvToggle(); });
+  // TV: refresh mais rápido (30s) quando em modo TV
+  setInterval(function(){ if(document.body.classList.contains('hhTv')){ const vv=document.getElementById('viewHH'); if(vv&&vv.classList.contains('on')) hhRender(); } }, 30000);
+})();
 window.hhInit = hhInit;
 window.hhRender = hhRender;
 (function(){
@@ -4112,5 +4144,6 @@ window.hhRender = hhRender;
 </script>
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
