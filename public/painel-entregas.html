@@ -115,8 +115,9 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
   <button id="tabEntV" onclick="showView('entv')">📅 Vinhedo — Programação</button>
   <button id="tabPA" onclick="showView('pa')">⚙️ Programação automática</button>
   <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
-<button id="tabHH" onclick="showView('hh')">🏭 Andon — Produção hora a hora</button>
+<button id="tabHH" onclick="showView('hh')">🏭 Andon — Linhas (hora a hora)</button>
 </nav>
+
 <div id="viewNf" class="view on">
 <style>
 /* CSS escopado na aba Faturamento — não afeta outras abas */
@@ -560,10 +561,10 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
 <div id="viewHH" class="view">
 <style>
 #viewHH .hhBar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
-#viewHH .hhBar select,#viewHH .hhBar button{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;color:var(--ink);cursor:pointer}
+#viewHH .hhBar select,#viewHH .hhBar button,#viewHH .hhBar input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;color:var(--ink);cursor:pointer}
 #viewHH .hhBar button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
 #viewHH .hhNote{font-size:13.5px;color:var(--mut);margin:4px 0 10px}
-#viewHH .hhGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 14px}
+#viewHH .hhGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:10px 0 14px}
 #viewHH .hhCell{border:1.5px solid var(--line);border-radius:10px;padding:10px 8px;min-height:112px;background:#fff}
 #viewHH .hhNow{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end}
 #viewHH .hhNow .big{font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
@@ -573,6 +574,13 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
 #viewHH .hhTbl th,#viewHH .hhTbl td{font-size:14px}
 #viewHH .badgeOk{background:#dcfce7;color:#166534;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
 #viewHH .badgeLate{background:#fee2e2;color:#991b1b;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
+#viewHH .hhPoka{background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:14px 18px;margin:10px 0;font-size:14.5px;display:none}
+#viewHH .hhPoka select,#viewHH .hhPoka input,#viewHH .hhPoka button{border:1px solid #d4d4d8;border-radius:8px;padding:8px 10px;font-size:13.5px;background:#fff}
+#viewHH .hhPoka button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+#viewHH .hhCfg input{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13.5px}
+#viewHH .hhCfg td{padding:4px 6px}
+@media(max-width:900px){#viewHH .hhGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){#viewHH .hhGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #viewHH .hhTvBtn{margin-left:auto}
 body.hhTv .tabnav,body.hhTv header,body.hhTv footer{display:none!important}
 body.hhTv #viewHH .hhNow .big{font-size:72px}
@@ -580,32 +588,63 @@ body.hhTv #viewHH .hhNow .lbl{font-size:16px}
 body.hhTv #viewHH .hhCell{min-height:150px}
 body.hhTv #viewHH .hhCell div:nth-child(2){font-size:34px}
 body.hhTv #viewHH .hhChart{height:380px}
-@media(max-width:900px){#viewHH .hhGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+body.hhTv #viewHH .hhCfgCard,body.hhTv #viewHH .hhParCard{display:none}
 </style>
 <main>
 <div class="hhNow" id="hhNow"></div>
+<div class="hhPoka" id="hhPoka"></div>
 <div class="hhBar">
-<span class="hhNote">Registro rápido por hora:</span>
-<select id="hhSelProd"></select>
-<select id="hhSelHora"></select>
-<input id="hhQtd" type="number" min="0" step="1" placeholder="Qtd" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;width:110px" aria-label="Quantidade produzida na hora">
+<span class="hhNote">Registro rápido:</span>
+<select id="hhSelLinha" aria-label="Linha de produção"></select>
+<select id="hhSelProd" aria-label="Produto"></select>
+<select id="hhSelHora" aria-label="Hora"></select>
+<input id="hhQtd" type="number" min="0" step="1" placeholder="Qtd" style="width:100px" aria-label="Quantidade produzida na hora">
 <button id="hhBtnAdd" class="primary">＋ Registrar</button>
+<button id="hhTvBtn" aria-label="Modo TV (tela cheia)">⛶ TV</button>
 <span class="hhNote" id="hhMsg" style="display:none"></span>
 </div>
-<div class="hhNote">Apontamento rápido no chão (sem login = modo leitura; conectar no 🔗 para registrar). Integração com o kiosk do Pulso: fase 2.</div>
+<div class="hhNote">Dashboard individual: <select id="hhLinhaSel" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;background:#fff"></select> · sem login = modo leitura; conectar no 🔗 para registrar.</div>
 <div class="hhGrid" id="hhGrid"></div>
-<div class="card">
-<h2>Produção do dia — hora a hora</h2>
-<div class="hhChart" id="hhChart"></div>
+<div class="card hhCfgCard">
+<h2>Configuração do dia — linhas de produção</h2>
+<div class="note">Linhas ativas hoje, pessoas alocadas e meta do dia por linha. A meta horária = meta do dia ÷ 11h (7h-17h). Salva no servidor (custo posterior usa pessoas × horas).</div>
+<div class="tblwrap hhCfg">
+<table id="hhCfgTbl"><thead><tr><th style="text-align:left">Linha</th><th>Pessoas</th><th>Meta do dia (un)</th><th></th></tr></thead><tbody id="hhCfgTb"></tbody></table>
+</div>
+<button id="hhCfgAdd" style="margin-top:10px">＋ Adicionar linha</button>
 </div>
 <div class="card">
-<h2>Detalhe por hora</h2>
+<h2 id="hhConsTtl">Consolidado — todas as linhas</h2>
 <div class="tblwrap">
-<table class="hhTbl" id="hhTbl"><thead><tr><th>Hora</th><th>Produzido</th><th>Meta</th><th>Situação</th><th style="text-align:left">Produtos</th></tr></thead><tbody id="hhTb"></tbody></table>
+<table class="hhTbl" id="hhConsTbl"><thead></thead><tbody id="hhConsTb"></tbody></table>
+</div>
+</div>
+<div class="card">
+<h2>Hora a hora — detalhe com acumulados</h2>
+<div class="tblwrap">
+<table class="hhTbl" id="hhTblT"><thead><tr><th>Hora</th><th>Produzido</th><th>Meta/h</th><th>Acumulado</th><th>Meta acum.</th><th>Difer.</th><th>Situação</th><th style="text-align:left">Paradas</th><th style="text-align:left">Produtos</th></tr></thead><tbody id="hhTb"></tbody></table>
+</div>
+</div>
+<div class="card">
+<h2>Produção por hora</h2>
+<div class="hhChart" id="hhChart"></div>
+</div>
+<div class="card hhParCard">
+<h2>Paradas de hoje — motivo e tempo</h2>
+<div class="tblwrap">
+<table class="hhTbl" id="hhParTbl"><thead><tr><th style="text-align:left">Linha</th><th>Início</th><th>Fim</th><th style="text-align:left">Motivo</th><th style="text-align:left">Observação</th><th></th></tr></thead><tbody id="hhParTb"></tbody></table>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center">
+<select id="hhParLinha" aria-label="Linha da parada"></select>
+<input id="hhParIni" type="number" min="7" max="18" placeholder="início (h)" style="width:100px">
+<input id="hhParFim" type="number" min="7" max="18" placeholder="fim (h)" style="width:100px">
+<select id="hhParMotivo" aria-label="Motivo da parada"><option value="">Motivo…</option><option>Falta de material</option><option>Quebra de equipamento</option><option>Falta de pessoas</option><option>Qualidade/retrabalho</option><option>Setup/troca de produto</option><option>Sem demanda</option><option>Outro</option></select>
+<input id="hhParObs" placeholder="observação (opcional)" style="flex:1;min-width:160px">
+<button id="hhParAdd" class="primary">＋ Registrar parada</button>
 </div>
 </div>
 </main>
-<footer>Andon hora a hora · meta por hora derivada da Programação firme · fonte: apontamentos rápidos (coleção andon_hh) · fase 2: kiosk do Pulso em tempo real</footer>
+<footer>Andon hora a hora · linhas de produção · meta horária = meta do dia ÷ 11h · dados guardados para custo posterior · fase 2: kiosk do Pulso em tempo real</footer>
 </div>
 
 <script>
@@ -3962,137 +4001,338 @@ document.addEventListener('keydown', function(e){
 </script>
 
 <script>
-
-// ==================== ABA ANDON — PRODUÇÃO HORA A HORA (v1) ====================
-// Dante 07/10: acompanhar a produção hora a hora na fábrica. MVP: apontamento rápido
-// por hora + meta derivada da Programação firme (declDraft). NADA do que funciona foi alterado.
+// ==================== ABA ANDON — PRODUÇÃO HORA A HORA POR LINHAS (v3) ====================
+// Dante 08/10: várias linhas de produção — config diária (linhas, pessoas, meta do dia),
+// resultado hora a hora por linha, meta/real acumulados (adiantado/atrasado), visão de TODAS
+// as linhas + dashboard individual, paradas com motivo (poka-yoke, não bloqueia).
+// Dados guardados na coleção andon_hh (snapshot completo, último vence) para custo posterior.
 const HH_API = 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev';
-const HH_HORA_INI = 7, HH_HORA_FIM = 18; // 7h-17h (janela da fábrica)
-let hhApont = []; // {data, hora, cod, qtd, ts}
-let hhChart = null;
+const HH_HORA_INI = 7, HH_HORA_FIM = 18; // janela da fábrica: 7h-17h
+let hhApont = [];   // {data, hora, linha, cod, qtd, ts}
+let hhLinhasCfg = []; // {id, nome, pessoas, meta} — config do dia
+let hhCfgData = '';   // data da config carregada
+let hhParadas = [];   // {data, linha, horaIni, horaFim, motivo, obs}
+let hhChart = null, hhChartL = null;
 let hhRevLocal = 0;
+let hhLinhaSel = '';  // linha selecionada no dashboard individual (vazio = todas)
 function hhHojeIso(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function hhMetaDoDia(iso){
-  let tot=0, porLocal={C:0,V:0};
-  (Array.isArray(declDraft)?declDraft:[]).forEach(function(d){
-    if(d.status==='Cancelado') return;
-    if(String(d.data)!==iso) return;
-    const q=Number(d.qtd)||0; if(q<=0) return;
-    tot+=q; porLocal[(d.local||'C')]+=q;
-  });
-  const nH=Math.max(1,HH_HORA_FIM-HH_HORA_INI);
-  return {total:tot, porHora:tot/nH, C:porLocal.C, V:porLocal.V, nH:nH};
+function hhAdmin(){ return !document.body.classList.contains('viewerMode'); }
+// ── meta: config do dia (por linha) ──
+function hhMetaLinha(l){
+  const c = hhLinhasCfg.find(function(x){ return x.id===l || x.nome===l; });
+  return c ? (Number(c.meta)||0) : 0;
 }
-function hhProdNaHora(iso,hora){
+function hhPessoasLinha(l){
+  const c = hhLinhasCfg.find(function(x){ return x.id===l || x.nome===l; });
+  return c ? (Number(c.pessoas)||0) : 0;
+}
+function hhMetaHora(l){ return hhMetaLinha(l)/Math.max(1,HH_HORA_FIM-HH_HORA_INI); }
+// ── produção real por linha/hora ──
+function hhProdLinhaHora(l, iso, hora){
   let q=0, itens={};
-  hhApont.forEach(function(a){ if(a.data===iso && Number(a.hora)===hora){ q+=Number(a.qtd)||0; const k=a.cod; itens[k]=(itens[k]||0)+Number(a.qtd); } });
+  hhApont.forEach(function(a){ if(a.linha===l && a.data===iso && Number(a.hora)===hora){ q+=Number(a.qtd)||0; const k=a.cod||'—'; itens[k]=(itens[k]||0)+Number(a.qtd); } });
   return {qtd:q, itens:itens};
 }
-function hhFlash(t){ const m=document.getElementById('hhMsg'); if(!m) return; m.textContent=t; m.style.display=''; setTimeout(function(){ m.style.display='none'; }, 3500); }
-function hhSave(){
-  try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); }catch(e){}
+function hhProdLinhaAcum(l, iso, ateHora){
+  let q=0;
+  hhApont.forEach(function(a){ if(a.linha===l && a.data===iso && Number(a.hora)<=ateHora) q+=Number(a.qtd)||0; });
+  return q;
+}
+function hhParadasLinha(l, iso){
+  return hhParadas.filter(function(p){ return p.linha===l && p.data===iso; });
+}
+function hhLinhasAtivas(){ // ids únicos da config
+  return hhLinhasCfg.map(function(c){ return c.id; });
+}
+// ── persistência (mesma coleção andon_hh, snapshot completo) ──
+function hhSnapshot(){
+  return {config:{data:hhCfgData, linhas:hhLinhasCfg}, apontamentos:hhApont, paradas:hhParadas, rev:Date.now()};
+}
+function hhSave(motivo){
+  try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); localStorage.setItem('hh|cfg', JSON.stringify({data:hhCfgData, linhas:hhLinhasCfg})); localStorage.setItem('hh|paradas', JSON.stringify(hhParadas)); }catch(e){}
   hhRevLocal=Date.now();
-  if(window.ANDON_SYNC && window.ANDON_SYNC.connected() && !document.body.classList.contains('viewerMode')){
+  if(window.ANDON_SYNC && window.ANDON_SYNC.connected() && hhAdmin()){
     try{
       fetch(HH_API+'/api/collections/andon_hh/records', {
         method:'POST',
         headers:{'Authorization':window.ANDON_SYNC.token, 'Content-Type':'application/json'},
-        body: JSON.stringify({event_type:'system', occurred_at:new Date().toISOString(), reason:'Apontamento hora a hora', source:'andon-hh', changes:{apontamentos:hhApont, rev:hhRevLocal}})
+        body: JSON.stringify({event_type:'system', occurred_at:new Date().toISOString(), reason:motivo||'Andon linhas — atualização', source:'andon-hh', changes:hhSnapshot()})
       }).then(function(r){ if(r.status===400||r.status===401||r.status===403){ window.ANDON_SYNC._authFail(); } return r.ok?r.json():null; }).then(function(rr){
-        if(rr && document.getElementById('hhMsg')) hhFlash('✔ Registrado e salvo no servidor');
-      }).catch(function(){ if(document.getElementById('hhMsg')) hhFlash('⚠ Registrado localmente (servidor indisponível)'); });
+        if(rr && document.getElementById('hhMsg')) hhFlash('✔ Salvo no servidor');
+      }).catch(function(){ if(document.getElementById('hhMsg')) hhFlash('⚠ Salvo localmente (servidor indisponível)'); });
     }catch(e){}
-  } else if(document.getElementById('hhMsg')){ hhFlash('✔ Registrado (local — conecte no 🔗 para sincronizar)'); }
+  } else if(document.getElementById('hhMsg')){ hhFlash('✔ Salvo local — conecte no 🔗 para sincronizar'); }
 }
+function hhFlash(t){ const m=document.getElementById('hhMsg'); if(!m) return; m.textContent=t; m.style.display=''; setTimeout(function(){ m.style.display='none'; }, 3500); }
 function hhLoad(){
   try{ const l=JSON.parse(localStorage.getItem('hh|apont')||'[]'); if(Array.isArray(l)) hhApont=l; }catch(e){}
+  try{ const c=JSON.parse(localStorage.getItem('hh|cfg')||'null'); if(c&&Array.isArray(c.linhas)){ hhLinhasCfg=c.linhas; hhCfgData=c.data||''; } }catch(e){}
+  try{ const p=JSON.parse(localStorage.getItem('hh|paradas')||'[]'); if(Array.isArray(p)) hhParadas=p; }catch(e){}
   fetch(HH_API+'/api/collections/andon_hh/records?sort=-created&perPage=1').then(function(r){ return r.ok?r.json():null; }).then(function(d){
     if(!d || !d.items || !d.items.length) return;
     const ch=d.items[0].changes||{};
-    if(!Array.isArray(ch.apontamentos)) return;
-    const srv=ch.apontamentos, srvRev=Number(ch.rev||0);
-    if(srvRev>hhRevLocal){ hhApont=srv; hhRevLocal=srvRev; try{ localStorage.setItem('hh|apont', JSON.stringify(srv)); }catch(e){} }
+    const srvRev=Number(ch.rev||0);
+    if(srvRev>hhRevLocal){
+      if(Array.isArray(ch.apontamentos)) hhApont=ch.apontamentos;
+      if(ch.config && Array.isArray(ch.config.linhas)){ hhLinhasCfg=ch.config.linhas; hhCfgData=ch.config.data||''; }
+      if(Array.isArray(ch.paradas)) hhParadas=ch.paradas;
+      hhRevLocal=srvRev;
+      try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); }catch(e){}
+    }
     const v=document.getElementById('viewHH'); if(v&&v.classList.contains('on')) hhRender();
   }).catch(function(){});
 }
+// ── CONFIG do dia (admin): linhas, pessoas, meta ──
+function hhCfgRender(){
+  const tb=document.getElementById('hhCfgTb'); if(!tb) return;
+  const iso=hhHojeIso();
+  tb.innerHTML = hhLinhasCfg.map(function(c,i){
+    return '<tr data-ci="'+i+'"><td><input data-c="nome" value="'+escH(c.nome)+'" aria-label="Nome da linha"></td>'+
+      '<td><input data-c="pessoas" type="number" min="0" step="1" value="'+(Number(c.pessoas)||0)+'" aria-label="Pessoas na linha"></td>'+
+      '<td><input data-c="meta" type="number" min="0" step="1" value="'+(Number(c.meta)||0)+'" aria-label="Meta do dia"></td>'+
+      '<td class="exec"><button data-cfg="del">✕</button></td></tr>';
+  }).join('') + (hhLinhasCfg.length? '' : '<tr><td colspan="4" style="color:var(--mut)">Nenhuma linha configurada hoje — adicione abaixo.</td></tr>');
+}
+// ── RENDER principal ──
 function hhRender(){
   const iso=hhHojeIso();
-  const meta=hhMetaDoDia(iso);
-  let tot=0; hhApont.forEach(function(a){ if(a.data===iso) tot+=Number(a.qtd)||0; });
   const now=new Date(); const hNow=now.getHours();
+  let tot=0, totMeta=0;
+  hhLinhasCfg.forEach(function(c){ totMeta+=Number(c.meta)||0; });
+  hhApont.forEach(function(a){ if(a.data===iso) tot+=Number(a.qtd)||0; });
   const nowEl=document.getElementById('hhNow');
   if(nowEl){
-    const pct=meta.total>0?Math.round(100*tot/meta.total):0;
-    nowEl.innerHTML='<div><div class="lbl">Produção de hoje ('+dtBR(iso)+')</div><div class="big">'+tot+' <span style="font-size:20px;font-weight:600">/ '+meta.total+' un</span></div><div class="sub">'+pct+'% da programação firme'+(meta.C?(' · Curitiba '+meta.C):(meta.V?(' · Vinhedo '+meta.V):''))+'</div></div>'+
+    const pct=totMeta>0?Math.round(100*tot/totMeta):0;
+    const acumH = hhLinhasCfg.reduce(function(s,c){ return s + hhMetaHora(c.id)*Math.max(0,Math.min(hNow,HH_HORA_FIM-1)-HH_HORA_INI+1); },0);
+    const dif=tot-acumH;
+    nowEl.innerHTML='<div><div class="lbl">Produção de hoje ('+dtBR(iso)+') — '+hhLinhasCfg.length+' linha(s)</div><div class="big">'+tot+' <span style="font-size:20px;font-weight:600">/ '+totMeta+' un</span></div><div class="sub">'+pct+'% da meta do dia · <span style="color:'+(dif>=0?'#86efac':'#fca5a5')+'">'+(dif>=0?'adiantado':'atrasado')+' '+NF.format(Math.abs(dif))+' un</span> vs meta acumulada</div></div>'+
       '<div><div class="lbl">Hora corrente</div><div class="big">'+String(hNow).padStart(2,'0')+'h</div><div class="sub">'+(hNow>=HH_HORA_INI&&hNow<HH_HORA_FIM?'jornada em curso':'fora da janela 7h-17h')+'</div></div>';
   }
-  const grid=document.getElementById('hhGrid'); if(!grid) return;
-  let cells='';
-  for(let h=HH_HORA_INI; h<HH_HORA_FIM; h++){
-    const p=hhProdNaHora(iso,h);
-    const alvo=meta.porHora;
-    let cls='#475569', bg='#f8fafc';
-    if(h===hNow){ bg='#e0e7ff'; cls='#4338ca'; }
-    else if(p.qtd>0){ bg='#dcfce7'; cls='#166534'; }
-    cells+='<div class="hhCell" style="background:'+bg+'"><div style="font-size:13px;font-weight:700;color:'+cls+'">'+String(h).padStart(2,'0')+'h</div>'+
-      '<div style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;margin:4px 0">'+p.qtd+'</div>'+
-      '<div style="font-size:12px;color:var(--mut)">meta '+Math.round(alvo)+'</div>'+
-      (Object.keys(p.itens).length?('<div style="font-size:11.5px;color:var(--mut);margin-top:4px">'+Object.keys(p.itens).map(function(k){return escH(k)+' ×'+p.itens[k];}).slice(0,3).join(' · ')+'</div>'):'')+
-      '</div>';
+  // config (só admin vê edição; viewer vê tabela)
+  hhCfgRender();
+  // seletor do dashboard individual
+  const sel=document.getElementById('hhLinhaSel');
+  if(sel){
+    const cur=hhLinhaSel;
+    sel.innerHTML='<option value="">— Todas as linhas (consolidado) —</option>'+hhLinhasCfg.map(function(c){ return '<option value="'+escH(c.id)+'"'+(cur===c.id?' selected':'')+'>'+escH(c.nome)+'</option>'; }).join('');
   }
-  grid.innerHTML=cells;
+  // visão consolidada (todas as linhas) — tabela hora × linha
+  const tbc=document.getElementById('hhConsTb'); if(!tbc) return;
+  const horas=[]; for(let h=HH_HORA_INI;h<HH_HORA_FIM;h++) horas.push(h);
+  let head='<tr><th>Hora</th>'+hhLinhasCfg.map(function(c){ return '<th>'+escH(c.nome)+'</th>'; }).join('')+'<th>Total</th></tr>';
+  // linha 1: produzido por hora
+  let r1='<tr><td><b>Produzido</b></td>'+hhLinhasCfg.map(function(c){ let s=0; horas.forEach(function(h){ s+=hhProdLinhaHora(c.id,iso,h).qtd; }); return '<td>'+s+'</td>'; }).join('');
+  let tt=0; hhApont.forEach(function(a){ if(a.data===iso) tt+=Number(a.qtd)||0; }); r1+='<td><b>'+tt+'</b></td></tr>';
+  // linha 2: meta do dia por linha
+  let r2='<tr><td>Meta do dia</td>'+hhLinhasCfg.map(function(c){ return '<td>'+(Number(c.meta)||0)+'</td>'; }).join('')+'<td>'+totMeta+'</td></tr>';
+  // linha 3: pessoas
+  let r3='<tr><td>Pessoas</td>'+hhLinhasCfg.map(function(c){ return '<td>'+(Number(c.pessoas)||0)+'</td>'; }).join('')+'<td>'+hhLinhasCfg.reduce(function(s,c){ return s+(Number(c.pessoas)||0); },0)+'</td></tr>';
+  // linha 4: status acumulado
+  let r4='<tr><td>Acumulado</td>'+hhLinhasCfg.map(function(c){
+    const acum=hhProdLinhaAcum(c.id,iso,Math.min(hNow,HH_HORA_FIM-1));
+    const mAc=hhMetaHora(c.id)*Math.max(0,Math.min(hNow,HH_HORA_FIM-1)-HH_HORA_INI+1);
+    const d=acum-mAc;
+    return '<td><span class="'+(d>=0?'badgeOk':'badgeLate')+'">'+acum+' / '+Math.round(mAc)+(d>=0?' ▲':' ▼')+'</span></td>';
+  }).join('')+'<td>—</td></tr>';
+  tbc.innerHTML=head+r1+r2+r3+r4;
+  // grade por hora (consolidado ou linha única)
+  const grid=document.getElementById('hhGrid');
+  if(grid){
+    let cells='';
+    const linhasFiltro = hhLinhaSel? hhLinhasCfg.filter(function(c){ return c.id===hhLinhaSel; }) : hhLinhasCfg;
+    horas.forEach(function(h){
+      let q=0, mH=0, itens={};
+      linhasFiltro.forEach(function(c){ const p=hhProdLinhaHora(c.id,iso,h); q+=p.qtd; mH+=hhMetaHora(c.id); Object.keys(p.itens).forEach(function(k){ itens[k]=(itens[k]||0)+p.itens[k]; }); });
+      let cls='#475569', bg='#f8fafc';
+      if(h===hNow){ bg='#e0e7ff'; cls='#4338ca'; }
+      else if(q>0){ bg='#dcfce7'; cls='#166534'; }
+      const paradasHora = hhParadas.filter(function(p){ return p.data===iso && Number(p.horaIni)<=h && Number(p.horaFim)>=h && (!hhLinhaSel || p.linha===hhLinhaSel); });
+      cells+='<div class="hhCell" style="background:'+bg+'"><div style="font-size:13px;font-weight:700;color:'+cls+'">'+String(h).padStart(2,'0')+'h'+(paradasHora.length?' <span title="parada" style="color:#b45309">⏸</span>':'')+'</div>'+
+        '<div style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;margin:4px 0">'+q+'</div>'+
+        '<div style="font-size:12px;color:var(--mut)">meta '+Math.round(mH)+'</div>'+
+        (Object.keys(itens).length?('<div style="font-size:11.5px;color:var(--mut);margin-top:4px">'+Object.keys(itens).map(function(kk){return escH(kk)+' ×'+itens[kk];}).slice(0,3).join(' · ')+'</div>'):'')+
+        '</div>';
+    });
+    grid.innerHTML=cells;
+  }
+  // gráfico: por hora — consolidado ou da linha selecionada
   const el=document.getElementById('hhChart');
   if(el && window.echarts){
     const labels=[], vals=[], metas=[];
-    for(let h=HH_HORA_INI; h<HH_HORA_FIM; h++){ labels.push(String(h).padStart(2,'0')+'h'); vals.push(hhProdNaHora(iso,h).qtd); metas.push(Math.round(meta.porHora)); }
+    const linhasFiltro2 = hhLinhaSel? hhLinhasCfg.filter(function(c){ return c.id===hhLinhaSel; }) : hhLinhasCfg;
+    horas.forEach(function(h){
+      labels.push(String(h).padStart(2,'0')+'h');
+      let v=0,m=0; linhasFiltro2.forEach(function(c){ v+=hhProdLinhaHora(c.id,iso,h).qtd; m+=hhMetaHora(c.id); });
+      vals.push(v); metas.push(Math.round(m));
+    });
     if(hhChart){ hhChart.dispose(); hhChart=null; }
     hhChart=echarts.init(el);
     hhChart.setOption({grid:{left:44,right:14,top:26,bottom:26},tooltip:{trigger:'axis'},
       xAxis:{type:'category',data:labels,axisLabel:{fontSize:12},axisLine:{lineStyle:{color:'#94a3b8'}}},
       yAxis:{type:'value',axisLabel:{fontSize:12},splitLine:{lineStyle:{type:'dashed',color:'#e2e8f0'}}},
       series:[{name:'Produzido',type:'bar',data:vals,barCategoryGap:'25%',itemStyle:{color:'#3b82f6',borderRadius:[4,4,0,0]},
-        markLine:{symbol:'none',data:[{yAxis:Math.round(meta.porHora),lineStyle:{color:'#f59e0b',type:'dashed'},label:{formatter:'Meta/h: '+Math.round(meta.porHora),position:'insideMiddleTop',color:'#b45309',fontWeight:700}}]}}]});
+        markLine:{symbol:'none',data:[{yAxis:Math.round(metas[0]||0),lineStyle:{color:'#f59e0b',type:'dashed'},label:{formatter:'Meta/h: '+Math.round(metas[0]||0),position:'insideMiddleTop',color:'#b45309',fontWeight:700}}]}}]});
   }
-  const tb=document.getElementById('hhTb'); if(!tb) return;
-  let rows='';
-  for(let h=HH_HORA_INI; h<HH_HORA_FIM; h++){
-    const p=hhProdNaHora(iso,h);
-    const mHora=Math.round(meta.porHora);
-    const sit=p.qtd<=0?'<span class="badgeLate">sem registro</span>':(p.qtd>=mHora?'<span class="badgeOk">meta ok</span>':'<span class="badgeLate">abaixo da meta</span>');
-    rows+='<tr><td>'+String(h).padStart(2,'0')+'h</td><td>'+p.qtd+'</td><td>'+mHora+'</td><td>'+sit+'</td><td style="text-align:left">'+(Object.keys(p.itens).length?escH(Object.keys(p.itens).map(function(k){return k+' ×'+p.itens[k];}).join(' · ')):'—')+'</td></tr>';
+  // tabela detalhe por hora (com acumulados e paradas)
+  const tb=document.getElementById('hhTb');
+  if(tb){
+    const linhasFiltro3 = hhLinhaSel? hhLinhasCfg.filter(function(c){ return c.id===hhLinhaSel; }) : hhLinhasCfg;
+    let acR=0, acM=0, rows='';
+    horas.forEach(function(h){
+      let q=0,m=0,prods={};
+      linhasFiltro3.forEach(function(c){ const p=hhProdLinhaHora(c.id,iso,h); q+=p.qtd; m+=hhMetaHora(c.id); Object.keys(p.itens).forEach(function(kk){ prods[kk]=(prods[kk]||0)+p.itens[kk]; }); });
+      acR+=q; acM+=m;
+      const dif=acR-acM;
+      const paradas=hhParadas.filter(function(p){ return p.data===iso && Number(p.horaIni)<=h && Number(p.horaFim)>=h && (!hhLinhaSel || p.linha===hhLinhaSel); });
+      const sit=(h>hNow)?'<span style="color:var(--mut)">—</span>':(q<=0&&m>0?'<span class="badgeLate">sem registro</span>':(dif>=0?'<span class="badgeOk">adiantado ▲</span>':'<span class="badgeLate">atrasado ▼</span>'));
+      rows+='<tr><td>'+String(h).padStart(2,'0')+'h</td><td>'+q+'</td><td>'+Math.round(m)+'</td><td>'+acR+'</td><td>'+Math.round(acM)+'</td><td>'+(h>hNow?'—':NF.format(dif))+'</td><td>'+sit+'</td><td style="text-align:left">'+(paradas.length?paradas.map(function(p){ return '⏸ '+escH(p.motivo)+(p.horaFim>p.horaIni?(' '+(Number(p.horaFim)-Number(p.horaIni))+'h'):''); }).join(' · '):'—')+'</td><td style="text-align:left">'+(Object.keys(prods).length?escH(Object.keys(prods).map(function(kk){return kk+' ×'+prods[kk];}).join(' · ')):'—')+'</td></tr>';
+    });
+    tb.innerHTML=rows;
   }
-  tb.innerHTML=rows;
+  // paradas do dia
+  const tp=document.getElementById('hhParTb');
+  if(tp){
+    const pars=hhParadas.filter(function(p){ return p.data===iso && (!hhLinhaSel || p.linha===hhLinhaSel); });
+    tp.innerHTML=pars.length? pars.map(function(p,i){
+      const lin=hhLinhasCfg.find(function(c){ return c.id===p.linha; });
+      return '<tr><td>'+(lin?escH(lin.nome):escH(p.linha))+'</td><td>'+String(p.horaIni).padStart(2,'0')+'h</td><td>'+String(p.horaFim).padStart(2,'0')+'h</td><td>'+escH(p.motivo)+'</td><td style="text-align:left">'+escH(p.obs||'')+'</td><td class="exec"><button data-par="del" data-pi="'+i+'">✕</button></td></tr>';
+    }).join('') : '<tr><td colspan="6" style="color:var(--mut)">Sem paradas registradas hoje.</td></tr>';
+  }
+  // selects de registro
   const sp=document.getElementById('hhSelProd');
   if(sp && !sp.options.length){
     const cods={};
     (Array.isArray(declDraft)?declDraft:[]).forEach(function(d){ if(d.cod&&!cods[d.cod])cods[d.cod]=descDe(d.cod); });
     DATA.rows.forEach(function(r){ if(!r.frete&&!cods[r.codigo])cods[r.codigo]=r.desc; });
-    Object.keys(cods).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}).forEach(function(k){ const o=document.createElement('option'); o.value=k; o.textContent=k+' — '+String(cods[k]).slice(0,30); sp.appendChild(o); });
+    Object.keys(cods).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}).forEach(function(kk){ const o=document.createElement('option'); o.value=kk; o.textContent=kk+' — '+String(cods[kk]).slice(0,30); sp.appendChild(o); });
   }
+  const sig=hhLinhasCfg.map(function(c){ return c.id; }).join('|');
+  ['hhSelLinha','hhParLinha'].forEach(function(idSl){
+    const sl=document.getElementById(idSl);
+    if(sl && sl.getAttribute('data-sig')!==sig){
+      const cur=sl.value;
+      sl.innerHTML='';
+      hhLinhasCfg.forEach(function(c){ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nome; sl.appendChild(o); });
+      sl.setAttribute('data-sig', sig);
+      // restaura seleção anterior se a linha ainda existe
+      const keep=hhLinhasCfg.some(function(c){ return c.id===cur; });
+      if(idSl==='hhSelLinha'){ if(hhLinhaSel && !keep) hhLinhaSel=''; sl.value=hhLinhaSel||''; }
+      else if(keep) sl.value=cur;
+    }
+  });
   const sh=document.getElementById('hhSelHora');
   if(sh && !sh.options.length){
     for(let h=HH_HORA_INI;h<HH_HORA_FIM;h++){ const o=document.createElement('option'); o.value=String(h); o.textContent=String(h).padStart(2,'0')+'h'; sh.appendChild(o); }
     const hn=new Date().getHours();
-    if(hn>=HH_HORA_INI && hn<HH_HORA_FIM) sh.value=String(hn); // default = hora corrente
+    if(hn>=HH_HORA_INI && hn<HH_HORA_FIM) sh.value=String(hn);
     else sh.selectedIndex=0;
   }
 }
 function hhInit(){
   const btn=document.getElementById('hhBtnAdd'); if(!btn) return;
   btn.addEventListener('click', function(){
-    if(document.body.classList.contains('viewerMode')){ hhFlash('⚠ modo leitura — conecte no 🔗 para registrar'); return; }
+    if(!hhAdmin()){ hhFlash('⚠ modo leitura — conecte no 🔗 para registrar'); return; }
+    const lin=(document.getElementById('hhSelLinha')||{}).value;
     const cod=(document.getElementById('hhSelProd')||{}).value;
     const sh=document.getElementById('hhSelHora');
     const hora=sh&&sh.value;
     const qtd=Number((document.getElementById('hhQtd')||{}).value)||0;
-    if(!cod||!hora||qtd<=0){ hhFlash('⚠ informe produto, hora e quantidade'); return; }
+    if(!lin||!cod||!hora||qtd<=0){ hhFlash('⚠ informe linha, produto, hora e quantidade'); return; }
     const iso=hhHojeIso();
-    hhApont.push({data:iso, hora:String(hora), cod:cod, qtd:qtd, ts:new Date().toISOString()});
-    hhSave(); hhRender();
+    hhApont.push({data:iso, hora:String(hora), linha:lin, cod:cod, qtd:qtd, ts:new Date().toISOString()});
+    hhSave('Apontamento '+lin+' '+String(hora)+'h'); hhRender();
     const qi=document.getElementById('hhQtd'); if(qi) qi.value='';
+    hhPokaChecar(lin, iso);
   });
+  // config: adicionar linha
+  const bAdd=document.getElementById('hhCfgAdd');
+  if(bAdd) bAdd.addEventListener('click', function(){
+    if(!hhAdmin()){ hhFlash('⚠ modo leitura'); return; }
+    const n=hhLinhasCfg.length+1;
+    hhLinhasCfg.push({id:'L'+n+'-'+Date.now().toString(36), nome:'Linha '+n, pessoas:0, meta:0});
+    hhSave('Config: linha adicionada'); hhCfgRender(); hhRender();
+  });
+  // config: editar (delegação)
+  const cfgTb=document.getElementById('hhCfgTb');
+  if(cfgTb) cfgTb.addEventListener('input', function(e){
+    const tr=e.target.closest('tr[data-ci]'); if(!tr) return;
+    const c=hhLinhasCfg[Number(tr.getAttribute('data-ci'))]; if(!c) return;
+    const f=e.target.getAttribute('data-c'); if(!f) return;
+    if(f==='nome') c.nome=e.target.value; else c[f]=Number(e.target.value)||0;
+    clearTimeout(window._hhCfgT); window._hhCfgT=setTimeout(function(){ hhSave('Config editada'); hhRender(); }, 600);
+  });
+  if(cfgTb) cfgTb.addEventListener('click', function(e){
+    const b=e.target.closest('button[data-cfg=del]'); if(!b) return;
+    const tr=b.closest('tr[data-ci]'); if(!tr) return;
+    const i=Number(tr.getAttribute('data-ci'));
+    if(confirm('Remover a linha "'+hhLinhasCfg[i].nome+'" de hoje? Os apontamentos dela permanecem no histórico.')){
+      hhLinhasCfg.splice(i,1); hhSave('Config: linha removida'); hhCfgRender(); hhRender();
+    }
+  });
+  // paradas: adicionar
+  const bPar=document.getElementById('hhParAdd');
+  if(bPar) bPar.addEventListener('click', function(){
+    if(!hhAdmin()){ hhFlash('⚠ modo leitura'); return; }
+    const lin=(document.getElementById('hhParLinha')||{}).value;
+    const hi=Number((document.getElementById('hhParIni')||{}).value)||0;
+    const hf=Number((document.getElementById('hhParFim')||{}).value)||0;
+    const mot=(document.getElementById('hhParMotivo')||{}).value;
+    if(!lin||!hi||!hf||hf<hi||!mot){ hhFlash('⚠ informe linha, hora início/fim e motivo'); return; }
+    hhParadas.push({data:hhHojeIso(), linha:lin, horaIni:String(hi), horaFim:String(hf), motivo:mot, obs:(document.getElementById('hhParObs')||{}).value||''});
+    hhSave('Parada registrada'); hhRender();
+    const fm=document.getElementById('hhParMotivo'); if(fm) fm.value='';
+    const fo=document.getElementById('hhParObs'); if(fo) fo.value='';
+  });
+  // paradas: remover (delegação)
+  const parTb=document.getElementById('hhParTb');
+  if(parTb) parTb.addEventListener('click', function(e){
+    const b=e.target.closest('button[data-par=del]'); if(!b) return;
+    const i=Number(b.getAttribute('data-pi'));
+    // índice global: recontar com filtro atual
+    const pars=hhParadas.filter(function(p){ return p.data===hhHojeIso() && (!hhLinhaSel || p.linha===hhLinhaSel); });
+    const p=pars[i]; if(!p) return;
+    const gi=hhParadas.indexOf(p);
+    if(gi>=0){ hhParadas.splice(gi,1); hhSave('Parada removida'); hhRender(); }
+  });
+  // dashboard individual: seletor
+  const selL=document.getElementById('hhLinhaSel');
+  if(selL) selL.addEventListener('change', function(){ hhLinhaSel=selL.value; hhRender(); });
+  // auto-refresh
   setInterval(function(){ const v=document.getElementById('viewHH'); if(v&&v.classList.contains('on')) hhRender(); }, 60000);
   hhLoad();
+}
+// ── POKA-YOKE: meta não atingida na hora → pedir motivo + tempo de parada (não bloqueia) ──
+function hhPokaChecar(lin, iso){
+  const hNow=new Date().getHours();
+  // checa a HORA ANTERIOR (que já fechou) — só se ela está DENTRO da janela 7h-17h
+  const hChec=hNow-1;
+  if(hChec<HH_HORA_INI || hChec>=HH_HORA_FIM) return;
+  const p=hhProdLinhaHora(lin, iso, hChec);
+  const mH=hhMetaHora(lin);
+  if(mH>0 && p.qtd<mH){
+    const box=document.getElementById('hhPoka');
+    if(!box) return;
+    const linN=(hhLinhasCfg.find(function(c){ return c.id===lin; })||{}).nome||lin;
+    box.innerHTML='<b>⚠ '+linN+' — '+String(hChec).padStart(2,'0')+'h ficou abaixo da meta ('+p.qtd+' de '+Math.round(mH)+' un).</b> Informe o motivo e o tempo de parada (não bloqueia):'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'+
+      '<select id="hhPokaMot"><option value="">Motivo…</option><option>Falta de material</option><option>Quebra de equipamento</option><option>Falta de pessoas</option><option>Qualidade/retrabalho</option><option>Setup/troca de produto</option><option>Sem demanda</option><option>Outro</option></select>'+
+      '<input id="hhPokaIni" type="number" min="'+HH_HORA_INI+'" max="'+(HH_HORA_FIM-1)+'" placeholder="início (h)" style="width:90px">'+
+      '<input id="hhPokaFim" type="number" min="'+HH_HORA_INI+'" max="'+HH_HORA_FIM+'" placeholder="fim (h)" style="width:90px">'+
+      '<input id="hhPokaObs" placeholder="observação (opcional)" style="flex:1;min-width:160px">'+
+      '<button id="hhPokaOk" class="primary">Registrar parada</button>'+
+      '<button id="hhPokaSkip">Dispensar</button></div>';
+    box.style.display='';
+    document.getElementById('hhPokaOk').addEventListener('click', function(){
+      const mot=document.getElementById('hhPokaMot').value;
+      const hi=Number(document.getElementById('hhPokaIni').value)||0;
+      const hf=Number(document.getElementById('hhPokaFim').value)||0;
+      if(!mot||!hi||!hf||hf<hi){ hhFlash('⚠ informe motivo e horas válidas'); return; }
+      hhParadas.push({data:iso, linha:lin, horaIni:String(hi), horaFim:String(hf), motivo:mot, obs:document.getElementById('hhPokaObs').value||''});
+      hhSave('Parada pós-poka ('+linN+')'); hhRender();
+      box.style.display='none';
+    });
+    document.getElementById('hhPokaSkip').addEventListener('click', function(){ box.style.display='none'; });
+  }
 }
 // ── MODO TV (Dante 08/10): fullscreen + esconde nav/header; ESC ou clique sai ──
 function hhTvToggle(){
@@ -4106,19 +4346,6 @@ function hhTvToggle(){
   }catch(e){}
   try{ hhRender(); }catch(e){}
 }
-(function(){
-  const v=document.getElementById('viewHH'); if(!v || document.getElementById('hhTvBtn')) return;
-  const bar=v.querySelector('.hhBar');
-  if(!bar) return;
-  const bt=document.createElement('button');
-  bt.id='hhTvBtn'; bt.className='hhTvBtn'; bt.textContent='⛶ TV';
-  bt.setAttribute('aria-label','Modo TV (tela cheia)');
-  bt.addEventListener('click', hhTvToggle);
-  bar.appendChild(bt);
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && document.body.classList.contains('hhTv')) hhTvToggle(); });
-  // TV: refresh mais rápido (30s) quando em modo TV
-  setInterval(function(){ if(document.body.classList.contains('hhTv')){ const vv=document.getElementById('viewHH'); if(vv&&vv.classList.contains('on')) hhRender(); } }, 30000);
-})();
 window.hhInit = hhInit;
 window.hhRender = hhRender;
 (function(){
@@ -4144,5 +4371,6 @@ window.hhRender = hhRender;
 </script>
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
