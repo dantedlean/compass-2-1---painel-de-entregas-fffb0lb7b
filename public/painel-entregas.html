@@ -4384,6 +4384,80 @@ window.hhRender = hhRender;
   };
 })();
 
+// ==================== KPIs PLANEJADO x EXECUTADO (Painel do Portfólio — Dante 08/10) ====================
+// Card na aba Faturamento do Andon replicando o Compass 1.0: semana/mês NFs geradas/planejadas + %,
+// pendentes, total de projetos com NF — fonte: endpoint nf-tasks-metrics (tasks do Compass 1.0).
+const NF_TASKS_URL = 'https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev/backend/v1/compass2/nf-tasks-metrics';
+let nfTasksChart = null;
+function nfKpisEnsure(){
+  const hero = document.getElementById('nfHero');
+  if(!hero || document.getElementById('nfKpiCard')) return null;
+  const card = document.createElement('div');
+  card.className = 'card'; card.id = 'nfKpiCard';
+  card.style.marginTop = '14px';
+  card.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;margin-bottom:10px">'+
+    '<h2 style="margin:0">Geração de NF — Planejado x Executado</h2>'+
+    '<span class="nfCount" id="nfKpiWhen"></span></div>'+
+    '<div class="kpis" id="nfKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px"></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 4px;gap:12px;flex-wrap:wrap">'+
+    '<h2 style="font-size:13px;font-weight:700;margin:0;color:#334155">NFs geradas por dia — <span id="nfQtdMesLbl">mês atual</span></h2>'+
+    '<div style="font-size:11.5px;color:#64748b">Total no período: <b id="nfQtdTot" style="color:#0f766e">—</b></div></div>'+
+    '<div id="chNfQtd" style="width:100%;height:130px"></div>';
+  hero.parentNode.insertBefore(card, hero.nextSibling);
+  return card;
+}
+function nfKpiBox(ttl, big, sub, color){
+  return '<div style="background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:12px;padding:14px 18px">'+
+    '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#93c5fd">'+ttl+'</div>'+
+    '<div style="font-size:30px;font-weight:800;margin:6px 0 2px;font-variant-numeric:tabular-nums">'+big+'</div>'+
+    '<div style="font-size:13.5px;color:'+color+'">'+sub+'</div></div>';
+}
+function nfKpisRender(){
+  const card = nfKpisEnsure(); if(!card) return;
+  const row = document.getElementById('nfKpiRow');
+  fetch(NF_TASKS_URL).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    if(!d || !d.ok){ if(row) row.innerHTML = '<div class="note">Métricas de NF indisponíveis no momento.</div>'; return; }
+    const s = d.semana, m = d.mes;
+    document.getElementById('nfKpiWhen').textContent = 'Semana ' + dtBR(s.inicio) + ' a ' + dtBR(s.fim) + ' · atualizado ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    row.innerHTML =
+      nfKpiBox('Esta semana', s.executadas+' / '+s.planejadas, s.cumprimento+'% de cumprimento', s.cumprimento>=100?'#86efac':'#fbbf24') +
+      nfKpiBox('Este mês ('+m.ref+')', m.executadas+' / '+m.planejadas, m.cumprimento+'% de cumprimento', m.cumprimento>=100?'#86efac':'#fbbf24') +
+      nfKpiBox('Pendentes', s.pendentes+' sem. / '+m.pendentes+' mês', 'Aguardando faturamento', '#fca5a5') +
+      nfKpiBox('Projetos com NF', String(d.projetos_com_nf), d.projetos_ativos+' projetos ativos no Compass', '#93c5fd');
+    // gráfico Nº de NFs por dia (estilo Compass: barras finas, mês inteiro)
+    const el = document.getElementById('chNfQtd');
+    if(el && window.echarts && DATA.nfFat && DATA.nfFat.daily){
+      const lblMes = document.getElementById('nfQtdMesLbl'); if(lblMes) lblMes.textContent = DATA.nfFat.mesLabel || 'mês atual';
+      const totQ = document.getElementById('nfQtdTot'); if(totQ) totQ.textContent = (DATA.nfFat.mesQtd||0) + ' NFs';
+      const labels = DATA.nfFat.daily.map(function(x){ return x.label; });
+      const vals = DATA.nfFat.daily.map(function(x){ return x.qtd; });
+      if(nfTasksChart){ nfTasksChart.dispose(); nfTasksChart = null; }
+      nfTasksChart = echarts.init(el);
+      nfTasksChart.setOption({grid:{left:40,right:14,top:22,bottom:24},tooltip:{trigger:'axis'},
+        xAxis:{type:'category',data:labels,axisLabel:{fontSize:11},axisLine:{lineStyle:{color:'#cbd5e1'}}},
+        yAxis:{type:'value',axisLabel:{fontSize:11},splitLine:{lineStyle:{type:'dashed',color:'#e2e8f0'}}},
+        series:[{name:'NFs',type:'bar',data:vals,barCategoryGap:'25%',itemStyle:{color:'#3b82f6',borderRadius:[4,4,0,0]}}]});
+    }
+  }).catch(function(){ const r2=document.getElementById('nfKpiRow'); if(r2) r2.innerHTML='<div class="note">Métricas de NF indisponíveis no momento.</div>'; });
+}
+(function(){
+  // espera renderNf existir (é definida no script principal) e envolve
+  const t0 = Date.now();
+  const iv = setInterval(function(){
+    if(typeof window.renderNf === 'function' || (typeof renderNf === 'function')){
+      clearInterval(iv);
+      const _rn = window.renderNf || renderNf;
+      const wrap = function(live){
+        const r = _rn(live);
+        try{ nfKpisRender(); }catch(e){}
+        return r;
+      };
+      try{ window.renderNf = wrap; }catch(e){}
+      try{ renderNf = wrap; }catch(e){}
+    } else if(Date.now()-t0 > 8000){ clearInterval(iv); }
+  }, 200);
+})();
+
 </script>
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
