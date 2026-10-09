@@ -4454,6 +4454,8 @@ function nfKpisRender(){
       };
       try{ window.renderNf = wrap; }catch(e){}
       try{ renderNf = wrap; }catch(e){}
+      // boot: a aba Faturamento pode já estar ativa — renderiza os KPIs imediatamente
+      try{ nfKpisRender(); }catch(e){}
     } else if(Date.now()-t0 > 8000){ clearInterval(iv); }
   }, 200);
 })();
