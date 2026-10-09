@@ -114,7 +114,7 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
   <button id="tabEnt" onclick="showView('ent')">📅 Curitiba — Programação</button>
   <button id="tabEntV" onclick="showView('entv')">📅 Vinhedo — Programação</button>
   <button id="tabPA" onclick="showView('pa')">⚙️ Programação automática</button>
-  <button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
+<button id="tabFat" onclick="showView('fat')">💰 Produtos a Faturar</button>
 <button id="tabHH" onclick="showView('hh')">🏭 Andon — Linhas (hora a hora)</button>
 </nav>
 
@@ -560,35 +560,51 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
 
 <div id="viewHH" class="view">
 <style>
-#viewHH .hhBar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
-#viewHH .hhBar select,#viewHH .hhBar button,#viewHH .hhBar input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;color:var(--ink);cursor:pointer}
-#viewHH .hhBar button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
-#viewHH .hhNote{font-size:13.5px;color:var(--mut);margin:4px 0 10px}
-#viewHH .hhGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:10px 0 14px}
-#viewHH .hhCell{border:1.5px solid var(--line);border-radius:10px;padding:10px 8px;min-height:112px;background:#fff}
-#viewHH .hhNow{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end}
-#viewHH .hhNow .big{font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-#viewHH .hhNow .lbl{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#93c5fd}
-#viewHH .hhNow .sub{font-size:14px;color:#cbd5e1}
-#viewHH .hhChart{height:260px;margin:6px 0 4px}
-#viewHH .hhTbl th,#viewHH .hhTbl td{font-size:14px}
-#viewHH .badgeOk{background:#dcfce7;color:#166534;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
-#viewHH .badgeLate{background:#fee2e2;color:#991b1b;font-weight:700;border-radius:999px;padding:2px 10px;font-size:12.5px}
-#viewHH .hhPoka{background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:14px 18px;margin:10px 0;font-size:14.5px;display:none}
-#viewHH .hhPoka select,#viewHH .hhPoka input,#viewHH .hhPoka button{border:1px solid #d4d4d8;border-radius:8px;padding:8px 10px;font-size:13.5px;background:#fff}
+#viewHH .hhBar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px}
+#viewHH .hhBar select,#viewHH .hhBar button,#viewHH .hhBar input{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:15px;background:#fff;color:var(--ink);cursor:pointer;min-height:42px}
+#viewHH .hhBar button.primary{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+#viewHH .hhNote{font-size:14.5px;color:var(--mut);margin:4px 0 12px;line-height:1.5}
+#viewHH .hhGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:10px 0 16px;max-width:1200px}
+#viewHH .hhCell{border:1.5px solid var(--line);border-radius:12px;padding:12px 10px;min-height:132px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+#viewHH .hhCell .hLbl{font-size:15px;font-weight:800;color:var(--ink)}
+#viewHH .hhCell .hVal{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+#viewHH .hhCell .hMeta{font-size:13.5px;color:var(--mut)}
+#viewHH .hhCell .hItens{font-size:12.5px;color:var(--mut);margin-top:6px;line-height:1.45}
+#viewHH .hhNow{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:14px;padding:22px 26px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:32px;align-items:flex-end;max-width:1200px}
+#viewHH .hhNow .big{font-size:52px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+#viewHH .hhNow .lbl{font-size:14.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#93c5fd}
+#viewHH .hhNow .sub{font-size:16px;color:#cbd5e1;margin-top:6px}
+#viewHH .hhChart{height:320px;margin:8px 0 4px;max-width:1200px}
+#viewHH .hhTbl th,#viewHH .hhTbl td{font-size:15.5px;padding:10px 12px}
+#viewHH .hhTbl th{font-size:14px}
+#viewHH .hhTbl table{width:100%;max-width:1200px}
+#viewHH .badgeOk{background:#dcfce7;color:#166534;font-weight:700;border-radius:999px;padding:4px 12px;font-size:14px}
+#viewHH .badgeLate{background:#fee2e2;color:#991b1b;font-weight:700;border-radius:999px;padding:4px 12px;font-size:14px}
+#viewHH .hhPoka{background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:16px 20px;margin:10px 0 16px;font-size:16px;line-height:1.5;display:none}
+#viewHH .hhPoka select,#viewHH .hhPoka input,#viewHH .hhPoka button{border:1px solid #d4d4d8;border-radius:8px;padding:10px 12px;font-size:15px;background:#fff;min-height:42px}
 #viewHH .hhPoka button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
-#viewHH .hhCfg input{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13.5px}
-#viewHH .hhCfg td{padding:4px 6px}
-@media(max-width:900px){#viewHH .hhGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+#viewHH .hhCfg input{width:100%;border:1px solid var(--line);border-radius:6px;padding:9px 10px;font-size:15.5px;min-height:40px}
+#viewHH .hhCfg td{padding:6px 8px}
+#viewHH .hhCfg th{font-size:14.5px}
+#viewHH .hhCfg button,#viewHH .hhParCard button{font-size:15px;min-height:42px;padding:10px 14px}
+#viewHH .hhParCard input,#viewHH .hhParCard select{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:15px;min-height:42px}
+@media(max-width:1100px){#viewHH .hhGrid{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}}
 @media(max-width:600px){#viewHH .hhGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-#viewHH .hhTvBtn{margin-left:auto}
-body.hhTv .tabnav,body.hhTv header,body.hhTv footer{display:none!important}
-body.hhTv #viewHH .hhNow .big{font-size:72px}
-body.hhTv #viewHH .hhNow .lbl{font-size:16px}
-body.hhTv #viewHH .hhCell{min-height:150px}
-body.hhTv #viewHH .hhCell div:nth-child(2){font-size:34px}
-body.hhTv #viewHH .hhChart{height:380px}
-body.hhTv #viewHH .hhCfgCard,body.hhTv #viewHH .hhParCard{display:none}
+#viewHH .hhTvBtn{margin-left:auto;font-weight:700}
+body.hhTv .tabnav,body.hhTv header,body.hhTv footer,body.hhTv .hhCfgCard,body.hhTv .hhParCard,body.hhTv .hhBar{display:none!important}
+body.hhTv #viewHH .hhNow .big{font-size:84px}
+body.hhTv #viewHH .hhNow .lbl{font-size:18px}
+body.hhTv #viewHH .hhNow .sub{font-size:20px}
+body.hhTv #viewHH .hhCell{min-height:160px;border-radius:16px}
+body.hhTv #viewHH .hhCell .hVal{font-size:44px}
+body.hhTv #viewHH .hhCell .hMeta{font-size:16px}
+body.hhTv #viewHH .hhChart{height:420px}
+body.hhTv{background:#0f172a}
+body.hhTv #viewHH{background:#0f172a;min-height:100vh;padding:24px}
+body.hhTv #viewHH .hhCell{background:#1e293b;border-color:#334155}
+body.hhTv #viewHH .hhCell .hLbl{color:#e2e8f0}
+body.hhTv #viewHH .hhCell .hMeta{color:#94a3b8}
+body.hhTv #viewHH .hhNow{background:#1e3a8a}
 </style>
 <main>
 <div class="hhNow" id="hhNow"></div>
@@ -600,7 +616,7 @@ body.hhTv #viewHH .hhCfgCard,body.hhTv #viewHH .hhParCard{display:none}
 <select id="hhSelHora" aria-label="Hora"></select>
 <input id="hhQtd" type="number" min="0" step="1" placeholder="Qtd" style="width:100px" aria-label="Quantidade produzida na hora">
 <button id="hhBtnAdd" class="primary">＋ Registrar</button>
-<button id="hhTvBtn" aria-label="Modo TV (tela cheia)">⛶ TV</button>
+<button id="hhTvBtn" aria-label="Modo TV (tela cheia)">⛶ Modo TV</button>
 <span class="hhNote" id="hhMsg" style="display:none"></span>
 </div>
 <div class="hhNote">Dashboard individual: <select id="hhLinhaSel" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;background:#fff"></select> · sem login = modo leitura; conectar no 🔗 para registrar.</div>
@@ -4147,10 +4163,10 @@ function hhRender(){
       if(h===hNow){ bg='#e0e7ff'; cls='#4338ca'; }
       else if(q>0){ bg='#dcfce7'; cls='#166534'; }
       const paradasHora = hhParadas.filter(function(p){ return p.data===iso && Number(p.horaIni)<=h && Number(p.horaFim)>=h && (!hhLinhaSel || p.linha===hhLinhaSel); });
-      cells+='<div class="hhCell" style="background:'+bg+'"><div style="font-size:13px;font-weight:700;color:'+cls+'">'+String(h).padStart(2,'0')+'h'+(paradasHora.length?' <span title="parada" style="color:#b45309">⏸</span>':'')+'</div>'+
-        '<div style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;margin:4px 0">'+q+'</div>'+
-        '<div style="font-size:12px;color:var(--mut)">meta '+Math.round(mH)+'</div>'+
-        (Object.keys(itens).length?('<div style="font-size:11.5px;color:var(--mut);margin-top:4px">'+Object.keys(itens).map(function(kk){return escH(kk)+' ×'+itens[kk];}).slice(0,3).join(' · ')+'</div>'):'')+
+      cells+='<div class="hhCell" style="background:'+bg+'"><div class="hLbl" style="color:'+cls+'">'+String(h).padStart(2,'0')+'h'+(paradasHora.length?' <span title="parada" style="color:#b45309">⏸</span>':'')+'</div>'+
+        '<div class="hVal" style="color:'+cls+'">'+q+'</div>'+
+        '<div class="hMeta">meta '+Math.round(mH)+'</div>'+
+        (Object.keys(itens).length?('<div class="hItens">'+Object.keys(itens).map(function(kk){return escH(kk)+' ×'+itens[kk];}).slice(0,3).join(' · ')+'</div>'):'')+
         '</div>';
     });
     grid.innerHTML=cells;
@@ -4339,7 +4355,7 @@ function hhTvToggle(){
   const b=document.body;
   const on=b.classList.toggle('hhTv');
   const bt=document.getElementById('hhTvBtn');
-  if(bt) bt.textContent=on?'✕ Sair da TV':'⛶ TV';
+  if(bt) bt.textContent=on?'✕ Sair do Modo TV':'⛶ Modo TV';
   try{
     if(on && document.documentElement.requestFullscreen && !document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
     else if(!on && document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(function(){}); }
@@ -4371,6 +4387,7 @@ window.hhRender = hhRender;
 </script>
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
