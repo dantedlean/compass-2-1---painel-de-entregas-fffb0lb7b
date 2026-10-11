@@ -11,9 +11,9 @@
 
   function applyInputStyles(input, isPassword) {
     if (!input) return
-    input.style.setProperty('color', '#ffffff', 'important')
-    input.style.setProperty('-webkit-text-fill-color', '#ffffff', 'important')
-    input.style.setProperty('background-color', '#0f172a', 'important')
+    input.style.setProperty('color', '#0f172a', 'important')
+    input.style.setProperty('-webkit-text-fill-color', '#0f172a', 'important')
+    input.style.setProperty('background-color', '#ffffff', 'important')
     input.style.setProperty('opacity', '1', 'important')
     input.style.setProperty('user-select', 'text', 'important')
     input.style.setProperty('-webkit-user-select', 'text', 'important')
@@ -106,7 +106,7 @@
       pasteWarn = document.createElement('div')
       pasteWarn.id = 'connPasteWarn'
       pasteWarn.style.cssText =
-        'display:none;width:100%;font-size:12px;color:#fef08a;background:rgba(161,98,7,0.3);border:1px solid rgba(250,204,21,0.5);padding:4px 10px;border-radius:6px;margin-top:4px;'
+        'display:none;width:100%;font-size:12px;color:#854d0e;background:#fef9c3;border:1px solid #fde047;padding:4px 10px;border-radius:6px;margin-top:4px;'
       connBox.appendChild(pasteWarn)
     }
 
@@ -119,9 +119,8 @@
       btnEmailPaste.textContent = '📋 Colar'
       btnEmailPaste.title = 'Colar e-mail ou usuário'
       btnEmailPaste.style.cssText =
-        'padding:5px 8px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);color:#ffffff;border-radius:6px;cursor:pointer;white-space:nowrap;margin-left:4px;'
-      btnEmailPaste.addEventListener('click', function (e) {
-        e.preventDefault()
+        'padding:5px 8px;font-size:11.5px;font-weight:700;background:#f1f5f9;border:1px solid #cbd5e1;color:#0f172a;border-radius:6px;cursor:pointer;white-space:nowrap;margin-left:4px;'
+      btnEmailPaste.addEventListener('click', function (e) {        e.preventDefault()
         e.stopPropagation()
         handlePasteAction('connEmail', 'connPasteWarn')
       })
@@ -139,9 +138,8 @@
       btnPassPaste.textContent = '📋 Colar'
       btnPassPaste.title = 'Colar senha'
       btnPassPaste.style.cssText =
-        'padding:5px 8px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);color:#ffffff;border-radius:6px;cursor:pointer;white-space:nowrap;margin-left:4px;'
-      btnPassPaste.addEventListener('click', function (e) {
-        e.preventDefault()
+        'padding:5px 8px;font-size:11.5px;font-weight:700;background:#f1f5f9;border:1px solid #cbd5e1;color:#0f172a;border-radius:6px;cursor:pointer;white-space:nowrap;margin-left:4px;'
+      btnPassPaste.addEventListener('click', function (e) {        e.preventDefault()
         e.stopPropagation()
         handlePasteAction('connPass', 'connPasteWarn')
       })
@@ -237,9 +235,9 @@
     style.id = 'andon-login-style'
     style.textContent = [
       '#connEmail, #connPass {',
-      '  color: #ffffff !important;',
-      '  -webkit-text-fill-color: #ffffff !important;',
-      '  background-color: #0f172a !important;',
+      '  color: #0f172a !important;',
+      '  -webkit-text-fill-color: #0f172a !important;',
+      '  background-color: #ffffff !important;',
       '  opacity: 1 !important;',
       '  user-select: text !important;',
       '  -webkit-user-select: text !important;',
