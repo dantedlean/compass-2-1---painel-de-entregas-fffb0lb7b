@@ -220,8 +220,8 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
     <button id="btnConn" class="dlbtn" style="display:none" onclick="andonToggleConn()">🔗 Conectar servidor</button>
     <span class="note" style="margin:0;color:#cbd5e1" id="connInfo"></span>
     <div id="connBox" style="display:none;gap:6px;align-items:center;flex-wrap:wrap">
-      <input id="connEmail" type="email" placeholder="e-mail" style="padding:5px 8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;font-size:12px">
-      <input id="connPass" type="password" placeholder="senha" style="padding:5px 8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;font-size:12px">
+      <input id="connEmail" type="email" placeholder="e-mail" style="padding:8px 10px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;border-radius:8px;font-size:13px">
+      <input id="connPass" type="password" placeholder="senha" style="padding:8px 10px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;border-radius:8px;font-size:13px">
       <button id="btnConnGo" class="dlbtn" style="background:#16a34a;border-color:#16a34a;color:#fff">Entrar</button>
       <span class="note" style="margin:0;color:#cbd5e1">conectando, o rascunho fica salvo no servidor — funciona em qualquer máquina</span>
     </div>
@@ -1332,7 +1332,7 @@ function renderProg(){
     if(semVazia){
       const _sync=window.ANDON_SYNC; const _con=!!(_sync&&_sync.connected());
       if(!_con){
-        vazioInfo.innerHTML='👁 Modo leitura — a programação firme aparece após ENTRAR (botão "Leitura — Entrar p/ editar"). A leitura da agenda exige login.';
+        vazioInfo.innerHTML='ℹ️ Modo leitura — esta semana está sem declarações. Para editar, use o botão "Leitura — Entrar p/ editar".';
       } else {
         const comDecl=semKeys.filter(function(si){return semanasMap[si].length;});
         vazioInfo.innerHTML='ℹ️ Esta semana está SEM programação — os dias ficam claros (nada sumiu). Declarações existem em: '+(comDecl.length?comDecl.map(function(si){const p=si.split('-');return p[2]+'/'+p[1];}).join(', '):'nenhuma semana')+'. Use o seletor "Semana" acima para ver outra semana.';
@@ -2716,11 +2716,8 @@ window.addEventListener('resize', function(){ if(gChart) gChart.resize(); if(tCh
 const DECL_KEY = 'andon|programacao|draft|v049';
 function declLoad(){
   const sanit=function(arr){ return arr.filter(function(d){ return !(Number(d.qtd)<0); }); };
-  // v0.0.248: sem login / viewer começa VAZIO — dados vêm do pull público do servidor
-  try{
-    const u=(JSON.parse(localStorage.getItem('andon|user')||'{}').role)||'';
-    if(u!=='admin') return [];
-  }catch(e){ return []; }
+  // v0.0.311 (restauro 10/10): rascunho carrega para TODOS (leitura pública da agenda);
+  // edição continua bloqueada para não-admin (viewerMode CSS + RLS admin-only)
   try{ const saved=JSON.parse(localStorage.getItem(DECL_KEY)||'null'); if(Array.isArray(saved)) return sanit(saved); }catch(e){}
   return sanit((DATA.progSemana && DATA.progSemana.declaracoes || []).map(function(d,i){return Object.assign({},d,{id:d.id||('PR-'+String(i+1).padStart(4,'0')),status:d.status||'Planejado'});}));
 }
@@ -2872,8 +2869,16 @@ if(document.getElementById('btnDlDecl')){
 
 // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
 declDraft=declLoad(); progBuildFromDecls(); rlpvInitModal(); apInitModal(); viewerUISet();
-  // v0.0.256 (Opção B): leitura da agenda/SMKT exige LOGIN — anônimo vê só carteira/
-  // faturamento/semanas (dados estáticos); agenda carrega só para quem conecta.
+  // v0.0.256 (Opção B, superada): leitura da agenda exigia login — anônimo não carregava.
+  // v0.0.311 (restauro 10/10): anônimo TAMBÉM carrega agenda/SMKT (leitura pública; edição segue admin).
+  if(!ANDON_SYNC.connected()){
+    setTimeout(function(){
+      Promise.resolve(ANDON_SYNC.pullPublic()).then(function(d){
+        if(Array.isArray(d) && JSON.stringify(d)!==JSON.stringify(declDraft||[])){ declDraft=d; declSave(); progBuildFromDecls(); if(typeof renderProg==='function') renderProg(); }
+      }).catch(function(){});
+      Promise.resolve(ANDON_SYNC.pullSmktPublic()).then(function(){ if(typeof renderSmkt==='function') renderSmkt(); }).catch(function(){});
+    }, 400);
+  }
 // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
 semearSugestaoProximaSemana(); progBuildFromDecls();
 
@@ -3070,13 +3075,14 @@ window.andonToggleConn = andonToggleConn;
   setInterval(function(){
     if(_pullBusy) return;
     // v0.0.256 (Opção B): sem branch especial — viewer conecta com token (path padrão);
-    // anônimo não conecta e não lê a agenda (leitura exige login)
-    if(!ANDON_SYNC.connected() || _pullBusy) return;
+    // v0.0.311 (restauro): anônimo lê via pullPublic (leitura pública da agenda)
+    if(_pullBusy) return;
     _pullBusy=true;
-    Promise.resolve(ANDON_SYNC.syncFromServer()).then(function(pulled){
+    const p1 = ANDON_SYNC.connected() ? Promise.resolve(ANDON_SYNC.syncFromServer()) : Promise.resolve(ANDON_SYNC.pullPublic()).then(function(d){ if(!Array.isArray(d)) return false; const loc=JSON.stringify(declDraft||[]); const sv=JSON.stringify(d); if(loc===sv) return false; declDraft=d; declSave(); return true; });
+    Promise.resolve(p1).then(function(pulled){
       if(pulled){ renderProg(); const st=document.getElementById('declStatus'); if(st) st.textContent='Rascunho atualizado do servidor ('+(new Date()).toLocaleTimeString('pt-BR')+')'; }
     }).catch(function(){})
-    .then(function(){ return ANDON_SYNC.syncSmktFromServer(); }).then(function(pulled){
+    .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncSmktFromServer() : ANDON_SYNC.pullSmktPublic(); }).then(function(pulled){
       if(pulled && typeof renderSmkt==='function'){ renderSmkt(); renderSemana(); renderKpis(); renderGantt(); renderTimeline(); renderTabela(); }
     }).catch(function(){})
     .finally(function(){ _pullBusy=false; });
@@ -3091,9 +3097,8 @@ window.andonToggleConn = andonToggleConn;
   // v0.0.230: ao GANHAR foco da aba, puxa o servidor na hora (aba em background suspende o setInterval
   // e o outro dispositivo edita — sem isso a tela fica velha até o próximo tick)
   function pullOnFocus(){
-    // v0.0.256 (Opção B): viewer/anônimo seguem o path padrão (leitura exige login)
-    if(!ANDON_SYNC.connected() || _pullBusy) return;
-    if(!ANDON_SYNC.connected() || _pullBusy) return;
+    // v0.0.311 (restauro): anônimo também puxa (leitura pública da agenda)
+    if(_pullBusy) return;
     _pullBusy=true;
     Promise.resolve(ANDON_SYNC.syncFromServer()).then(function(pulled){
       if(pulled){ renderProg(); const st=document.getElementById('declStatus'); if(st) st.textContent='Rascunho atualizado do servidor ('+(new Date()).toLocaleTimeString('pt-BR')+')'; }
