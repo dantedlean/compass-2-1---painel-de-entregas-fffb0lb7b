@@ -67,8 +67,10 @@ routerAdd(
         if (!token) throw new Error('Secret MAXIPROD_TOKEN não cadastrado neste backend.')
         var brt = new Date(Date.now() - 10800000)
         var ano = brt.getUTCFullYear()
-        var gte = ano + '-01-01T00:00:00.000Z'
-        var lte = ano + '-12-31T23:59:59.999Z'
+        // v0.0.311 (fix 10/10): emissaoData virou LocalDate na API MaxiProd (mudança 07/10)
+        // — só aceita data PURA (YYYY-MM-DD); datetime dá "LocalDate cannot parse".
+        var gte = ano + '-01-01'
+        var lte = ano + '-12-31'
 
         var nfs = []
         var skip = 0
