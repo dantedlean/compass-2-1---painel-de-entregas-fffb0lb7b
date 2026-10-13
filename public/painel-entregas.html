@@ -4629,7 +4629,10 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     else if(pct>=75){stF='warn';txtF='ACOMPANHAR';}
     else if(goal||prod){stF='stop';txtF='ABAIXO DO RITMO';}
     else {stF='idle';txtF='SEM META HOJE';}
-    cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(hhDescDe(cod))+'</h3><div class="hhAndonItem"><span class="hhAndonBadge '+(rowTipo==='sub'?'sub':'final')+'">'+badgeTxt+'</span><span>'+escH(cod)+'</span></div></div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mhF+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(prod)+'</b><span>prontas</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(deltaF<0?' neg':'')+'">'+(goal? (deltaF>=0?'+':'−') + NF.format(Math.abs(deltaF)) + ' un ' + (deltaF>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+stF+'"><span>'+txtF+'</span><span>'+pct+'%</span></div></div>');
+    const singleL=fins[cod].length===1?fins[cod][0]:null;
+    const titulo=singleL?hhNome(singleL):hhDescDe(cod);
+    const subCells=singleL?'':fins[cod].map(function(l){return escH(hhNome(l));}).join(' · ');
+    cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(titulo)+'</h3><div class="hhAndonItem"><span class="hhAndonBadge '+(rowTipo==='sub'?'sub':'final')+'">'+badgeTxt+'</span><span>'+escH(cod)+'</span></div>'+(subCells?'<small>'+subCells+'</small>':'')+'</div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mhF+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(prod)+'</b><span>prontas</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(deltaF<0?' neg':'')+'">'+(goal? (deltaF>=0?'+':'−') + NF.format(Math.abs(deltaF)) + ' un ' + (deltaF>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+stF+'"><span>'+txtF+'</span><span>'+pct+'%</span></div></div>');
   });
   el.innerHTML=cards.length?cards.join(''):'<div class="hhEmpty">Nenhuma célula configurada.</div>';
 }
