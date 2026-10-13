@@ -4391,6 +4391,7 @@ function hhWardDe(cod, linha){
 }
 function hhMetaHoraL(l,h){const c=hhCfg(l),mins=hhMinutesToClockHour(c,h);if(mins<=0)return 0;const fins=hhFinaisDaCelula(l).filter(function(x){return Number(x.metaH)>0;});if(fins.length)return fins.reduce(function(n,x){return n+(Number(x.metaH)||0);},0)*mins/60;const p=hhProdCfg.filter(function(x){return x.linha===l&&x.cod&&Number(x.metaH)>0;});if(p.length)return p.reduce(function(n,x){return n+(Number(x.metaH)||0);},0)*mins/60;const total=hhShiftMinutes(c);return total>0?(Number(c.meta)||0)*mins/total:0;}
 function hhMetaHora(l){const c=hhCfg(l),total=hhShiftMinutes(c);return total>0?((Number(c.meta)||0)/(total/60)):0;}
+function hhFmtHora(v){v=Number(v)||0;if(!v)return '';const r=Math.round(v);if(Math.abs(v-r)<0.05||r>=10)return NF.format(r);return String(Math.round(v*10)/10).replace('.',',');}
 function hhMetaElapsed(c,minuteOfDay){const worked=hhWorkMinutes(c,0,minuteOfDay),total=hhShiftMinutes(c);if(total<=0)return 0;const fin=hhFinalDe(c.id),p=hhProdCfg.filter(function(x){return x.linha===c.id&&x.cod;});if(p.length){const fins=hhFinaisDaCelula(c.id);if(fins.length){const mhTot=fins.reduce(function(n,x){return n+(Number(x.metaH)||0);},0);return mhTot>0?mhTot*worked/60:(Number(c.meta)||0)*worked/total;}const allPhase=p.every(function(x){const fr=hhFinalRowDe(x.cod);return fr&&fr.linha!==c.id;});if(allPhase)return 0;return (Number(c.meta)||0)*worked/total;}if(c&&hhProdCfg.filter(function(x){return x.linha===c.id&&x.cod;}).every(function(x){const fr=hhFinalRowDe(x.cod);return fr&&fr.linha!==c.id;})&&hhProdCfg.some(function(x){return x.linha===c.id&&x.cod;}))return 0;return (Number(c.meta)||0)*worked/total;}
 function hhMetaInterval(l,slot,cod){if(!slot)return 0;const c=hhCfg(l);if(cod){const pr=hhProdCfg.find(function(x){return x.linha===l&&String(x.cod)===String(cod)&&Number(x.metaH)>0;});if(pr)return (Number(pr.metaH)||0)*slot.minutes/60;}const p=hhProdCfg.filter(function(x){return x.linha===l&&x.cod&&Number(x.metaH)>0;});if(p.length)return p.reduce(function(n,x){return n+(Number(x.metaH)||0)*slot.minutes/60;},0);const total=hhShiftMinutes(c);return total>0?hhMetaPosto(l)*slot.minutes/total:0;}
 function hhProdLinhaSlot(l,iso,slot){let q=0,itens={},regimes={},legacy=0,qf=0,itensF={},regimesF={},legacyF=0;if(!slot)return {qtd:0,itens:itens,regimes:regimes,legacy:0,qtdFinal:0,itensFinal:itensF,regimesFinal:regimesF,fase:false,final:false};const fin=hhFinalDe(l);const slots=hhWorkIntervals(hhCfg(l)).filter(function(x){return x.hour===slot.hour;}),first=slots.length?slots[0].key:'';hhApont.forEach(function(a){if(a.linha!==l||a.data!==iso)return;if(a.intervalo){if(String(a.intervalo)!==slot.key)return;}else if(Number(a.hora)===slot.hour){if(first!==slot.key){legacy+=Number(a.qtd)||0;if(fin&&String(a.cod)===fin)legacyF+=Number(a.qtd)||0;return;}}else return;const z=Number(a.qtd)||0,k=a.cod||'—';q+=z;itens[k]=(itens[k]||0)+z;const w=a.ward===true||(a.ward==null&&hhWardDe(k,l)),rk=(w?'WARD':'PV')+'|'+k;regimes[rk]=(regimes[rk]||0)+z;if(fin&&k===fin){qf+=z;itensF[k]=(itensF[k]||0)+z;regimesF[rk]=(regimesF[rk]||0)+z;}});return {qtd:q,itens:itens,regimes:regimes,legacy:legacy,qtdAll:q+legacy,qtdFinal:fin?qf+legacyF:q+legacy,itensFinal:itensF,regimesFinal:regimesF,fase:!!fin,final:!!fin};}
@@ -4539,7 +4540,7 @@ function hhBaseRender(){
     const sug = Math.round(x.media*10)/10;
     return '<tr><td>'+escH(hhNome(x.linha))+' · '+escH(x.cod)+' — '+escH(hhDescDe(x.cod)).slice(0,40)+'</td>'+
       '<td class="num">'+(x.pessoas||'—')+' / '+(x.postos||'—')+'</td><td class="num">'+NF.format(Math.round(sug))+'</td>'+
-      '<td class="num">'+NF.format(x.melhor)+'</td><td class="num"><b>'+NF.format(Math.round(sug))+'/h</b></td></tr>';
+      '<td class="num">'+NF.format(x.melhor)+'</td><td class="num"><b>'+hhFmtHora(sug)+'/h</b></td></tr>';
   }).join('') : '<tr><td colspan="5" style="color:var(--mut)">Sem dados suficientes — o baseline se forma com os lançamentos hora a hora.</td></tr>';
 }
 // ── Três áreas do Andon HH: navegação local, sem recriar controlos ou listeners persistidos. ──
@@ -4607,7 +4608,7 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     else if(pct>=75){st='warn';txt='ACOMPANHAR';}
     else if(goal||actual){st='stop';txt='ABAIXO DO RITMO';}
     else {st='idle';txt='SEM META HOJE';}
-    const mhH=hhMetaHora(c.id);const mh=mhH?' · '+NF.format(Math.round(mhH))+'/h':'';
+    const mhH=hhMetaHora(c.id);const mh=mhH?' · '+hhFmtHora(mhH)+'/h':'';
     const prodsTitle=prods.slice(0,3).map(function(p){const t=p.final===true?'final':(p.tipo==='sub'?'sub':'peca');const lbl=t==='final'?'Produto final':(t==='sub'?'Subconjunto':'Peça');return '<div class="hhAndonItem"><span class="hhAndonBadge '+t+'">'+lbl+'</span><span>'+escH(p.cod)+'</span></div>';}).join('')+(prods.length>3?'<div class="hhAndonItem"><span style="font-size:11.5px;color:#64748B;font-weight:700">+'+(prods.length-3)+' outro(s) produto(s)</span></div>':'');
     cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(c.nome)+'</h3>'+(prodsTitle||'<div class="hhAndonItem"><span style="font-size:11.5px;color:#64748B;font-weight:700">sem produto configurado</span></div>')+'</div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mh+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(actual)+'</b><span>produzido</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(delta<0?' neg':'')+'">'+(goal? (delta>=0?'+':'−') + NF.format(Math.abs(delta)) + ' un ' + (delta>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+st+'"><span>'+txt+'</span><span>'+pct+'%</span></div></div>');
   });
@@ -4621,7 +4622,7 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     const pct=goal?Math.min(999,Math.round(prod/goal*100)):0;
     const st=goal&&prod>=goal?'ok':(pct>=75?'warn':(goal||prod?'stop':'idle'));
     let mhF=0;fins[cod].forEach(function(l){mhF+=hhMetaHora(l);});
-    mhF=mhF?' · '+NF.format(Math.round(mhF))+'/h':'';
+    mhF=mhF?' · '+hhFmtHora(mhF)+'/h':'';
     const deltaF=prod-goal;
     let stF,txtF;
     if(goal&&prod>=goal){stF='ok';txtF='✓ META ATINGIDA';}
