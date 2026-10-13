@@ -766,6 +766,7 @@ body.hhTv #viewHH{padding:18px;background:#0f172a}body.hhTv #viewHH .hhTopbar,bo
 #viewHH #hhProdTbl td:has(input[data-p=final]){background:#F8FAFC;min-width:90px}
 #viewHH #hhProdTbl input[data-p=final]{width:22px;height:22px;cursor:pointer;accent-color:#1D4ED8}
 #viewHH #hhProdTbl input[data-p=final]:disabled{cursor:not-allowed;opacity:.5}
+#viewHH #hhProdTbl .hhAutoHint{font-size:10.5px;color:#64748B;font-weight:700;line-height:1.25}
 #viewHH #hhFloorCards .hhFloorCard{background:#fff;border:1px solid var(--hh-line);border-left:5px solid var(--hh-teal);border-radius:12px;padding:13px 15px;box-shadow:0 1px 3px rgba(15,23,42,.06);min-width:0}
 #viewHH #hhFloorCards .hhFloorCard.ok{border-left-color:#16A34A}
 #viewHH #hhFloorCards .hhFloorCard.warn{border-left-color:#D97706}
@@ -4482,7 +4483,7 @@ function hhProdRender(){
     const tipo=p.tipo||(p.final===true?'final':'fase');
     const nNaCelula=hhProdCfg.filter(function(x){return x.linha===p.linha&&x.cod;}).length;
     const multi=nNaCelula>=2;
-    const autoHint='<div style="font-size:10px;color:#64748B;font-weight:700">automático (meta do dia)</div>';
+    const autoHint='<div class="hhAutoHint">automático<br>(meta do dia ÷ horas)</div>';
     const faseTag=tipo==='final'?' <span class="hhTagPV" title="Produto final — é a CONTAGEM do dia">🏁 final</span>':(tipo==='sub'?' <span class="hhTagPV" style="background:#FEF3C7;color:#92400E" title="Subconjunto pronto — entra no estoque de subconjuntos; não soma no total do dia">sub</span>':(hhFinalDe(p.linha)?' <span style="font-size:11px;color:#64748B" title="Peça pronta / fase interna — não soma no total do dia">peça</span>':''));
     return '<tr data-pi="'+i+'">'+
       '<td><select data-p="linha" aria-label="Célula do produto">'+hhLinhasCfg.map(function(x){return '<option value="'+escH(x.id)+'"'+(p.linha===x.id?' selected':'')+'>'+escH(x.nome)+'</option>';}).join('')+'</select></td>'+
