@@ -4631,7 +4631,8 @@ function hhPlanDiasRender(){
   });
 }
 function hhAplicarDia(){
-  // a config ativa é SEMPRE a do dia selecionado — dia sem config própria fica VAZIO (zerado)
+  // REGRA Dante 13/10: dia SEM programação própria abre EM BRANCO (zerado).
+  // A config base (hh|cfg) é só TEMPLATE para o botão Copiar — nunca é exibida como programação de um dia.
   const iso=hhDiaSelIso();
   if(window._hhDiaAplicado===iso) return;
   const d=hhCfgPorDia[iso];
@@ -4643,16 +4644,7 @@ function hhAplicarDia(){
 }
 function hhSemSelAplicar(){ window._hhDiaAplicado=''; hhAplicarDia(); hhRender(); }
 function hhFirmeDe(iso){ const d=hhCfgPorDia[String(iso||'')]; return !!(d&&d.firme); }
-function hhSeedHoje(){
-  // migração 1x: config base existente vira a programação de HOJE e dos dias que têm apontamento/parada
-  if(Object.keys(hhCfgPorDia).length) return;
-  if(!hhLinhasCfg.length) return;
-  const dias={};
-  hhApont.forEach(function(a){ if(a.data)dias[a.data]=1; });
-  hhParadas.forEach(function(p){ if(p.data)dias[p.data]=1; });
-  dias[hhHojeIso()]=1;
-  Object.keys(dias).forEach(function(k){ hhCfgSaveDia(k,false); });
-}
+function hhSeedHoje(){ return; }
 function hhCopiarDiaAnterior(){
   if(!hhAdmin()){ hhFlash('⚠ modo leitura'); return; }
   const iso=hhDiaSelIso();
@@ -4663,10 +4655,11 @@ function hhCopiarDiaAnterior(){
     const c=hhCfgPorDia[k];
     if(c&&Array.isArray(c.linhas)&&c.linhas.length){ alvo=c; alvoIso=k; break; }
   }
-  if(!alvo){ hhFlash('⚠ nenhum dia anterior com programação nos últimos 14 dias'); return; }
+  if(!alvo){ const b=JSON.parse(localStorage.getItem('hh|cfg')||'null'); if(b&&Array.isArray(b.linhas)&&b.linhas.length){ alvo={linhas:b.linhas,produtos:b.produtos||[]}; alvoIso='programação base'; } }
+  if(!alvo){ hhFlash('⚠ nada para copiar — nenhum dia anterior com programação'); return; }
   hhLinhasCfg=JSON.parse(JSON.stringify(alvo.linhas)); hhProdCfg=JSON.parse(JSON.stringify(alvo.produtos||[]));
   hhCfgData=iso; hhCfgSaveDia(iso,false); hhSave('Copiado de '+alvoIso+' → '+iso); hhRender();
-  hhFlash('✔ Copiado de '+alvoIso+' — confira e salve como firme');
+  hhFlash('✔ Copiado de '+alvoIso+' — confira e salve como FIRME');
 }
 function hhFirmarDia(){
   if(!hhAdmin()){ hhFlash('⚠ modo leitura'); return; }
