@@ -809,6 +809,10 @@ body.viewerMode #viewHH #hhCfgAdd,body.viewerMode #viewHH .hhAddProduct,body.vie
     <select id="hhSemSel" style="padding:5px 10px;border:1px solid var(--hh-line);border-radius:8px;font-size:13px;background:#fff;cursor:pointer"></select>
   </div>
   <div class="wbtns" id="hhDiaBtns" style="margin-bottom:12px"></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 14px">
+    <button id="hhCopiarDia" class="hhActionBtn" title="Copia células, jornadas, metas e produtos do dia anterior para o dia selecionado"><span>⧉</span> Copiar programação do dia anterior</button>
+    <span class="hhNote" style="margin:0">Cada dia abre com a programação base — edite e salve para torná-lo independente.</span>
+  </div>
   <div class="hhKpis" id="hhPlanKpis"></div>
   <div class="card hhCfgCard"><div class="hhCardHead"><div><h2>Células de produção</h2><p>O nome pode mudar; o identificador interno mantém o histórico. Horário e capacidade podem variar por dia.</p></div><button id="hhCfgAdd" class="hhActionBtn"><span>＋</span> Adicionar célula</button></div>
     <div class="tblwrap hhCfg"><table id="hhCfgTbl"><thead><tr><th style="text-align:left">Célula (nome editável)</th><th>Operadores</th><th>Postos</th><th>Atalho</th><th>Jornada (início/fim)</th><th>Almoço (opcional)</th><th>Meta dia</th><th></th></tr></thead><tbody id="hhCfgTb"></tbody></table></div>
@@ -4493,8 +4497,8 @@ function hhMetaElapsedPosto(c,minuteOfDay){const worked=hhWorkMinutes(c,0,minute
 function hhCfgAtivo(iso){ const k=String(iso||''); const d=hhCfgPorDia[k]; if(d&&Array.isArray(d.linhas)&&d.linhas.length) return {linhas:d.linhas, produtos:d.produtos||[]}; return {linhas:hhLinhasCfg, produtos:hhProdCfg}; }
 function hhProdCfgAtivo(iso){ return hhCfgAtivo(iso).produtos; }
 function hhCfgDataDe(iso){ const d=hhCfgPorDia[String(iso||'')]; return d?d.data:''; }
-function hhCfgSaveDia(iso){ hhCfgPorDia[String(iso||'')]={data:String(iso||''),linhas:hhLinhasCfg,produtos:hhProdCfg}; try{localStorage.setItem('hh|cfgdia',JSON.stringify(hhCfgPorDia));}catch(e){} }
-function hhProdCfgSave(){try{localStorage.setItem('hh|cfg',JSON.stringify({data:hhCfgData,linhas:hhLinhasCfg,produtos:hhProdCfg}));}catch(e){}hhCfgSaveDia(hhCfgData||hhDiaSelIso());}
+function hhCfgSaveDia(iso,firme){ hhCfgPorDia[String(iso||'')]={data:String(iso||''),linhas:hhLinhasCfg,produtos:hhProdCfg,firme:!!firme}; try{localStorage.setItem('hh|cfgdia',JSON.stringify(hhCfgPorDia));}catch(e){} }
+function hhProdCfgSave(){try{localStorage.setItem('hh|cfg',JSON.stringify({data:hhCfgData,linhas:hhLinhasCfg,produtos:hhProdCfg}));}catch(e){}hhCfgSaveDia(hhCfgData||hhDiaSelIso(),hhFirmeDe(hhCfgData||hhDiaSelIso()));}
 function hhProdRender(){
   const tb=document.getElementById('hhProdTb'); if(!tb) return;
   tb.innerHTML = hhProdCfg.map(function(p,i){
@@ -4627,14 +4631,63 @@ function hhPlanDiasRender(){
     });
   });
 }
-function hhSemSelAplicar(){
-  // troca o dia ativo: carrega a config DO DIA selecionado (ou herda a base)
+function hhAplicarDia(){
+  // a config ativa é SEMPRE a do dia selecionado — dia sem config própria fica VAZIO (zerado)
   const iso=hhDiaSelIso();
+  if(window._hhDiaAplicado===iso) return;
   const d=hhCfgPorDia[iso];
-  if(d&&Array.isArray(d.linhas)&&d.linhas.length){ hhLinhasCfg=d.linhas; hhProdCfg=d.produtos||hhProdCfg; hhCfgData=iso; }
-  else { const base=JSON.parse(localStorage.getItem('hh|cfg')||'null'); if(base&&Array.isArray(base.linhas)&&base.linhas.length){ hhLinhasCfg=base.linhas; hhProdCfg=Array.isArray(base.produtos)?base.produtos:[]; hhCfgData=iso; } }
+  if(d&&Array.isArray(d.linhas)&&d.linhas.length){ hhLinhasCfg=d.linhas; hhProdCfg=Array.isArray(d.produtos)?d.produtos:[]; }
+  else { hhLinhasCfg=[]; hhProdCfg=[]; }
+  hhCfgData=iso;
+  window._hhDiaAplicado=iso;
   hhTipoNorm();
-  hhRender();
+}
+function hhSemSelAplicar(){ window._hhDiaAplicado=''; hhAplicarDia(); hhRender(); }
+function hhFirmeDe(iso){ const d=hhCfgPorDia[String(iso||'')]; return !!(d&&d.firme); }
+function hhSeedHoje(){
+  // migração 1x: config base existente vira a programação de HOJE e dos dias que têm apontamento/parada
+  if(Object.keys(hhCfgPorDia).length) return;
+  if(!hhLinhasCfg.length) return;
+  const dias={};
+  hhApont.forEach(function(a){ if(a.data)dias[a.data]=1; });
+  hhParadas.forEach(function(p){ if(p.data)dias[p.data]=1; });
+  dias[hhHojeIso()]=1;
+  Object.keys(dias).forEach(function(k){ hhCfgSaveDia(k,false); });
+}
+function hhCopiarDiaAnterior(){
+  if(!hhAdmin()){ hhFlash('⚠ modo leitura'); return; }
+  const iso=hhDiaSelIso();
+  let alvo=null,alvoIso='';
+  for(let i=1;i<=14;i++){
+    const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()-i);
+    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const c=hhCfgPorDia[k];
+    if(c&&Array.isArray(c.linhas)&&c.linhas.length){ alvo=c; alvoIso=k; break; }
+  }
+  if(!alvo){ hhFlash('⚠ nenhum dia anterior com programação nos últimos 14 dias'); return; }
+  hhLinhasCfg=JSON.parse(JSON.stringify(alvo.linhas)); hhProdCfg=JSON.parse(JSON.stringify(alvo.produtos||[]));
+  hhCfgData=iso; hhCfgSaveDia(iso,false); hhSave('Copiado de '+alvoIso+' → '+iso); hhRender();
+  hhFlash('✔ Copiado de '+alvoIso+' — confira e salve como firme');
+}
+function hhFirmarDia(){
+  if(!hhAdmin()){ hhFlash('⚠ modo leitura'); return; }
+  if(!hhLinhasCfg.length){ hhFlash('⚠ dia vazio — copie do dia anterior ou configure as células antes de salvar'); return; }
+  hhCfgData=hhDiaSelIso(); hhCfgSaveDia(hhCfgData,true); hhSave('💾 Programação firme — dia '+hhCfgData); hhRender();
+  hhFlash('✔ Programação firme salva ('+hhCfgData+')');
+}
+function hhCopiarProgDiaAnterior(){
+  // copia a config do dia anterior (útil para preencher dias novos)
+  const iso=hhDiaSelIso();
+  const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()-1);
+  const ant=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const src=hhCfgPorDia[ant]||(function(){const b=JSON.parse(localStorage.getItem('hh|cfg')||'null');return b&&Array.isArray(b.linhas)&&b.linhas.length?{linhas:b.linhas,produtos:b.produtos||[]}:null;})();
+  if(!src||!Array.isArray(src.linhas)||!src.linhas.length){ hhFlash('⚠ dia anterior ('+ant+') sem programação para copiar'); return; }
+  hhLinhasCfg=JSON.parse(JSON.stringify(src.linhas));
+  hhProdCfg=JSON.parse(JSON.stringify(src.produtos||[]));
+  hhCfgData=iso; hhCfgSaveDia(iso);
+  hhSave('Programação copiada do dia '+ant+' para '+iso);
+  hhCfgRender(); hhProdRender(); hhRender();
+  hhFlash('✔ Programação de '+ant+' copiada para o dia selecionado');
 }
 function hhPlanSummaryRender(){
  const k=document.getElementById('hhPlanKpis');if(k){const nprod=hhProdCfg.filter(function(p){return !!p.cod;}).length,day=hhLinhasCfg.reduce(function(s,c){return s+hhMetaLinha(c.id);},0),ward=hhProdCfg.filter(function(p){return p.ward;}).length,nfin=Object.keys(hhProdCfg.reduce(function(m,p){if(p.final===true&&p.cod)m[p.cod]=1;return m;},{})).length;k.innerHTML='<div class="hhKpi"><div class="hhKpiLabel">Células</div><div class="hhKpiValue">'+NF.format(hhLinhasCfg.length)+'</div><div class="hhKpiHint">programadas para hoje</div></div><div class="hhKpi"><div class="hhKpiLabel">Produtos / lotes</div><div class="hhKpiValue">'+NF.format(nprod)+'</div><div class="hhKpiHint">podem rodar em paralelo</div></div><div class="hhKpi"><div class="hhKpiLabel">Meta diária (produto final / subconjunto)</div><div class="hhKpiValue">'+NF.format(Math.round(day))+' un</div><div class="hhKpiHint">'+(nfin?'contagem final de '+NF.format(nfin)+' produto(s) — fases internas não somam':'soma de metas/h × horas abertas')+'</div></div><div class="hhKpi"><div class="hhKpiLabel">Destinos WARD</div><div class="hhKpiValue">'+NF.format(ward)+'</div><div class="hhKpiHint">lotes para Supermercado</div></div>';}
@@ -4862,6 +4915,8 @@ function hhInit(){
     window._hhAccessObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
   }
   if(!window._hhAccessTimer) window._hhAccessTimer=setInterval(hhAccessSet,2000);
+  const bCop=document.getElementById('hhCopiarDia');
+  if(bCop) bCop.addEventListener('click', function(){ if(!hhAdmin()){hhFlash('⚠ modo leitura — entre como admin para copiar');return;} hhCopiarProgDiaAnterior(); });
   const btn=document.getElementById('hhBtnAdd'); if(!btn) return;
   // botão 🛒 → SMKT na célula da hora (produto WARD): entrada real no estoque de prontos
   const gridEl=document.getElementById('hhGrid');
