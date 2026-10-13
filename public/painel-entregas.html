@@ -741,7 +741,12 @@ body.hhTv #viewHH{padding:18px;background:#0f172a}body.hhTv #viewHH .hhTopbar,bo
 #viewHH .hhAndonTitle{padding:14px 16px 6px;display:flex;flex-direction:column;gap:2px}
 #viewHH .hhAndonTitle h3{margin:0;font-size:22px;font-weight:900;color:#0F172A;line-height:1.15;letter-spacing:-.01em}
 #viewHH .hhAndonTitle small{font-size:11.5px;font-weight:700;color:#64748B}
-#viewHH .hhAndonBadge{display:inline-block;align-self:flex-start;font-size:10.5px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:#1D4ED8;background:#DBEAFE;border-radius:6px;padding:3px 8px;margin-bottom:4px}
+#viewHH .hhAndonItem{display:flex;align-items:center;gap:8px;margin-top:6px;min-width:0}
+#viewHH .hhAndonItem>span:last-child{font-size:13.5px;font-weight:700;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#viewHH .hhAndonBadge{display:inline-flex;align-items:center;flex:none;font-size:10px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:3px 8px}
+#viewHH .hhAndonBadge.final{color:#1D4ED8;background:#DBEAFE}
+#viewHH .hhAndonBadge.sub{color:#92400E;background:#FEF3C7}
+#viewHH .hhAndonBadge.peca{color:#475569;background:#E2E8F0}
 #viewHH .hhAndonFoot{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;font-size:14.5px;font-weight:850;color:#fff;letter-spacing:.02em}
 #viewHH .hhAndonFoot.ok{background:#16A34A}
 #viewHH .hhAndonFoot.warn{background:#D97706}
@@ -4603,7 +4608,8 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     else if(goal||actual){st='stop';txt='ABAIXO DO RITMO';}
     else {st='idle';txt='SEM META HOJE';}
     const mhH=hhMetaHora(c.id);const mh=mhH?' · '+String(Math.round(mhH*10)/10).replace('.',',')+'/h':'';
-    cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(c.nome)+'</h3></div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mh+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(actual)+'</b><span>produzido</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(delta<0?' neg':'')+'">'+(goal? (delta>=0?'+':'−') + NF.format(Math.abs(delta)) + ' un ' + (delta>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+st+'"><span>'+txt+'</span><span>'+pct+'%</span></div></div>');
+    const prodsTitle=prods.slice(0,3).map(function(p){const t=p.final===true?'final':(p.tipo==='sub'?'sub':'peca');const lbl=t==='final'?'Produto final':(t==='sub'?'Subconjunto':'Peça');return '<div class="hhAndonItem"><span class="hhAndonBadge '+t+'">'+lbl+'</span><span>'+escH(p.cod)+'</span></div>';}).join('')+(prods.length>3?'<div class="hhAndonItem"><span style="font-size:11.5px;color:#64748B;font-weight:700">+'+(prods.length-3)+' outro(s) produto(s)</span></div>':'');
+    cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(c.nome)+'</h3>'+(prodsTitle||'<div class="hhAndonItem"><span style="font-size:11.5px;color:#64748B;font-weight:700">sem produto configurado</span></div>')+'</div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mh+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(actual)+'</b><span>produzido</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(delta<0?' neg':'')+'">'+(goal? (delta>=0?'+':'−') + NF.format(Math.abs(delta)) + ' un ' + (delta>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+st+'"><span>'+txt+'</span><span>'+pct+'%</span></div></div>');
   });
   const fins={};
   hhProdCfg.forEach(function(p){if(p.cod&&p.linha&&(p.tipo==='final'||p.tipo==='sub'||(p.final===true))){fins[p.cod]=fins[p.cod]||[];fins[p.cod].push(p.linha);}});
@@ -4622,7 +4628,7 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     else if(pct>=75){stF='warn';txtF='ACOMPANHAR';}
     else if(goal||prod){stF='stop';txtF='ABAIXO DO RITMO';}
     else {stF='idle';txtF='SEM META HOJE';}
-    cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><span class="hhAndonBadge">'+badgeTxt+'</span><h3>'+escH(hhDescDe(cod))+'</h3><small>'+fins[cod].map(function(l){return escH(hhNome(l));}).join(' · ')+'</small></div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mhF+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(prod)+'</b><span>prontas</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(deltaF<0?' neg':'')+'">'+(goal? (deltaF>=0?'+':'−') + NF.format(Math.abs(deltaF)) + ' un ' + (deltaF>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+stF+'"><span>'+txtF+'</span><span>'+pct+'%</span></div></div>');
+    cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(hhDescDe(cod))+'</h3><div class="hhAndonItem"><span class="hhAndonBadge '+(rowTipo==='sub'?'sub':'final')+'">'+badgeTxt+'</span><span>'+escH(cod)+'</span></div></div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mhF+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(prod)+'</b><span>prontas</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(deltaF<0?' neg':'')+'">'+(goal? (deltaF>=0?'+':'−') + NF.format(Math.abs(deltaF)) + ' un ' + (deltaF>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+stF+'"><span>'+txtF+'</span><span>'+pct+'%</span></div></div>');
   });
   el.innerHTML=cards.length?cards.join(''):'<div class="hhEmpty">Nenhuma célula configurada.</div>';
 }
