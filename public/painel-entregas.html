@@ -4538,8 +4538,8 @@ function hhBaseRender(){
   tb.innerHTML = b.length? b.map(function(x){
     const sug = Math.round(x.media*10)/10;
     return '<tr><td>'+escH(hhNome(x.linha))+' · '+escH(x.cod)+' — '+escH(hhDescDe(x.cod)).slice(0,40)+'</td>'+
-      '<td class="num">'+(x.pessoas||'—')+' / '+(x.postos||'—')+'</td><td class="num">'+String(sug.toFixed(1)).replace('.',',')+'</td>'+
-      '<td class="num">'+NF.format(x.melhor)+'</td><td class="num"><b>'+String(sug.toFixed(1)).replace('.',',')+'/h</b></td></tr>';
+      '<td class="num">'+(x.pessoas||'—')+' / '+(x.postos||'—')+'</td><td class="num">'+NF.format(Math.round(sug))+'</td>'+
+      '<td class="num">'+NF.format(x.melhor)+'</td><td class="num"><b>'+NF.format(Math.round(sug))+'/h</b></td></tr>';
   }).join('') : '<tr><td colspan="5" style="color:var(--mut)">Sem dados suficientes — o baseline se forma com os lançamentos hora a hora.</td></tr>';
 }
 // ── Três áreas do Andon HH: navegação local, sem recriar controlos ou listeners persistidos. ──
@@ -4607,7 +4607,7 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     else if(pct>=75){st='warn';txt='ACOMPANHAR';}
     else if(goal||actual){st='stop';txt='ABAIXO DO RITMO';}
     else {st='idle';txt='SEM META HOJE';}
-    const mhH=hhMetaHora(c.id);const mh=mhH?' · '+String(Math.round(mhH*10)/10).replace('.',',')+'/h':'';
+    const mhH=hhMetaHora(c.id);const mh=mhH?' · '+NF.format(Math.round(mhH))+'/h':'';
     const prodsTitle=prods.slice(0,3).map(function(p){const t=p.final===true?'final':(p.tipo==='sub'?'sub':'peca');const lbl=t==='final'?'Produto final':(t==='sub'?'Subconjunto':'Peça');return '<div class="hhAndonItem"><span class="hhAndonBadge '+t+'">'+lbl+'</span><span>'+escH(p.cod)+'</span></div>';}).join('')+(prods.length>3?'<div class="hhAndonItem"><span style="font-size:11.5px;color:#64748B;font-weight:700">+'+(prods.length-3)+' outro(s) produto(s)</span></div>':'');
     cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(c.nome)+'</h3>'+(prodsTitle||'<div class="hhAndonItem"><span style="font-size:11.5px;color:#64748B;font-weight:700">sem produto configurado</span></div>')+'</div><div class="hhAndonBody"><div class="hhAndonPct">'+pct+'<small>%</small></div><div class="hhAndonSub">da meta do dia'+mh+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(actual)+'</b><span>produzido</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(goal))+'</b><span>meta</span></div></div><div class="hhAndonDelta'+(delta<0?' neg':'')+'">'+(goal? (delta>=0?'+':'−') + NF.format(Math.abs(delta)) + ' un ' + (delta>=0?'adiantado':'faltando') : '')+'</div></div><div class="hhAndonFoot '+st+'"><span>'+txt+'</span><span>'+pct+'%</span></div></div>');
   });
@@ -4621,7 +4621,7 @@ function hhAndonCardsRender(iso,hNow,nowMinute){
     const pct=goal?Math.min(999,Math.round(prod/goal*100)):0;
     const st=goal&&prod>=goal?'ok':(pct>=75?'warn':(goal||prod?'stop':'idle'));
     let mhF=0;fins[cod].forEach(function(l){mhF+=hhMetaHora(l);});
-    mhF=mhF?' · '+String(Math.round(mhF*10)/10).replace('.',',')+'/h':'';
+    mhF=mhF?' · '+NF.format(Math.round(mhF))+'/h':'';
     const deltaF=prod-goal;
     let stF,txtF;
     if(goal&&prod>=goal){stF='ok';txtF='✓ META ATINGIDA';}
