@@ -807,12 +807,10 @@ body.viewerMode #viewHH #hhCfgAdd,body.viewerMode #viewHH .hhAddProduct,body.vie
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px">
     <b style="font-size:12px;color:#334155">Semana:</b>
     <select id="hhSemSel" style="padding:5px 10px;border:1px solid var(--hh-line);border-radius:8px;font-size:13px;background:#fff;cursor:pointer"></select>
+    <button id="hhBtnFirmar" class="hhActionBtn" style="background:#1D4ED8;color:#fff;border-color:#1D4ED8" title="Salva a programação deste dia como FIRME — fica fixa neste dia"><span>💾</span> Salvar dia como programação firme</button>
+    <button id="hhBtnCopiar" class="hhActionBtn" title="Copia as células/produtos do dia anterior mais próximo com programação"><span>⧉</span> Copiar prog. do dia anterior</button>
   </div>
   <div class="wbtns" id="hhDiaBtns" style="margin-bottom:12px"></div>
-  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 14px">
-    <button id="hhCopiarDia" class="hhActionBtn" title="Copia células, jornadas, metas e produtos do dia anterior para o dia selecionado"><span>⧉</span> Copiar programação do dia anterior</button>
-    <span class="hhNote" style="margin:0">Cada dia abre com a programação base — edite e salve para torná-lo independente.</span>
-  </div>
   <div class="hhKpis" id="hhPlanKpis"></div>
   <div class="card hhCfgCard"><div class="hhCardHead"><div><h2>Células de produção</h2><p>O nome pode mudar; o identificador interno mantém o histórico. Horário e capacidade podem variar por dia.</p></div><button id="hhCfgAdd" class="hhActionBtn"><span>＋</span> Adicionar célula</button></div>
     <div class="tblwrap hhCfg"><table id="hhCfgTbl"><thead><tr><th style="text-align:left">Célula (nome editável)</th><th>Operadores</th><th>Postos</th><th>Atalho</th><th>Jornada (início/fim)</th><th>Almoço (opcional)</th><th>Meta dia</th><th></th></tr></thead><tbody id="hhCfgTb"></tbody></table></div>
@@ -4618,8 +4616,9 @@ function hhPlanDiasRender(){
     const cfg=hhCfgPorDia[iso];
     const nCels=cfg&&Array.isArray(cfg.linhas)?cfg.linhas.length:0;
     const nAp=(function(){let n=0;hhApont.forEach(function(a){if(a.data===iso)n++;});return n;})();
+    const firme=cfg&&cfg.firme;
     const temAlgo=nCels>0||nAp>0;
-    html+='<button data-hh-dia="'+iso+'" class="'+(iso===hhDiaSel?'on':'')+'"'+(temAlgo?'':' style="opacity:.55"')+'>'+nomeDia[d.getDay()]+' · '+br+(temAlgo?' <span style="font-size:10px;font-weight:800">· '+(nCels?nCels+'c':'')+(nAp?(nCels?' ':'')+nAp+'a':'')+'</span>':'')+'</button>';
+    html+='<button data-hh-dia="'+iso+'" class="'+(iso===hhDiaSel?'on':'')+'"'+(temAlgo?'':' style="opacity:.55"')+'>'+nomeDia[d.getDay()]+' · '+br+(firme?' <span style="font-size:9.5px;font-weight:900;color:#1D4ED8">FIRME</span>':'')+(temAlgo?' <span style="font-size:10px;font-weight:800">· '+(nCels?nCels+'c':'')+(nAp?(nCels?' ':'')+nAp+'a':'')+'</span>':'')+'</button>';
   }
   box.innerHTML=html;
   Array.prototype.forEach.call(box.children,function(b){
@@ -4674,20 +4673,6 @@ function hhFirmarDia(){
   if(!hhLinhasCfg.length){ hhFlash('⚠ dia vazio — copie do dia anterior ou configure as células antes de salvar'); return; }
   hhCfgData=hhDiaSelIso(); hhCfgSaveDia(hhCfgData,true); hhSave('💾 Programação firme — dia '+hhCfgData); hhRender();
   hhFlash('✔ Programação firme salva ('+hhCfgData+')');
-}
-function hhCopiarProgDiaAnterior(){
-  // copia a config do dia anterior (útil para preencher dias novos)
-  const iso=hhDiaSelIso();
-  const d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()-1);
-  const ant=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  const src=hhCfgPorDia[ant]||(function(){const b=JSON.parse(localStorage.getItem('hh|cfg')||'null');return b&&Array.isArray(b.linhas)&&b.linhas.length?{linhas:b.linhas,produtos:b.produtos||[]}:null;})();
-  if(!src||!Array.isArray(src.linhas)||!src.linhas.length){ hhFlash('⚠ dia anterior ('+ant+') sem programação para copiar'); return; }
-  hhLinhasCfg=JSON.parse(JSON.stringify(src.linhas));
-  hhProdCfg=JSON.parse(JSON.stringify(src.produtos||[]));
-  hhCfgData=iso; hhCfgSaveDia(iso);
-  hhSave('Programação copiada do dia '+ant+' para '+iso);
-  hhCfgRender(); hhProdRender(); hhRender();
-  hhFlash('✔ Programação de '+ant+' copiada para o dia selecionado');
 }
 function hhPlanSummaryRender(){
  const k=document.getElementById('hhPlanKpis');if(k){const nprod=hhProdCfg.filter(function(p){return !!p.cod;}).length,day=hhLinhasCfg.reduce(function(s,c){return s+hhMetaLinha(c.id);},0),ward=hhProdCfg.filter(function(p){return p.ward;}).length,nfin=Object.keys(hhProdCfg.reduce(function(m,p){if(p.final===true&&p.cod)m[p.cod]=1;return m;},{})).length;k.innerHTML='<div class="hhKpi"><div class="hhKpiLabel">Células</div><div class="hhKpiValue">'+NF.format(hhLinhasCfg.length)+'</div><div class="hhKpiHint">programadas para hoje</div></div><div class="hhKpi"><div class="hhKpiLabel">Produtos / lotes</div><div class="hhKpiValue">'+NF.format(nprod)+'</div><div class="hhKpiHint">podem rodar em paralelo</div></div><div class="hhKpi"><div class="hhKpiLabel">Meta diária (produto final / subconjunto)</div><div class="hhKpiValue">'+NF.format(Math.round(day))+' un</div><div class="hhKpiHint">'+(nfin?'contagem final de '+NF.format(nfin)+' produto(s) — fases internas não somam':'soma de metas/h × horas abertas')+'</div></div><div class="hhKpi"><div class="hhKpiLabel">Destinos WARD</div><div class="hhKpiValue">'+NF.format(ward)+'</div><div class="hhKpiHint">lotes para Supermercado</div></div>';}
@@ -4770,6 +4755,7 @@ function hhBindTabs(){
 // ── RENDER principal ──
 function hhRender(){
   const iso=hhDiaSelIso();
+  hhAplicarDia();
   hhPlanDiasRender();
   const now=new Date(); const hNow=now.getHours(),nowMinute=hNow*60+now.getMinutes();
   let tot=0, totMeta=0;
@@ -4915,9 +4901,11 @@ function hhInit(){
     window._hhAccessObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
   }
   if(!window._hhAccessTimer) window._hhAccessTimer=setInterval(hhAccessSet,2000);
-  const bCop=document.getElementById('hhCopiarDia');
-  if(bCop) bCop.addEventListener('click', function(){ if(!hhAdmin()){hhFlash('⚠ modo leitura — entre como admin para copiar');return;} hhCopiarProgDiaAnterior(); });
+  const bCop=document.getElementById('hhBtnCopiar');
+  if(bCop&&!bCop._bound){ bCop._bound=true; bCop.addEventListener('click', function(){ if(!hhAdmin()){hhFlash('⚠ modo leitura — entre como admin para copiar');return;} hhCopiarDiaAnterior(); }); }
   const btn=document.getElementById('hhBtnAdd'); if(!btn) return;
+  const bFirm=document.getElementById('hhBtnFirmar');
+  if(bFirm&&!bFirm._bound){ bFirm._bound=true; bFirm.addEventListener('click',hhFirmarDia); }
   // botão 🛒 → SMKT na célula da hora (produto WARD): entrada real no estoque de prontos
   const gridEl=document.getElementById('hhGrid');
   if(gridEl) gridEl.addEventListener('click', function(e){
@@ -5089,7 +5077,7 @@ function hhInit(){
   });
   // auto-refresh
   setInterval(function(){ const v=document.getElementById('viewHH'); if(v&&v.classList.contains('on')) hhRender(); }, 60000);
-  hhRender(); hhLoad();
+  hhLoad(); hhSeedHoje(); hhRender();
 }
 // ── POKA-YOKE: hora abaixo da meta → pedir motivo + tempo de parada (não bloqueia) ──
 function hhPokaChecar(lin, iso){
