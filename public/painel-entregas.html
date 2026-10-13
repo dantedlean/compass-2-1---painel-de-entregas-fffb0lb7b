@@ -808,7 +808,7 @@ body.viewerMode #viewHH #hhCfgAdd,body.viewerMode #viewHH .hhAddProduct,body.vie
     <div class="tblwrap hhCfg"><table id="hhCfgTbl"><thead><tr><th style="text-align:left">Célula (nome editável)</th><th>Operadores</th><th>Postos</th><th>Atalho</th><th>Jornada (início/fim)</th><th>Almoço (opcional)</th><th>Meta dia</th><th></th></tr></thead><tbody id="hhCfgTb"></tbody></table></div>
   </div>
   <div class="card hhParCard"><div class="hhCardHead"><div><h2>Produtos e metas por célula</h2><p>Configure vários produtos simultâneos — cada um pode ter sua própria meta/h e destino WARD ou PV.</p></div><div class="hhAddProduct"><label for="hhProdAddCell">Adicionar em</label><select id="hhProdAddCell" aria-label="Célula do novo produto"></select><button id="hhProdAdd" class="hhActionBtn"><span>＋</span> Adicionar produto</button></div></div>
-    <div class="tblwrap hhCfg"><table id="hhProdTbl"><thead><tr><th style="text-align:left">Célula</th><th style="text-align:left">Produto</th><th>Regime</th><th>PV destino</th><th>Postos usados</th><th>Meta/h</th><th title="Tipo de saída deste posto: Peça pronta (não soma) · Subconjunto pronto (entra no estoque de subconjuntos) · Produto final (é a CONTAGEM do dia)">Saída</th><th></th></tr></thead><tbody id="hhProdTb"></tbody></table></div>
+    <div class="tblwrap hhCfg"><table id="hhProdTbl"><thead><tr><th style="text-align:left">Célula</th><th style="text-align:left">Produto</th><th>Regime</th><th>PV destino</th><th>Postos usados</th><th title="Só quando a célula roda 2+ produtos ao mesmo tempo — com 1 produto é automático (meta do dia ÷ horas)">Meta/h</th><th title="Tipo de saída deste posto: Peça pronta (não soma) · Subconjunto pronto (entra no estoque de subconjuntos) · Produto final (é a CONTAGEM do dia)">Saída</th><th></th></tr></thead><tbody id="hhProdTb"></tbody></table></div>
     <div class="hhRegimeLegend"><span><i class="hhDot hhDotPV"></i><b>PV</b> — produção ligada a um pedido de venda</span><span><i class="hhDot hhDotWard"></i><b>WARD</b> — lote para o Supermercado</span><span><b>Saída</b> — <b>Peça pronta</b>: não soma no total do dia · <b>Subconjunto pronto</b>: entra no estoque de subconjuntos · <b>Produto final</b>: é a CONTAGEM do dia (meta e produzido contam só dele — geralmente na linha de montagem)</span></div>
     <div id="hhPostosAudit" class="hhPostosAudit"></div>
   </div>
@@ -4480,14 +4480,17 @@ function hhProdRender(){
   tb.innerHTML = hhProdCfg.map(function(p,i){
     const c = hhCfg(p.linha);
     const tipo=p.tipo||(p.final===true?'final':'fase');
+    const nNaCelula=hhProdCfg.filter(function(x){return x.linha===p.linha&&x.cod;}).length;
+    const multi=nNaCelula>=2;
+    const autoHint='<div style="font-size:10px;color:#64748B;font-weight:700">automático (meta do dia)</div>';
     const faseTag=tipo==='final'?' <span class="hhTagPV" title="Produto final — é a CONTAGEM do dia">🏁 final</span>':(tipo==='sub'?' <span class="hhTagPV" style="background:#FEF3C7;color:#92400E" title="Subconjunto pronto — entra no estoque de subconjuntos; não soma no total do dia">sub</span>':(hhFinalDe(p.linha)?' <span style="font-size:11px;color:#64748B" title="Peça pronta / fase interna — não soma no total do dia">peça</span>':''));
     return '<tr data-pi="'+i+'">'+
       '<td><select data-p="linha" aria-label="Célula do produto">'+hhLinhasCfg.map(function(x){return '<option value="'+escH(x.id)+'"'+(p.linha===x.id?' selected':'')+'>'+escH(x.nome)+'</option>';}).join('')+'</select></td>'+
       '<td><input data-p="cod" value="'+escH(p.cod)+'" aria-label="Código do produto">'+faseTag+'</td>'+
       '<td><select data-p="ward" aria-label="Regime"><option value="pv"'+(!p.ward?' selected':'')+'>PV</option><option value="ward"'+(p.ward?' selected':'')+'>WARD</option></select></td>'+
       '<td><input data-p="pv" value="'+escH(p.pv||'')+'" placeholder="'+(p.ward?'Lote (sem PV)':'PV destino')+'" '+(p.ward?'disabled':'')+' aria-label="PV de destino"></td>'+
-      '<td><input data-p="postos" type="number" min="0" step="1" value="'+(Number(p.postos)||0)+'" style="width:64px" aria-label="Postos neste produto"></td>'+
-      '<td><input data-p="metaH" type="number" min="0" step="0.5" value="'+(Number(p.metaH)||0)+'" style="width:76px" aria-label="Meta por hora"></td>'+
+      '<td>'+(multi?'<input data-p="postos" type="number" min="0" step="1" value="'+(Number(p.postos)||0)+'" style="width:64px" aria-label="Postos neste produto">':autoHint)+'</td>'+
+      '<td>'+(multi?'<input data-p="metaH" type="number" min="0" step="0.5" value="'+(Number(p.metaH)||0)+'" style="width:76px" aria-label="Meta por hora">':autoHint)+'</td>'+
       '<td style="text-align:center"><select data-p="tipo" aria-label="Tipo de saída deste posto" title="Peça pronta: não soma no total do dia · Subconjunto pronto: entra no estoque de subconjuntos · Produto final: é a CONTAGEM do dia"><option value="fase"'+(tipo==='fase'?' selected':'')+'>Peça pronta</option><option value="sub"'+(tipo==='sub'?' selected':'')+'>Subconjunto pronto</option><option value="final"'+(tipo==='final'?' selected':'')+'>Produto final</option></select>'+(tipo==='final'?'<div style="font-size:10px;color:#1D4ED8;font-weight:800">CONTAGEM</div>':'')+'</td>'+
       '<td class="exec"><button data-prod="del">✕</button></td></tr>';
   }).join('') + (hhProdCfg.length? '' : '<tr><td colspan="8" style="color:var(--mut)">Nenhum produto configurado — adicione abaixo (ex.: SOLDA · 314-0012-08 · 3 postos · PV · 6/h).</td></tr>');
