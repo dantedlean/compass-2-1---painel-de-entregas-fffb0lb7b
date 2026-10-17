@@ -1365,5 +1365,3 @@ setInterval(function(){const v=document.getElementById('viewHH');if(v&&v.classLi
 
 setTimeout(function(){try{hhMonV2InitScreen();if(typeof hhInit==='function')hhInit();if(typeof hhRender==='function')hhRender();}catch(e){}},0);
 
-</script>
-

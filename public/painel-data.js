@@ -3524,5 +3524,3 @@ document.addEventListener('keydown', function(e){
   setInterval(checkVer, 300000);
 })();
 
-</script>
-
