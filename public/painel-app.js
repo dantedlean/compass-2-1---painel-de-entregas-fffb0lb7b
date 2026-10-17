@@ -1401,7 +1401,7 @@ function hhMonV2Factory431(iso,now){
  const root=document.getElementById('hhFactoryScreen');if(!root)return;
  const d=now||new Date(),cells=hhLinhasCfg.slice(),rows=cells.map(function(c){return {c:c,m:hhMonV2State(c,iso,d)};});
  const sums=rows.reduce(function(a,x){a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;a[x.m.state]=(a[x.m.state]||0)+1;return a;},{actual:0,goal:0,expected:0,delta:0,ahead:0,steady:0,warn:0,late:0,stop:0,wait:0});
- const first=cells[0],turno=first?('Turno A · '+hhTimeTxt(hhScheduleStart(first))+' - '+hhTimeTxt(hhScheduleEnd(first))):'';
+ const first=cells[0],turno=first?('Turno A · '+hhClockTxt(hhScheduleStart(first))+' - '+hhClockTxt(hhScheduleEnd(first))):'';
  const cards=rows.map(function(x,i){return hh431FactoryCard(x.c,i,iso,d,x.m);}).join('');
  const counts=[['','ADIANTADAS / NO RITMO',(sums.ahead+sums.steady)],['warn','ATENÇÃO',sums.warn],['late','ATRASADAS',sums.late],['stop','PARADA',sums.stop],['wait','AGUARDANDO',sums.wait]].map(function(x){return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[0]+'"></i><b>'+NF.format(x[2])+'</b> '+x[1]+'</div>';}).join('');
  root.innerHTML='<div class="hhFactoryScreen"><header class="hhFactoryHead"><div class="hhFactoryBrand">D-LEAN SOLUTIONS<strong>Andon · Produção</strong><span class="hhFactoryTurno">'+escH(turno)+'</span></div>'+
@@ -1429,7 +1429,7 @@ function hhMonV2Individual431(iso,now){
   prodPanel='<div class="hhIndProduct"><span class="tag '+hh431TagClass(m)+'">EM PRODUÇÃO</span><div class="name">'+hhMonV2ProductDescription(p)+'</div><div class="meta">'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD (Supermercado)':'sem destino definido'))+' · '+escH(focus?focus.label:'faixa atual')+'</div><div class="qty">'+NF.format(day)+' / '+NF.format(meta)+' pc</div><div class="bar"><i style="width:'+pctP+'%"></i></div><div class="hint">faltam '+NF.format(Math.max(0,meta-day))+' pc p/ a quantidade do dia</div></div>'+stopText;}
  else{const p=pr.all[0];prodPanel='<div class="hhIndProduct"><span class="tag gray">EM PRODUÇÃO</span><div class="name">'+(p?hhMonV2ProductDescription(p):'Sem produto programado')+'</div><div class="meta">'+(m.tline.mode==='before'||m.tline.mode==='future'?'aguardando abertura da célula':'sem apontamento na faixa vigente')+'</div></div>';}
  const queue=pr.queue.slice(0,3).map(function(p,i){return '<li><span class="n">'+(i+1)+'</span><span class="who"><b>'+hhMonV2ProductDescription(p)+'</b><small>'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD':'—'))+'</small></span><span class="qty">'+NF.format(Number(p.qtdDia)||0)+' pc</span></li>';}).join('');
- const shift='Turno A · '+hhTimeTxt(hhScheduleStart(c))+' - '+hhTimeTxt(hhScheduleEnd(c));
+ const shift='Turno A · '+hhClockTxt(hhScheduleStart(c))+' - '+hhClockTxt(hhScheduleEnd(c));
  const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(left)+' min · ritmo nec.: '+NF.format(rate)+' pc/h'):'meta diária atingida';
  root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div class="turno">'+escH(shift)+'</div></div>'+
  '<div class="hhIndState">'+hh431Icon(m)+' '+escH(m.label)+'<small>'+hh431Delta(m.delta)+' pc</small></div>'+
