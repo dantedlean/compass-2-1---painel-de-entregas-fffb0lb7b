@@ -88,7 +88,7 @@ routerAdd(
             'dest:destinatarioOuRemetente{razaoSocial,apelido},' +
             'cid:freteDestinoMunicipio{descricao,uf{sigla}},' +
             'op:operacaoFiscal{descricao},' +
-            'itensDaNotaFiscalEmitidaOuRecebida{tipo,quantidade,valorTotal,descricao,item{codigo,descricao}}}}}'
+            'itensDaNotaFiscalEmitidaOuRecebida{itemDoPedidoDeVendaId,tipo,quantidade,valorTotal,descricao,item{codigo,descricao}}}}}'
           var res = $http.send({
             url: 'https://api.maxiprod.com.br/graphql/',
             method: 'POST',
@@ -135,6 +135,7 @@ routerAdd(
               qtd: Number(it.quantidade || 0),
               valor: Math.round(Number(it.valorTotal || 0) * 100) / 100,
               classe: classificarItem(it),
+              pvId: it.itemDoPedidoDeVendaId || null,
             })
           }
           var dest = n.dest || {}
@@ -155,6 +156,46 @@ routerAdd(
             fiscal_op: opDesc,
             items: itens,
           })
+        }
+
+        // PV por item (v0.0.420): itemDoPedidoDeVendaId -> numero do PV (mesmo metodo do nf_baixadas.py)
+        var pvIds = []
+        for (var pi = 0; pi < limpos.length; pi++) {
+          var its = limpos[pi].items || []
+          for (var pj = 0; pj < its.length; pj++) {
+            if (its[pj].pvId && pvIds.indexOf(its[pj].pvId) < 0) pvIds.push(its[pj].pvId)
+          }
+        }
+        var pvMap = {}
+        for (var pk = 0; pk < pvIds.length; pk += 200) {
+          var chunk = pvIds.slice(pk, pk + 200)
+          var qpv =
+            '{itensDosPedidosDeVendas(take:200,skip:0,where:{id:{in:[' +
+            chunk.join(',') +
+            ']}}){items{id,pedidoDeVenda{numero}}}}'
+          var respv = $http.send({
+            url: 'https://api.maxiprod.com.br/graphql/',
+            method: 'POST',
+            headers: { Authorization: 'basic ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: qpv }),
+            timeout: 120,
+          })
+          if (respv.statusCode >= 200 && respv.statusCode < 300) {
+            var jp = respv.json || JSON.parse(new TextDecoder().decode(respv.body))
+            var its2 =
+              (jp.data &&
+                jp.data.itensDosPedidosDeVendas &&
+                jp.data.itensDosPedidosDeVendas.items) ||
+              []
+            for (var pl = 0; pl < its2.length; pl++)
+              pvMap[String(its2[pl].id)] = String(its2[pl].pedidoDeVenda.numero)
+          }
+        }
+        for (var pm = 0; pm < limpos.length; pm++) {
+          var its3 = limpos[pm].items || []
+          for (var pn = 0; pn < its3.length; pn++) {
+            its3[pn].pv = pvMap[String(its3[pn].pvId)] || ''
+          }
         }
 
         var col = $app.findCollectionByNameOrId('faturamento_nfs')
@@ -334,7 +375,7 @@ cronAdd('faturamento_sync', '*/15 * * * *', () => {
         'dest:destinatarioOuRemetente{razaoSocial,apelido},' +
         'cid:freteDestinoMunicipio{descricao,uf{sigla}},' +
         'op:operacaoFiscal{descricao},' +
-        'itensDaNotaFiscalEmitidaOuRecebida{tipo,quantidade,valorTotal,descricao,item{codigo,descricao}}}}}'
+        'itensDaNotaFiscalEmitidaOuRecebida{itemDoPedidoDeVendaId,tipo,quantidade,valorTotal,descricao,item{codigo,descricao}}}}}'
       var res = $http.send({
         url: 'https://api.maxiprod.com.br/graphql/',
         method: 'POST',
@@ -381,6 +422,7 @@ cronAdd('faturamento_sync', '*/15 * * * *', () => {
           qtd: Number(it.quantidade || 0),
           valor: Math.round(Number(it.valorTotal || 0) * 100) / 100,
           classe: classificarItem(it),
+          pvId: it.itemDoPedidoDeVendaId || null,
         })
       }
       var dest = n.dest || {}
@@ -401,6 +443,44 @@ cronAdd('faturamento_sync', '*/15 * * * *', () => {
         fiscal_op: opDesc,
         items: itens,
       })
+    }
+
+    // PV por item (v0.0.420): itemDoPedidoDeVendaId -> numero do PV (mesmo metodo do nf_baixadas.py)
+    var pvIds = []
+    for (var pi = 0; pi < limpos.length; pi++) {
+      var its = limpos[pi].items || []
+      for (var pj = 0; pj < its.length; pj++) {
+        if (its[pj].pvId && pvIds.indexOf(its[pj].pvId) < 0) pvIds.push(its[pj].pvId)
+      }
+    }
+    var pvMap = {}
+    for (var pk = 0; pk < pvIds.length; pk += 200) {
+      var chunk = pvIds.slice(pk, pk + 200)
+      var qpv =
+        '{itensDosPedidosDeVendas(take:200,skip:0,where:{id:{in:[' +
+        chunk.join(',') +
+        ']}}){items{id,pedidoDeVenda{numero}}}}'
+      var respv = $http.send({
+        url: 'https://api.maxiprod.com.br/graphql/',
+        method: 'POST',
+        headers: { Authorization: 'basic ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: qpv }),
+        timeout: 120,
+      })
+      if (respv.statusCode >= 200 && respv.statusCode < 300) {
+        var jp = respv.json || JSON.parse(new TextDecoder().decode(respv.body))
+        var its2 =
+          (jp.data && jp.data.itensDosPedidosDeVendas && jp.data.itensDosPedidosDeVendas.items) ||
+          []
+        for (var pl = 0; pl < its2.length; pl++)
+          pvMap[String(its2[pl].id)] = String(its2[pl].pedidoDeVenda.numero)
+      }
+    }
+    for (var pm = 0; pm < limpos.length; pm++) {
+      var its3 = limpos[pm].items || []
+      for (var pn = 0; pn < its3.length; pn++) {
+        its3[pn].pv = pvMap[String(its3[pn].pvId)] || ''
+      }
     }
 
     var col = $app.findCollectionByNameOrId('faturamento_nfs')
