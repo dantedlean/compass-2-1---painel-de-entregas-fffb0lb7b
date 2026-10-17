@@ -766,7 +766,57 @@ body.hhTv #hhTvExit:hover{opacity:1;color:#fff}
 #viewHH .hhAddProduct{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.hhAddProduct label{font-size:11px;font-weight:800;color:#475569}.hhAddProduct select{min-width:150px;height:40px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;padding:7px 9px;color:#0F172A}
 #viewHH .hhPostosAudit{margin-top:10px;display:grid;gap:5px}.hhPostAuditRow{font-size:12px;padding:7px 9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;color:#475569}.hhPostAuditRow.warn{background:#FEF2F2;color:#991B1B;border-color:#FECACA}.hhPostAuditRow.good{background:#ECFDF5;color:#166534;border-color:#BBF7D0}
 #viewHH .hhFloorCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:0 0 12px}
-#viewHH .hhAndonGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:0 0 16px}
+#viewHH .hhAndonGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin:0 0 16px}
+/* ── v0.0.424 Cards Andon — modelo do monitor (Dante 17/10): célula + faixa + hora a hora ── */
+#viewHH .hhMonCell{background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 2px 6px rgba(15,23,42,.08);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+#viewHH .hhMonHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:14px 16px 8px}
+#viewHH .hhMonHead h3{margin:0;font-size:21px;font-weight:900;color:#0F172A;line-height:1.15;letter-spacing:-.01em}
+#viewHH .hhMonSub{font-size:12px;font-weight:700;color:#64748B;margin-top:3px}
+#viewHH .hhMonTop{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px}
+#viewHH .hhMonTopBox{border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;min-width:0}
+#viewHH .hhMonTopBox .lbl{font-size:10.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.06em}
+#viewHH .hhMonTopBox .num{font-size:26px;font-weight:900;color:#0F172A;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:2px}
+#viewHH .hhMonTopBox .num small{font-size:15px;font-weight:800;color:#64748B}
+#viewHH .hhMonTopBox .esp{font-size:12px;font-weight:700;color:#64748B;margin-top:2px}
+#viewHH .hhMonDelta{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:13px;font-weight:850}
+#viewHH .hhMonDelta.pos{background:#DCFCE7;color:#166534}
+#viewHH .hhMonDelta.neg{background:#FEE2E2;color:#991B1B}
+#viewHH .hhMonBars{display:flex;gap:3px;align-items:flex-end;height:46px;padding:12px 16px 4px}
+#viewHH .hhMonBars i{flex:1 1 0;min-width:4px;max-width:26px;border-radius:3px 3px 0 0;background:#16A34A}
+#viewHH .hhMonBars i.aten{background:#D97706}
+#viewHH .hhMonBars i.atra{background:#DC2626}
+#viewHH .hhMonBars i.fut{background:#E2E8F0}
+#viewHH .hhMonEmProd{margin:10px 16px 0;border:1px solid #E2E8F0;border-radius:10px;padding:9px 12px;font-size:13.5px;color:#334155}
+#viewHH .hhMonEmProd b{color:#0F172A}
+#viewHH .hhMonProx{padding:10px 16px 14px;font-size:13px;color:#475569}
+#viewHH .hhMonProx .t{font-size:10.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+#viewHH .hhMonFoot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:14px;font-weight:850;color:#fff;letter-spacing:.02em}
+#viewHH .hhMonFoot.ok{background:#16A34A}
+#viewHH .hhMonFoot.warn{background:#D97706}
+#viewHH .hhMonFoot.stop{background:#DC2626}
+#viewHH .hhMonFoot.idle{background:#64748B}
+#viewHH .hhMonFoot small{font-size:11.5px;font-weight:700;opacity:.9}
+#viewHH .hhCellMon{margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 2px 6px rgba(15,23,42,.08);overflow:hidden}
+#viewHH .hhCellMonHead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px 6px}
+#viewHH .hhCellMonHead h3{margin:0;font-size:24px;font-weight:900;color:#0F172A}
+#viewHH .hhCellMonTop{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:6px 18px}
+#viewHH .hhCellMonTop .lbl{font-size:10.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.05em}
+#viewHH .hhCellMonTop .num{font-size:30px;font-weight:900;color:#0F172A;font-variant-numeric:tabular-nums;line-height:1.1}
+#viewHH .hhCellMonTop .num small{font-size:16px;font-weight:800;color:#64748B}
+#viewHH .hhCellMonTop .esp{font-size:12px;font-weight:700;color:#64748B}
+#viewHH .hhCellMonTbl{margin:10px 18px 4px}
+#viewHH .hhCellMonTbl table{width:100%;border-collapse:collapse;font-size:13.5px}
+#viewHH .hhCellMonTbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#64748B;border-bottom:2px solid #E2E8F0;padding:5px 6px;text-align:right}
+#viewHH .hhCellMonTbl td{padding:5px 6px;text-align:right;border-bottom:1px solid #F1F5F9;font-variant-numeric:tabular-nums;font-weight:700;color:#334155}
+#viewHH .hhCellMonTbl td:first-child,#viewHH .hhCellMonTbl th:first-child{text-align:left}
+#viewHH .hhCellMonTbl td.pos{color:#166534}
+#viewHH .hhCellMonTbl td.neg{color:#991B1B}
+#viewHH .hhCellMonEmProd{margin:10px 18px;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;font-size:14px;color:#334155}
+#viewHH .hhCellMonProx{margin:0 18px 12px;font-size:13.5px;color:#475569}
+#viewHH .hhCellMonProx .t{font-size:10.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+#viewHH .hhCellMonProx ol{margin:0;padding-left:18px}
+#viewHH .hhCellMonHelp{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;background:#F8FAFC;border-top:1px solid #E2E8F0;font-size:12.5px;color:#64748B}
+body.hhTv #hhCellMon{display:none!important}
 #viewHH .hhAndonBox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;box-shadow:0 2px 6px rgba(15,23,42,.08);display:flex;flex-direction:column}
 #viewHH .hhAndonTitle{padding:14px 16px 6px;display:flex;flex-direction:column;gap:2px}
 #viewHH .hhAndonTitle h3{margin:0;font-size:22px;font-weight:900;color:#0F172A;line-height:1.15;letter-spacing:-.01em}
@@ -884,7 +934,7 @@ body.viewerMode #viewHH #hhCfgAdd,body.viewerMode #viewHH .hhAddProduct,body.vie
 </div>
 <div id="hhPanelMonitor" class="hhPanel" role="tabpanel" aria-labelledby="hhTabMonitor" hidden="">
   <div class="hhSectionHead"><div><h2>Monitoramento da produção</h2><p>Visão clara para o time na fábrica e leitura consolidada para líderes e gestores.</p></div><div class="hhMonitorActions"><div class="hhViewSwitch" role="group" aria-label="Tipo de monitoramento"><button class="active" data-hh-view="chao" aria-pressed="true">▣ Tela da produção</button><button data-hh-view="gestao" aria-pressed="false">◉ Visão dos gestores</button></div><button id="hhTvBtn" class="hhActionBtn hhTvBtn" aria-label="Abrir modo TV (tela cheia)">⛶ Modo TV</button></div></div>
-  <div id="hhMonitorFloor" class="hhMonitorPane active"><div class="hhFloorIntro"><span class="hhFloorIcon">▣</span><div><b>Agora na produção</b><span>Prioridade visual: o que está rodando, no ritmo ou precisa de suporte.</span></div><span class="hhLivePill"><i></i> Atualizado agora</span></div><div class="hhAndonGrid" id="hhAndonCards"></div><div class="hhNow" id="hhNow"></div><div class="hhFloorMetrics" id="hhFloorMetrics"></div><div class="hhFloorCards" id="hhFloorCards"></div><div class="card hhFloorCard"><div class="hhInlineHead"><div><h3>Quadro de hora a hora</h3><p>Plano × realizado · acumulados · situação de cada intervalo</p></div><select id="hhLinhaSel" aria-label="Filtrar monitoramento por célula"></select></div><div class="hhGrid" id="hhGrid"></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhConsTbl"><thead></thead><tbody id="hhConsTb"></tbody></table></div></div></div>
+  <div id="hhMonitorFloor" class="hhMonitorPane active"><div class="hhFloorIntro"><span class="hhFloorIcon">▣</span><div><b>Agora na produção</b><span>Prioridade visual: o que está rodando, no ritmo ou precisa de suporte.</span></div><span class="hhLivePill"><i></i> Atualizado agora</span></div><div class="hhAndonGrid" id="hhAndonCards"></div><div id="hhCellMon"></div><div class="hhNow" id="hhNow"></div><div class="hhFloorMetrics" id="hhFloorMetrics"></div><div class="hhFloorCards" id="hhFloorCards"></div><div class="card hhFloorCard"><div class="hhInlineHead"><div><h3>Quadro de hora a hora</h3><p>Plano × realizado · acumulados · situação de cada intervalo</p></div><select id="hhLinhaSel" aria-label="Filtrar monitoramento por célula"></select></div><div class="hhGrid" id="hhGrid"></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhConsTbl"><thead></thead><tbody id="hhConsTb"></tbody></table></div></div></div>
   <div id="hhMonitorManager" class="hhMonitorPane" hidden=""><div class="hhManagerKpis" id="hhManagerKpis"></div><div class="hhManagerGrid"><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Produção por célula</h3><p>Visão consolidada do turno — sem ranking individual.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhManagerCellTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Janela</th><th scope="col">Equipe / postos</th><th scope="col">Produzido / meta</th><th scope="col">Ritmo</th><th scope="col">Diferença</th></tr></thead><tbody id="hhManagerCellTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>Produção por hora</h3><p>Realizado versus meta do intervalo.</p></div></div><div class="hhChart" id="hhChart"></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhTblT"><thead><tr><th scope="col">Hora</th><th scope="col">Produzido</th><th scope="col">Meta/h</th><th scope="col">Acumulado</th><th scope="col">Meta acum.</th><th scope="col">Difer.</th><th scope="col">Situação</th><th scope="col">Paradas</th><th scope="col">Produtos</th></tr></thead><tbody id="hhTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>Perdas do turno</h3><p>Minutos registrados por motivo — apoio ao Pareto.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhParetoTbl"><thead><tr><th scope="col">Motivo</th><th scope="col">Minutos</th><th scope="col">Ocorrências</th></tr></thead><tbody id="hhParetoTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>WARD × PV</h3><p>Destinos exibidos separadamente.</p></div></div><div class="hhSplitStats" id="hhSplitStats"></div></div><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Capacidade histórica</h3><p>Referência para próxima programação; a PCP revisa e aprova qualquer meta sugerida.</p></div><span class="hhGatePill">PCP valida</span></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhBaseTbl"><thead><tr><th style="text-align:left" scope="col">Célula × produto</th><th scope="col">Operadores / postos</th><th scope="col">Média/h</th><th scope="col">Melhor intervalo</th><th scope="col">Sugestão/h</th></tr></thead><tbody id="hhBaseTb"></tbody></table></div></div><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Ações em aberto</h3><p>Paradas e contramedidas com responsável definido.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhActionsTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Motivo</th><th scope="col">Minutos</th><th style="text-align:left" scope="col">Observação / ação</th><th scope="col">Status</th></tr></thead><tbody id="hhActionsTb"></tbody></table></div></div></div></div>
 </div>
 </main>
@@ -5623,6 +5673,88 @@ window.hhRender = hhRender;
   };
 })();
 
+// ══════════════════════════════════════════════════════════════════════════
+// v0.0.424 (Dante 17/10) — Cards Andon no modelo do monitor aprovado:
+// monitor geral (1 card por célula + produto final) e monitor individual da célula.
+// Override por cima das funções originais (preservadas); fallback seguro se algo faltar.
+// ══════════════════════════════════════════════════════════════════════════
+function hhMonProdTot(l,iso,cod){let q=0;hhApontValidos().forEach(function(a){if(a.linha===l&&a.data===iso&&String(a.cod)===String(cod)&&!hhApFase(a))q+=Number(a.qtd)||0;});return q;}
+function hhMonHourly(l,iso){const c=hhCfg(l);if(!c)return[];const t=hhDataClock(iso,new Date());const out=[];hhWorkIntervals(c).forEach(function(s){const cut=t.mode==='active'?t.planMinute:undefined;const meta=hhMetaStageSlot(c,s,cut);const real=hhStageSlot(l,iso,s);const closed=s.end<=t.planMinute;let st='fut';if(closed){const d=real-meta;st=d>0.5?'ok':(d<-0.5?'atra':(meta||real?'aten':'fut'));}else if(real>0)st='ok';out.push({label:s.label,meta:meta,real:real,st:st,closed:closed});});return out;}
+function hhMonParada(c,iso,t){return hhParadas.find(function(p){const a=hhStopMin(p.horaIni),b=hhStopMin(p.horaFim);return p.linha===c.id&&p.data===iso&&a!==null&&b!==null&&a<t.planMinute&&b>t.start;});}
+function hhMonEmProd(l,iso,slot){if(!slot)return null;const c=hhCfg(l);if(!c)return null;let best=null;hhProdCfg.filter(function(p){return p.linha===l&&p.cod;}).forEach(function(p){const q=hhActualProductSlot(l,iso,slot,p.cod);if(q>0&&(!best||q>best.q))best={cod:p.cod,q:q,meta:hhQtdDiaDe(p),tot:hhMonProdTot(l,iso,p.cod)};});return best;}
+function hhMonProximos(l,iso,max){const c=hhCfg(l);if(!c)return[];const out=[];hhProdCfg.filter(function(p){return p.linha===l&&p.cod;}).forEach(function(p){const tot=hhMonProdTot(l,iso,p.cod),meta=hhQtdDiaDe(p),falta=meta-tot;if(falta>0)out.push({cod:p.cod,falta:falta,meta:meta});});out.sort(function(a,b){return b.falta-a.falta;});return out.slice(0,max||3);}
+function hhMonDeltaPill(d){const cls=d>0.5?'pos':'neg';const s=d>0?' +':' ';return '<span class="hhMonDelta '+cls+'">'+s+NF.format(Math.round(d))+' pc</span>';}
+function hhMonBarsHtml(hh){const mx=Math.max(1,Math.max.apply(null,hh.map(function(x){return Math.max(x.meta,x.real);})));return '<div class="hhMonBars">'+hh.map(function(x){const hMeta=x.meta?Math.max(8,Math.round(x.meta/mx*100)):0;const hReal=x.real?Math.max(6,Math.round(x.real/mx*100)):0;return '<i class="'+(x.st==='fut'?'fut':x.st)+'" style="height:'+hMeta+'%" title="'+x.label+' · meta '+NF.format(Math.round(x.meta))+' · real '+NF.format(x.real)+'"><b style="height:'+hReal+'%"></b></i>';}).join('')+'</div>';}
+function hhMonCellCard(c,iso,now){
+  const m=hhMonitorCellMetrics(c,iso,now),t=m.timeline,f=m.focus;
+  const hh=hhMonHourly(c.id,iso);
+  const par=hhMonParada(c,iso,t);
+  const dh=f?m.slotActual-m.slotPlan:0;
+  const state=par?'stop':(m.state==='ok'?(m.delta<-0.5?'stop':'ok'):(m.state==='warn'?'warn':(m.state==='idle'?'idle':'stop')));
+  const stTxt=par?'⛔ PARADA — '+escH(par.motivo||'parada'):(m.delta<-0.5?'ATRASADO · PRECISA DE APOIO':m.text);
+  const ep=hhMonEmProd(c.id,iso,f);
+  const prox=hhMonProximos(c.id,iso,3);
+  const turno=hhTimeTxt(c.hIni,hhScheduleStart(c))+'–'+hhTimeTxt(c.hFim,hhScheduleEnd(c));
+  const mh=hhMetaHora(c.id);
+  let html='<div class="hhMonCell '+state+'"><div class="hhMonHead"><div><h3>'+escH(c.nome)+'</h3><div class="hhMonSub">Turno '+turno+(c.pessoas?' · '+NF.format(c.pessoas)+' operadores':'')+'</div></div><div style="text-align:right">'+hhMonDeltaPill(m.delta)+'<div class="hhMonSub">vs. esperado ('+NF.format(Math.round(m.stagePlan))+')</div></div></div>';
+  html+='<div class="hhMonTop"><div class="hhMonTopBox"><div class="lbl">Realizado / Meta dia</div><div class="num">'+NF.format(m.stageActual)+' <small>/ '+NF.format(Math.round(m.stageGoal))+'</small></div><div class="esp">'+(m.stageGoal?Math.round(m.stageActual/m.stageGoal*100):0)+'% da meta do dia</div></div>';
+  html+='<div class="hhMonTopBox"><div class="lbl">Meta hora — '+hhClockTxt(f?f.start:0)+'</div><div class="num">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotPlan))+'</small></div><div class="esp">esperado agora: '+NF.format(Math.round(m.slotPlan))+(mh?' · '+hhFmtHora(mh)+'/h':'')+'</div></div></div>';
+  html+=hhMonBarsHtml(hh);
+  html+='<div class="hhMonEmProd">'+(ep?'<b>EM PRODUÇÃO:</b> '+escH(ep.cod)+' — '+NF.format(ep.q)+' na faixa · '+NF.format(ep.tot)+' / '+NF.format(ep.meta)+' un dia':'<b>EM PRODUÇÃO:</b> sem apontamento na faixa atual')+'</div>';
+  html+='<div class="hhMonProx"><div class="t">Próximos na fila</div>'+(prox.length?prox.map(function(p,i){return (i+1)+'. '+escH(p.cod)+' — '+NF.format(p.falta)+' pc (de '+NF.format(p.meta)+')';}).join('<br>'):'nenhum produto pendente hoje')+'</div>';
+  html+='<div class="hhMonFoot '+state+'"><span>'+stTxt+'</span><span>'+m.shiftPct+'% jornada</span></div></div>';
+  return html;
+}
+function hhAndonCardsRender(iso,hNow,nowMinute,now){
+  const el=document.getElementById('hhAndonCards');if(!el)return;
+  const ref=now||new Date(),cards=[];
+  try{
+    hhLinhasCfg.forEach(function(c){
+      const products=hhProdCfg.filter(function(p){return p.linha===c.id&&p.cod;}),final=hhFinalDe(c.id);
+      if(products.length===1&&final&&String(products[0].cod)===String(final))return;
+      cards.push(hhMonCellCard(c,iso,ref));
+    });
+    const finals={};hhProdCfg.forEach(function(p){if(p.cod&&p.linha&&(p.tipo==='final'||p.tipo==='sub'||p.final===true)){finals[p.cod]=finals[p.cod]||[];finals[p.cod].push(p.linha);}});
+    Object.keys(finals).forEach(function(code){
+      const lines=finals[code].filter(function(l){const final=hhFinalDe(l);return !final||String(final)===String(code);});if(!lines.length)return;
+      const row=hhProdCfg.find(function(p){return String(p.cod)===String(code)&&(p.tipo==='final'||p.tipo==='sub'||p.final===true);})||{},type=row.tipo||'final',m=hhMonitorProductMetrics(code,lines,iso,ref),single=lines.length===1?lines[0]:null,title=single?hhNome(single):hhDescDe(code),sub=single?'':lines.map(function(l){return escH(hhNome(l));}).join(' · '),dh=m.focusActual-m.focusPlan;
+      const st=m.state==='ok'?'ok':m.state==='stop'?'stop':m.state==='idle'?'idle':'warn';
+      cards.push('<div class="hhAndonBox"><div class="hhAndonTitle"><h3>'+escH(title)+'</h3><div class="hhAndonItem"><span class="hhAndonBadge '+(type==='sub'?'sub':'final')+'">'+(type==='sub'?'Subconjunto pronto':'Produto final')+'</span><span>'+escH(code)+'</span><span style="margin-left:auto;font-size:12px;color:#64748B;font-weight:700">meta turno '+NF.format(Math.round(m.goal))+' un</span></div>'+(sub?'<small>'+sub+'</small>':'')+'</div><div class="hhAndonBody"><div class="hhAndonSub">FAIXA '+escH(m.focusLabel||'sem faixa')+'</div><div class="hhAndonCounts"><div class="hhAndonCount"><b>'+NF.format(m.focusActual)+'</b><span>realizado na faixa</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(m.focusPlan))+'</b><span>meta na faixa</span></div></div><div class="hhAndonDelta'+(dh<0?' neg':'')+'">'+(dh>0?'+':'')+NF.format(Math.round(dh))+' un na faixa</div><div class="hhAndonCounts" style="margin-top:10px"><div class="hhAndonCount"><b>'+NF.format(m.actual)+'</b><span>produto final acumulado</span></div><div class="hhAndonCount"><b>'+NF.format(Math.round(m.planned))+'</b><span>meta final acumulada</span></div></div><div class="hhAndonDelta'+(m.delta<0?' neg':'')+'">'+(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' un '+(m.delta>=0?'adiantado':'atrasado')+' · '+NF.format(m.pct)+'%</div></div><div class="hhAndonFoot '+st+'"><span>'+m.text+'</span><span>'+m.shiftPct+'% jornada</span></div></div>');
+    });
+    el.innerHTML=cards.length?cards.join(''):'<div class="hhEmpty">Nenhuma célula configurada.</div>';
+    hhCellMonRender(iso,ref);
+  }catch(e){try{el.innerHTML='<div class="hhEmpty">Monitor: '+escH(String(e&&e.message||e))+'</div>';}catch(e2){}}
+}
+function hhCellMonRender(iso,now){
+  const el=document.getElementById('hhCellMon');if(!el)return;
+  try{
+    const id=hhLinhaSel||(hhLinhasCfg[0]||{}).id;if(!id){el.innerHTML='';return;}
+    const c=hhCfg(id);if(!c){el.innerHTML='';return;}
+    const m=hhMonitorCellMetrics(c,iso,now),t=m.timeline,f=m.focus;
+    const hh=hhMonHourly(id,iso);
+    const faltaDia=Math.max(0,m.stageGoal-m.stageActual);
+    const minsRest=Math.max(1,hhScheduleEnd(c)-t.planMinute);
+    const ritmo=faltaDia>0?Math.ceil(faltaDia/(minsRest/60)):0;
+    const ep=hhMonEmProd(id,iso,f);
+    const prox=hhMonProximos(id,iso,4);
+    let acumR=0,acumM=0;
+    const rows=hh.map(function(x){acumR+=x.closed?x.real:0;acumM+=x.closed?x.meta:0;const dh=x.closed?x.real-x.meta:null,da=acumM?acumR-acumM:null;return '<tr><td>'+x.label+'</td><td>'+NF.format(Math.round(x.meta))+'</td><td>'+NF.format(x.real)+'</td><td class="'+(dh===null?'':(dh>0.5?'pos':(dh<-0.5?'neg':'')))+'">'+(dh===null?'—':((dh>0?'+':'')+NF.format(Math.round(dh))))+'</td><td class="'+(da===null?'':(da>0.5?'pos':(da<-0.5?'neg':'')))+'">'+(da===null?'—':((da>0?'+':'')+NF.format(Math.round(da))))+'</td></tr>';}).join('');
+    const turno=hhTimeTxt(c.hIni,hhScheduleStart(c))+'–'+hhTimeTxt(c.hFim,hhScheduleEnd(c));
+    const upd=hhClockTxt(new Date().getHours()*60+new Date().getMinutes())+':'+String(new Date().getSeconds()).padStart(2,'0');
+    let html='<div class="hhCellMon"><div class="hhCellMonHead"><h3>'+escH(c.nome)+'</h3><div class="hhMonSub">Turno '+turno+' · '+dtBR(iso)+'</div></div>';
+    html+='<div class="hhCellMonTop">';
+    html+='<div><div class="lbl">Realizado / Meta dia</div><div class="num">'+NF.format(m.stageActual)+' <small>/ '+NF.format(Math.round(m.stageGoal))+'</small></div><div class="esp">'+(m.stageGoal?Math.round(m.stageActual/m.stageGoal*100):0)+'% da meta do dia</div></div>';
+    html+='<div><div class="lbl">Vs. esperado</div><div class="num">'+(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' <small>pc</small></div><div class="esp">esperado agora: '+NF.format(Math.round(m.stagePlan))+'</div></div>';
+    html+='<div><div class="lbl">Meta hora — '+hhClockTxt(f?f.start:0)+'</div><div class="num">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotPlan))+'</small></div><div class="esp">esperado agora: '+NF.format(Math.round(m.slotPlan))+'</div></div>';
+    html+='<div><div class="lbl">Faltam p/ meta dia</div><div class="num">'+NF.format(faltaDia)+' <small>pc</small></div><div class="esp">'+(faltaDia>0?'ritmo nec.: '+NF.format(ritmo)+' pc/h':'meta atingida')+'</div></div>';
+    html+='</div>';
+    html+='<div class="hhCellMonTbl"><table><thead><tr><th>Hora</th><th>Meta</th><th>Real</th><th>Δ hora</th><th>Δ acum.</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    html+='<div class="hhCellMonEmProd">'+(ep?'<b>EM PRODUÇÃO:</b> '+escH(ep.cod)+' — '+NF.format(ep.q)+' / '+NF.format(Math.round(m.slotPlan))+' na faixa · faltam '+NF.format(Math.max(0,ep.meta-ep.tot))+' p/ fechar o dia':'<b>EM PRODUÇÃO:</b> sem apontamento na faixa atual')+'</div>';
+    html+='<div class="hhCellMonProx"><div class="t">Próximos na fila</div><ol>'+((prox.length?prox:[{cod:'—',falta:0,meta:0}]).map(function(p){return '<li>'+escH(p.cod)+' — '+NF.format(p.falta)+' pc (de '+NF.format(p.meta)+')</li>';}).join(''))+'</ol></div>';
+    html+='<div class="hhCellMonHelp"><span>Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span><span>atualizado '+upd+'</span></div></div>';
+    el.innerHTML=html;
+  }catch(e){try{el.innerHTML='';}catch(e2){}}
+}
 
 </script>
 
