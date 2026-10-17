@@ -1448,3 +1448,25 @@ hhMonV2Render=function(iso,now){
 };
 setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0);
 
+// ===== v0.0.436 — binding GLOBAL dos botões de tela do monitor =====
+// A view HH pode não casar com "#viewHH [data-hh-view]" (mesma causa raiz do CSS v0.0.431-433);
+// sem este binding, os cliques em Monitor geral/Individual/Gestão não fazem nada.
+(function(){
+ function hh436BindViews(){
+  document.querySelectorAll('[data-hh-view]').forEach(function(b){
+   if(b._hh436Bound)return;b._hh436Bound=true;
+   b.addEventListener('click',function(e){
+    e.stopPropagation();
+    var key=b.getAttribute('data-hh-view');
+    try{hhSetMonitorScreen(key);}catch(e1){}
+    try{var pick=document.querySelector('.hhIndividualSelect');if(pick)pick.style.display=(key==='individual'?'flex':'none');}catch(e2){}
+    try{hhRender();}catch(e3){}
+    if(key==='gestao'&&window.echarts&&typeof hhChart!=='undefined'&&hhChart)setTimeout(function(){hhChart.resize();},80);
+   });
+  });
+ }
+ hh436BindViews();
+ setTimeout(hh436BindViews,600);
+ setTimeout(hh436BindViews,2000);
+})();
+
