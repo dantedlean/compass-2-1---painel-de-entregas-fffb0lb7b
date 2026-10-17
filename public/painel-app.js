@@ -1353,9 +1353,15 @@ hhTvToggle=function(){
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
 function hhMonV2InitScreen(){
+ document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
+  if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
+  b.addEventListener('click',function(e){e.stopPropagation();hhSetMonitorScreen(b.getAttribute('data-hh-view'));hhRender();if(b.getAttribute('data-hh-view')==='gestao'&&window.echarts&&hhChart)setTimeout(function(){hhChart.resize();},80);});
+ });
  const sel=document.getElementById('hhMonCellSelect');
  if(sel&&!sel._hhMonV2Bound){sel._hhMonV2Bound=true;sel.addEventListener('change',function(){window._hhMonV2CellId=sel.value;hhRender();});}
  if(sel){const sig=hhLinhasCfg.map(function(c){return c.id+':'+c.nome;}).join('|');if(sel.getAttribute('data-sig')!==sig){const current=window._hhMonV2CellId||sel.value;sel.innerHTML=hhLinhasCfg.map(function(c){return '<option value="'+escH(c.id)+'">'+escH(c.nome)+'</option>';}).join('');sel.setAttribute('data-sig',sig);if(current&&hhLinhasCfg.some(function(c){return c.id===current;}))sel.value=current;}if(!sel.value&&hhLinhasCfg.length)sel.value=hhLinhasCfg[0].id;window._hhMonV2CellId=sel.value;}
+ const tv=document.getElementById('hhTvBtn');
+ if(tv&&!tv._hhMonV2Bound){tv._hhMonV2Bound=true;tv.addEventListener('click',function(){hhTvToggle();});}
 }
 
 hhMonV2InitScreen();
