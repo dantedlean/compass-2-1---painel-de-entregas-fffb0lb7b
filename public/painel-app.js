@@ -1371,3 +1371,80 @@ setInterval(function(){const v=document.getElementById('viewHH');if(v&&v.classLi
 
 setTimeout(function(){try{hhMonV2InitScreen();if(typeof hhInit==='function')hhInit();if(typeof hhRender==='function')hhRender();}catch(e){}},0);
 
+// ===== v0.0.431 OVERRIDE — Monitores Geral/Individual DARK conforme modelo Dante (TV 1920x1080) =====
+function hh431DateLabel(iso){try{const d=new Date(String(iso)+'T12:00:00');const mo=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()];return ['dom','seg','ter','qua','qui','sex','sáb'][d.getDay()]+' · '+String(d.getDate()).padStart(2,'0')+' '+mo+' '+d.getFullYear();}catch(e){return String(iso);}}
+function hh431ClockFull(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
+function hh431Delta(v){return (v>0?'+':'')+NF.format(Math.round(v));}
+function hh431Icon(m){if(m.stop)return '■';if(m.state==='late')return '▼';if(m.state==='warn')return '⚠';if(m.state==='ahead')return '▲';return '○';}
+function hh431ProductDay(l,iso,cod){let q=0;hhApontValidos().forEach(function(a){if(a.linha===l&&a.data===iso&&hhApontAtivo(a)&&String(a.cod)===String(cod)&&!hhApFase(a))q+=Number(a.qtd)||0;});return q;}
+function hh431TagClass(m,future){if(future)return 'gray';if(m.stop)return 'red';if(m.state==='warn')return 'yellow';if(m.state==='late')return 'red';return '';}
+function hh431FactoryCard(c,index,iso,now,m){
+ const rows=hhMonV2SlotRows(c,iso,now),pr=hhMonV2Products(c,iso,now,m),foc=m.focus;
+ const progress=Math.min(100,m.progress),falta=Math.max(0,m.goal-m.actual);
+ const slotLabel=foc?foc.label:'—',future=m.tline.mode==='before'||m.tline.mode==='future';
+ const peak=Math.max(1,...rows.map(function(r){return Math.max(r.actual,r.goal);}));
+ const chart=rows.map(function(r){const realPct=Math.min(100,r.actual/peak*100),targetPct=Math.min(100,r.goal/peak*100);let cls=r.future?'future':(r.delta>=-0.5?'':(r.delta/Math.max(1,r.expected)>=-0.05?'warn':'late'));return '<div class="hhFcHour" title="'+escH(r.slot.label)+' · meta '+NF.format(Math.round(r.goal))+' · real '+NF.format(r.actual)+'"><div class="hhFcPlot"><i class="hhFcBar '+cls+'" style="height:'+realPct+'%"></i><i class="hhFcTarget" style="bottom:'+targetPct+'%"></i></div><small>'+String(Math.floor(r.slot.start/60)).padStart(2,'0')+(r.slot.start%60?':'+String(r.slot.start%60).padStart(2,'0'):'')+'</small></div>';}).join('');
+ let emProd;
+ if(pr.running){const p=pr.running.p,day=hh431ProductDay(c.id,iso,p.cod);emProd='<div class="hhFcProduct"><span class="tag '+(future?'gray':hh431TagClass(m))+'">'+(future?'PRÓXIMA':'EM PRODUÇÃO')+'</span><span class="prod">'+hhMonV2ProductDescription(p)+'</span><span class="qty">'+NF.format(day)+' / '+NF.format(Number(p.qtdDia)||0)+' pc</span></div>';}
+ else{const p=pr.all[0];emProd='<div class="hhFcProduct"><span class="tag gray">EM PRODUÇÃO</span><span class="prod">'+(p?hhMonV2ProductDescription(p):'Sem produto programado')+'</span><span class="qty">'+(p?NF.format(Number(p.qtdDia)||0)+' pc':'—')+'</span></div>';}
+ const queue=pr.queue.slice(0,2).map(function(p){return '<div class="row"><b>'+hhMonV2ProductDescription(p)+'</b><span>'+NF.format(Number(p.qtdDia)||0)+' pc</span></div>';}).join('');
+ const stop=m.stop?hhMonV2StopText(m.stop,c,m.cut):'';
+ return '<article class="hhFactoryCard '+m.state+'"><header class="hhFactoryCardHead"><div class="cellname"><span class="cellnum">CÉL '+String(index+1).padStart(2,'0')+'</span>'+escH(c.nome)+'</div><span class="status">'+hh431Icon(m)+' '+escH(m.label)+'</span></header><div class="hhFactoryCardBody">'+
+ '<div class="hhFcRow"><div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+progress+'%"></i></div><div class="hint">'+progress+'% da meta · '+NF.format(falta)+' pc faltantes</div></div>'+
+ '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(m.expected))+')</div><div class="delta '+(m.delta<0?'neg':'')+'">'+hh431Delta(m.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(m.expected))+'</div></div></div>'+
+ '<div class="hhFcRow"><div class="hhFcMetric"><div class="lbl">Meta hora · '+escH(slotLabel)+'</div><div class="val">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">esperado agora: '+NF.format(Math.round(m.slotExpected))+'</div></div>'+
+ '<div><div class="hhFcChartTitle"><span>HORA A HORA</span><span>meta hora — tracejada</span></div><div class="hhFcChart">'+chart+'</div></div></div>'+
+ emProd+(queue?'<div class="hhFcQueue"><div class="title">PRÓXIMOS</div>'+queue+'</div>':'')+stop+
+ '</div></article>';
+}
+function hhMonV2Factory431(iso,now){
+ const root=document.getElementById('hhFactoryScreen');if(!root)return;
+ const d=now||new Date(),cells=hhLinhasCfg.slice(),rows=cells.map(function(c){return {c:c,m:hhMonV2State(c,iso,d)};});
+ const sums=rows.reduce(function(a,x){a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;a[x.m.state]=(a[x.m.state]||0)+1;return a;},{actual:0,goal:0,expected:0,delta:0,ahead:0,steady:0,warn:0,late:0,stop:0,wait:0});
+ const first=cells[0],turno=first?('Turno A · '+hhTimeTxt(hhScheduleStart(first))+' - '+hhTimeTxt(hhScheduleEnd(first))):'';
+ const cards=rows.map(function(x,i){return hh431FactoryCard(x.c,i,iso,d,x.m);}).join('');
+ const counts=[['','ADIANTADAS / NO RITMO',(sums.ahead+sums.steady)],['warn','ATENÇÃO',sums.warn],['late','ATRASADAS',sums.late],['stop','PARADA',sums.stop],['wait','AGUARDANDO',sums.wait]].map(function(x){return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[0]+'"></i><b>'+NF.format(x[2])+'</b> '+x[1]+'</div>';}).join('');
+ root.innerHTML='<div class="hhFactoryScreen"><header class="hhFactoryHead"><div class="hhFactoryBrand">D-LEAN SOLUTIONS<strong>Andon · Produção</strong><span class="hhFactoryTurno">'+escH(turno)+'</span></div>'+
+ '<div class="hhFactoryHero"><div class="lbl">Fábrica · Realizado / Meta dia</div><div class="num">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="sub">VS. ESPERADO AGORA <b style="color:'+(sums.delta>=0?'#2BD576':'#E5484D')+'">'+hh431Delta(sums.delta)+' pc</b></div></div>'+
+ '<div class="hhFactoryCounts">'+counts+'</div>'+
+ '<div class="hhFactoryClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))+'</div></div></header>'+
+ '<div class="hhFactoryCards">'+(rows.length?cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
+ '<div class="hhFactoryLegend"><span><i class="hhFactoryDot"></i> Adiantado · realizado ≥ esperado</span><span><i class="hhFactoryDot warn"></i> Atenção · até −5%</span><span><i class="hhFactoryDot late"></i> Atrasado · abaixo de −5%</span><span><i class="hhFactoryDot stop"></i> Parada · célula sem produzir</span><span><i class="hhLegendLine"></i> meta hora</span></div>'+
+ '<div class="hhFactoryFoot"><span>Esperado = meta proporcional ao tempo do turno.</span><span>atualizado '+hh431ClockFull()+'</span></div></div>';
+}
+function hhMonV2Individual431(iso,now){
+ const root=document.getElementById('hhIndividualScreen');if(!root)return;
+ const d=now||new Date(),sel=document.getElementById('hhMonCellSelect');let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
+ let c=hhLinhasCfg.find(function(x){return x.id===id;});if(!c){c=hhLinhasCfg[0];id=c&&c.id;}
+ if(!c){root.innerHTML='<div class="hhEmpty">Nenhuma célula programada.</div>';return;}
+ if(sel&&sel.value!==id)sel.value=id;window._hhMonV2CellId=id;
+ const m=hhMonV2State(c,iso,d),rows=hhMonV2SlotRows(c,iso,d),pr=hhMonV2Products(c,iso,d,m),focus=m.focus;
+ const remaining=Math.max(0,m.goal-m.actual),left=hhWorkMinutes(c,Math.max(m.cut,hhScheduleStart(c)),hhScheduleEnd(c)),rate=remaining&&left?Math.ceil(remaining/(left/60)):0;
+ const pct=m.goal?Math.min(100,Math.round(m.actual/m.goal*100)):0;
+ const progCls=m.stop||m.state==='late'?'red':(m.state==='warn'?'warn':(m.state==='wait'?'gray':''));
+ let acumA=0,acumE=0;
+ const table=rows.map(function(r){if(!r.future){acumA+=r.actual;acumE+=r.closed?r.goal:r.expected;}const dh=r.future?'—':hh431Delta(r.delta),da=r.future?'—':hh431Delta(acumA-acumE);return '<tr class="'+(r.current?'current ':'')+(r.early?'early ':'')+(r.future?'future':'')+'"><td>'+escH(r.slot.label)+(r.early?' · adiantada':(r.current?' · agora':''))+'</td><td>'+NF.format(Math.round(r.goal))+'</td><td>'+NF.format(r.actual)+'</td><td class="'+(r.future?'future':(r.delta>=0?'pos':'neg'))+'">'+dh+'</td><td class="'+(r.future?'future':(acumA-acumE>=0?'pos':'neg'))+'">'+da+'</td></tr>';}).join('');
+ let prodPanel;
+ if(pr.running){const p=pr.running.p,meta=Number(p.qtdDia)||0,day=hh431ProductDay(c.id,iso,p.cod),pctP=meta?Math.min(100,Math.round(day/meta*100)):0,stopText=m.stop?hhMonV2StopText(m.stop,c,m.cut):'';
+  prodPanel='<div class="hhIndProduct"><span class="tag '+hh431TagClass(m)+'">EM PRODUÇÃO</span><div class="name">'+hhMonV2ProductDescription(p)+'</div><div class="meta">'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD (Supermercado)':'sem destino definido'))+' · '+escH(focus?focus.label:'faixa atual')+'</div><div class="qty">'+NF.format(day)+' / '+NF.format(meta)+' pc</div><div class="bar"><i style="width:'+pctP+'%"></i></div><div class="hint">faltam '+NF.format(Math.max(0,meta-day))+' pc p/ a quantidade do dia</div></div>'+stopText;}
+ else{const p=pr.all[0];prodPanel='<div class="hhIndProduct"><span class="tag gray">EM PRODUÇÃO</span><div class="name">'+(p?hhMonV2ProductDescription(p):'Sem produto programado')+'</div><div class="meta">'+(m.tline.mode==='before'||m.tline.mode==='future'?'aguardando abertura da célula':'sem apontamento na faixa vigente')+'</div></div>';}
+ const queue=pr.queue.slice(0,3).map(function(p,i){return '<li><span class="n">'+(i+1)+'</span><span class="who"><b>'+hhMonV2ProductDescription(p)+'</b><small>'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD':'—'))+'</small></span><span class="qty">'+NF.format(Number(p.qtdDia)||0)+' pc</span></li>';}).join('');
+ const shift='Turno A · '+hhTimeTxt(hhScheduleStart(c))+' - '+hhTimeTxt(hhScheduleEnd(c));
+ const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(left)+' min · ritmo nec.: '+NF.format(rate)+' pc/h'):'meta diária atingida';
+ root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div class="turno">'+escH(shift)+'</div></div>'+
+ '<div class="hhIndState">'+hh431Icon(m)+' '+escH(m.label)+'<small>'+hh431Delta(m.delta)+' pc</small></div>'+
+ '<div class="hhIndClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))+'</div></div></header>'+
+ '<div class="hhIndMain"><section class="hhIndPanel hhIndSummary"><h3>RESUMO DA CÉLULA</h3>'+
+ '<div class="lbl">Realizado / Meta dia</div><div class="big">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hint">'+pct+'% da meta · esperado agora: '+NF.format(Math.round(m.expected))+' pc</div><div class="hhIndProgress '+progCls+'"><i style="width:'+pct+'%"></i></div>'+
+ '<div class="lbl">Meta hora · '+escH(focus?focus.label:'—')+'</div><div class="big">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">esperado agora: '+NF.format(Math.round(m.slotExpected))+' pc</div>'+
+ '<div class="lbl">Faltam p/ meta dia</div><div class="big">'+NF.format(remaining)+' <small>pc</small></div><div class="hint">'+escH(missingHint)+'</div></section>'+
+ '<section class="hhIndPanel"><h3>HORA A HORA <small>Δ = realizado − meta</small></h3><table class="hhIndTable"><thead><tr><th>Hora</th><th>Meta</th><th>Real</th><th>Δ hora</th><th>Δ acum.</th></tr></thead><tbody>'+table+'</tbody></table></section>'+
+ '<div class="hhIndRight"><section class="hhIndPanel"><h3>EM PRODUÇÃO</h3>'+prodPanel+'</section><section class="hhIndPanel"><h3>PRÓXIMOS NA FILA</h3><ol class="hhIndQueue">'+(queue||'<li>Sem próximo produto na programação.</li>')+'</ol></section></div></div>'+
+ '<footer class="hhIndFooter"><span>Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span><span>atualizado '+hh431ClockFull()+'</span></footer></div>';
+}
+hhMonV2Render=function(iso,now){
+ try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
+ try{hhMonV2Individual431(iso,now);}catch(e){console.error('hh431 individual',e);}
+};
+setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0);
+
