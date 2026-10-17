@@ -1459,6 +1459,7 @@ setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0
     e.stopPropagation();
     var key=b.getAttribute('data-hh-view');
     try{hhSetMonitorScreen(key);}catch(e1){}
+    try{document.querySelectorAll('[data-hh-view]').forEach(function(x){var on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-pressed',on?'true':'false');});}catch(e4){}
     try{var pick=document.querySelector('.hhIndividualSelect');if(pick)pick.style.display=(key==='individual'?'flex':'none');}catch(e2){}
     try{hhRender();}catch(e3){}
     if(key==='gestao'&&window.echarts&&typeof hhChart!=='undefined'&&hhChart)setTimeout(function(){hhChart.resize();},80);
