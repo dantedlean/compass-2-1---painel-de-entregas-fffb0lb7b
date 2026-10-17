@@ -1470,3 +1470,26 @@ setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0
  setTimeout(hh436BindViews,2000);
 })();
 
+// ===== v0.0.441 — binding GLOBAL das abas 01/02/03 (o antigo usa #viewHH, que não casa) =====
+(function(){
+ function hh441BindTabs(){
+  document.querySelectorAll('[data-hh-tab]').forEach(function(b){
+   if(b._hh441Bound)return;b._hh441Bound=true;
+   b.addEventListener('click',function(e){
+    e.stopPropagation();
+    var key=b.getAttribute('data-hh-tab');
+    document.querySelectorAll('[data-hh-tab]').forEach(function(x){var on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-selected',on?'true':'false');});
+    [['programacao','hhPanelPlan'],['apontamento','hhPanelEntry'],['monitoramento','hhPanelMonitor']].forEach(function(pair){
+     var el=document.getElementById(pair[1]);if(!el)return;var on=pair[0]===key;
+     el.classList.toggle('active',on);el.hidden=!on;
+    });
+    try{hhRender();}catch(e3){}
+    if(key==='monitoramento'&&window.echarts&&typeof hhChart!=='undefined'&&hhChart)setTimeout(function(){hhChart.resize();},80);
+   });
+  });
+ }
+ hh441BindTabs();
+ setTimeout(hh441BindTabs,600);
+ setTimeout(hh441BindTabs,2000);
+})();
+
