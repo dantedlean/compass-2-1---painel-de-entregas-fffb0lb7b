@@ -1179,8 +1179,14 @@ body.hhTv .hhFactoryCards{grid-template-columns:repeat(3,minmax(0,1fr))!importan
 body.hhTv .side,body.hhTv .topbar,body.hhTv .tabnav,body.hhTv .hhTabs,body.hhTv footer:not(.hhIndFooter){display:none!important}
 body.hhTv .hhMonitorActions,body.hhTv .hhSectionHead,body.hhTv .hhViewSwitch,body.hhTv .hhIndividualSelect{display:none!important}
 body.hhTv .hhFactoryScreen,body.hhTv .hhIndividualScreen{min-height:calc(100vh - 28px)!important;border-radius:0!important}
-body.hhTv .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;min-height:calc(100vh - 28px)!important;align-content:stretch!important}
-body.hhTv .hhFactoryCard{min-height:calc((100vh - 70px)/2)!important}
+body.hhTv .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;height:calc(100vh - 28px)!important;gap:10px!important;padding:10px!important}
+body.hhTv .hhFactoryCard{min-height:0!important;overflow:hidden!important}
+body.hhTv .hhFactoryCardBody{gap:6px!important;padding:0 12px 8px!important}
+body.hhTv .hhFcChart{height:84px!important}
+body.hhTv .hhFcPlot{height:64px!important}
+body.hhTv .hhFcMetric .val{font-size:28px!important}
+body.hhTv .hhFcMetric .hint{font-size:10px!important}
+body.hhTv .hhFcRow3{gap:8px!important}
 body.hhTv .hhFcChart{height:110px!important}
 body.hhTv .hhFcPlot{height:88px!important}
 body.hhTv .hhFcMetric .val{font-size:34px!important}
