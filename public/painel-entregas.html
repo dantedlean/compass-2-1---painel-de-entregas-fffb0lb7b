@@ -1058,7 +1058,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
 .hhFabCountRow b{margin-left:auto !important;font-size:16px !important;font-weight:950 !important;color:#EEF1F5 !important;font-variant-numeric:tabular-nums}
 .hhFabCountRow .hhFactoryDot{width:9px !important;height:9px !important;flex:0 0 auto}
 .hhFabClock{font-variant-numeric:tabular-nums !important}
-@media(max-width:1100px){.hhFactoryCards{grid-template-columns:1fr !important}}
+@media(max-width:1100px){body:not(.hhTv) .hhFactoryCards{grid-template-columns:1fr !important}}
 .hhFactoryCard{display:flex !important;flex-direction:column !important;min-width:0 !important;background:#151A21 !important;border:1px solid #262C36 !important;border-radius:12px !important;overflow:hidden}
 .hhFactoryCard.empty{opacity:.55}
 .hhFactoryCardHead{display:flex !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;padding:12px 14px 8px}
@@ -1200,6 +1200,35 @@ body.hhTv .hhIndRight .hhIndPanel{margin:0!important}
 body.hhTv .hhIndBanner{min-height:64px!important;padding:10px 16px!important}
 body.hhTv .hhIndTable{font-size:11px!important}
 body.hhTv .hhIndTable td,body.hhTv .hhIndTable th{padding:2px 6px!important}
+</style>
+<style>
+/* v0.0.444d — TV: neutraliza TODAS as regras TV antigas de cards (300/340px, grid 3col, hhAndonGrid)
+   e impõe o grid 2x2 travado no viewport. Última folha do arquivo = vence a cascata. */
+body.hhTv #hhMonitorFloor .hhAndonGrid{display:none!important}
+body.hhTv .hhFactoryCard,body.hhTv .hhLiveCellCard{min-height:0!important;min-width:0!important;overflow:hidden!important}
+body.hhTv .hhFactoryScreen{min-height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;overflow:hidden!important;border-radius:0!important}
+body.hhTv .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;min-height:0!important;overflow:hidden!important;gap:10px!important;padding:10px!important}
+@media(max-width:1100px){body.hhTv .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:700px){body.hhTv .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}}
+body.hhTv .hhIndMain{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;overflow:hidden!important;gap:10px!important;padding:10px!important}
+@media(max-width:1100px){body.hhTv .hhIndMain{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}}
+body.hhTv .hhIndMain .hhIndPanel{min-height:0!important;overflow:hidden!important}
+body.hhTv .hhIndMain .hhIndRight{grid-column:auto!important;display:contents!important}
+body.hhTv .hhIndRight .hhIndPanel{margin:0!important}
+body.hhTv .hhIndBanner{min-height:64px!important;padding:10px 16px!important}
+body.hhTv .hhIndTable{font-size:11px!important}
+body.hhTv .hhIndTable td,body.hhTv .hhIndTable th{padding:2px 6px!important}
+body.hhTv #hhMonitorManager.active{display:block!important}
+body.hhTv #hhMonitorManager .hhManagerKpis{display:none!important}
+body.hhTv #hhMonitorManager .hhCardHead{display:none!important}
+body.hhTv #hhMonitorManager .hhManagerGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;padding:10px!important;height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;overflow:auto!important}
+body.hhTv #hhMonitorManager .hhManagerGrid>.card{min-height:0!important;overflow:hidden!important}
+body.hhTv .hhFcChart{height:84px!important}
+body.hhTv .hhFcPlot{height:64px!important}
+body.hhTv .hhFcMetric .val{font-size:28px!important}
+body.hhTv .hhFcMetric .hint{font-size:10px!important}
+body.hhTv .hhFcRow3{gap:8px!important}
+body.hhTv .hhFactoryCardBody{gap:6px!important;padding:0 12px 8px!important}
 </style>
 <style>
 /* v0.0.438b — visibilidade dos painéis/abas SEM prefixo #viewHH (a view HH não está dentro dele) */
