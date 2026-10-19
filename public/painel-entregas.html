@@ -1187,10 +1187,19 @@ body.hhTv .hhFcPlot{height:64px!important}
 body.hhTv .hhFcMetric .val{font-size:28px!important}
 body.hhTv .hhFcMetric .hint{font-size:10px!important}
 body.hhTv .hhFcRow3{gap:8px!important}
-body.hhTv .hhFcChart{height:110px!important}
-body.hhTv .hhFcPlot{height:88px!important}
-body.hhTv .hhFcMetric .val{font-size:34px!important}
 body.hhTv .hhIndMain{min-height:calc(100vh - 28px)!important}
+/* v0.0.444b — neutraliza regras TV antigas que conflitam (card 340px, tela 100vh, grid 3 col) */
+body.hhTv .hhFactoryCard{min-height:0!important}
+body.hhTv .hhFactoryScreen{min-height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;overflow:hidden!important}
+body.hhTv .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;overflow:hidden!important}
+/* v0.0.444b — TV: grid do monitor individual também 2x2 e painéis compactos */
+body.hhTv .hhIndMain{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;height:calc(100vh - 28px)!important;max-height:calc(100vh - 28px)!important;overflow:hidden!important;gap:10px!important;padding:10px!important}
+body.hhTv .hhIndMain .hhIndPanel{min-height:0!important;overflow:hidden!important}
+body.hhTv .hhIndMain .hhIndRight{grid-column:auto!important;display:contents!important}
+body.hhTv .hhIndRight .hhIndPanel{margin:0!important}
+body.hhTv .hhIndBanner{min-height:64px!important;padding:10px 16px!important}
+body.hhTv .hhIndTable{font-size:11px!important}
+body.hhTv .hhIndTable td,body.hhTv .hhIndTable th{padding:2px 6px!important}
 </style>
 <style>
 /* v0.0.438b — visibilidade dos painéis/abas SEM prefixo #viewHH (a view HH não está dentro dele) */
