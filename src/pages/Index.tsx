@@ -41,7 +41,7 @@ const Index = () => {
       if (!doc.getElementById('fix-paste-script')) {
         const s = doc.createElement('script')
         s.id = 'fix-paste-script'
-        s.src = '/painel-fix.js?v=0.1.08'
+        s.src = '/painel-fix.js?v=0.1.13'
         doc.head.appendChild(s)
       }
     } catch {
@@ -63,7 +63,7 @@ const Index = () => {
   return (
     <div className="w-screen h-screen m-0 p-0 overflow-hidden bg-background">
       <iframe
-        src="/painel-entregas.html"
+        src="/painel-entregas.html?v=0.1.13"
         title="Painel de Entregas — Dlean"
         className="w-full h-full border-0 block m-0 p-0"
         allow="clipboard-read; clipboard-write; fullscreen"

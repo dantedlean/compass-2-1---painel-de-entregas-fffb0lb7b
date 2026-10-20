@@ -5274,6 +5274,8 @@ function hhRenderIndividualHeaderHtml(c, m, d, iso) {
      '<button type="button" class="hhPillBtn" onclick="try{hhActivateMonitorNav(\'gestao\');}catch(e){}">Gestão</button>'+
      '<button type="button" class="hhPillBtn hhPillTv" onclick="try{hhTvToggle();}catch(e){}">⛶ Tela cheia</button>'+
     '</div>'+
+    '<div class="hhIndivCellPickerWrap" id="hhIndivCellPickerSlot">'+
+    '</div>'+
     '<button class="hhThemeToggleBtn" type="button" onclick="hhToggleTheme()">'+(currentTheme==='dark'?'☀ Claro':'🌙 Escuro')+'</button>'+
    '</div>'+
   '</div>'+
@@ -5470,7 +5472,15 @@ hhMonV2Render=function(iso,now){
   }
  }
  try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
- try{hhMonV2Individual431(iso,now);}catch(e){console.error('hh431 individual',e);}
+ try{
+  hhMonV2Individual431(iso,now);
+  // Posicionar o elemento #hhMonCellSelect / .hhIndividualSelect dentro do header do Monitor Individual
+  var slot = document.getElementById('hhIndivCellPickerSlot');
+  var selWrap = document.querySelector('.hhIndividualSelect');
+  if(slot && selWrap && selWrap.parentNode !== slot){
+   slot.appendChild(selWrap);
+  }
+ }catch(e){console.error('hh431 individual',e);}
  try{
   var mgrScreen=document.getElementById('hhManagerCleanScreen');
   if(mgrScreen){
