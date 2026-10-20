@@ -4438,8 +4438,11 @@ function hhInit(){
       if(sMin===null||eMin===null){hhFlash('⚠ informe início/fim válidos do intervalo fora da jornada');hhEntryErr('⚠ Informe início/fim válidos do intervalo fora da jornada.');return;}
       slot={hour:Math.floor(sMin/60),start:sMin,end:eMin,minutes:eMin-sMin,key:'out-'+sMin+'-'+eMin,label:hhClockTxt(sMin)+'–'+hhClockTxt(eMin)+' (fora)'};
     } else slot=sh&&sh.value?hhIntervalFor(lin,sh.value):null;
-    const qtd=Number((document.getElementById('hhQtd')||{}).value)||0;
-    if(!lin||!cod||!slot||qtd<=0){hhFlash('⚠ informe célula, produto, intervalo e quantidade');hhEntryErr('⚠ Não registrou — '+(lin?(cod?'':'informe o produto. '):'selecione a célula. ')+(cod?'':'Informe o produto. ')+(!slot&&lin?'Selecione o intervalo. ':'')+(qtd<=0?'Informe a quantidade (maior que zero).':''));return;}
+    const rawQtd = ((document.getElementById('hhQtd')||{}).value ?? '').trim();
+    const numQtd = rawQtd === '' ? NaN : Number(rawQtd);
+    const qtdValida = !isNaN(numQtd) && numQtd >= 0;
+    const qtd = qtdValida ? numQtd : 0;
+    if(!lin||!cod||!slot||!qtdValida){hhFlash('⚠ informe célula, produto, intervalo e quantidade');hhEntryErr('⚠ Não registrou — '+(lin?(cod?'':'informe o produto. '):'selecione a célula. ')+(cod?'':'Informe o produto. ')+(!slot&&lin?'Selecione o intervalo. ':'')+(rawQtd===''?'Informe a quantidade.':(numQtd<0?'Informe a quantidade (não pode ser negativa).':'Informe a quantidade.')));return;}
     const programado=hhProdCfg.some(function(p){return p.linha===lin&&String(p.cod)===String(cod);});
     const mEl=document.getElementById('hhMotivo'),motivo=mEl&&mEl.style.display!=='none'?(mEl.value||'').trim():'';
     if((fora||!programado)&&!motivo){hhFlash('⚠ exceção exige motivo — '+(fora?'fora da jornada':'produto não programado'));const mf2=document.getElementById('hhMotivoField');if(mf2)mf2.style.display='flex';if(mEl)mEl.focus();hhEntryErr('⚠ Produto '+(fora?'FORA da jornada':'não programado nesta célula')+' — escreva o Motivo da exceção antes de registrar.');return;}
@@ -4896,6 +4899,7 @@ hhTvToggle=function(){
  else{if(x)x.style.display='none';try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
+window.hhTvToggle = hhTvToggle;
 function hhMonV2InitScreen(){
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
   if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
@@ -5005,6 +5009,25 @@ function hhMonV2Individual431(iso,now){
  '<footer class="hhIndFooter"><span>Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span><span>atualizado '+hh431ClockFull()+'</span></footer></div>';
 }
 hhMonV2Render=function(iso,now){
+ const sel=document.getElementById('hhMonCellSelect');
+ if(sel){
+  const sig=hhLinhasCfg.map(function(c){return c.id+':'+c.nome;}).join('|');
+  if(sel.getAttribute('data-sig')!==sig){
+   const current=window._hhMonV2CellId||sel.value;
+   sel.innerHTML=hhLinhasCfg.map(function(c){return '<option value="'+escH(c.id)+'">'+escH(c.nome)+'</option>';}).join('');
+   sel.setAttribute('data-sig',sig);
+   if(current&&hhLinhasCfg.some(function(c){return c.id===current;}))sel.value=current;
+  }
+  if(!sel.value&&hhLinhasCfg.length)sel.value=hhLinhasCfg[0].id;
+  window._hhMonV2CellId=sel.value;
+  if(!sel._hh431Bound){
+   sel._hh431Bound=true;
+   sel.addEventListener('change',function(){
+    window._hhMonV2CellId=sel.value;
+    try{hhMonV2Individual431(hhDiaSelIso(),new Date());}catch(err){console.error('hh431 change ind',err);}
+   });
+  }
+ }
  try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
  try{hhMonV2Individual431(iso,now);}catch(e){console.error('hh431 individual',e);}
 };
