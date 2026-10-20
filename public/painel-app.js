@@ -4886,11 +4886,33 @@ window.hhRender=hhRender;
 hhTvToggle=function(){
  const body=document.body,on=!body.classList.contains('hhTv'),screen=window._hhMonitorScreen||'chao';
  body.classList.toggle('hhTv',on);body.classList.toggle('hhTvIndividual',on&&screen==='individual');
- const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';
- let x=document.getElementById('hhTvExit');if(on){if(!x){x=document.createElement('button');x.id='hhTvExit';x.textContent='✕';x.title='Sair da tela cheia (ESC)';x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});document.body.appendChild(x);}x.style.display='block';try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}}
- else{if(x)x.style.display='none';try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
+ const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair do Modo TV':'📺 Modo TV';
+ let x=document.getElementById('hhTvExit');
+ if(on){
+  if(!x){
+   x=document.createElement('button');x.id='hhTvExit';x.textContent='✕ Sair do Modo TV (ESC)';x.title='Sair do Modo TV (ESC)';
+   x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});
+   document.body.appendChild(x);
+  }
+  x.style.display='block';
+  try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}
+ }else{
+  if(x)x.style.display='none';
+  try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}
+ }
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
+if(!window._hhTvEscBound){
+ window._hhTvEscBound=true;
+ document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&document.body.classList.contains('hhTv')){
+   hhTvToggle();
+  }
+ });
+}
+if(window.location.search.indexOf('tv=1')!==-1||window.location.hash==='#tv'){
+ setTimeout(function(){if(!document.body.classList.contains('hhTv'))hhTvToggle();},120);
+}
 function hhMonV2InitScreen(){
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
   if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
@@ -4944,7 +4966,7 @@ function hh431FactoryCard(c,index,iso,now,m){
  '<div class="hhFcRow hhFcRow3"><div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+progress+'%"></i></div><div class="hint">'+progress+'% da meta · '+NF.format(falta)+' pc faltantes</div></div>'+
  '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(m.expected))+')</div><div class="delta '+(m.delta<0?'neg':'')+'">'+hh431Delta(m.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(m.expected))+'</div></div>'+
  '<div class="hhFcMetric"><div class="lbl">Meta hora · '+escH(slotLabel)+'</div><div class="val">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">esperado agora: '+NF.format(Math.round(m.slotExpected))+'</div></div></div>'+
- '<div><div class="hhFcChartTitle"><span>HORA A HORA</span><span>meta hora — tracejada</span></div><div class="hhFcChart">'+chart+'</div></div></div>'+
+ '<div><div class="hhFcChartTitle"><span>HORA A HORA</span><span>meta hora — tracejada</span></div><div class="hhFcChart">'+chart+'</div></div>'+
  bottom+stop+
  '</div></article>';
 }
