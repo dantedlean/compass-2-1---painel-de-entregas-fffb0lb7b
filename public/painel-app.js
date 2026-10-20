@@ -4956,17 +4956,17 @@ function hhMonV2Factory431(iso,now){
  const cards=rows.map(function(x,i){return hh431FactoryCard(x.c,i,iso,d,x.m);}).join('');
  const countsArr=[['','ADIANTADAS / NO RITMO',(sums.ahead+sums.steady)],['warn','ATENÇÃO',sums.warn],['late','ATRASADAS',sums.late],['stop','PARADA',sums.stop],['wait','AGUARDANDO',sums.wait]];
  const counts=countsArr.map(function(x){return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[0]+'"></i><b>'+NF.format(x[2])+'</b> '+x[1]+'</div>';}).join('');
- const countsRows=countsArr.map(function(x){return '<div class="hhFabCountRow"><i class="hhFactoryDot '+x[0]+'"></i><span>'+x[1]+'</span><b>'+NF.format(x[2])+'</b></div>';}).join('');
  const fabPct=sums.goal?Math.min(100,Math.round(sums.actual/sums.goal*100)):0;
  const fabIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- const fabCard='<article class="hhFactoryCard hhFactoryCardFab"><header class="hhFactoryCardHead"><div class="cellname"><span class="cellnum">D-LEAN SOLUTIONS</span>Andon · Produção</div><span class="status hhFabClock">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' · '+hh431DateLabel(fabIso)+'</span></header><div class="hhFactoryCardBody">'+
- '<div class="hhFcRow hhFcRow3">'+
- '<div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+fabPct+'%"></i></div><div class="hint">'+fabPct+'% da meta · '+escH(turno)+'</div></div>'+
- '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(sums.expected))+')</div><div class="delta '+(sums.delta<0?'neg':'')+'">'+hh431Delta(sums.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(sums.expected))+'</div></div>'+
- '<div class="hhFcMetric"><div class="lbl">Células · status</div><div class="hhFabCounts">'+countsRows+'</div></div>'+
- '</div></div></article>';
+ const headerBar='<header class="hhFactoryHead">'+
+ '<div class="hhFactoryBrand">D-LEAN SOLUTIONS<strong>Andon · Produção</strong><span class="hhFactoryTurno">'+escH(turno)+'</span></div>'+
+ '<div class="hhFactoryHero"><div class="lbl">Fábrica · Realizado / Meta dia</div><div class="num">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="sub">'+fabPct+'% da meta · VS. ESPERADO AGORA <b style="color:'+(sums.delta>=0?'#2BD576':'#E5484D')+'">'+hh431Delta(sums.delta)+' pc</b> (esperado: '+NF.format(Math.round(sums.expected))+')</div></div>'+
+ '<div class="hhFactoryCounts">'+counts+'</div>'+
+ '<div class="hhFactoryClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(fabIso)+'</div></div>'+
+ '</header>';
  root.innerHTML='<div class="hhFactoryScreen">'+
- '<div class="hhFactoryCards">'+(rows.length?fabCard+cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
+ headerBar+
+ '<div class="hhFactoryCards">'+(rows.length?cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
  '</div>';
 }
 function hhMonV2Individual431(iso,now){

@@ -4,7 +4,7 @@
 // 2. type="password" nativo no campo de senha.
 // 3. Botões "📋 Colar" com leitura de clipboard e aviso discreto em caso de bloqueio.
 // 4. Enter dispara o envio em ambos os campos.
-// 5. Atualização da versão para v0.1.04 nos cabeçalhos e rodapés.
+// 5. Atualização da versão para v0.1.05 nos cabeçalhos e rodapés.
 
 ;(function () {
   'use strict'
@@ -185,20 +185,20 @@
         verBadge.className = 'version-tag'
         verBadge.style.cssText =
           'margin-left:8px;font-weight:700;color:#93c5fd;background:rgba(255,255,255,0.12);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.25);'
-        verBadge.textContent = 'v0.1.04'
+        verBadge.textContent = 'v0.1.05'
         headerSub.appendChild(verBadge)
       } else {
-        verBadge.textContent = 'v0.1.04'
+        verBadge.textContent = 'v0.1.05'
       }
     }
 
-    // Atualiza versão v0.1.04 nos rodapés
+    // Atualiza versão v0.1.05 nos rodapés
     document.querySelectorAll('footer').forEach(function (f) {
       const curVer = f.getAttribute('data-ver-updated')
-      if (curVer !== 'v0.1.04') {
-        f.setAttribute('data-ver-updated', 'v0.1.04')
+      if (curVer !== 'v0.1.05') {
+        f.setAttribute('data-ver-updated', 'v0.1.05')
         // remove versão anterior se já inserida
-        f.innerHTML = f.innerHTML.replace(/\s*·\s*<b[^>]*>v0\.1\.[0-9]+<\/b>/g, '').trim() + ' · <b style="color:var(--acc, #1e3a8a)">v0.1.04</b>'
+        f.innerHTML = f.innerHTML.replace(/\s*·\s*<b[^>]*>v0\.1\.[0-9]+<\/b>/g, '').trim() + ' · <b style="color:var(--acc, #1e3a8a)">v0.1.05</b>'
       }
     })
   }
