@@ -1024,12 +1024,643 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   </div>
 </div>
 </main>
-<footer class="hhFooter" data-ver-updated="v0.1.08">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.08</b></footer>
+<footer class="hhFooter" data-ver-updated="v0.1.09">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.09</b></footer>
 </div>
-</style>
 <style>
-/* ===== v0.0.431 — Monitores Geral/Individual DARK conforme modelo Dante (TV 1920x1080) ===== */
-.hhFactoryScreen,.hhIndividualScreen{background:#0B0E12 !important;color:#EEF1F5 !important;border:1px solid #262C36 !important;border-radius:16px !important;overflow:hidden}
+/* ===== Redesign Visual Andon · Produção — Monitor Geral Clean (Tema Claro / Escuro via variáveis) ===== */
+:root {
+  --hh-bg: #F5F6F8;
+  --hh-card: #FFFFFF;
+  --hh-border: #E5E7EB;
+  --hh-text: #111827;
+  --hh-muted: #6B7280;
+  --hh-track: #EEF0F3;
+  --hh-accent: #2563EB;
+  --hh-neg-text: #B91C1C;
+  --hh-neg-bg: #FEE2E2;
+  --hh-pos-text: #16A34A;
+  --hh-cur-border: #111827;
+  --hh-badge-ritmo-text: #166534;
+  --hh-badge-ritmo-bg: #DCFCE7;
+  --hh-badge-warn-text: #92400E;
+  --hh-badge-warn-bg: #FEF3C7;
+  --hh-badge-late-text: #B91C1C;
+  --hh-badge-late-bg: #FEE2E2;
+  --hh-badge-stop-text: #111827;
+  --hh-badge-stop-bg: #E5E7EB;
+  --hh-badge-wait-text: #4B5563;
+  --hh-badge-wait-bg: #F3F4F6;
+  --hh-dot-ritmo: #16A34A;
+  --hh-dot-warn: #D97706;
+  --hh-dot-late: #DC2626;
+  --hh-dot-stop: #111827;
+  --hh-dot-wait: #9CA3AF;
+  --hh-dot-zero: #9CA3AF;
+}
+
+[data-hh-theme="dark"],
+[data-theme="dark"] {
+  --hh-bg: #0F1115;
+  --hh-card: #181B22;
+  --hh-border: #2A2F3A;
+  --hh-text: #F3F4F6;
+  --hh-muted: #9CA3AF;
+  --hh-track: #262B35;
+  --hh-accent: #60A5FA;
+  --hh-neg-text: #F87171;
+  --hh-neg-bg: #3B1F23;
+  --hh-pos-text: #22C55E;
+  --hh-cur-border: #F3F4F6;
+  --hh-badge-ritmo-text: #4ADE80;
+  --hh-badge-ritmo-bg: #143522;
+  --hh-badge-warn-text: #FBBF24;
+  --hh-badge-warn-bg: #38280E;
+  --hh-badge-late-text: #F87171;
+  --hh-badge-late-bg: #3B1F23;
+  --hh-badge-stop-text: #E5E7EB;
+  --hh-badge-stop-bg: #2A2F3A;
+  --hh-badge-wait-text: #9CA3AF;
+  --hh-badge-wait-bg: #232730;
+  --hh-dot-ritmo: #22C55E;
+  --hh-dot-warn: #F59E0B;
+  --hh-dot-late: #F87171;
+  --hh-dot-stop: #E5E7EB;
+  --hh-dot-wait: #7C8494;
+  --hh-dot-zero: #9CA3AF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-hh-theme="light"]):not([data-theme="light"]) {
+    --hh-bg: #0F1115;
+    --hh-card: #181B22;
+    --hh-border: #2A2F3A;
+    --hh-text: #F3F4F6;
+    --hh-muted: #9CA3AF;
+    --hh-track: #262B35;
+    --hh-accent: #60A5FA;
+    --hh-neg-text: #F87171;
+    --hh-neg-bg: #3B1F23;
+    --hh-pos-text: #22C55E;
+    --hh-cur-border: #F3F4F6;
+    --hh-badge-ritmo-text: #4ADE80;
+    --hh-badge-ritmo-bg: #143522;
+    --hh-badge-warn-text: #FBBF24;
+    --hh-badge-warn-bg: #38280E;
+    --hh-badge-late-text: #F87171;
+    --hh-badge-late-bg: #3B1F23;
+    --hh-badge-stop-text: #E5E7EB;
+    --hh-badge-stop-bg: #2A2F3A;
+    --hh-badge-wait-text: #9CA3AF;
+    --hh-badge-wait-bg: #232730;
+    --hh-dot-ritmo: #22C55E;
+    --hh-dot-warn: #F59E0B;
+    --hh-dot-late: #F87171;
+    --hh-dot-stop: #E5E7EB;
+    --hh-dot-wait: #7C8494;
+    --hh-dot-zero: #9CA3AF;
+  }
+}
+
+/* Container do Monitor Geral Clean */
+.hhCleanContainer {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  background-color: var(--hh-bg) !important;
+  color: var(--hh-text) !important;
+  padding: 20px 24px !important;
+  box-sizing: border-box !important;
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+/* 1. Cabeçalho */
+.hhCleanHeader {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+  padding-bottom: 4px !important;
+}
+
+.hhHeadLeft {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.hhBrandSmall {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhTitleMain {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--hh-text) !important;
+  line-height: 1.2 !important;
+}
+
+.hhHeadRight {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  text-align: right !important;
+}
+
+.hhClockWrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.hhClockHM {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.hhClockSub {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhHeadActions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.hhNavPills {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: var(--hh-track) !important;
+  padding: 3px !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--hh-border) !important;
+}
+
+.hhPillBtn {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--hh-muted) !important;
+  border-radius: 9999px !important;
+  padding: 5px 12px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+}
+.hhPillBtn:hover {
+  color: var(--hh-text) !important;
+}
+.hhPillBtn.active {
+  background: var(--hh-card) !important;
+  color: var(--hh-text) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
+}
+.hhPillTv {
+  color: var(--hh-accent) !important;
+}
+
+.hhThemeToggleBtn {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  color: var(--hh-text) !important;
+  border-radius: 9999px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.15s ease !important;
+}
+.hhThemeToggleBtn:hover {
+  border-color: var(--hh-muted) !important;
+}
+
+/* 2. Linha de resumo (3 cartões) */
+.hhSummaryRow {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+@media (max-width: 900px) {
+  .hhSummaryRow {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.hhSummaryCard {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 14px !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  box-shadow: none !important;
+}
+
+.hhSummaryLabel {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhSummaryValue {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  line-height: 1.1 !important;
+  font-variant-numeric: tabular-nums !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+}
+.hhSummaryValue.is-neg {
+  color: var(--hh-neg-text) !important;
+}
+.hhSummaryValue.is-pos {
+  color: var(--hh-text) !important;
+}
+
+.hhSummaryUnit {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhSummaryProgress {
+  height: 10px !important;
+  background: var(--hh-track) !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  margin-top: 4px !important;
+}
+.hhSummaryProgress i {
+  display: block !important;
+  height: 100% !important;
+  background: var(--hh-accent) !important;
+  border-radius: inherit !important;
+  transition: width 0.3s ease !important;
+}
+
+.hhSummaryHint {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+/* Status list no 3º cartão de resumo */
+.hhStatusList {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-top: 2px !important;
+}
+
+.hhStatusItem {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text) !important;
+}
+
+.hhDotDot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  flex: 0 0 auto !important;
+}
+.hhDotDot.dot-ritmo { background-color: var(--hh-dot-ritmo) !important; }
+.hhDotDot.dot-warn { background-color: var(--hh-dot-warn) !important; }
+.hhDotDot.dot-late { background-color: var(--hh-dot-late) !important; }
+.hhDotDot.dot-stop { background-color: var(--hh-dot-stop) !important; border-radius: 2px !important; }
+.hhDotDot.dot-wait { background-color: var(--hh-dot-wait) !important; }
+
+.hhStatusName {
+  flex: 1 !important;
+  color: var(--hh-text) !important;
+}
+
+.hhStatusCount {
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--hh-text) !important;
+}
+.hhStatusCount.zero {
+  color: var(--hh-dot-zero) !important;
+  font-weight: 500 !important;
+}
+
+/* 3. Lista de Células (um cartão por célula em linha larga) */
+.hhCellListSection {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.hhCellRowCard {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 14px !important;
+  padding: 18px 24px !important;
+  display: grid !important;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.3fr) minmax(140px, 1fr) minmax(170px, 1.1fr) minmax(320px, 2.4fr) !important;
+  align-items: center !important;
+  gap: 20px !important;
+  box-shadow: none !important;
+  position: relative !important;
+}
+
+@media (max-width: 1250px) {
+  .hhCellRowCard {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+  .hhCellColHourly {
+    grid-column: 1 / -1 !important;
+  }
+}
+@media (max-width: 650px) {
+  .hhCellRowCard {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.hhCellCol {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+/* Coluna 1: Nome da Célula */
+.hhCellLabel {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhCellTitle {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: var(--hh-text) !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hhCellBadge {
+  display: inline-flex !important;
+  align-items: center !important;
+  align-self: flex-start !important;
+  padding: 4px 10px !important;
+  border-radius: 9999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  margin-top: 4px !important;
+  white-space: nowrap !important;
+}
+.hhBadge-ahead, .hhBadge-steady {
+  background: var(--hh-badge-ritmo-bg) !important;
+  color: var(--hh-badge-ritmo-text) !important;
+}
+.hhBadge-warn {
+  background: var(--hh-badge-warn-bg) !important;
+  color: var(--hh-badge-warn-text) !important;
+}
+.hhBadge-late {
+  background: var(--hh-badge-late-bg) !important;
+  color: var(--hh-badge-late-text) !important;
+}
+.hhBadge-stop {
+  background: var(--hh-badge-stop-bg) !important;
+  color: var(--hh-badge-stop-text) !important;
+}
+.hhBadge-wait {
+  background: var(--hh-badge-wait-bg) !important;
+  color: var(--hh-badge-wait-text) !important;
+}
+
+/* Coluna 2: Realizado / Meta do dia */
+.hhCellMetricVal {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+}
+.hhCellMetricSub {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhCellProgress {
+  height: 8px !important;
+  background: var(--hh-track) !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  margin: 3px 0 !important;
+}
+.hhCellProgress i {
+  display: block !important;
+  height: 100% !important;
+  background: var(--hh-accent) !important;
+  border-radius: inherit !important;
+}
+
+.hhCellMetricHint {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+/* Coluna 3: Vs. esperado */
+.hhCellVsVal {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1.15 !important;
+}
+.hhCellVsVal.is-neg {
+  color: var(--hh-neg-text) !important;
+}
+.hhCellVsVal.is-pos {
+  color: var(--hh-pos-text) !important;
+}
+
+/* Coluna 5: Gráfico Hora a Hora */
+.hhHourlyGrid {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.hhHourCol {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.hhHourVal {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--hh-text) !important;
+  font-variant-numeric: tabular-nums !important;
+  min-height: 14px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+.hhHourCol.is-future .hhHourVal {
+  visibility: hidden !important;
+}
+
+.hhHourTrackWrap {
+  width: 100% !important;
+  padding: 1px !important;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+}
+.hhHourCol.is-current .hhHourTrackWrap {
+  border: 1.5px solid var(--hh-cur-border) !important;
+  padding: 0px !important;
+}
+
+.hhHourTrack {
+  height: 44px !important;
+  width: 100% !important;
+  background-color: var(--hh-track) !important;
+  border-radius: 4px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: flex-end !important;
+}
+
+.hhHourFill {
+  width: 100% !important;
+  background-color: var(--hh-accent) !important;
+  border-radius: 4px 4px 0 0 !important;
+  transition: height 0.25s ease !important;
+}
+
+.hhHourTime {
+  font-size: 10px !important;
+  color: var(--hh-muted) !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums !important;
+  text-align: center !important;
+}
+.hhHourCol.is-current .hhHourTime {
+  color: var(--hh-text) !important;
+  font-weight: 700 !important;
+}
+
+.hhCellStopBanner {
+  grid-column: 1 / -1 !important;
+  margin-top: 4px !important;
+}
+.hhCellStopBanner .hhFcStop {
+  background: var(--hh-neg-bg) !important;
+  color: var(--hh-neg-text) !important;
+  border: 1px solid rgba(185, 28, 28, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.hhCleanEmpty {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 14px !important;
+  padding: 32px !important;
+  text-align: center !important;
+  color: var(--hh-muted) !important;
+  font-size: 14px !important;
+}
+
+/* Modo TV com suporte a fontes aumentadas e respeito ao tema */
+body.hhTv #hhMonitorFloor {
+  background-color: var(--hh-bg) !important;
+  color: var(--hh-text) !important;
+}
+body.hhTv .hhCleanContainer {
+  padding: 24px 32px !important;
+  gap: 24px !important;
+}
+body.hhTv .hhTitleMain {
+  font-size: 30px !important;
+}
+body.hhTv .hhClockHM {
+  font-size: 42px !important;
+}
+body.hhTv .hhClockSub {
+  font-size: 14px !important;
+}
+body.hhTv .hhSummaryValue {
+  font-size: 40px !important;
+}
+body.hhTv .hhSummaryLabel {
+  font-size: 14px !important;
+}
+body.hhTv .hhCellTitle {
+  font-size: 26px !important;
+}
+body.hhTv .hhCellMetricVal {
+  font-size: 24px !important;
+}
+body.hhTv .hhCellVsVal {
+  font-size: 24px !important;
+}
+body.hhTv .hhHourTrack {
+  height: 52px !important;
+}
+body.hhTv .hhHourVal {
+  font-size: 13px !important;
+}
+body.hhTv .hhHourTime {
+  font-size: 12px !important;
+}
+
+/* Neutraliza estilos legados que forçavam fundo preto absoluto e blocos repetidos em #hhFactoryScreen */
+#hhFactoryScreen {
+  background: transparent !important;
+  border: 0 !important;
+}
+#hhFactoryScreen .hhFactoryScreen {
+  background: transparent !important;
+  border: 0 !important;
+}
 .hhFactoryHead{display:grid !important;grid-template-columns:auto 1.4fr auto auto !important;align-items:center !important;gap:20px !important;background:#0B0E12 !important;padding:16px 22px !important;border-bottom:1px solid #262C36 !important;min-height:96px}
 .hhFactoryBrand{font-size:13px !important;font-weight:950 !important;letter-spacing:.14em !important;color:#EEF1F5}
 .hhFactoryBrand strong{display:block !important;margin-top:4px !important;color:#fff !important;font-size:20px !important;letter-spacing:.02em}
@@ -1267,7 +1898,7 @@ body.hhTv .contentArea {
   max-width: 100vw !important;
   margin: 0 !important;
   padding: 0 !important;
-  background: #0B0E12 !important;
+  background: var(--hh-bg, #F5F6F8) !important;
 }
 body.hhTv #viewHH {
   display: block !important;
@@ -1275,7 +1906,7 @@ body.hhTv #viewHH {
   padding: 0 !important;
   width: 100vw !important;
   min-height: 100vh !important;
-  background: #0B0E12 !important;
+  background: var(--hh-bg, #F5F6F8) !important;
 }
 body.hhTv #hhPanelMonitor {
   display: block !important;
@@ -1283,7 +1914,7 @@ body.hhTv #hhPanelMonitor {
   padding: 0 !important;
   width: 100vw !important;
   min-height: 100vh !important;
-  background: #0B0E12 !important;
+  background: var(--hh-bg, #F5F6F8) !important;
 }
 body.hhTv .hhMonitorPane {
   display: none !important;
@@ -1319,8 +1950,8 @@ body.hhTv #hhTvExit:hover {
 </div>
 </div>
 
-<script src="painel-data.js?v=0.1.08"></script>
-<script src="painel-app.js?v=0.1.08"></script>
+<script src="painel-data.js?v=0.1.09"></script>
+<script src="painel-app.js?v=0.1.09"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
