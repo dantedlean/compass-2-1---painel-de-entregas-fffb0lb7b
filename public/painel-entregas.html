@@ -1024,7 +1024,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   </div>
 </div>
 </main>
-<footer class="hhFooter" data-ver-updated="v0.1.11">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.11</b></footer>
+<footer class="hhFooter" data-ver-updated="v0.1.12">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.12</b></footer>
 </div>
 <style>
 /* ===== Redesign Visual Andon · Produção — Monitor Geral Clean (Tema Claro / Escuro via variáveis) ===== */
@@ -1989,12 +1989,651 @@ body.hh-mon-manager #hhPanelMonitor .hhMonitorActions:not(.hhIndividualSelect),
 body.hh-mon-manager #hhPanelMonitor .hhViewSwitch {
   display: none !important;
 }
+
+/* ==========================================================================
+   v0.1.12 — REDESIGN MONITOR INDIVIDUAL DA CÉLULA (LAYOUT CLEAN + FULLSCREEN)
+   ========================================================================== */
+
+/* 1. Neutralização de regras legadas que quebravam o grid em modo TV / Desktop */
+body.hhTv .hhIndivContainer,
+body.hhTv #hhMonitorIndividual .hhIndivContainer {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 100vh !important;
+  padding: 16px 24px !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+body.hhTv #viewHH #hhMonitorIndividual.active,
+body.hhTv #hhMonitorIndividual.active {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
+#hhIndividualScreen {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* 2. Container principal do Monitor Individual */
+.hhIndivContainer {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  background-color: var(--hh-bg) !important;
+  color: var(--hh-text) !important;
+  padding: 20px 24px 14px 24px !important;
+  box-sizing: border-box !important;
+  min-height: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* 3. Área 1 — Header horizontal neutro */
+.hhIndivHeaderWrap {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1.3fr) minmax(220px, 1fr) minmax(320px, 1.4fr) !important;
+  align-items: center !important;
+  gap: 16px !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 0 6px 0 !important;
+  flex-wrap: nowrap !important;
+}
+
+.hhIndivHeadLeft {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+.hhIndivBrand {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndivCellTitle {
+  margin: 0 !important;
+  font-size: clamp(22px, 1.8vw, 36px) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--hh-text) !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hhIndivShift {
+  font-size: clamp(12px, 0.85vw, 15px) !important;
+  font-weight: 600 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndivHeadCenter {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  text-align: center !important;
+  min-width: 0 !important;
+}
+
+.hhIndivStatusBadge {
+  font-size: clamp(12px, 0.9vw, 15px) !important;
+  font-weight: 700 !important;
+  padding: 5px 16px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+.hhIndivDesvio {
+  font-size: clamp(15px, 1.1vw, 22px) !important;
+  font-weight: 750 !important;
+  font-variant-numeric: tabular-nums !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  letter-spacing: -0.01em !important;
+}
+.hhIndivDesvio.is-neg {
+  color: var(--hh-neg-text) !important;
+}
+.hhIndivDesvio.is-pos {
+  color: var(--hh-pos-text) !important;
+}
+
+.hhIndivHeadRight {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.hhIndivClockWrap {
+  text-align: right !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+
+.hhIndivClockHM {
+  font-size: clamp(28px, 2.2vw, 42px) !important;
+  font-weight: 800 !important;
+  color: var(--hh-text) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.hhIndivClockSub {
+  font-size: clamp(11px, 0.8vw, 14px) !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+  text-transform: capitalize !important;
+}
+
+.hhIndivHeadActions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* 4. Grid de 3 Colunas: 27% | 47% | 26% */
+.hhIndivGridArea {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.27fr) minmax(0, 0.47fr) minmax(0, 0.26fr) !important;
+  gap: 16px !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  align-items: stretch !important;
+}
+
+/* 5. Cartão Genérico do Monitor Individual */
+.hhIndivCard {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.hhIndivCardHead {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  padding: 14px 18px 10px 18px !important;
+  border-bottom: 1px solid var(--hh-border) !important;
+}
+
+.hhIndivCardTitle {
+  margin: 0 !important;
+  font-size: clamp(16px, 1.1vw, 20px) !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--hh-text) !important;
+}
+
+.hhIndivCardSub {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+/* ÁREA 2 — Coluna Esquerda: Resumo da Célula (3 seções) */
+.hhIndivSummaryCol {
+  padding: 16px 20px !important;
+  justify-content: space-between !important;
+  overflow-y: auto !important;
+}
+
+.hhIndivSection {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.hhIndivDivider {
+  height: 1px !important;
+  background-color: var(--hh-border) !important;
+  margin: 12px 0 !important;
+}
+
+.hhIndivSummaryCol .hhSummaryLabel {
+  font-size: clamp(11px, 0.75vw, 13px) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  color: var(--hh-muted) !important;
+  text-transform: uppercase !important;
+}
+
+.hhIndivSummaryCol .hhSummaryValue {
+  font-size: clamp(28px, 2vw, 42px) !important;
+  font-weight: 800 !important;
+  color: var(--hh-text) !important;
+  line-height: 1.1 !important;
+  font-variant-numeric: tabular-nums !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+}
+
+.hhIndivSummaryCol .hhSummaryValue.is-neg {
+  color: var(--hh-neg-text) !important;
+}
+.hhIndivSummaryCol .hhSummaryValue.is-pos {
+  color: var(--hh-text) !important;
+}
+
+.hhIndivSummaryCol .hhSummaryUnit {
+  font-size: clamp(14px, 0.9vw, 18px) !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndivSummaryCol .hhSummaryHint {
+  font-size: clamp(12px, 0.8vw, 14.5px) !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+/* ÁREA 3 — Coluna Central: Tabela Hora a Hora */
+.hhIndivHourlyCol {
+  overflow: hidden !important;
+}
+
+.hhIndivTableWrap {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  padding: 0 4px !important;
+}
+
+.hhIndivTable {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: clamp(14px, 0.95vw, 18px) !important;
+}
+
+.hhIndivTable thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  background: var(--hh-card) !important;
+  padding: 10px 12px !important;
+  font-size: clamp(10px, 0.7vw, 12px) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--hh-muted) !important;
+  text-align: right !important;
+  border-bottom: 1px solid var(--hh-border) !important;
+}
+
+.hhIndivTable thead th.th-slot {
+  text-align: left !important;
+}
+
+.hhIndivTable tbody td {
+  padding: clamp(8px, 0.8vh, 14px) 12px !important;
+  border-bottom: 1px solid var(--hh-border) !important;
+  color: var(--hh-text) !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
+
+.hhIndivTable tbody td.hhSlotCol {
+  text-align: left !important;
+  font-weight: 700 !important;
+}
+
+.hhSlotBadge {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  margin-left: 6px !important;
+  color: var(--hh-accent) !important;
+}
+
+.hhIndivTable tbody tr.is-current {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+  font-weight: 750 !important;
+}
+[data-hh-theme="dark"] .hhIndivTable tbody tr.is-current,
+[data-theme="dark"] .hhIndivTable tbody tr.is-current {
+  background-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.hhIndivTable tbody tr.is-current td.hhSlotCol {
+  color: var(--hh-accent) !important;
+  border-left: 3px solid var(--hh-accent) !important;
+}
+
+.hhIndivTable tbody tr.is-early td.hhSlotCol {
+  color: var(--hh-pos-text) !important;
+}
+
+.hhIndivTable tbody tr.is-future td {
+  color: var(--hh-muted) !important;
+  opacity: 0.55 !important;
+}
+
+.hhIndivTable tbody td.pos {
+  color: var(--hh-pos-text) !important;
+  font-weight: 700 !important;
+}
+
+.hhIndivTable tbody td.neg {
+  color: var(--hh-neg-text) !important;
+  font-weight: 700 !important;
+}
+
+.hhIndivTable tbody td.future {
+  color: var(--hh-muted) !important;
+}
+
+/* ÁREA 4 — Coluna Direita: Operação e Fila empilhados */
+.hhIndivRightCol {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+.hhIndivProdCard {
+  flex: 1 1 50% !important;
+  overflow: hidden !important;
+}
+
+.hhIndProductBox {
+  padding: 14px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+}
+
+.hhIndProductTop {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.hhIndProductSlot {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndProductName {
+  font-size: clamp(16px, 1.1vw, 22px) !important;
+  font-weight: 800 !important;
+  color: var(--hh-text) !important;
+  line-height: 1.25 !important;
+  margin: 4px 0 2px 0 !important;
+}
+
+.hhIndProductDest {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndProductQtyRow {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  margin-top: 4px !important;
+}
+
+.hhIndProductQtyVal {
+  font-size: clamp(16px, 1.1vw, 20px) !important;
+  font-weight: 800 !important;
+  color: var(--hh-text) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.hhIndProductQtyVal small {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndProductQtySlot {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--hh-accent) !important;
+}
+
+.hhIndProgressBar {
+  height: 8px !important;
+  background: var(--hh-track) !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  margin-top: 2px !important;
+}
+.hhIndProgressBar i {
+  display: block !important;
+  height: 100% !important;
+  background: var(--hh-accent) !important;
+  border-radius: inherit !important;
+  transition: width 0.3s ease !important;
+}
+
+.hhIndProductHint {
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndStopWrap {
+  margin-top: 8px !important;
+}
+.hhIndStopWrap .hhFcStop {
+  background: var(--hh-neg-bg) !important;
+  color: var(--hh-neg-text) !important;
+  border: 1px solid rgba(185, 28, 28, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+}
+
+.hhIndivQueueCard {
+  flex: 1 1 50% !important;
+  overflow: hidden !important;
+}
+
+.hhIndQueueList {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 8px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+}
+
+.hhIndQueueItem {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 6px 0 !important;
+  border-bottom: 1px solid var(--hh-border) !important;
+}
+.hhIndQueueItem:last-child {
+  border-bottom: 0 !important;
+}
+
+.hhIndQueueNum {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  background: var(--hh-track) !important;
+  color: var(--hh-text) !important;
+  border: 1px solid var(--hh-border) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.hhIndQueueWho {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.hhIndQueueProdTitle {
+  font-size: clamp(12.5px, 0.85vw, 15px) !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.hhIndQueueSub {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndQueueQty {
+  font-size: clamp(13px, 0.9vw, 16px) !important;
+  font-weight: 750 !important;
+  color: var(--hh-text) !important;
+  font-variant-numeric: tabular-nums !important;
+  flex-shrink: 0 !important;
+}
+.hhIndQueueQty small {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--hh-muted) !important;
+}
+
+.hhIndQueueEmpty {
+  padding: 16px 0 !important;
+  color: var(--hh-muted) !important;
+  font-size: 12px !important;
+  text-align: center !important;
+}
+
+/* RODAPÉ — Faixa horizontal discreta */
+.hhIndivFooter {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 6px 4px 0 4px !important;
+  border-top: 1px solid var(--hh-border) !important;
+  background: transparent !important;
+  font-size: 11.5px !important;
+  color: var(--hh-muted) !important;
+  font-weight: 500 !important;
+  flex-shrink: 0 !important;
+}
+
+.hhIndivFootHelp {
+  flex: 1 1 auto !important;
+}
+
+.hhIndivFootMeta {
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
+}
+
+.hhIndivVersion {
+  color: var(--hh-accent) !important;
+  font-weight: 700 !important;
+}
+
+/* RESPONSIVIDADE E BREAKPOINTS */
+@media (max-width: 1280px) {
+  .hhIndivHeaderWrap {
+    grid-template-columns: 1fr auto !important;
+    gap: 12px !important;
+  }
+  .hhIndivHeadCenter {
+    grid-column: 1 / -1 !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hhIndivGridArea {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) !important;
+  }
+  .hhIndivRightCol {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hhIndivContainer {
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+  .hhIndivHeaderWrap {
+    grid-template-columns: 1fr !important;
+  }
+  .hhIndivHeadRight {
+    align-items: flex-start !important;
+  }
+  .hhIndivGridArea {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .hhIndivRightCol {
+    grid-template-columns: 1fr !important;
+  }
+  .hhIndivFooter {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+}
 </style>
 </div>
 </div>
 
-<script src="painel-data.js?v=0.1.11"></script>
-<script src="painel-app.js?v=0.1.11"></script>
+<script src="painel-data.js?v=0.1.12"></script>
+<script src="painel-app.js?v=0.1.12"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
