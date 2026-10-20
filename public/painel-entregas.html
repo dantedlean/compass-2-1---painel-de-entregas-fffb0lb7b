@@ -1024,7 +1024,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   </div>
 </div>
 </main>
-<footer class="hhFooter" data-ver-updated="v0.1.09">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.09</b></footer>
+<footer class="hhFooter" data-ver-updated="v0.1.10">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.10</b></footer>
 </div>
 <style>
 /* ===== Redesign Visual Andon · Produção — Monitor Geral Clean (Tema Claro / Escuro via variáveis) ===== */
@@ -1946,12 +1946,33 @@ body.hhTv #hhTvExit:hover {
   background: rgba(220, 38, 38, 0.8) !important;
   color: #fff !important;
 }
+
+/* v0.1.10 — Ocultar cabeçalho antigo (.hhTopbar) e controles duplicados (#hhPanelMonitor > .hhSectionHead) exclusivamente no Monitor geral */
+#viewHH:has(#hhPanelMonitor.active #hhMonitorFloor.active) .hhTopbar,
+#viewHH:has(#hhPanelMonitor.active #hhFactoryScreen:not(:empty)) .hhTopbar,
+#viewHH.hh-mon-chao .hhTopbar,
+body.hh-mon-chao #viewHH .hhTopbar {
+  display: none !important;
+}
+
+#hhPanelMonitor.active:has(#hhMonitorFloor.active) > .hhSectionHead,
+#hhPanelMonitor.active:has(#hhFactoryScreen:not(:empty)) > .hhSectionHead,
+#hhPanelMonitor.active:has(#hhMonitorFloor.active) .hhMonitorActions:not(.hhIndividualSelect),
+#hhPanelMonitor.active:has(#hhMonitorFloor.active) .hhViewSwitch,
+#hhPanelMonitor.hh-mon-chao > .hhSectionHead,
+#hhPanelMonitor.hh-mon-chao .hhMonitorActions:not(.hhIndividualSelect),
+#hhPanelMonitor.hh-mon-chao .hhViewSwitch,
+body.hh-mon-chao #hhPanelMonitor > .hhSectionHead,
+body.hh-mon-chao #hhPanelMonitor .hhMonitorActions:not(.hhIndividualSelect),
+body.hh-mon-chao #hhPanelMonitor .hhViewSwitch {
+  display: none !important;
+}
 </style>
 </div>
 </div>
 
-<script src="painel-data.js?v=0.1.09"></script>
-<script src="painel-app.js?v=0.1.09"></script>
+<script src="painel-data.js?v=0.1.10"></script>
+<script src="painel-app.js?v=0.1.10"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
