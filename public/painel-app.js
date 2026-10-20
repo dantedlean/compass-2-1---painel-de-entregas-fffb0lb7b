@@ -4135,8 +4135,15 @@ function hhBindTabs(){
  const hour=document.getElementById('hhSelHora');if(hour)hour.addEventListener('change',hhEntryContextRender);
  const filter=document.getElementById('hhLinhaSel');if(filter)filter.addEventListener('change',function(){hhLinhaSel=filter.value;hhRender();});
  const qty=document.getElementById('hhQtd');document.querySelectorAll('#viewHH [data-hh-qdelta]').forEach(function(b){b.addEventListener('click',function(){if(!hhAdmin()){hhFlash('⚠ modo leitura');return;}if(qty)qty.value=String(Math.max(0,(Number(qty.value)||0)+Number(b.getAttribute('data-hh-qdelta'))));});});
- const tv=document.getElementById('hhTvBtn');if(tv)tv.addEventListener('click',hhTvToggle);
- document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement&&document.body.classList.contains('hhTv')){hhTvToggle();}});
+ // v0.1.08: rebind de #hhTvBtn é feito exclusivamente após o reassign final de hhTvToggle.
+ if(typeof hhRebindTvBtn==='function')hhRebindTvBtn();
+ document.addEventListener('fullscreenchange',function(){
+  if(document.fullscreenElement){window._hhTvFs=true;}
+  else if(document.fullscreenElement===null&&window._hhTvFs){
+   window._hhTvFs=false;
+   if(document.body.classList.contains('hhTv')){hhTvToggle();}
+  }
+ });
  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('hhTv')){hhTvToggle();}});
 }
 // ── RENDER principal ──
@@ -4891,12 +4898,47 @@ window._hhRenderOperationalBase=hhRender;
 hhRender=function(){window._hhRenderOperationalBase();hhMonV2Render(hhDiaSelIso(),new Date());};
 window.hhRender=hhRender;
 // Screen-specific presentation mode; fullscreen follows the currently selected monitor.
+// v0.1.08: Rebind limpo do botão #hhTvBtn substituindo nós anteriores para garantir um único handler final
+function hhRebindTvBtn(){
+ const oldTv=document.getElementById('hhTvBtn');
+ if(!oldTv)return;
+ if(oldTv._hhTvFinalBound)return;
+ const newTv=oldTv.cloneNode(true);
+ newTv.id='hhTvBtn';
+ newTv._hhTvFinalBound=true;
+ newTv.addEventListener('click',function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  hhTvToggle();
+ });
+ if(oldTv.parentNode){
+  oldTv.parentNode.replaceChild(newTv,oldTv);
+ }
+}
+window.hhRebindTvBtn = hhRebindTvBtn;
+
 hhTvToggle=function(){
  const body=document.body,on=!body.classList.contains('hhTv'),screen=window._hhMonitorScreen||'chao';
  body.classList.toggle('hhTv',on);body.classList.toggle('hhTvIndividual',on&&screen==='individual');
  const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';
- let x=document.getElementById('hhTvExit');if(on){if(!x){x=document.createElement('button');x.id='hhTvExit';x.textContent='✕';x.title='Sair da tela cheia (ESC)';x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});document.body.appendChild(x);}x.style.display='block';try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}}
- else{if(x)x.style.display='none';try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
+ let x=document.getElementById('hhTvExit');
+ if(on){
+  if(!x){x=document.createElement('button');x.id='hhTvExit';x.textContent='✕';x.title='Sair da tela cheia (ESC)';x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});document.body.appendChild(x);}
+  x.style.display='block';
+  try{
+   if(document.documentElement.requestFullscreen&&!document.fullscreenElement){
+    document.documentElement.requestFullscreen().then(function(){
+     window._hhTvFs=true;
+    }).catch(function(){});
+   } else if(document.fullscreenElement){
+    window._hhTvFs=true;
+   }
+  }catch(e){}
+ }else{
+  window._hhTvFs=false;
+  if(x)x.style.display='none';
+  try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}
+ }
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
 window.hhTvToggle = hhTvToggle;
@@ -4908,8 +4950,7 @@ function hhMonV2InitScreen(){
  const sel=document.getElementById('hhMonCellSelect');
  if(sel&&!sel._hhMonV2Bound){sel._hhMonV2Bound=true;sel.addEventListener('change',function(){window._hhMonV2CellId=sel.value;hhRender();});}
  if(sel){const sig=hhLinhasCfg.map(function(c){return c.id+':'+c.nome;}).join('|');if(sel.getAttribute('data-sig')!==sig){const current=window._hhMonV2CellId||sel.value;sel.innerHTML=hhLinhasCfg.map(function(c){return '<option value="'+escH(c.id)+'">'+escH(c.nome)+'</option>';}).join('');sel.setAttribute('data-sig',sig);if(current&&hhLinhasCfg.some(function(c){return c.id===current;}))sel.value=current;}if(!sel.value&&hhLinhasCfg.length)sel.value=hhLinhasCfg[0].id;window._hhMonV2CellId=sel.value;}
- const tv=document.getElementById('hhTvBtn');
- if(tv&&!tv._hhMonV2Bound){tv._hhMonV2Bound=true;tv.addEventListener('click',function(){hhTvToggle();});}
+ hhRebindTvBtn();
 }
 
 hhMonV2InitScreen();
@@ -4917,7 +4958,20 @@ setInterval(function(){const v=document.getElementById('viewHH');if(v&&v.classLi
 
 // v0.0.425: após o carregamento assíncrono do estado, redesenha os dois monitores.
 
-setTimeout(function(){try{hhMonV2InitScreen();if(typeof hhInit==='function')hhInit();if(typeof hhRender==='function')hhRender();}catch(e){}},0);
+setTimeout(function(){
+ try{
+  hhMonV2InitScreen();
+  if(typeof hhInit==='function')hhInit();
+  if(typeof hhRebindTvBtn==='function')hhRebindTvBtn();
+  if(typeof hhRender==='function')hhRender();
+  if((window.location.search&&/[?&]tv=1\b/.test(window.location.search))||window.location.hash==='#tv'){
+   if(!document.body.classList.contains('hhTv')){hhTvToggle();}
+  }
+ }catch(e){}
+},0);
+// v0.1.08: reforço do rebind após renderizações assíncronas
+setTimeout(function(){try{if(typeof hhRebindTvBtn==='function')hhRebindTvBtn();}catch(e){}},300);
+setTimeout(function(){try{if(typeof hhRebindTvBtn==='function')hhRebindTvBtn();}catch(e){}},1000);
 
 // ===== v0.0.431 OVERRIDE — Monitores Geral/Individual DARK conforme modelo Dante (TV 1920x1080) =====
 function hh431DateLabel(iso){try{const d=new Date(String(iso)+'T12:00:00');const mo=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()];return ['dom','seg','ter','qua','qui','sex','sáb'][d.getDay()]+' · '+String(d.getDate()).padStart(2,'0')+' '+mo+' '+d.getFullYear();}catch(e){return String(iso);}}
