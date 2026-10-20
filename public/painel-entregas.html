@@ -1292,6 +1292,122 @@ body[data-theme="light"],
   border-color: var(--hh-muted) !important;
 }
 
+/* ==========================================================================
+   Integração do seletor de célula #hhMonCellSelect no header do Monitor Individual
+   ========================================================================== */
+.hhIndivCellPickerWrap,
+#hhIndivCellPickerSlot {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Quando .hhIndividualSelect é movido para dentro do slot no header */
+.hhIndivCellPickerWrap .hhIndividualSelect,
+#hhIndivCellPickerSlot .hhIndividualSelect {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ocultar o label "Célula para monitor individual" quando integrado ao header (mantém acessibilidade/título) */
+.hhIndivCellPickerWrap .hhIndividualSelect label,
+#hhIndivCellPickerSlot .hhIndividualSelect label {
+  display: none !important;
+}
+
+/* Estilo do dropdown integrado ao header (coerente com pills e botões) */
+.hhIndivCellPickerWrap select,
+#hhIndivCellPickerSlot select,
+.hhIndivHeaderWrap #hhMonCellSelect,
+.hhCleanHeader #hhMonCellSelect {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-color: var(--hh-card) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 11px 11px !important;
+  color: var(--hh-text) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 9999px !important;
+  padding: 5px 28px 5px 14px !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 36px !important;
+  min-width: 150px !important;
+  max-width: 220px !important;
+  line-height: 1.2 !important;
+  cursor: pointer !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.hhIndivCellPickerWrap select:hover,
+#hhIndivCellPickerSlot select:hover,
+.hhIndivHeaderWrap #hhMonCellSelect:hover,
+.hhCleanHeader #hhMonCellSelect:hover {
+  border-color: var(--hh-muted) !important;
+}
+
+.hhIndivCellPickerWrap select:focus,
+#hhIndivCellPickerSlot select:focus,
+.hhIndivHeaderWrap #hhMonCellSelect:focus,
+.hhCleanHeader #hhMonCellSelect:focus {
+  border-color: var(--hh-accent) !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+}
+
+.hhIndivCellPickerWrap select option,
+#hhIndivCellPickerSlot select option,
+#hhMonCellSelect option {
+  background-color: var(--hh-card) !important;
+  color: var(--hh-text) !important;
+}
+
+/* GARANTIR VISIBILIDADE EM MODO TV E FULLSCREEN (anula regras globais body.hhTv que escondem .hhIndividualSelect) */
+body.hhTv .hhIndivCellPickerWrap,
+body.hhTv #hhIndivCellPickerSlot,
+body.hhTv .hhIndivCellPickerWrap .hhIndividualSelect,
+body.hhTv #hhIndivCellPickerSlot .hhIndividualSelect,
+body.hhTv .hhIndivCellPickerWrap #hhMonCellSelect,
+body.hhTv #hhIndivCellPickerSlot #hhMonCellSelect,
+body.hhTv .hhIndivHeaderWrap #hhMonCellSelect,
+body.hhTv .hhCleanHeader #hhMonCellSelect,
+body.hhTv .hhMonCellSlot,
+body.hhTv #hhMonCellSelect {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Esconder a faixa antiga solta do #hhPanelMonitor (fora do slot do header) */
+#hhPanelMonitor > .hhIndividualSelect,
+#viewHH > .hhIndividualSelect,
+.hhSectionHead + .hhIndividualSelect:not(#hhIndivCellPickerSlot .hhIndividualSelect) {
+  display: none !important;
+}
+
 /* 2. Linha de resumo (3 cartões) */
 .hhSummaryRow {
   display: grid !important;
@@ -2666,6 +2782,31 @@ body.hhTv #hhMonitorIndividual.active {
     align-items: flex-start !important;
     gap: 6px !important;
   }
+}
+
+/* Regra final para garantir visibilidade do seletor em qualquer modo (TV, tela cheia, claro, escuro)
+   e esconder a barra antiga independente */
+#hhIndivCellPickerSlot,
+.hhIndivCellPickerWrap,
+#hhIndivCellPickerSlot #hhMonCellSelect,
+.hhIndivCellPickerWrap #hhMonCellSelect,
+body.hhTv #hhIndivCellPickerSlot,
+body.hhTv .hhIndivCellPickerWrap,
+body.hhTv #hhIndivCellPickerSlot #hhMonCellSelect,
+body.hhTv .hhIndivCellPickerWrap #hhMonCellSelect,
+body.hhTv .hhMonCellSlot,
+body.hhTv #hhMonCellSelect {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Esconde definitivamente a faixa antiga solta do seletor no Monitor Individual */
+#hhPanelMonitor > .hhIndividualSelect,
+.hhSectionHead + .hhIndividualSelect,
+body.hhTv #hhPanelMonitor > .hhIndividualSelect,
+body.hh-mon-individual #hhPanelMonitor > .hhIndividualSelect {
+  display: none !important;
 }
 </style>
 </div>
