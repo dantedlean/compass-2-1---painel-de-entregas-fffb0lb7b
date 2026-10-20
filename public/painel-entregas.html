@@ -1017,14 +1017,14 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   <div class="hhMonitorActions hhIndividualSelect"><label for="hhMonCellSelect">Célula para monitor individual</label><select id="hhMonCellSelect" aria-label="Selecionar célula do monitor individual"></select></div>
   <section id="hhMonitorFloor" class="hhMonitorPane active" aria-label="Monitor geral da fábrica"><div id="hhFactoryScreen"></div></section>
   <section id="hhMonitorIndividual" class="hhMonitorPane" hidden aria-label="Monitor individual da célula"><div id="hhIndividualScreen"></div></section>
-  <section id="hhMonitorManager" class="hhMonitorPane" hidden aria-label="Visão de gestão"><div class="hhManagerKpis" id="hhManagerKpis"></div><div class="hhManagerGrid"><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Produção por célula</h3><p>Visão consolidada do turno — sem ranking individual.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhManagerCellTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Janela</th><th scope="col">Equipe / postos</th><th scope="col">Produzido / meta</th><th scope="col">Ritmo</th><th scope="col">Diferença</th></tr></thead><tbody id="hhManagerCellTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>Produção por hora</h3><p>Realizado versus meta do intervalo.</p></div></div><div class="hhChart" id="hhChart"></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhTblT"><thead><tr><th scope="col">Hora</th><th scope="col">Produzido</th><th scope="col">Meta/h</th><th scope="col">Acumulado</th><th scope="col">Meta acum.</th><th scope="col">Difer.</th><th scope="col">Situação</th><th scope="col">Paradas</th><th scope="col">Produtos</th></tr></thead><tbody id="hhTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>Perdas do turno</h3><p>Minutos registrados por motivo — apoio ao Pareto.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhParetoTbl"><thead><tr><th scope="col">Motivo</th><th scope="col">Minutos</th><th scope="col">Ocorrências</th></tr></thead><tbody id="hhParetoTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>WARD × PV</h3><p>Destinos exibidos separadamente.</p></div></div><div class="hhSplitStats" id="hhSplitStats"></div></div><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Capacidade histórica</h3><p>Referência para próxima programação; a PCP revisa e aprova qualquer meta sugerida.</p></div><span class="hhGatePill">PCP valida</span></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhBaseTbl"><thead><tr><th style="text-align:left" scope="col">Célula × produto</th><th scope="col">Operadores / postos</th><th scope="col">Média/h</th><th scope="col">Melhor intervalo</th><th scope="col">Sugestão/h</th></tr></thead><tbody id="hhBaseTb"></tbody></table></div></div><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Ações em aberto</h3><p>Paradas e contramedidas com responsável definido.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhActionsTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Motivo</th><th scope="col">Minutos</th><th style="text-align:left" scope="col">Observação / ação</th><th scope="col">Status</th></tr></thead><tbody id="hhActionsTb"></tbody></table></div></div></div></section>
+  <section id="hhMonitorManager" class="hhMonitorPane" hidden aria-label="Visão de gestão"><div id="hhManagerCleanScreen"></div><div class="hhManagerKpis" id="hhManagerKpis"></div><div class="hhManagerGrid"><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Produção por célula</h3><p>Visão consolidada do turno — sem ranking individual.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhManagerCellTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Janela</th><th scope="col">Equipe / postos</th><th scope="col">Produzido / meta</th><th scope="col">Ritmo</th><th scope="col">Diferença</th></tr></thead><tbody id="hhManagerCellTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>Produção por hora</h3><p>Realizado versus meta do intervalo.</p></div></div><div class="hhChart" id="hhChart"></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhTblT"><thead><tr><th scope="col">Hora</th><th scope="col">Produzido</th><th scope="col">Meta/h</th><th scope="col">Acumulado</th><th scope="col">Meta acum.</th><th scope="col">Difer.</th><th scope="col">Situação</th><th scope="col">Paradas</th><th scope="col">Produtos</th></tr></thead><tbody id="hhTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>Perdas do turno</h3><p>Minutos registrados por motivo — apoio ao Pareto.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhParetoTbl"><thead><tr><th scope="col">Motivo</th><th scope="col">Minutos</th><th scope="col">Ocorrências</th></tr></thead><tbody id="hhParetoTb"></tbody></table></div></div><div class="card"><div class="hhCardHead"><div><h3>WARD × PV</h3><p>Destinos exibidos separadamente.</p></div></div><div class="hhSplitStats" id="hhSplitStats"></div></div><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Capacidade histórica</h3><p>Referência para próxima programação; a PCP revisa e aprova qualquer meta sugerida.</p></div><span class="hhGatePill">PCP valida</span></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhBaseTbl"><thead><tr><th style="text-align:left" scope="col">Célula × produto</th><th scope="col">Operadores / postos</th><th scope="col">Média/h</th><th scope="col">Melhor intervalo</th><th scope="col">Sugestão/h</th></tr></thead><tbody id="hhBaseTb"></tbody></table></div></div><div class="card hhManagerWide"><div class="hhCardHead"><div><h3>Ações em aberto</h3><p>Paradas e contramedidas com responsável definido.</p></div></div><div class="tblwrap hhCfg"><table class="hhTbl" id="hhActionsTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Motivo</th><th scope="col">Minutos</th><th style="text-align:left" scope="col">Observação / ação</th><th scope="col">Status</th></tr></thead><tbody id="hhActionsTb"></tbody></table></div></div></div></section>
   <div id="hhLegacyMonitor" class="hhCompatibility" aria-hidden="true">
     <div id="hhAndonCards"></div><div id="hhCellMon"></div><div id="hhNow"></div><div id="hhFloorMetrics"></div><div id="hhFloorCards"></div>
     <div id="hhGrid"></div><table id="hhConsTbl"><thead></thead><tbody id="hhConsTb"></tbody></table>
   </div>
 </div>
 </main>
-<footer class="hhFooter" data-ver-updated="v0.1.10">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.10</b></footer>
+<footer class="hhFooter" data-ver-updated="v0.1.11">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.11</b></footer>
 </div>
 <style>
 /* ===== Redesign Visual Andon · Produção — Monitor Geral Clean (Tema Claro / Escuro via variáveis) ===== */
@@ -1947,32 +1947,54 @@ body.hhTv #hhTvExit:hover {
   color: #fff !important;
 }
 
-/* v0.1.10 — Ocultar cabeçalho antigo (.hhTopbar) e controles duplicados (#hhPanelMonitor > .hhSectionHead) exclusivamente no Monitor geral */
-#viewHH:has(#hhPanelMonitor.active #hhMonitorFloor.active) .hhTopbar,
-#viewHH:has(#hhPanelMonitor.active #hhFactoryScreen:not(:empty)) .hhTopbar,
+/* v0.1.11 — Ocultar cabeçalho antigo (.hhTopbar) e controles duplicados (#hhPanelMonitor > .hhSectionHead / .hhViewSwitch) nos 3 monitores do Andon (chao, individual, manager) */
+#viewHH:has(#hhPanelMonitor.active) .hhTopbar,
+#viewHH.hh-mon-active .hhTopbar,
+body.hh-mon-active #viewHH .hhTopbar,
 #viewHH.hh-mon-chao .hhTopbar,
-body.hh-mon-chao #viewHH .hhTopbar {
+body.hh-mon-chao #viewHH .hhTopbar,
+#viewHH.hh-mon-individual .hhTopbar,
+body.hh-mon-individual #viewHH .hhTopbar,
+#viewHH.hh-mon-manager .hhTopbar,
+body.hh-mon-manager #viewHH .hhTopbar {
   display: none !important;
 }
 
-#hhPanelMonitor.active:has(#hhMonitorFloor.active) > .hhSectionHead,
-#hhPanelMonitor.active:has(#hhFactoryScreen:not(:empty)) > .hhSectionHead,
-#hhPanelMonitor.active:has(#hhMonitorFloor.active) .hhMonitorActions:not(.hhIndividualSelect),
-#hhPanelMonitor.active:has(#hhMonitorFloor.active) .hhViewSwitch,
+#hhPanelMonitor.active > .hhSectionHead,
+#hhPanelMonitor.active .hhMonitorActions:not(.hhIndividualSelect),
+#hhPanelMonitor.active .hhViewSwitch,
+#hhPanelMonitor.hh-mon-active > .hhSectionHead,
+#hhPanelMonitor.hh-mon-active .hhMonitorActions:not(.hhIndividualSelect),
+#hhPanelMonitor.hh-mon-active .hhViewSwitch,
+body.hh-mon-active #hhPanelMonitor > .hhSectionHead,
+body.hh-mon-active #hhPanelMonitor .hhMonitorActions:not(.hhIndividualSelect),
+body.hh-mon-active #hhPanelMonitor .hhViewSwitch,
 #hhPanelMonitor.hh-mon-chao > .hhSectionHead,
 #hhPanelMonitor.hh-mon-chao .hhMonitorActions:not(.hhIndividualSelect),
 #hhPanelMonitor.hh-mon-chao .hhViewSwitch,
 body.hh-mon-chao #hhPanelMonitor > .hhSectionHead,
 body.hh-mon-chao #hhPanelMonitor .hhMonitorActions:not(.hhIndividualSelect),
-body.hh-mon-chao #hhPanelMonitor .hhViewSwitch {
+body.hh-mon-chao #hhPanelMonitor .hhViewSwitch,
+#hhPanelMonitor.hh-mon-individual > .hhSectionHead,
+#hhPanelMonitor.hh-mon-individual .hhMonitorActions:not(.hhIndividualSelect),
+#hhPanelMonitor.hh-mon-individual .hhViewSwitch,
+body.hh-mon-individual #hhPanelMonitor > .hhSectionHead,
+body.hh-mon-individual #hhPanelMonitor .hhMonitorActions:not(.hhIndividualSelect),
+body.hh-mon-individual #hhPanelMonitor .hhViewSwitch,
+#hhPanelMonitor.hh-mon-manager > .hhSectionHead,
+#hhPanelMonitor.hh-mon-manager .hhMonitorActions:not(.hhIndividualSelect),
+#hhPanelMonitor.hh-mon-manager .hhViewSwitch,
+body.hh-mon-manager #hhPanelMonitor > .hhSectionHead,
+body.hh-mon-manager #hhPanelMonitor .hhMonitorActions:not(.hhIndividualSelect),
+body.hh-mon-manager #hhPanelMonitor .hhViewSwitch {
   display: none !important;
 }
 </style>
 </div>
 </div>
 
-<script src="painel-data.js?v=0.1.10"></script>
-<script src="painel-app.js?v=0.1.10"></script>
+<script src="painel-data.js?v=0.1.11"></script>
+<script src="painel-app.js?v=0.1.11"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>

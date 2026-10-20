@@ -4128,7 +4128,7 @@ function hhAndonCardsRender(iso,hNow,nowMinute,now){
 
 function hhBindTabs(){
  if(window._hhTabsBound)return;window._hhTabsBound=true;
- document.querySelectorAll('#viewHH [data-hh-tab]').forEach(function(b){b.addEventListener('click',function(){const key=b.getAttribute('data-hh-tab');document.querySelectorAll('#viewHH [data-hh-tab]').forEach(function(x){const on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-selected',on?'true':'false');});[['programacao','hhPanelPlan'],['apontamento','hhPanelEntry'],['monitoramento','hhPanelMonitor']].forEach(function(pair){const el=document.getElementById(pair[1]);if(!el)return;const on=pair[0]===key;el.classList.toggle('active',on);el.hidden=!on;if(pair[0]==='monitoramento'&&on){var cs=window._hhMonitorScreen||'chao';document.body.classList.toggle('hh-mon-chao',cs==='chao');var vH=document.getElementById('viewHH');if(vH)vH.classList.toggle('hh-mon-chao',cs==='chao');el.classList.toggle('hh-mon-chao',cs==='chao');}else if(pair[0]==='monitoramento'&&!on){document.body.classList.remove('hh-mon-chao');var vH=document.getElementById('viewHH');if(vH)vH.classList.remove('hh-mon-chao');el.classList.remove('hh-mon-chao');}});hhRender();if(key==='monitoramento'&&window.echarts&&hhChart)setTimeout(function(){hhChart.resize();},80);});});
+ document.querySelectorAll('#viewHH [data-hh-tab]').forEach(function(b){b.addEventListener('click',function(){const key=b.getAttribute('data-hh-tab');document.querySelectorAll('#viewHH [data-hh-tab]').forEach(function(x){const on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-selected',on?'true':'false');});[['programacao','hhPanelPlan'],['apontamento','hhPanelEntry'],['monitoramento','hhPanelMonitor']].forEach(function(pair){const el=document.getElementById(pair[1]);if(!el)return;const on=pair[0]===key;el.classList.toggle('active',on);el.hidden=!on;});if(typeof hhSyncMonitorScopeClasses==='function')hhSyncMonitorScopeClasses(window._hhMonitorScreen||'chao');hhRender();if(key==='monitoramento'&&window.echarts&&hhChart)setTimeout(function(){hhChart.resize();},80);});});
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){b.addEventListener('click',function(){const key=b.getAttribute('data-hh-view');hhSetMonitorScreen(key);hhRender();if(key==='gestao'&&window.echarts&&hhChart)setTimeout(function(){hhChart.resize();},80);});});
  const cell=document.getElementById('hhSelLinha');if(cell)cell.addEventListener('change',function(){hhRender();});
  const prod=document.getElementById('hhSelProd');if(prod){prod.addEventListener('change',hhEntryContextRender);prod.addEventListener('input',hhEntryContextRender);}
@@ -4759,6 +4759,19 @@ window.hhRender = hhRender;
 // v0.0.425 (17/10) — MONITORES SEPARADOS conforme anexos de Dante.
 // A área antiga fica preservada e oculta; nenhum apontamento/config é alterado.
 // ══════════════════════════════════════════════════════════════════════════
+function hhSyncMonitorScopeClasses(screenKey){
+ var s=['individual','gestao'].indexOf(screenKey)>=0?screenKey:'chao';
+ var monPan=document.getElementById('hhPanelMonitor');
+ var isMonActive=monPan&&monPan.classList.contains('active');
+ var targets=[document.body, document.getElementById('viewHH'), monPan].filter(Boolean);
+ targets.forEach(function(el){
+  el.classList.toggle('hh-mon-active', isMonActive);
+  el.classList.toggle('hh-mon-chao', isMonActive && s==='chao');
+  el.classList.toggle('hh-mon-individual', isMonActive && s==='individual');
+  el.classList.toggle('hh-mon-manager', isMonActive && s==='gestao');
+ });
+}
+
 function hhSetMonitorScreen(key){
  const selected=['individual','gestao'].indexOf(key)>=0?key:'chao';
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){const on=b.getAttribute('data-hh-view')===selected;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false');});
@@ -4766,10 +4779,8 @@ function hhSetMonitorScreen(key){
  const pick=document.querySelector('#viewHH .hhIndividualSelect');if(pick){pick.style.display=selected==='individual'?'flex':'none';pick.classList.toggle('active',selected==='individual');}
  if(selected==='individual'&&hhLinhasCfg.length&&!hhLinhasCfg.some(function(c){return c.id===window._hhMonV2CellId;}))window._hhMonV2CellId=hhLinhasCfg[0].id;
  document.body.classList.toggle('hhTvIndividual',selected==='individual');
- document.body.classList.toggle('hh-mon-chao',selected==='chao');
- var viewHHEl=document.getElementById('viewHH');if(viewHHEl)viewHHEl.classList.toggle('hh-mon-chao',selected==='chao');
- var monPanEl=document.getElementById('hhPanelMonitor');if(monPanEl)monPanEl.classList.toggle('hh-mon-chao',selected==='chao');
  window._hhMonitorScreen=selected;
+ hhSyncMonitorScopeClasses(selected);
  try{if(typeof hhMonV2Render==='function')hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 }
 function hhMonV2Cut(c,iso,now){
@@ -4948,9 +4959,7 @@ hhTvToggle=function(){
 window.hhTvToggle = hhTvToggle;
 function hhMonV2InitScreen(){
  const s=window._hhMonitorScreen||'chao';
- document.body.classList.toggle('hh-mon-chao',s==='chao');
- var viewHHEl=document.getElementById('viewHH');if(viewHHEl)viewHHEl.classList.toggle('hh-mon-chao',s==='chao');
- var monPanEl=document.getElementById('hhPanelMonitor');if(monPanEl)monPanEl.classList.toggle('hh-mon-chao',s==='chao');
+ if(typeof hhSyncMonitorScopeClasses==='function')hhSyncMonitorScopeClasses(s);
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
   if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
   b.addEventListener('click',function(e){e.stopPropagation();hhSetMonitorScreen(b.getAttribute('data-hh-view'));hhRender();if(b.getAttribute('data-hh-view')==='gestao'&&window.echarts&&hhChart)setTimeout(function(){hhChart.resize();},80);});
@@ -5011,11 +5020,10 @@ function hhSetTheme(theme){
  const root=document.getElementById('hhMonitorFloor');
  if(root){root.setAttribute('data-theme',theme);}
  document.body.setAttribute('data-hh-theme',theme);
- const btn=document.getElementById('hhThemeToggleBtn');
- if(btn){
+ document.querySelectorAll('.hhThemeToggleBtn').forEach(function(btn){
   btn.innerHTML=theme==='dark'?'☀ Claro':'🌙 Escuro';
   btn.title='Alternar tema ('+(theme==='dark'?'Mudar para Claro':'Mudar para Escuro')+')';
- }
+ });
 }
 function hhToggleTheme(){
  const cur=hhGetTheme()==='dark'?'light':'dark';
@@ -5024,6 +5032,66 @@ function hhToggleTheme(){
 window.hhGetTheme=hhGetTheme;
 window.hhSetTheme=hhSetTheme;
 window.hhToggleTheme=hhToggleTheme;
+
+// v0.1.11 — Navegação completa via Pills do novo cabeçalho (Monitor geral / individual / gestão / tela cheia)
+function hhActivateMonitorNav(screenKey){
+ const selected=['individual','gestao'].indexOf(screenKey)>=0?screenKey:'chao';
+ // 1. Ativar aba de Monitoramento caso o usuário esteja em Programação ou Apontamento
+ document.querySelectorAll('[data-hh-tab]').forEach(function(x){
+  const on=x.getAttribute('data-hh-tab')==='monitoramento';
+  x.classList.toggle('active',on);
+  x.setAttribute('aria-selected',on?'true':'false');
+ });
+ [['programacao','hhPanelPlan'],['apontamento','hhPanelEntry'],['monitoramento','hhPanelMonitor']].forEach(function(pair){
+  const el=document.getElementById(pair[1]);
+  if(!el)return;
+  const on=pair[0]==='monitoramento';
+  el.classList.toggle('active',on);
+  el.hidden=!on;
+ });
+ // 2. Trocar tela interna do monitoramento e sincronizar escopos
+ hhSetMonitorScreen(selected);
+ hhRender();
+ if(selected==='gestao'&&window.echarts&&typeof hhChart!=='undefined'&&hhChart){
+  setTimeout(function(){try{hhChart.resize();}catch(e){}},80);
+ }
+}
+window.hhActivateMonitorNav=hhActivateMonitorNav;
+
+function hhRenderCleanHeaderHtml(activeScreen, d, iso){
+ const currentScreen=['individual','gestao'].indexOf(activeScreen)>=0?activeScreen:'chao';
+ const curDate=d||new Date();
+ const curIso=iso||hhDiaSelIso();
+ const timeHM=String(curDate.getHours()).padStart(2,'0')+':'+String(curDate.getMinutes()).padStart(2,'0');
+ const first=hhLinhasCfg[0];
+ const turnoRange=first?(hhClockTxt(hhScheduleStart(first))+' às '+hhClockTxt(hhScheduleEnd(first))):'';
+ const turnoTxt='Turno 01 · '+turnoRange;
+ const dateFullTxt=hh431DateLabel(curIso)+' · '+turnoTxt;
+ const currentTheme=hhGetTheme();
+
+ return '<header class="hhCleanHeader">'+
+  '<div class="hhHeadLeft">'+
+   '<div class="hhBrandSmall">DLEAN SOLUTIONS</div>'+
+   '<h1 class="hhTitleMain">Andon · Produção</h1>'+
+  '</div>'+
+  '<div class="hhHeadRight">'+
+   '<div class="hhClockWrap">'+
+    '<div class="hhClockHM">'+timeHM+'</div>'+
+    '<div class="hhClockSub">'+dateFullTxt+'</div>'+
+   '</div>'+
+   '<div class="hhHeadActions">'+
+    '<div class="hhNavPills" role="group" aria-label="Atalhos do monitor">'+
+     '<button type="button" class="hhPillBtn '+(currentScreen==='chao'?'active':'')+'" onclick="try{hhActivateMonitorNav(\'chao\');}catch(e){}">Monitor geral</button>'+
+     '<button type="button" class="hhPillBtn '+(currentScreen==='individual'?'active':'')+'" onclick="try{hhActivateMonitorNav(\'individual\');}catch(e){}">Monitor individual</button>'+
+     '<button type="button" class="hhPillBtn '+(currentScreen==='gestao'?'active':'')+'" onclick="try{hhActivateMonitorNav(\'gestao\');}catch(e){}">Gestão</button>'+
+     '<button type="button" class="hhPillBtn hhPillTv" onclick="try{hhTvToggle();}catch(e){}">⛶ Tela cheia</button>'+
+    '</div>'+
+    '<button class="hhThemeToggleBtn" type="button" onclick="hhToggleTheme()">'+(currentTheme==='dark'?'☀ Claro':'🌙 Escuro')+'</button>'+
+   '</div>'+
+  '</div>'+
+ '</header>';
+}
+window.hhRenderCleanHeaderHtml=hhRenderCleanHeaderHtml;
 
 function hh431FactoryCard(c,index,iso,now,m){
  const rows=hhMonV2SlotRows(c,iso,now),foc=m.focus;
@@ -5106,28 +5174,8 @@ function hhMonV2Factory431(iso,now){
 
  root.innerHTML=
  '<div class="hhCleanContainer" data-theme="'+currentTheme+'">'+
-  // (1) CABEÇALHO
-  '<header class="hhCleanHeader">'+
-   '<div class="hhHeadLeft">'+
-    '<div class="hhBrandSmall">DLEAN SOLUTIONS</div>'+
-    '<h1 class="hhTitleMain">Andon · Produção</h1>'+
-   '</div>'+
-   '<div class="hhHeadRight">'+
-    '<div class="hhClockWrap">'+
-     '<div class="hhClockHM">'+timeHM+'</div>'+
-     '<div class="hhClockSub">'+dateFullTxt+'</div>'+
-    '</div>'+
-    '<div class="hhHeadActions">'+
-     '<div class="hhNavPills" role="group" aria-label="Atalhos do monitor">'+
-      '<button type="button" class="hhPillBtn active" onclick="try{hhSetMonitorScreen(\'chao\');hhRender();}catch(e){}">Monitor geral</button>'+
-      '<button type="button" class="hhPillBtn" onclick="try{hhSetMonitorScreen(\'individual\');hhRender();}catch(e){}">Monitor individual</button>'+
-      '<button type="button" class="hhPillBtn" onclick="try{hhSetMonitorScreen(\'gestao\');hhRender();if(window.echarts&&hhChart)setTimeout(function(){hhChart.resize();},80);}catch(e){}">Gestão</button>'+
-      '<button type="button" class="hhPillBtn hhPillTv" onclick="try{hhTvToggle();}catch(e){}">⛶ Tela cheia</button>'+
-     '</div>'+
-     '<button id="hhThemeToggleBtn" class="hhThemeToggleBtn" type="button" onclick="hhToggleTheme()">'+(currentTheme==='dark'?'☀ Claro':'🌙 Escuro')+'</button>'+
-    '</div>'+
-   '</div>'+
-  '</header>'+
+  // (1) CABEÇALHO NOVO
+  hhRenderCleanHeaderHtml('chao', d, iso)+
 
   // (2) LINHA DE RESUMO (3 CARTÕES)
   '<section class="hhSummaryRow">'+
@@ -5195,7 +5243,9 @@ function hhMonV2Individual431(iso,now){
  const emP=pr.running?pr.running.p:pr.all[0];const queue=pr.queue.filter(function(p){return !emP||String(p.cod)!==String(emP.cod);}).slice(0,3).map(function(p,i){return '<li><span class="n">'+(i+1)+'</span><span class="who"><b>'+hhMonV2ProductDescription(p)+'</b><small>'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD':'—'))+'</small></span><span class="qty">'+NF.format(Number(p.qtdDia)||0)+' pc</span></li>';}).join('');
  const shift='Turno A · '+hhClockTxt(hhScheduleStart(c))+' - '+hhClockTxt(hhScheduleEnd(c));
  const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(left)+' min · ritmo nec.: '+NF.format(rate)+' pc/h'):'meta diária atingida';
- root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div class="turno">'+escH(shift)+'</div></div>'+
+ root.innerHTML='<div class="hhIndividualScreen">'+
+ hhRenderCleanHeaderHtml('individual', d, iso)+
+ '<header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div class="turno">'+escH(shift)+'</div></div>'+
  '<div class="hhIndState">'+hh431Icon(m)+' '+escH(m.label)+'<small>'+hh431Delta(m.delta)+' pc</small></div>'+
  '<div class="hhIndClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))+'</div></div></header>'+
  '<div class="hhIndMain"><section class="hhIndPanel hhIndSummary"><h3>RESUMO DA CÉLULA</h3>'+
@@ -5228,6 +5278,12 @@ hhMonV2Render=function(iso,now){
  }
  try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
  try{hhMonV2Individual431(iso,now);}catch(e){console.error('hh431 individual',e);}
+ try{
+  var mgrScreen=document.getElementById('hhManagerCleanScreen');
+  if(mgrScreen){
+   mgrScreen.innerHTML=hhRenderCleanHeaderHtml('gestao', now, iso);
+  }
+ }catch(e){console.error('hh431 gestao header',e);}
 };
 setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0);
 
@@ -5266,17 +5322,8 @@ setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0
     [['programacao','hhPanelPlan'],['apontamento','hhPanelEntry'],['monitoramento','hhPanelMonitor']].forEach(function(pair){
      var el=document.getElementById(pair[1]);if(!el)return;var on=pair[0]===key;
      el.classList.toggle('active',on);el.hidden=!on;
-     if(pair[0]==='monitoramento'&&on){
-      var curScreen=window._hhMonitorScreen||'chao';
-      document.body.classList.toggle('hh-mon-chao',curScreen==='chao');
-      var viewHHEl=document.getElementById('viewHH');if(viewHHEl)viewHHEl.classList.toggle('hh-mon-chao',curScreen==='chao');
-      el.classList.toggle('hh-mon-chao',curScreen==='chao');
-     } else if(pair[0]==='monitoramento'&&!on){
-      document.body.classList.remove('hh-mon-chao');
-      var viewHHEl=document.getElementById('viewHH');if(viewHHEl)viewHHEl.classList.remove('hh-mon-chao');
-      el.classList.remove('hh-mon-chao');
-     }
     });
+    if(typeof hhSyncMonitorScopeClasses==='function')hhSyncMonitorScopeClasses(window._hhMonitorScreen||'chao');
     try{hhRender();}catch(e3){}
     if(key==='monitoramento'&&window.echarts&&typeof hhChart!=='undefined'&&hhChart)setTimeout(function(){hhChart.resize();},80);
    });
