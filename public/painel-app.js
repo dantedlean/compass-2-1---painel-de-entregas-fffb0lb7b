@@ -5018,9 +5018,21 @@ function hhGetTheme(){
 }
 function hhSetTheme(theme){
  try{localStorage.setItem('hh_theme',theme);}catch(e){}
- const root=document.getElementById('hhMonitorFloor');
- if(root){root.setAttribute('data-theme',theme);}
- document.body.setAttribute('data-hh-theme',theme);
+ document.documentElement.setAttribute('data-hh-theme',theme);
+ document.documentElement.setAttribute('data-theme',theme);
+ if(document.body){
+  document.body.setAttribute('data-hh-theme',theme);
+  document.body.setAttribute('data-theme',theme);
+ }
+ const ids=['hhMonitorFloor','hhMonitorIndividual','hhMonitorManager','hhFactoryScreen','hhIndividualScreen','hhManagerCleanScreen'];
+ ids.forEach(function(id){
+  var el=document.getElementById(id);
+  if(el){el.setAttribute('data-theme',theme);el.setAttribute('data-hh-theme',theme);}
+ });
+ document.querySelectorAll('.hhCleanContainer').forEach(function(el){
+  el.setAttribute('data-theme',theme);
+  el.setAttribute('data-hh-theme',theme);
+ });
  document.querySelectorAll('.hhThemeToggleBtn').forEach(function(btn){
   btn.innerHTML=theme==='dark'?'☀ Claro':'🌙 Escuro';
   btn.title='Alternar tema ('+(theme==='dark'?'Mudar para Claro':'Mudar para Escuro')+')';
@@ -5248,7 +5260,6 @@ function hhRenderIndividualHeaderHtml(c, m, d, iso) {
    '<div class="hhIndivShift">'+shift+'</div>'+
   '</div>'+
   '<div class="hhIndivHeadCenter">'+
-   '<div class="hhCellBadge hhBadge-'+statusCls+' hhIndivStatusBadge">'+escH(statusLabel)+'</div>'+
    '<div class="hhIndivDesvio '+(deltaVal < 0 ? 'is-neg' : 'is-pos')+'">'+desvioText+'</div>'+
   '</div>'+
   '<div class="hhHeadRight hhIndivHeadRight">'+
@@ -5428,7 +5439,7 @@ function hhMonV2Individual431(iso,now){
   // RODAPÉ: Faixa horizontal discreta
   '<footer class="hhIndivFooter">'+
    '<span class="hhIndivFootHelp">Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span>'+
-   '<span class="hhIndivFootMeta">atualizado '+hh431ClockFull()+' · <b class="hhIndivVersion">v0.1.12</b></span>'+
+   '<span class="hhIndivFootMeta">atualizado '+hh431ClockFull()+' · <b class="hhIndivVersion">v0.1.13</b></span>'+
   '</footer>'+
  '</div>';
 

@@ -1024,7 +1024,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   </div>
 </div>
 </main>
-<footer class="hhFooter" data-ver-updated="v0.1.12">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.12</b></footer>
+<footer class="hhFooter" data-ver-updated="v0.1.13">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.13</b></footer>
 </div>
 <style>
 /* ===== Redesign Visual Andon · Produção — Monitor Geral Clean (Tema Claro / Escuro via variáveis) ===== */
@@ -1058,6 +1058,10 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   --hh-dot-zero: #9CA3AF;
 }
 
+:root[data-hh-theme="dark"],
+:root[data-theme="dark"],
+body[data-hh-theme="dark"],
+body[data-theme="dark"],
 [data-hh-theme="dark"],
 [data-theme="dark"] {
   --hh-bg: #0F1115;
@@ -1086,6 +1090,41 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   --hh-dot-late: #F87171;
   --hh-dot-stop: #E5E7EB;
   --hh-dot-wait: #7C8494;
+  --hh-dot-zero: #9CA3AF;
+}
+
+:root[data-hh-theme="light"],
+:root[data-theme="light"],
+body[data-hh-theme="light"],
+body[data-theme="light"],
+[data-hh-theme="light"],
+[data-theme="light"] {
+  --hh-bg: #F5F6F8;
+  --hh-card: #FFFFFF;
+  --hh-border: #E5E7EB;
+  --hh-text: #111827;
+  --hh-muted: #6B7280;
+  --hh-track: #EEF0F3;
+  --hh-accent: #2563EB;
+  --hh-neg-text: #B91C1C;
+  --hh-neg-bg: #FEE2E2;
+  --hh-pos-text: #16A34A;
+  --hh-cur-border: #111827;
+  --hh-badge-ritmo-text: #166534;
+  --hh-badge-ritmo-bg: #DCFCE7;
+  --hh-badge-warn-text: #92400E;
+  --hh-badge-warn-bg: #FEF3C7;
+  --hh-badge-late-text: #B91C1C;
+  --hh-badge-late-bg: #FEE2E2;
+  --hh-badge-stop-text: #111827;
+  --hh-badge-stop-bg: #E5E7EB;
+  --hh-badge-wait-text: #4B5563;
+  --hh-badge-wait-bg: #F3F4F6;
+  --hh-dot-ritmo: #16A34A;
+  --hh-dot-warn: #D97706;
+  --hh-dot-late: #DC2626;
+  --hh-dot-stop: #111827;
+  --hh-dot-wait: #9CA3AF;
   --hh-dot-zero: #9CA3AF;
 }
 
@@ -2632,8 +2671,8 @@ body.hhTv #hhMonitorIndividual.active {
 </div>
 </div>
 
-<script src="painel-data.js?v=0.1.12"></script>
-<script src="painel-app.js?v=0.1.12"></script>
+<script src="painel-data.js?v=0.1.13"></script>
+<script src="painel-app.js?v=0.1.13"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
