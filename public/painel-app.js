@@ -5282,9 +5282,55 @@ function hhRenderIndividualHeaderHtml(c, m, d, iso) {
  '</header>';
 }
 
+function hhEnsureIndivCellSelectInSlot(){
+ try{
+  var slot = document.getElementById('hhIndivCellPickerSlot');
+  if(!slot) return;
+  var selWrap = slot.querySelector('.hhIndividualSelect') || document.querySelector('.hhIndividualSelect') || window._hhPreservedIndivSelectWrap;
+  if(!selWrap){
+   selWrap = document.createElement('div');
+   selWrap.className = 'hhMonitorActions hhIndividualSelect';
+   var lbl = document.createElement('label');
+   lbl.htmlFor = 'hhMonCellSelect';
+   lbl.textContent = 'Célula para monitor individual';
+   var sEl = document.createElement('select');
+   sEl.id = 'hhMonCellSelect';
+   sEl.setAttribute('aria-label', 'Selecionar célula do monitor individual');
+   selWrap.appendChild(lbl);
+   selWrap.appendChild(sEl);
+  }
+  window._hhPreservedIndivSelectWrap = selWrap;
+
+  var sel = selWrap.querySelector('#hhMonCellSelect');
+  if(sel){
+   var sig = (typeof hhLinhasCfg !== 'undefined' && Array.isArray(hhLinhasCfg) ? hhLinhasCfg : []).map(function(c){return c.id+':'+c.nome;}).join('|');
+   if(sel.getAttribute('data-sig') !== sig || !sel.options || sel.options.length === 0){
+    var current = window._hhMonV2CellId || sel.value;
+    sel.innerHTML = (hhLinhasCfg||[]).map(function(c){return '<option value="'+escH(c.id)+'">'+escH(c.nome)+'</option>';}).join('');
+    sel.setAttribute('data-sig', sig);
+    if(current && (hhLinhasCfg||[]).some(function(c){return c.id === current;})) sel.value = current;
+   }
+   if(!sel.value && (hhLinhasCfg||[]).length) sel.value = hhLinhasCfg[0].id;
+   if(sel.value) window._hhMonV2CellId = sel.value;
+   if(!sel._hh431Bound){
+    sel._hh431Bound = true;
+    sel.addEventListener('change', function(){
+     window._hhMonV2CellId = sel.value;
+     try{hhMonV2Individual431(hhDiaSelIso(), new Date());}catch(err){console.error('hh431 change ind', err);}
+    });
+   }
+  }
+
+  if(slot && selWrap.parentNode !== slot){
+   slot.appendChild(selWrap);
+  }
+ }catch(e){console.error('hhEnsureIndivCellSelectInSlot error', e);}
+}
+
 function hhMonV2Individual431(iso,now){
  const root=document.getElementById('hhIndividualScreen');if(!root)return;
- const d=now||new Date(),sel=document.getElementById('hhMonCellSelect');let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
+ var selPre=document.getElementById('hhMonCellSelect')||(window._hhPreservedIndivSelectWrap?window._hhPreservedIndivSelectWrap.querySelector('#hhMonCellSelect'):null);
+ const d=now||new Date(),sel=selPre;let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
  let c=hhLinhasCfg.find(function(x){return x.id===id;});if(!c){c=hhLinhasCfg[0];id=c&&c.id;}
  if(!c){root.innerHTML='<div class="hhCleanEmpty">Nenhuma célula programada.</div>';return;}
  if(sel&&sel.value!==id)sel.value=id;window._hhMonV2CellId=id;
@@ -5361,6 +5407,13 @@ function hhMonV2Individual431(iso,now){
  }).join(''):'<li class="hhIndQueueEmpty">Sem próximo produto na programação.</li>';
 
  const currentTheme=hhGetTheme();
+
+ // Preservar o elemento #hhMonCellSelect / .hhIndividualSelect antes da reconstrução do innerHTML
+ var selWrapToSave = document.querySelector('.hhIndividualSelect') || window._hhPreservedIndivSelectWrap;
+ if(selWrapToSave && selWrapToSave.parentNode){
+  window._hhPreservedIndivSelectWrap = selWrapToSave;
+  selWrapToSave.parentNode.removeChild(selWrapToSave);
+ }
 
  root.innerHTML='<div class="hhCleanContainer hhIndivContainer" data-theme="'+currentTheme+'">'+
   // ÁREA 1: Cabeçalho horizontal neutro
@@ -5441,7 +5494,7 @@ function hhMonV2Individual431(iso,now){
   // RODAPÉ: Faixa horizontal discreta
   '<footer class="hhIndivFooter">'+
    '<span class="hhIndivFootHelp">Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span>'+
-   '<span class="hhIndivFootMeta">atualizado '+hh431ClockFull()+' · <b class="hhIndivVersion">v0.1.13</b></span>'+
+   '<span class="hhIndivFootMeta">atualizado '+hh431ClockFull()+' · <b class="hhIndivVersion">v0.1.14</b></span>'+
   '</footer>'+
  '</div>';
 
@@ -5450,9 +5503,12 @@ function hhMonV2Individual431(iso,now){
   var indEl=document.getElementById('hhMonitorIndividual');
   if(indEl)indEl.setAttribute('data-theme',currentTheme);
  }catch(e){}
+
+ // Reinserir e garantir o seletor no novo slot do header imediatamente após a reconstrução do DOM
+ hhEnsureIndivCellSelectInSlot();
 }
 hhMonV2Render=function(iso,now){
- const sel=document.getElementById('hhMonCellSelect');
+ const sel=document.getElementById('hhMonCellSelect')||(window._hhPreservedIndivSelectWrap?window._hhPreservedIndivSelectWrap.querySelector('#hhMonCellSelect'):null);
  if(sel){
   const sig=hhLinhasCfg.map(function(c){return c.id+':'+c.nome;}).join('|');
   if(sel.getAttribute('data-sig')!==sig){
@@ -5474,12 +5530,8 @@ hhMonV2Render=function(iso,now){
  try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
  try{
   hhMonV2Individual431(iso,now);
-  // Posicionar o elemento #hhMonCellSelect / .hhIndividualSelect dentro do header do Monitor Individual
-  var slot = document.getElementById('hhIndivCellPickerSlot');
-  var selWrap = document.querySelector('.hhIndividualSelect');
-  if(slot && selWrap && selWrap.parentNode !== slot){
-   slot.appendChild(selWrap);
-  }
+  // Posicionar e garantir o elemento #hhMonCellSelect / .hhIndividualSelect dentro do header do Monitor Individual
+  hhEnsureIndivCellSelectInSlot();
  }catch(e){console.error('hh431 individual',e);}
  try{
   var mgrScreen=document.getElementById('hhManagerCleanScreen');
