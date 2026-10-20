@@ -2062,12 +2062,15 @@ function declLoad(){
   return sanit((DATA.progSemana && DATA.progSemana.declaracoes || []).map(function(d,i){return Object.assign({},d,{id:d.id||('PR-'+String(i+1).padStart(4,'0')),status:d.status||'Planejado'});}));
 }
 function declSave(){ // v0.0.248: sem login NÃO persiste local (leitura) — só admin grava
+  // v0.0.456 (19/10): o REBUILD do card roda SEMPRE (mesmo em leitura) — antes ele
+  // dependia do localStorage, que a leitura não grava; resultado: puxou rascunho do
+  // servidor e a tabela do card ficava vazia ("Cur 10" no botão do dia, tabela sumida).
+  if(typeof progBuildFromDecls==='function'){ try{ progBuildFromDecls(); }catch(e){} }
   try{
     const u=(JSON.parse(localStorage.getItem('andon|user')||'{}').role)||'';
     if(u!=='admin') return;
   }catch(e){ return; }
-  try{localStorage.setItem(DECL_KEY,JSON.stringify(declDraft));}catch(e){}
-  if(typeof progBuildFromDecls==='function')progBuildFromDecls(); }
+  try{localStorage.setItem(DECL_KEY,JSON.stringify(declDraft));}catch(e){} }
 function escH(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function renderDeclEditor(){
   const tb=document.getElementById('declRows'); if(!tb) return; // editor desativado 28/09 — inclusão pela barra do card principal
@@ -2290,13 +2293,15 @@ const ANDON_SYNC = {
     const loc = JSON.stringify(declDraft||[]);
     const srvS = JSON.stringify(srv);
     if(loc === srvS) return false; // já está igual
-    // conflito: prevalece o mais recente (rev = epoch no push)
+    // v0.0.456 (19/10): NUNCA re-enviar o que acabou de puxar do servidor.
+    // Antes: puxou snapshot → rev local < rev servidor → push de volta = ECO.
+    // Com 2 máquinas logadas, o eco multiplicava gravações (5 pushes/min) e a
+    // máquina com cópia antiga apagava a inserção nova (last-write-wins).
     const locRev = Number(localStorage.getItem('andon|rev')||0);
     const srvRev = Number((ev.changes&&ev.changes.rev)||0);
+    if(locRev < srvRev){ declDraft = srv; declSave(); localStorage.setItem('andon|rev', String(srvRev)); return true; }
     if(locRev > srvRev && !document.body.classList.contains('viewerMode')){ this.push(declDraft, 'Rascunho local mais novo — reenviado ao servidor').catch(function(){}); return false; }
-    declDraft = srv; declSave();
-    localStorage.setItem('andon|rev', String(srvRev));
-    return true;
+    return false;
   },
   // v0.0.66: SMKT (entradas + histórico) — mesmo padrão de snapshot
   async pushSmkt(ent, hist, nfRes){
@@ -4886,33 +4891,11 @@ window.hhRender=hhRender;
 hhTvToggle=function(){
  const body=document.body,on=!body.classList.contains('hhTv'),screen=window._hhMonitorScreen||'chao';
  body.classList.toggle('hhTv',on);body.classList.toggle('hhTvIndividual',on&&screen==='individual');
- const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair do Modo TV':'📺 Modo TV';
- let x=document.getElementById('hhTvExit');
- if(on){
-  if(!x){
-   x=document.createElement('button');x.id='hhTvExit';x.textContent='✕ Sair do Modo TV (ESC)';x.title='Sair do Modo TV (ESC)';
-   x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});
-   document.body.appendChild(x);
-  }
-  x.style.display='block';
-  try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}
- }else{
-  if(x)x.style.display='none';
-  try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}
- }
+ const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';
+ let x=document.getElementById('hhTvExit');if(on){if(!x){x=document.createElement('button');x.id='hhTvExit';x.textContent='✕';x.title='Sair da tela cheia (ESC)';x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});document.body.appendChild(x);}x.style.display='block';try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}}
+ else{if(x)x.style.display='none';try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
-if(!window._hhTvEscBound){
- window._hhTvEscBound=true;
- document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'&&document.body.classList.contains('hhTv')){
-   hhTvToggle();
-  }
- });
-}
-if(window.location.search.indexOf('tv=1')!==-1||window.location.hash==='#tv'){
- setTimeout(function(){if(!document.body.classList.contains('hhTv'))hhTvToggle();},120);
-}
 function hhMonV2InitScreen(){
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
   if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
@@ -4966,7 +4949,7 @@ function hh431FactoryCard(c,index,iso,now,m){
  '<div class="hhFcRow hhFcRow3"><div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+progress+'%"></i></div><div class="hint">'+progress+'% da meta · '+NF.format(falta)+' pc faltantes</div></div>'+
  '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(m.expected))+')</div><div class="delta '+(m.delta<0?'neg':'')+'">'+hh431Delta(m.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(m.expected))+'</div></div>'+
  '<div class="hhFcMetric"><div class="lbl">Meta hora · '+escH(slotLabel)+'</div><div class="val">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">esperado agora: '+NF.format(Math.round(m.slotExpected))+'</div></div></div>'+
- '<div><div class="hhFcChartTitle"><span>HORA A HORA</span><span>meta hora — tracejada</span></div><div class="hhFcChart">'+chart+'</div></div>'+
+ '<div><div class="hhFcChartTitle"><span>HORA A HORA</span><span>meta hora — tracejada</span></div><div class="hhFcChart">'+chart+'</div></div></div>'+
  bottom+stop+
  '</div></article>';
 }
@@ -4978,17 +4961,17 @@ function hhMonV2Factory431(iso,now){
  const cards=rows.map(function(x,i){return hh431FactoryCard(x.c,i,iso,d,x.m);}).join('');
  const countsArr=[['','ADIANTADAS / NO RITMO',(sums.ahead+sums.steady)],['warn','ATENÇÃO',sums.warn],['late','ATRASADAS',sums.late],['stop','PARADA',sums.stop],['wait','AGUARDANDO',sums.wait]];
  const counts=countsArr.map(function(x){return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[0]+'"></i><b>'+NF.format(x[2])+'</b> '+x[1]+'</div>';}).join('');
+ const countsRows=countsArr.map(function(x){return '<div class="hhFabCountRow"><i class="hhFactoryDot '+x[0]+'"></i><span>'+x[1]+'</span><b>'+NF.format(x[2])+'</b></div>';}).join('');
  const fabPct=sums.goal?Math.min(100,Math.round(sums.actual/sums.goal*100)):0;
  const fabIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- const headerBar='<header class="hhFactoryHead">'+
- '<div class="hhFactoryBrand">D-LEAN SOLUTIONS<strong>Andon · Produção</strong><span class="hhFactoryTurno">'+escH(turno)+'</span></div>'+
- '<div class="hhFactoryHero"><div class="lbl">Fábrica · Realizado / Meta dia</div><div class="num">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="sub">'+fabPct+'% da meta · VS. ESPERADO AGORA <b style="color:'+(sums.delta>=0?'#2BD576':'#E5484D')+'">'+hh431Delta(sums.delta)+' pc</b> (esperado: '+NF.format(Math.round(sums.expected))+')</div></div>'+
- '<div class="hhFactoryCounts">'+counts+'</div>'+
- '<div class="hhFactoryClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(fabIso)+'</div></div>'+
- '</header>';
+ const fabCard='<article class="hhFactoryCard hhFactoryCardFab"><header class="hhFactoryCardHead"><div class="cellname"><span class="cellnum">D-LEAN SOLUTIONS</span>Andon · Produção</div><span class="status hhFabClock">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' · '+hh431DateLabel(fabIso)+'</span></header><div class="hhFactoryCardBody">'+
+ '<div class="hhFcRow hhFcRow3">'+
+ '<div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+fabPct+'%"></i></div><div class="hint">'+fabPct+'% da meta · '+escH(turno)+'</div></div>'+
+ '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(sums.expected))+')</div><div class="delta '+(sums.delta<0?'neg':'')+'">'+hh431Delta(sums.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(sums.expected))+'</div></div>'+
+ '<div class="hhFcMetric"><div class="lbl">Células · status</div><div class="hhFabCounts">'+countsRows+'</div></div>'+
+ '</div></div></article>';
  root.innerHTML='<div class="hhFactoryScreen">'+
- headerBar+
- '<div class="hhFactoryCards">'+(rows.length?cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
+ '<div class="hhFactoryCards">'+(rows.length?fabCard+cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
  '</div>';
 }
 function hhMonV2Individual431(iso,now){
