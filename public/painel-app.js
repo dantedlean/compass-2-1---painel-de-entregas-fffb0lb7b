@@ -5118,11 +5118,28 @@ function hh431FactoryCard(c,index,iso,now,m){
  const chartCols=rows.map(function(r){
   const goal=Math.round(r.goal);
   const fillPct=goal>0?Math.min(100,Math.round((r.actual/goal)*100)):(r.actual>0?100:0);
-  const valTxt=r.future?'&nbsp;':NF.format(r.actual);
+  let valHtml;
+  if(r.future){
+   valHtml='&nbsp;';
+  } else if(r.closed){
+   const actualFormatted=NF.format(r.actual);
+   if(goal>0 || r.actual>0){
+    const diff=r.actual-goal;
+    const diffSign=diff>0?'+':'';
+    const diffTxt=diffSign+NF.format(diff);
+    const diffCls=diff<0?'neg':(diff>0?'pos':'zero');
+    valHtml='<span class="hhHourMain">'+actualFormatted+'</span> <span class="hhHourDiff '+diffCls+'">'+diffTxt+'</span>';
+   } else {
+    valHtml='<span class="hhHourMain">'+actualFormatted+'</span>';
+   }
+  } else {
+   // em andamento / atual: mantém quantidade atual sem variação definitiva até encerramento
+   valHtml='<span class="hhHourMain">'+NF.format(r.actual)+'</span>';
+  }
   const timeLabel=String(Math.floor(r.slot.start/60)).padStart(2,'0')+(r.slot.start%60?':'+String(r.slot.start%60).padStart(2,'0'):'')+'h';
   const isCurrent=r.current;
   return '<div class="hhHourCol '+(isCurrent?'is-current ':'')+(r.future?'is-future':'')+'" title="'+escH(r.slot.label)+' · meta '+NF.format(goal)+' pc · real '+NF.format(r.actual)+' pc">'+
-   '<div class="hhHourVal">'+valTxt+'</div>'+
+   '<div class="hhHourVal">'+valHtml+'</div>'+
    '<div class="hhHourTrackWrap">'+
     '<div class="hhHourTrack"><div class="hhHourFill" style="height:'+(r.future?0:fillPct)+'%"></div></div>'+
    '</div>'+

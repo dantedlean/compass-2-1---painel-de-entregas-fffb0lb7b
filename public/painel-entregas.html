@@ -1246,50 +1246,65 @@ body[data-theme="light"],
   background: var(--hh-track) !important;
   padding: 3px !important;
   border-radius: 9999px !important;
-  border: 1px solid var(--hh-border) !important;
+  border: 1.5px solid var(--hh-border) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 
 .hhPillBtn {
   background: transparent !important;
-  border: 0 !important;
+  border: 1px solid transparent !important;
   color: var(--hh-muted) !important;
   border-radius: 9999px !important;
-  padding: 5px 12px !important;
-  font-size: 11px !important;
+  padding: 5px 13px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
   white-space: nowrap !important;
-  line-height: 1.2 !important;
+  line-height: 1.25 !important;
 }
 .hhPillBtn:hover {
   color: var(--hh-text) !important;
+  background: rgba(125,135,150,0.09) !important;
 }
 .hhPillBtn.active {
   background: var(--hh-card) !important;
   color: var(--hh-text) !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
+  font-weight: 750 !important;
+  border-color: var(--hh-border) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
 }
 .hhPillTv {
   color: var(--hh-accent) !important;
+  font-weight: 650 !important;
+}
+.hhPillTv:hover {
+  color: var(--hh-accent) !important;
+  background: rgba(37,99,235,0.08) !important;
+}
+.hhPillTv.active {
+  border-color: var(--hh-accent) !important;
 }
 
 .hhThemeToggleBtn {
   background: var(--hh-card) !important;
-  border: 1px solid var(--hh-border) !important;
+  border: 1.5px solid var(--hh-border) !important;
   color: var(--hh-text) !important;
   border-radius: 9999px !important;
   padding: 6px 14px !important;
   font-size: 12px !important;
-  font-weight: 600 !important;
+  font-weight: 650 !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
   transition: all 0.15s ease !important;
 }
 .hhThemeToggleBtn:hover {
   border-color: var(--hh-muted) !important;
+  background: var(--hh-track) !important;
+  color: var(--hh-text) !important;
 }
 
 /* ==========================================================================
@@ -1692,8 +1707,31 @@ body.hhTv #hhMonCellSelect {
   color: var(--hh-text) !important;
   font-variant-numeric: tabular-nums !important;
   min-height: 14px !important;
-  line-height: 1 !important;
+  line-height: 1.1 !important;
   text-align: center !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  white-space: nowrap !important;
+}
+.hhHourVal .hhHourMain {
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+}
+.hhHourVal .hhHourDiff {
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+.hhHourVal .hhHourDiff.neg {
+  color: var(--hh-neg-text, #DC2626) !important;
+}
+.hhHourVal .hhHourDiff.pos {
+  color: var(--hh-pos-text, #16A34A) !important;
+}
+.hhHourVal .hhHourDiff.zero {
+  color: var(--hh-muted, #64748B) !important;
 }
 .hhHourCol.is-future .hhHourVal {
   visibility: hidden !important;
