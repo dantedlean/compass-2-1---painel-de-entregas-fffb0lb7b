@@ -3729,6 +3729,7 @@ function hhLoad(){
       hhRevLocal=srvRev;
       try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); }catch(e){}
     }
+    window._hhDiaAplicado = '';
     hhRender();
   }).catch(function(){});
 }
@@ -5511,7 +5512,7 @@ function hhMonV2Individual431(iso,now){
   // RODAPÉ: Faixa horizontal discreta
   '<footer class="hhIndivFooter">'+
    '<span class="hhIndivFootHelp">Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span>'+
-   '<span class="hhIndivFootMeta">atualizado '+hh431ClockFull()+' · <b class="hhIndivVersion">v0.1.14</b></span>'+
+   '<span class="hhIndivFootMeta">atualizado '+hh431ClockFull()+' · <b class="hhIndivVersion">v0.1.15</b></span>'+
   '</footer>'+
  '</div>';
 
