@@ -5019,7 +5019,22 @@ function hh431FactoryCard(c,index,iso,now,m){
  const progress=Math.min(100,m.progress),falta=Math.max(0,m.goal-m.actual);
  const slotLabel=foc?foc.label:'—',future=m.tline.mode==='before'||m.tline.mode==='future';
  const peak=Math.max(1,...rows.map(function(r){return Math.max(r.actual,r.goal);}));
- const chart=rows.map(function(r){const realPct=Math.min(100,r.actual/peak*100),targetPct=Math.min(100,r.goal/peak*100);let cls=r.future?'future':(r.delta>=-0.5?'':(r.delta/Math.max(1,r.expected)>=-0.05?'warn':'late'));return '<div class="hhFcHour" title="'+escH(r.slot.label)+' · meta '+NF.format(Math.round(r.goal))+' · real '+NF.format(r.actual)+'"><div class="hhFcPlot"><i class="hhFcBar '+cls+'" style="height:'+realPct+'%"></i><i class="hhFcTarget" style="bottom:'+targetPct+'%"></i></div><small>'+String(Math.floor(r.slot.start/60)).padStart(2,'0')+(r.slot.start%60?':'+String(r.slot.start%60).padStart(2,'0'):'')+'</small></div>';}).join('');
+ const chart=rows.map(function(r){
+  const realPct=Math.min(100,r.actual/peak*100),targetPct=Math.min(100,r.goal/peak*100);
+  let cls=r.future?'future':(r.delta>=-0.5?'':(r.delta/Math.max(1,r.expected)>=-0.05?'warn':'late'));
+  let deltaHtml='';
+  if(r.closed&&r.goal>0){
+   const dVal=r.actual-r.goal;
+   const dClass=dVal>0?'pos':(dVal<0?'neg':'zero');
+   const dTxt=(dVal>0?'+':'')+NF.format(Math.round(dVal));
+   deltaHtml='<span class="hhFcHourDelta '+dClass+'">'+dTxt+'</span>';
+  }
+  const actualTxt=NF.format(r.actual);
+  return '<div class="hhFcHour" title="'+escH(r.slot.label)+' · meta '+NF.format(Math.round(r.goal))+' · real '+actualTxt+'">'+
+   '<div class="hhFcHourVal"><span class="hhFcHourActual">'+actualTxt+'</span>'+deltaHtml+'</div>'+
+   '<div class="hhFcPlot"><i class="hhFcBar '+cls+'" style="height:'+realPct+'%"></i><i class="hhFcTarget" style="bottom:'+targetPct+'%"></i></div>'+
+   '<small>'+String(Math.floor(r.slot.start/60)).padStart(2,'0')+(r.slot.start%60?':'+String(r.slot.start%60).padStart(2,'0'):'')+'</small></div>';
+ }).join('');
  let emProd;
  if(pr.running){const p=pr.running.p,day=hh431ProductDay(c.id,iso,p.cod);emProd='<div class="hhFcProduct"><span class="tag '+(future?'gray':hh431TagClass(m))+'">'+(future?'PRÓXIMA':'EM PRODUÇÃO')+'</span><span class="prod">'+hhMonV2ProductDescription(p)+'</span><span class="qty">'+NF.format(day)+' / '+NF.format(Number(p.qtdDia)||0)+' pc</span></div>';}
  else{const p=pr.all[0];emProd='<div class="hhFcProduct"><span class="tag gray">EM PRODUÇÃO</span><span class="prod">'+(p?hhMonV2ProductDescription(p):'Sem produto programado')+'</span><span class="qty">'+(p?NF.format(Number(p.qtdDia)||0)+' pc':'—')+'</span></div>';}
