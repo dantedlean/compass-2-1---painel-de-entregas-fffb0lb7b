@@ -1068,6 +1068,10 @@ html[data-hh-theme="dark"] .hhCleanBadge.wait {
   align-items: center !important;
 }
 .hhCleanHourVal {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  gap: 2px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: var(--hh-text2) !important;
@@ -1076,6 +1080,27 @@ html[data-hh-theme="dark"] .hhCleanBadge.wait {
   height: 14px !important;
   line-height: 14px !important;
   text-align: center !important;
+  white-space: nowrap !important;
+}
+.hhCleanHourVal .actual {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--hh-text2) !important;
+}
+.hhCleanHourDelta {
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.hhCleanHourDelta.pos {
+  color: #16A34A !important;
+}
+.hhCleanHourDelta.neg {
+  color: #DC2626 !important;
+}
+.hhCleanHourDelta.zero {
+  color: #9CA3AF !important;
 }
 .hhCleanHourTrack {
   width: 100% !important;
@@ -1325,9 +1350,39 @@ body.hhTv #viewHH .hhFactoryCards,body.hhTv #viewHH .hhFactoryGrid{grid-template
 #viewHH .hhIndBar{display:block;width:58px;height:4px;margin:3px 0 0 auto;border-radius:99px;background:#E2E8F0;overflow:hidden}
 #viewHH .hhIndBar i{display:block;height:100%;border-radius:99px;background:#16A34A}
 #viewHH .hhFactoryCards{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-/* Fullscreen hides only application chrome; the monitor's own headers and footers remain visible. */
-body.hhTv .side,body.hhTv .topbar,body.hhTv .tabnav{display:none!important}
-body.hhTv .shell>footer{display:none!important}
+/* Fullscreen hides application chrome completely; focuses strictly on the active dashboard. */
+body.hhTv, html:fullscreen body, body:fullscreen {
+  overflow: hidden !important;
+}
+body.hhTv .side, body.hhTv aside.side,
+html:fullscreen .side, html:fullscreen aside.side,
+body:fullscreen .side, body:fullscreen aside.side {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  visibility: hidden !important;
+}
+body.hhTv .contentArea,
+html:fullscreen .contentArea,
+body:fullscreen .contentArea {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 1 1 100% !important;
+}
+body.hhTv .contentArea main,
+html:fullscreen .contentArea main,
+body:fullscreen .contentArea main {
+  padding: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+body.hhTv .topbar, body.hhTv .tabnav, body.hhTv .shell>footer,
+html:fullscreen .topbar, html:fullscreen .tabnav, html:fullscreen .shell>footer,
+body:fullscreen .topbar, body:fullscreen .tabnav, body:fullscreen .shell>footer {
+  display: none !important;
+}
 body.hhTv #viewHH header{display:flex!important}
 body.hhTv #viewHH .hhFactoryHead{display:grid!important}
 body.hhTv #viewHH .hhIndHead{display:flex!important}
@@ -1402,7 +1457,7 @@ body.hhTv #viewHH .hhIndTableWrap{max-height:calc(100vh - 200px)}
   </div>
 </div>
 <div id="hhPanelMonitor" class="hhPanel" role="tabpanel" aria-labelledby="hhTabMonitor" hidden="">
-  <div class="hhSectionHead"><div><h2>Andon — Produção</h2><p>Monitores separados: panorama geral da fábrica e tela individual por célula.</p></div><div class="hhMonitorActions"><div class="hhViewSwitch" role="group" aria-label="Selecionar monitor"><button class="active" data-hh-view="chao" aria-pressed="true">▦ Monitor geral</button><button data-hh-view="individual" aria-pressed="false">▣ Monitor individual</button><button data-hh-view="gestao" aria-pressed="false">◉ Gestão</button></div><button id="hhThemeBtn" class="hhActionBtn hhThemeBtn" aria-label="Alternar tema claro/escuro" title="Alternar tema claro e escuro">◐ Tema</button><button id="hhTvBtn" class="hhActionBtn hhTvBtn" aria-label="Abrir monitor em tela cheia">⛶ Tela cheia</button></div></div>
+  <div class="hhSectionHead"><div><h2>Andon — Produção</h2><p>Monitores separados: panorama geral da fábrica e tela individual por célula.</p></div><div class="hhMonitorActions"><div class="hhViewSwitch" role="group" aria-label="Selecionar monitor"><button class="active" data-hh-view="chao" aria-pressed="true">▦ Monitor geral</button><button data-hh-view="individual" aria-pressed="false">▣ Monitor individual</button><button data-hh-view="gestao" aria-pressed="false">◉ Gestão</button></div><button id="hhTvBtn" class="hhActionBtn hhTvBtn" aria-label="Abrir monitor em tela cheia">⛶ Tela cheia</button></div></div>
   <div class="hhMonitorActions hhIndividualSelect"><label for="hhMonCellSelect">Célula para monitor individual</label><select id="hhMonCellSelect" aria-label="Selecionar célula do monitor individual"></select></div>
   <section id="hhMonitorFloor" class="hhMonitorPane active" aria-label="Monitor geral da fábrica"><div id="hhFactoryScreen"></div></section>
   <section id="hhMonitorIndividual" class="hhMonitorPane" hidden aria-label="Monitor individual da célula"><div id="hhIndividualScreen"></div></section>
