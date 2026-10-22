@@ -5181,5 +5181,5 @@ setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0
  setTimeout(hh441BindTabs,2000);
 })();
 
-// Compass 2.2 — Andon de Produção · v0.1.18
+// Compass 2.2 — Andon de Produção · v0.1.19
 
