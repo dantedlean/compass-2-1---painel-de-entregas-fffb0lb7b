@@ -5058,10 +5058,12 @@ function hhMonV2Factory431(iso,now){
 }
 function hhMonV2Individual431(iso,now){
  const root=document.getElementById('hhIndividualScreen');if(!root)return;
- const d=now||new Date(),sel=document.getElementById('hhMonCellSelect');let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
+ let sel=document.getElementById('hhMonCellSelect');
+ let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
  let c=hhLinhasCfg.find(function(x){return x.id===id;});if(!c){c=hhLinhasCfg[0];id=c&&c.id;}
  if(!c){root.innerHTML='<div class="hhEmpty">Nenhuma célula programada.</div>';return;}
  if(sel&&sel.value!==id)sel.value=id;window._hhMonV2CellId=id;
+ const d=now||new Date();
  const m=hhMonV2State(c,iso,d),rows=hhMonV2SlotRows(c,iso,d),pr=hhMonV2Products(c,iso,d,m),focus=m.focus;
  const remaining=Math.max(0,m.goal-m.actual),left=hhWorkMinutes(c,Math.max(m.cut,hhScheduleStart(c)),hhScheduleEnd(c)),rate=remaining&&left?Math.ceil(remaining/(left/60)):0;
  const pct=m.goal?Math.min(100,Math.round(m.actual/m.goal*100)):0;
@@ -5075,7 +5077,8 @@ function hhMonV2Individual431(iso,now){
  const emP=pr.running?pr.running.p:pr.all[0];const queue=pr.queue.filter(function(p){return !emP||String(p.cod)!==String(emP.cod);}).slice(0,3).map(function(p,i){return '<li><span class="n">'+(i+1)+'</span><span class="who"><b>'+hhMonV2ProductDescription(p)+'</b><small>'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD':'—'))+'</small></span><span class="qty">'+NF.format(Number(p.qtdDia)||0)+' pc</span></li>';}).join('');
  const shift='Turno A · '+hhClockTxt(hhScheduleStart(c))+' - '+hhClockTxt(hhScheduleEnd(c));
  const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(left)+' min · ritmo nec.: '+NF.format(rate)+' pc/h'):'meta diária atingida';
- root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div class="turno">'+escH(shift)+'</div></div>'+
+ const preservedSel=sel;
+ root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><div class="hhIndTitleRow"><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div id="hhIndSelSlot" class="hhIndSelSlot"></div></div><div class="turno">'+escH(shift)+'</div></div>'+
  '<div class="hhIndState">'+hh431Icon(m)+' '+escH(m.label)+'<small>'+hh431Delta(m.delta)+' pc</small></div>'+
  '<div class="hhIndClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))+'</div></div></header>'+
  '<div class="hhIndMain"><section class="hhIndPanel hhIndSummary"><h3>RESUMO DA CÉLULA</h3>'+
@@ -5085,6 +5088,31 @@ function hhMonV2Individual431(iso,now){
  '<section class="hhIndPanel"><h3>HORA A HORA <small>Δ = realizado − meta</small></h3><table class="hhIndTable"><thead><tr><th>Hora</th><th>Meta</th><th>Real</th><th>Δ hora</th><th>Δ acum.</th></tr></thead><tbody>'+table+'</tbody></table></section>'+
  '<div class="hhIndRight"><section class="hhIndPanel"><h3>EM PRODUÇÃO</h3>'+prodPanel+'</section><section class="hhIndPanel"><h3>PRÓXIMOS NA FILA</h3><ol class="hhIndQueue">'+(queue||'<li>Sem próximo produto na programação.</li>')+'</ol></section></div></div>'+
  '<footer class="hhIndFooter"><span>Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span><span>atualizado '+hh431ClockFull()+'</span></footer></div>';
+ const slot=document.getElementById('hhIndSelSlot');
+ if(slot){
+  let targetSel=preservedSel;
+  if(!targetSel||!targetSel.parentNode){
+   targetSel=document.createElement('select');
+   targetSel.id='hhMonCellSelect';
+   targetSel.setAttribute('aria-label','Selecionar célula do monitor individual');
+  }
+  targetSel.className='hhMonCellSelectInHeader';
+  const sig=hhLinhasCfg.map(function(x){return x.id+':'+x.nome;}).join('|');
+  if(targetSel.getAttribute('data-sig')!==sig){
+   targetSel.innerHTML=hhLinhasCfg.map(function(x){return '<option value="'+escH(x.id)+'">'+escH(x.nome)+'</option>';}).join('');
+   targetSel.setAttribute('data-sig',sig);
+  }
+  targetSel.value=id;
+  if(!targetSel._hhMonV2Bound){
+   targetSel._hhMonV2Bound=true;
+   targetSel.addEventListener('change',function(){
+    window._hhMonV2CellId=targetSel.value;
+    if(typeof hhRender==='function')hhRender();
+    else hhMonV2Render(hhDiaSelIso(),new Date());
+   });
+  }
+  slot.appendChild(targetSel);
+ }
 }
 hhMonV2Render=function(iso,now){
  try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
