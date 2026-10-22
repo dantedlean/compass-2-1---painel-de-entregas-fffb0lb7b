@@ -3776,6 +3776,7 @@ function hhLoad(){
       if(Array.isArray(ch.paradas)) hhParadas=ch.paradas;
       hhRevLocal=srvRev;
       try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); }catch(e){}
+      window._hhDiaAplicado='';
     }
     hhRender();
   }).catch(function(){});
@@ -4359,8 +4360,9 @@ function hhApontEditar(idx){
 }
 function hhApontEditarSalvar(e){
  e.preventDefault();if(!hhAdmin())return;const modal=document.getElementById('hhApontEditModal'),id=modal&&modal.dataset.apontamentoId,idx=hhApont.findIndex(function(x){return x&&x._hhId===id;});if(idx<0||!hhApontAtivo(hhApont[idx]))return;
- const a=hhApont[idx],data=(document.getElementById('hhEditData')||{}).value||a.data,linha=(document.getElementById('hhEditLinha')||{}).value||a.linha,conf=hhCfgPorDia[data],linhas=conf&&Array.isArray(conf.linhas)?conf.linhas:(data===hhDiaSelIso()?hhLinhasCfg:null),produtos=conf&&Array.isArray(conf.produtos)?conf.produtos:(data===hhDiaSelIso()?hhProdCfg:null),c=linhas&&linhas.find(function(x){return x.id===linha;}),cod=((document.getElementById('hhEditCod')||{}).value||'').trim(),qtd=Number((document.getElementById('hhEditQtd')||{}).value),ini=hhTimeMin((document.getElementById('hhEditIni')||{}).value||'',null),fim=hhTimeMin((document.getElementById('hhEditFim')||{}).value||'',null),motivo=((document.getElementById('hhEditMotivo')||{}).value||'').trim(),err=document.getElementById('hhApontEditErr'),fail=function(t){if(err){err.textContent=t;err.style.display='block';}};
- if(!c||!produtos){fail('A programação da célula/data não está carregada; não apliquei a mudança.');return;}if(!cod||!(qtd>0)||ini===null||fim===null||fim<=ini||!motivo){fail('Informe produto, quantidade maior que zero, horários válidos e motivo.');return;}
+ const a=hhApont[idx],data=(document.getElementById('hhEditData')||{}).value||a.data,linha=(document.getElementById('hhEditLinha')||{}).value||a.linha,conf=hhCfgPorDia[data],linhas=conf&&Array.isArray(conf.linhas)?conf.linhas:(data===hhDiaSelIso()?hhLinhasCfg:null),produtos=conf&&Array.isArray(conf.produtos)?conf.produtos:(data===hhDiaSelIso()?hhProdCfg:null),c=linhas&&linhas.find(function(x){return x.id===linha;}),cod=((document.getElementById('hhEditCod')||{}).value||'').trim(),rawQtd=((document.getElementById('hhEditQtd')||{}).value||'').trim(),ini=hhTimeMin((document.getElementById('hhEditIni')||{}).value||'',null),fim=hhTimeMin((document.getElementById('hhEditFim')||{}).value||'',null),motivo=((document.getElementById('hhEditMotivo')||{}).value||'').trim(),err=document.getElementById('hhApontEditErr'),fail=function(t){if(err){err.textContent=t;err.style.display='block';}};
+ if(!c||!produtos){fail('A programação da célula/data não está carregada; não apliquei a mudança.');return;}if(!cod||rawQtd===''||isNaN(Number(rawQtd))||Number(rawQtd)<0||ini===null||fim===null||fim<=ini||!motivo){fail('Informe produto, quantidade válida (0 ou mais), horários válidos e motivo.');return;}
+ const qtd=Number(rawQtd);
  const slot=hhWorkIntervals(c).find(function(x){return x.start===ini&&x.end===fim;}),blocos=c.blocos||[],bi=blocos.findIndex(function(b){return hhTimeMin(b.ini,null)===ini&&hhTimeMin(b.fim,null)===fim;}),bloco=bi>=0?blocos[bi]:null,inside=hhWorkMinutes(c,ini,fim)===fim-ini;if(inside&&!slot&&!bloco){fail('O horário deve coincidir com um intervalo ou bloco configurado.');return;}
  const before=JSON.parse(JSON.stringify(a)),prod=produtos.find(function(x){return x.linha===linha&&String(x.cod)===cod;}),finalDaCelula=produtos.find(function(x){return x.linha===linha&&x.final===true;});a.data=data;a.linha=linha;a.cod=cod;a.qtd=qtd;a.hora=String(Math.floor(ini/60));a.inicioMin=ini;a.fimMin=fim;a.intervalo=slot?slot.key:(bloco?'bloco-'+bi+'-'+ini+'-'+fim:'out-'+ini+'-'+fim);a.fora=!inside;a.ward=prod?!!prod.ward:hhWardDe(cod,linha);a.fase=!!finalDaCelula&&String(finalDaCelula.cod)!==cod;a.pv=prod&&!prod.ward?String(prod.pv||''):'';a.operador=((document.getElementById('hhEditOperador')||{}).value||'').trim();a.posto=((document.getElementById('hhEditPosto')||{}).value||'').trim();if(bloco)a.bloco={ini:hhClockTxt(ini),fim:hhClockTxt(fim),cod:bloco.cod||'',meta:Number(bloco.meta)||0};else delete a.bloco;if(!inside||!prod)a.motivo=motivo;a.editadoEm=new Date().toISOString();a.editadoPor=hhQuem();a.motivoEdicao=motivo;
  hhApontAuditAdd('editar',before,a,motivo);hhSave('Apontamento corrigido · '+cod+' · '+motivo);modal.hidden=true;hhEntryErr('');hhRender();
@@ -4486,8 +4488,9 @@ function hhInit(){
       if(sMin===null||eMin===null){hhFlash('⚠ informe início/fim válidos do intervalo fora da jornada');hhEntryErr('⚠ Informe início/fim válidos do intervalo fora da jornada.');return;}
       slot={hour:Math.floor(sMin/60),start:sMin,end:eMin,minutes:eMin-sMin,key:'out-'+sMin+'-'+eMin,label:hhClockTxt(sMin)+'–'+hhClockTxt(eMin)+' (fora)'};
     } else slot=sh&&sh.value?hhIntervalFor(lin,sh.value):null;
-    const qtd=Number((document.getElementById('hhQtd')||{}).value)||0;
-    if(!lin||!cod||!slot||qtd<=0){hhFlash('⚠ informe célula, produto, intervalo e quantidade');hhEntryErr('⚠ Não registrou — '+(lin?(cod?'':'informe o produto. '):'selecione a célula. ')+(cod?'':'Informe o produto. ')+(!slot&&lin?'Selecione o intervalo. ':'')+(qtd<=0?'Informe a quantidade (maior que zero).':''));return;}
+    const rawQtd=((document.getElementById('hhQtd')||{}).value||'').trim();
+    if(!lin||!cod||!slot||rawQtd===''||isNaN(Number(rawQtd))||Number(rawQtd)<0){hhFlash('⚠ informe célula, produto, intervalo e quantidade');hhEntryErr('⚠ Não registrou — '+(lin?(cod?'':'informe o produto. '):'selecione a célula. ')+(cod?'':'Informe o produto. ')+(!slot&&lin?'Selecione o intervalo. ':'')+(rawQtd===''||isNaN(Number(rawQtd))||Number(rawQtd)<0?'Informe a quantidade.':''));return;}
+    const qtd=Number(rawQtd);
     const programado=hhProdCfg.some(function(p){return p.linha===lin&&String(p.cod)===String(cod);});
     const mEl=document.getElementById('hhMotivo'),motivo=mEl&&mEl.style.display!=='none'?(mEl.value||'').trim():'';
     if((fora||!programado)&&!motivo){hhFlash('⚠ exceção exige motivo — '+(fora?'fora da jornada':'produto não programado'));const mf2=document.getElementById('hhMotivoField');if(mf2)mf2.style.display='flex';if(mEl)mEl.focus();hhEntryErr('⚠ Produto '+(fora?'FORA da jornada':'não programado nesta célula')+' — escreva o Motivo da exceção antes de registrar.');return;}
@@ -4936,14 +4939,32 @@ window._hhRenderOperationalBase=hhRender;
 hhRender=function(){window._hhRenderOperationalBase();hhMonV2Render(hhDiaSelIso(),new Date());};
 window.hhRender=hhRender;
 // Screen-specific presentation mode; fullscreen follows the currently selected monitor.
+window._hhTvFs = window._hhTvFs || false;
 hhTvToggle=function(){
- const body=document.body,on=!body.classList.contains('hhTv'),screen=window._hhMonitorScreen||'chao';
+ const body=document.body;
+ const on = !body.classList.contains('hhTv');
+ window._hhTvFs = on;
+ const screen=window._hhMonitorScreen||'chao';
  body.classList.toggle('hhTv',on);body.classList.toggle('hhTvIndividual',on&&screen==='individual');
  const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';
+ document.querySelectorAll('#hhTvBtn, .hhTvBtn').forEach(function(b){b.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';});
  let x=document.getElementById('hhTvExit');if(on){if(!x){x=document.createElement('button');x.id='hhTvExit';x.textContent='✕';x.title='Sair da tela cheia (ESC)';x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});document.body.appendChild(x);}x.style.display='block';try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}}
  else{if(x)x.style.display='none';try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
+function hhBindTvButtons(){
+ const on = document.body.classList.contains('hhTv') || !!window._hhTvFs;
+ document.querySelectorAll('#hhTvBtn, .hhTvBtn').forEach(function(tv){
+  tv.textContent = on ? '✕ Sair da tela cheia' : '⛶ Tela cheia';
+  if(!tv._hhBound){
+   tv._hhBound = true;
+   tv.addEventListener('click', function(e){
+    e.preventDefault(); e.stopPropagation();
+    hhTvToggle();
+   });
+  }
+ });
+}
 function hhMonV2InitScreen(){
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
   if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
@@ -4952,8 +4973,21 @@ function hhMonV2InitScreen(){
  const sel=document.getElementById('hhMonCellSelect');
  if(sel&&!sel._hhMonV2Bound){sel._hhMonV2Bound=true;sel.addEventListener('change',function(){window._hhMonV2CellId=sel.value;hhRender();});}
  if(sel){const sig=hhLinhasCfg.map(function(c){return c.id+':'+c.nome;}).join('|');if(sel.getAttribute('data-sig')!==sig){const current=window._hhMonV2CellId||sel.value;sel.innerHTML=hhLinhasCfg.map(function(c){return '<option value="'+escH(c.id)+'">'+escH(c.nome)+'</option>';}).join('');sel.setAttribute('data-sig',sig);if(current&&hhLinhasCfg.some(function(c){return c.id===current;}))sel.value=current;}if(!sel.value&&hhLinhasCfg.length)sel.value=hhLinhasCfg[0].id;window._hhMonV2CellId=sel.value;}
- const tv=document.getElementById('hhTvBtn');
- if(tv&&!tv._hhMonV2Bound){tv._hhMonV2Bound=true;tv.addEventListener('click',function(){hhTvToggle();});}
+ hhBindTvButtons();
+}
+if(!window._hhTvDocEventsBound){
+ window._hhTvDocEventsBound=true;
+ document.addEventListener('fullscreenchange',function(){
+  const isFs=!!document.fullscreenElement;
+  if(!isFs && document.body.classList.contains('hhTv')){
+   hhTvToggle();
+  }
+ });
+ document.addEventListener('keydown',function(e){
+  if(e.key==='Escape' && document.body.classList.contains('hhTv')){
+   hhTvToggle();
+  }
+ });
 }
 
 hhMonV2InitScreen();
