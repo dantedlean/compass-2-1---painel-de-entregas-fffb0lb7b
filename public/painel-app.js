@@ -5050,26 +5050,205 @@ function hh431FactoryCard(c,index,iso,now,m){
  bottom+stop+
  '</div></article>';
 }
-function hhMonV2Factory431(iso,now){
+// ===== v0.1.20 THEME CONTROLLER (localStorage + prefers-color-scheme) =====
+(function(){
+ function hhGetInitialTheme(){
+  try{
+   const saved=localStorage.getItem('hh|theme');
+   if(saved==='light'||saved==='dark')return saved;
+   if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)return 'dark';
+  }catch(e){}
+  return 'light';
+ }
+ function hhApplyTheme(t){
+  try{
+   document.documentElement.setAttribute('data-hh-theme',t);
+   localStorage.setItem('hh|theme',t);
+   const btns=document.querySelectorAll('#hhThemeBtn, .hhThemeBtn');
+   btns.forEach(function(b){
+    b.setAttribute('data-theme',t);
+    b.textContent=t==='dark'?'☼ Claro':'◐ Escuro';
+    b.title='Alternar para tema '+(t==='dark'?'claro':'escuro');
+   });
+  }catch(e){}
+ }
+ window.hhToggleTheme=function(){
+  const cur=document.documentElement.getAttribute('data-hh-theme')||'light';
+  const next=cur==='dark'?'light':'dark';
+  hhApplyTheme(next);
+ };
+ function hhBindThemeButtons(){
+  document.querySelectorAll('#hhThemeBtn, .hhThemeBtn').forEach(function(btn){
+   if(btn._hhThemeBound)return;btn._hhThemeBound=true;
+   btn.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    window.hhToggleTheme();
+   });
+  });
+ }
+ const initTheme=hhGetInitialTheme();
+ hhApplyTheme(initTheme);
+ if(window.matchMedia){
+  try{
+   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(e){
+    if(!localStorage.getItem('hh|theme')){
+     hhApplyTheme(e.matches?'dark':'light');
+    }
+   });
+  }catch(e){}
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',hhBindThemeButtons);
+ }else{
+  hhBindThemeButtons();
+ }
+ setTimeout(hhBindThemeButtons,500);
+ setTimeout(hhBindThemeButtons,2000);
+})();
+
+// ===== v0.1.20 NOVO RENDER CLEAN DO MONITOR GERAL (Modelo do usuário / PNG) =====
+function hhMonV2FactoryClean(iso,now){
  const root=document.getElementById('hhFactoryScreen');if(!root)return;
  const d=now||new Date(),cells=hhLinhasCfg.slice(),rows=cells.map(function(c){return {c:c,m:hhMonV2State(c,iso,d)};});
- const sums=rows.reduce(function(a,x){a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;a[x.m.state]=(a[x.m.state]||0)+1;return a;},{actual:0,goal:0,expected:0,delta:0,ahead:0,steady:0,warn:0,late:0,stop:0,wait:0});
- const first=cells[0],turno=first?('Turno A · '+hhClockTxt(hhScheduleStart(first))+' - '+hhClockTxt(hhScheduleEnd(first))):'';
- const cards=rows.map(function(x,i){return hh431FactoryCard(x.c,i,iso,d,x.m);}).join('');
- const countsArr=[['','ADIANTADAS / NO RITMO',(sums.ahead+sums.steady)],['warn','ATENÇÃO',sums.warn],['late','ATRASADAS',sums.late],['stop','PARADA',sums.stop],['wait','AGUARDANDO',sums.wait]];
- const counts=countsArr.map(function(x){return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[0]+'"></i><b>'+NF.format(x[2])+'</b> '+x[1]+'</div>';}).join('');
- const countsRows=countsArr.map(function(x){return '<div class="hhFabCountRow"><i class="hhFactoryDot '+x[0]+'"></i><span>'+x[1]+'</span><b>'+NF.format(x[2])+'</b></div>';}).join('');
- const fabPct=sums.goal?Math.min(100,Math.round(sums.actual/sums.goal*100)):0;
- const fabIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- const fabCard='<article class="hhFactoryCard hhFactoryCardFab"><header class="hhFactoryCardHead"><div class="cellname"><span class="cellnum">D-LEAN SOLUTIONS</span>Andon · Produção</div><span class="status hhFabClock">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' · '+hh431DateLabel(fabIso)+'</span></header><div class="hhFactoryCardBody">'+
- '<div class="hhFcRow hhFcRow3">'+
- '<div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+fabPct+'%"></i></div><div class="hint">'+fabPct+'% da meta · '+escH(turno)+'</div></div>'+
- '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(sums.expected))+')</div><div class="delta '+(sums.delta<0?'neg':'')+'">'+hh431Delta(sums.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(sums.expected))+'</div></div>'+
- '<div class="hhFcMetric"><div class="lbl">Células · status</div><div class="hhFabCounts">'+countsRows+'</div></div>'+
- '</div></div></article>';
- root.innerHTML='<div class="hhFactoryScreen">'+
- '<div class="hhFactoryCards">'+(rows.length?fabCard+cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
+ const sums=rows.reduce(function(a,x){
+  a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;
+  if(x.m.stop)a.stop++;
+  else if(x.m.state==='late')a.late++;
+  else if(x.m.state==='warn')a.warn++;
+  else if(x.m.state==='ahead'||x.m.state==='steady')a.ritmo++;
+  else a.wait++;
+  return a;
+ },{actual:0,goal:0,expected:0,delta:0,ritmo:0,warn:0,late:0,stop:0,wait:0});
+
+ const first=cells[0];
+ const turnoStr=first?('Turno A · '+hhClockTxt(hhScheduleStart(first))+' – '+hhClockTxt(hhScheduleEnd(first))):'';
+ const dtIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ const dateStr=hh431DateLabel(dtIso);
+ const clockStr=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+
+ const totalPct=sums.goal?Math.min(100,Math.round(sums.actual/sums.goal*100)):0;
+ const totalDeltaCls=sums.delta<0?'neg':(sums.delta>0?'pos':'');
+ const totalDeltaTxt=(sums.delta>0?'+':'')+NF.format(Math.round(sums.delta))+' pc';
+
+ // Status counts
+ const stRows=[
+  {key:'ahead',label:'No ritmo',count:sums.ritmo},
+  {key:'warn',label:'Atenção',count:sums.warn},
+  {key:'late',label:'Atrasadas',count:sums.late},
+  {key:'stop',label:'Paradas',count:sums.stop},
+  {key:'wait',label:'Aguardando',count:sums.wait}
+ ];
+ const statusHtml=stRows.map(function(s){
+  const zCls=s.count===0?' zero':'';
+  return '<div class="hhCleanStatusItem">'+
+   '<div class="hhCleanStatusLeft"><i class="hhCleanStatusDot '+s.key+'"></i><span>'+s.label+'</span></div>'+
+   '<span class="hhCleanStatusCount'+zCls+'">'+NF.format(s.count)+'</span>'+
+  '</div>';
+ }).join('');
+
+ // Resumo 3 cards
+ const summaryHtml='<section class="hhCleanSummary">'+
+  '<div class="hhCleanCard">'+
+   '<div class="hhCleanLbl">REALIZADO / META DO DIA</div>'+
+   '<div class="hhCleanBigVal">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div>'+
+   '<div class="hhCleanProgress"><i style="width:'+totalPct+'%"></i></div>'+
+   '<div class="hhCleanSub">'+totalPct+'% da meta</div>'+
+  '</div>'+
+  '<div class="hhCleanCard">'+
+   '<div class="hhCleanLbl">VS. ESPERADO AGORA</div>'+
+   '<div class="hhCleanBigVal '+totalDeltaCls+'">'+totalDeltaTxt+'</div>'+
+   '<div class="hhCleanSub">esperado: '+NF.format(Math.round(sums.expected))+' pc</div>'+
+  '</div>'+
+  '<div class="hhCleanCard">'+
+   '<div class="hhCleanLbl">CÉLULAS</div>'+
+   '<div class="hhCleanStatusList">'+statusHtml+'</div>'+
+  '</div>'+
+ '</section>';
+
+ // Cartões das Células
+ const cellCardsHtml=rows.map(function(x,i){
+  const c=x.c, m=x.m;
+  const slotRows=hhMonV2SlotRows(c,iso,d);
+  const foc=m.focus;
+  const progress=Math.min(100,m.progress);
+  const falta=Math.max(0,m.goal-m.actual);
+  const deltaCls=m.delta<0?'neg':(m.delta>0?'pos':'');
+  const deltaTxt=(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' pc';
+
+  // Selo de status
+  const badgeCls=m.stop?'stop':(m.state==='late'?'late':(m.state==='warn'?'warn':(m.state==='ahead'||m.state==='steady'?'ahead':'wait')));
+  const badgeLabel=m.stop?'Parada':(m.state==='late'?'Atrasado':(m.state==='warn'?'Atenção':(m.state==='ahead'?'Adiantado':(m.state==='steady'?'No ritmo':'Aguardando'))));
+
+  // Meta hora atual
+  const slotLabel=foc?foc.label:'09:00–10:00';
+  const slotGoalRounded=Math.round(m.slotGoal);
+
+  // Hora a hora
+  const hourlyCols=slotRows.map(function(r){
+   const isNow=!!r.current;
+   const isFuture=!!r.future;
+   const valTxt=isFuture?'':NF.format(r.actual);
+   const barPct=(r.goal>0)?Math.min(100,Math.round(r.actual/r.goal*100)):0;
+   const hStart=String(Math.floor(r.slot.start/60)).padStart(2,'0');
+   const hLbl=(r.slot.start%60)?(hStart+':'+String(r.slot.start%60).padStart(2,'0')):hStart;
+
+   return '<div class="hhCleanHourCol'+(isNow?' is-now':'')+'">'+
+    '<span class="hhCleanHourVal">'+valTxt+'</span>'+
+    '<div class="hhCleanHourTrack">'+
+     (isFuture?'':'<div class="hhCleanHourBar" style="height:'+barPct+'%"></div>')+
+    '</div>'+
+    '<span class="hhCleanHourLbl">'+hLbl+'</span>'+
+   '</div>';
+  }).join('');
+
+  return '<article class="hhCleanCellCard">'+
+   '<div class="hhCleanCellCol">'+
+    '<div class="hhCleanLbl">CÉLULA '+String(i+1).padStart(2,'0')+'</div>'+
+    '<div class="hhCleanCellName" title="'+escH(c.nome)+'">'+escH(c.nome)+'</div>'+
+    '<span class="hhCleanBadge '+badgeCls+'">'+badgeLabel+'</span>'+
+   '</div>'+
+   '<div class="hhCleanCellCol">'+
+    '<div class="hhCleanLbl">REALIZADO / META DO DIA</div>'+
+    '<div class="hhCleanCellNumVal">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div>'+
+    '<div class="hhCleanCellProgress"><i style="width:'+progress+'%"></i></div>'+
+    '<div class="hhCleanCellSub">'+progress+'% da meta · '+NF.format(falta)+' pc faltantes</div>'+
+   '</div>'+
+   '<div class="hhCleanCellCol">'+
+    '<div class="hhCleanLbl">VS. ESPERADO</div>'+
+    '<div class="hhCleanCellNumVal '+deltaCls+'">'+deltaTxt+'</div>'+
+    '<div class="hhCleanCellSub">esperado: '+NF.format(Math.round(m.expected))+' pc</div>'+
+   '</div>'+
+   '<div class="hhCleanCellCol">'+
+    '<div class="hhCleanLbl">META HORA · '+escH(slotLabel)+'</div>'+
+    '<div class="hhCleanCellNumVal">'+NF.format(m.slotActual)+' <small>/ '+NF.format(slotGoalRounded)+' pc</small></div>'+
+    '<div class="hhCleanCellSub">esperado: '+NF.format(Math.round(m.slotExpected))+' pc</div>'+
+   '</div>'+
+   '<div class="hhCleanCellCol hhCleanColHourly">'+
+    '<div class="hhCleanLbl">HORA A HORA '+(slotGoalRounded?('· META '+NF.format(slotGoalRounded)+' PC'):'')+'</div>'+
+    '<div class="hhCleanHourly">'+hourlyCols+'</div>'+
+   '</div>'+
+  '</article>';
+ }).join('');
+
+ root.innerHTML='<div class="hhCleanScreen">'+
+  '<header class="hhCleanHeader">'+
+   '<div class="hhCleanHeaderLeft">'+
+    '<div class="company">D-LEAN SOLUTIONS</div>'+
+    '<h1>Andon · Produção</h1>'+
+   '</div>'+
+   '<div class="hhCleanHeaderRight">'+
+    '<div class="clock">'+clockStr+'</div>'+
+    '<div class="sub">'+dateStr+(turnoStr?(' · '+turnoStr):'')+'</div>'+
+   '</div>'+
+  '</header>'+
+  summaryHtml+
+  '<section class="hhCleanCellsList">'+
+   (rows.length?cellCardsHtml:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+
+  '</section>'+
  '</div>';
+}
+function hhMonV2Factory431(iso,now){
+ return hhMonV2FactoryClean(iso,now);
 }
 function hhMonV2Individual431(iso,now){
  const root=document.getElementById('hhIndividualScreen');if(!root)return;
@@ -5130,7 +5309,7 @@ function hhMonV2Individual431(iso,now){
  }
 }
 hhMonV2Render=function(iso,now){
- try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
+ try{hhMonV2FactoryClean(iso,now);}catch(e){console.error('hh431 clean geral',e);}
  try{hhMonV2Individual431(iso,now);}catch(e){console.error('hh431 individual',e);}
 };
 setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0);
@@ -5181,5 +5360,5 @@ setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0
  setTimeout(hh441BindTabs,2000);
 })();
 
-// Compass 2.2 — Andon de Produção · v0.1.19
+// Compass 2.2 — Andon de Produção · v0.1.20
 

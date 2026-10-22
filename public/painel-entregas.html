@@ -1030,7 +1030,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   </div>
 </div>
 <div id="hhPanelMonitor" class="hhPanel" role="tabpanel" aria-labelledby="hhTabMonitor" hidden="">
-  <div class="hhSectionHead"><div><h2>Andon — Produção</h2><p>Monitores separados: panorama geral da fábrica e tela individual por célula.</p></div><div class="hhMonitorActions"><div class="hhViewSwitch" role="group" aria-label="Selecionar monitor"><button class="active" data-hh-view="chao" aria-pressed="true">▦ Monitor geral</button><button data-hh-view="individual" aria-pressed="false">▣ Monitor individual</button><button data-hh-view="gestao" aria-pressed="false">◉ Gestão</button></div><button id="hhTvBtn" class="hhActionBtn hhTvBtn" aria-label="Abrir monitor em tela cheia">⛶ Tela cheia</button></div></div>
+  <div class="hhSectionHead"><div><h2>Andon — Produção</h2><p>Monitores separados: panorama geral da fábrica e tela individual por célula.</p></div><div class="hhMonitorActions"><div class="hhViewSwitch" role="group" aria-label="Selecionar monitor"><button class="active" data-hh-view="chao" aria-pressed="true">▦ Monitor geral</button><button data-hh-view="individual" aria-pressed="false">▣ Monitor individual</button><button data-hh-view="gestao" aria-pressed="false">◉ Gestão</button></div><button id="hhThemeBtn" class="hhActionBtn hhThemeBtn" aria-label="Alternar tema claro/escuro" title="Alternar tema claro e escuro">◐ Tema</button><button id="hhTvBtn" class="hhActionBtn hhTvBtn" aria-label="Abrir monitor em tela cheia">⛶ Tela cheia</button></div></div>
   <div class="hhMonitorActions hhIndividualSelect"><label for="hhMonCellSelect">Célula para monitor individual</label><select id="hhMonCellSelect" aria-label="Selecionar célula do monitor individual"></select></div>
   <section id="hhMonitorFloor" class="hhMonitorPane active" aria-label="Monitor geral da fábrica"><div id="hhFactoryScreen"></div></section>
   <section id="hhMonitorIndividual" class="hhMonitorPane" hidden aria-label="Monitor individual da célula"><div id="hhIndividualScreen"></div></section>
@@ -1041,10 +1041,416 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   </div>
 </div>
 </main>
-<footer class="hhFooter" data-ver-updated="v0.1.19">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.19</b></footer>
+<footer class="hhFooter" data-ver-updated="v0.1.20">ANDON DE PRODUÇÃO · PROGRAMAR · APONTAR · REAGIR · APRENDER COM HISTÓRICO · <b style="color:var(--acc, #1e3a8a)">v0.1.20</b></footer>
 </div>
 </style>
 <style>
+/* ===== THEME VARIABLES (v0.1.20 Clean & Dark) ===== */
+:root, html[data-hh-theme="light"] {
+  --hh-bg: #F5F6F8;
+  --hh-card: #FFFFFF;
+  --hh-border: #E5E7EB;
+  --hh-text: #111827;
+  --hh-text2: #6B7280;
+  --hh-track: #EEF0F3;
+  --hh-acc: #2563EB;
+  --hh-late: #B91C1C;
+  --hh-late-bg: #FEE2E2;
+  --hh-now-border: #111827;
+  --hh-st-ahead: #16A34A;
+  --hh-st-warn: #D97706;
+  --hh-st-late: #DC2626;
+  --hh-st-stop: #111827;
+  --hh-st-wait: #9CA3AF;
+  --hh-st-zero: #9CA3AF;
+}
+html[data-hh-theme="dark"] {
+  --hh-bg: #0F1115;
+  --hh-card: #181B22;
+  --hh-border: #2A2F3A;
+  --hh-text: #F3F4F6;
+  --hh-text2: #9CA3AF;
+  --hh-track: #262B35;
+  --hh-acc: #60A5FA;
+  --hh-late: #F87171;
+  --hh-late-bg: #3B1F23;
+  --hh-now-border: #F3F4F6;
+  --hh-st-ahead: #22C55E;
+  --hh-st-warn: #F59E0B;
+  --hh-st-late: #F87171;
+  --hh-st-stop: #E5E7EB;
+  --hh-st-wait: #7C8494;
+  --hh-st-zero: #7C8494;
+}
+
+/* ===== NOVO MONITOR GERAL CLEAN (v0.1.20) ===== */
+.hhCleanScreen {
+  background: var(--hh-bg) !important;
+  color: var(--hh-text) !important;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  padding: 24px !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  box-sizing: border-box !important;
+}
+.hhCleanHeader {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+}
+.hhCleanHeaderLeft .company {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  color: var(--hh-text2) !important;
+}
+.hhCleanHeaderLeft h1 {
+  margin: 4px 0 0 !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  letter-spacing: -0.02em !important;
+}
+.hhCleanHeaderRight {
+  text-align: right !important;
+}
+.hhCleanHeaderRight .clock {
+  font-size: 40px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.hhCleanHeaderRight .sub {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text2) !important;
+  margin-top: 4px !important;
+}
+
+/* Linha de resumo com 3 cartões */
+.hhCleanSummary {
+  display: grid !important;
+  grid-template-columns: 1.35fr 1fr 1fr !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+.hhCleanCard {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 14px !important;
+  padding: 20px 24px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+.hhCleanLbl {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  color: var(--hh-text2) !important;
+}
+.hhCleanBigVal {
+  font-size: 44px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  line-height: 1.1 !important;
+  font-variant-numeric: tabular-nums !important;
+  margin: 8px 0 6px !important;
+}
+.hhCleanBigVal small {
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text2) !important;
+}
+.hhCleanBigVal.neg {
+  color: var(--hh-late) !important;
+}
+.hhCleanBigVal.pos {
+  color: var(--hh-st-ahead) !important;
+}
+.hhCleanProgress {
+  height: 10px !important;
+  background: var(--hh-track) !important;
+  border-radius: 99px !important;
+  overflow: hidden !important;
+  margin-top: 10px !important;
+}
+.hhCleanProgress i {
+  display: block !important;
+  height: 100% !important;
+  background: var(--hh-acc) !important;
+  border-radius: inherit !important;
+}
+.hhCleanSub {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text2) !important;
+  margin-top: 8px !important;
+}
+
+/* Status list no resumo */
+.hhCleanStatusList {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+}
+.hhCleanStatusItem {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text) !important;
+}
+.hhCleanStatusLeft {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.hhCleanStatusDot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+.hhCleanStatusDot.ahead { background: var(--hh-st-ahead) !important; }
+.hhCleanStatusDot.warn { background: var(--hh-st-warn) !important; }
+.hhCleanStatusDot.late { background: var(--hh-st-late) !important; }
+.hhCleanStatusDot.stop { background: var(--hh-st-stop) !important; }
+.hhCleanStatusDot.wait { background: var(--hh-st-wait) !important; }
+.hhCleanStatusCount {
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.hhCleanStatusCount.zero {
+  color: var(--hh-st-zero) !important;
+  font-weight: 500 !important;
+}
+
+/* Lista de células */
+.hhCleanCellsList {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+.hhCleanCellCard {
+  background: var(--hh-card) !important;
+  border: 1px solid var(--hh-border) !important;
+  border-radius: 14px !important;
+  padding: 18px 24px !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: 1.15fr 1.35fr .95fr 1.05fr 2.15fr !important;
+  gap: 20px !important;
+  align-items: center !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+.hhCleanCellCol {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+.hhCleanCellName {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: var(--hh-text) !important;
+  margin: 2px 0 6px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.hhCleanBadge {
+  display: inline-flex !important;
+  align-items: center !important;
+  align-self: flex-start !important;
+  padding: 3px 10px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+}
+.hhCleanBadge.late {
+  background: var(--hh-late-bg) !important;
+  color: var(--hh-late) !important;
+}
+.hhCleanBadge.ahead, .hhCleanBadge.steady {
+  background: #DCFCE7 !important;
+  color: #16A34A !important;
+}
+html[data-hh-theme="dark"] .hhCleanBadge.ahead,
+html[data-hh-theme="dark"] .hhCleanBadge.steady {
+  background: #143522 !important;
+  color: #4ADE80 !important;
+}
+.hhCleanBadge.warn {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
+}
+html[data-hh-theme="dark"] .hhCleanBadge.warn {
+  background: #38280E !important;
+  color: #FBBF24 !important;
+}
+.hhCleanBadge.stop {
+  background: #E5E7EB !important;
+  color: #111827 !important;
+}
+html[data-hh-theme="dark"] .hhCleanBadge.stop {
+  background: #2A2F3A !important;
+  color: #F3F4F6 !important;
+}
+.hhCleanBadge.wait {
+  background: #F3F4F6 !important;
+  color: #6B7280 !important;
+}
+html[data-hh-theme="dark"] .hhCleanBadge.wait {
+  background: #20242D !important;
+  color: #9CA3AF !important;
+}
+
+.hhCleanCellNumVal {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+  line-height: 1.15 !important;
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
+}
+.hhCleanCellNumVal small {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text2) !important;
+}
+.hhCleanCellNumVal.neg { color: var(--hh-late) !important; }
+.hhCleanCellNumVal.pos { color: var(--hh-st-ahead) !important; }
+
+.hhCleanCellProgress {
+  height: 8px !important;
+  background: var(--hh-track) !important;
+  border-radius: 99px !important;
+  overflow: hidden !important;
+  margin: 6px 0 4px !important;
+}
+.hhCleanCellProgress i {
+  display: block !important;
+  height: 100% !important;
+  background: var(--hh-acc) !important;
+  border-radius: inherit !important;
+}
+.hhCleanCellSub {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--hh-text2) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Gráfico hora a hora da célula */
+.hhCleanHourly {
+  display: flex !important;
+  gap: 6px !important;
+  align-items: flex-end !important;
+  margin-top: 4px !important;
+}
+.hhCleanHourCol {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+.hhCleanHourVal {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--hh-text2) !important;
+  font-variant-numeric: tabular-nums !important;
+  margin-bottom: 4px !important;
+  height: 14px !important;
+  line-height: 14px !important;
+  text-align: center !important;
+}
+.hhCleanHourTrack {
+  width: 100% !important;
+  height: 44px !important;
+  background: var(--hh-track) !important;
+  border-radius: 4px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  box-sizing: border-box !important;
+}
+.hhCleanHourCol.is-now .hhCleanHourTrack {
+  outline: 1.5px solid var(--hh-now-border) !important;
+  outline-offset: -1.5px !important;
+}
+.hhCleanHourBar {
+  width: 100% !important;
+  background: var(--hh-acc) !important;
+  border-radius: 2px 2px 0 0 !important;
+  min-height: 0 !important;
+  transition: height .2s ease !important;
+}
+.hhCleanHourLbl {
+  font-size: 11px !important;
+  color: var(--hh-text2) !important;
+  margin-top: 4px !important;
+  font-variant-numeric: tabular-nums !important;
+  text-align: center !important;
+}
+.hhCleanHourCol.is-now .hhCleanHourLbl {
+  font-weight: 700 !important;
+  color: var(--hh-text) !important;
+}
+
+/* Responsividade do monitor geral clean */
+@media(max-width: 1200px) {
+  .hhCleanCellCard {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+  .hhCleanCellCard .hhCleanColHourly {
+    grid-column: 1 / -1 !important;
+  }
+}
+@media(max-width: 768px) {
+  .hhCleanSummary {
+    grid-template-columns: 1fr !important;
+  }
+  .hhCleanCellCard {
+    grid-template-columns: 1fr !important;
+  }
+  .hhCleanHeader {
+    flex-direction: column !important;
+  }
+  .hhCleanHeaderRight {
+    text-align: left !important;
+  }
+}
+
+/* MODO TV (TELA CHEIA) PARA O MONITOR GERAL CLEAN */
+body.hhTv .hhCleanScreen {
+  min-height: 100vh !important;
+  padding: 24px 32px !important;
+  border-radius: 0 !important;
+}
+body.hhTv .hhCleanHeaderLeft h1 { font-size: 40px !important; }
+body.hhTv .hhCleanHeaderRight .clock { font-size: 52px !important; }
+body.hhTv .hhCleanBigVal { font-size: 52px !important; }
+body.hhTv .hhCleanCellNumVal { font-size: 38px !important; }
+body.hhTv .hhCleanCellName { font-size: 26px !important; }
+body.hhTv .hhCleanHourTrack { height: 50px !important; }
+
 /* ===== v0.0.431 — Monitores Geral/Individual DARK conforme modelo Dante (TV 1920x1080) ===== */
 .hhFactoryScreen,.hhIndividualScreen{background:#0B0E12 !important;color:#EEF1F5 !important;border:1px solid #262C36 !important;border-radius:16px !important;overflow:hidden}
 .hhFactoryHead{display:grid !important;grid-template-columns:auto 1.4fr auto auto !important;align-items:center !important;gap:20px !important;background:#0B0E12 !important;padding:16px 22px !important;border-bottom:1px solid #262C36 !important;min-height:96px}
@@ -1266,11 +1672,42 @@ body.hhTv .hhFactoryCardBody{gap:6px!important;padding:0 12px 8px!important}
 /* v0.0.442 — bloco legado do monitor (cards antigos + produto final) oculto: substituído pelos monitores dark do modelo Dante */
 .hhCompatibility{display:none!important}
 </style>
+<style>
+/* v0.1.20 — TV mode para o novo layout clean do Monitor Geral */
+body.hhTv #hhMonitorFloor.active .hhCleanScreen {
+  min-height: 100vh !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+  padding: 20px 28px !important;
+  overflow: auto !important;
+}
+body.hhTv #hhMonitorFloor.active .hhCleanHeaderLeft h1 {
+  font-size: 36px !important;
+}
+body.hhTv #hhMonitorFloor.active .hhCleanHeaderRight .clock {
+  font-size: 46px !important;
+}
+body.hhTv #hhMonitorFloor.active .hhCleanBigVal {
+  font-size: 44px !important;
+}
+body.hhTv #hhMonitorFloor.active .hhCleanCellNumVal {
+  font-size: 32px !important;
+}
+body.hhTv #hhMonitorFloor.active .hhCleanCellName {
+  font-size: 24px !important;
+}
+body.hhTv {
+  background: var(--hh-bg) !important;
+}
+body.hhTv #viewHH {
+  background: var(--hh-bg) !important;
+}
+</style>
 </div>
 </div>
 
-<script src="painel-data.js?v=0.1.19"></script>
-<script src="painel-app.js?v=0.1.19"></script>
+<script src="painel-data.js?v=0.1.20"></script>
+<script src="painel-app.js?v=0.1.20"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
