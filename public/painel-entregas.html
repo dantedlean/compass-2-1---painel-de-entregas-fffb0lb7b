@@ -980,9 +980,8 @@ body.hhTv #viewHH .hhFactoryHead{display:grid!important}
 body.hhTv #viewHH .hhIndHead{display:flex!important}
 body.hhTv #viewHH .hhFactoryFoot,body.hhTv #viewHH .hhIndFooter{display:flex!important}
 body.hhTv #viewHH .hhPanel{display:none!important}
-body.hhTv #viewHH #hhPanelMonitor{display:block!important;padding:0!important;margin:0!important}
-body.hhTv #viewHH #hhMonitorFloor.active,body.hhTv #viewHH #hhMonitorIndividual.active,body.hhTv #viewHH #hhMonitorManager.active{display:block!important}
-body.hhTv #viewHH .hhIndMain{grid-template-columns:minmax(250px,.86fr) minmax(460px,1.55fr) minmax(280px,.95fr);min-height:calc(100vh - 135px)}
+body.hhTv #viewHH #hhPanelMonitor{display:flex!important;flex-direction:column!important;height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
+body.hhTv #viewHH #hhMonitorFloor.active,body.hhTv #viewHH #hhMonitorIndividual.active,body.hhTv #viewHH #hhMonitorManager.active{display:flex!important;flex:1!important;min-height:0!important;overflow:hidden!important}body.hhTv #viewHH .hhIndMain{grid-template-columns:minmax(250px,.86fr) minmax(460px,1.55fr) minmax(280px,.95fr);min-height:calc(100vh - 135px)}
 body.hhTv #viewHH .hhIndTableWrap{max-height:calc(100vh - 200px)}
 @media(max-width:1100px){#viewHH .hhFactoryCards{grid-template-columns:repeat(2,minmax(0,1fr))}#viewHH .hhIndMain{grid-template-columns:minmax(230px,.85fr) minmax(0,1.5fr)}#viewHH .hhIndRight{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}#viewHH .hhIndRight .hhIndPanel{margin:0!important}}
 @media(max-width:700px){#viewHH .hhFactoryCards{grid-template-columns:1fr}#viewHH .hhIndMain{grid-template-columns:1fr}#viewHH .hhIndRight{grid-column:auto;display:flex}#viewHH .hhIndHead{align-items:flex-start;flex-direction:column}#viewHH .hhIndHead .turno{text-align:left}}
@@ -1005,11 +1004,11 @@ body:fullscreen #viewHH {
 }
 body.hhTv #viewHH .hhTopbar,body.hhTv #viewHH .hhTabs,body.hhTv #viewHH .hhConnBox,body.hhTv #viewHH .hhSectionHead,body.hhTv #viewHH .hhMonitorActions,body.hhTv #viewHH .hhIndividualSelect,body.hhTv #viewHH .hhFooter{display:none!important}
 body.hhTv #viewHH .hhPanel{display:none!important}
-body.hhTv #viewHH #hhPanelMonitor{display:block!important;padding:0!important;margin:0!important}
+body.hhTv #viewHH #hhPanelMonitor{display:flex!important;flex-direction:column!important;height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
 body.hhTv #viewHH .hhMonitorPane{display:none!important}
-body.hhTv #viewHH .hhMonitorPane.active{display:block!important}
+body.hhTv #viewHH .hhMonitorPane.active{display:flex!important;flex:1!important;min-height:0!important;overflow:hidden!important}
 body.hhTv #viewHH #hhLegacyMonitor{display:none!important}
-body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-height:calc(100vh - 24px);border-radius:0;border:0}
+body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{height:100%!important;min-height:0!important;max-height:100%!important;border-radius:0;border:0;overflow:hidden!important}
 
 </style>
 <main class="hhMain">
@@ -1090,6 +1089,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
 <style>
 /* ===== THEME VARIABLES (v0.1.20 Clean & Dark) ===== */
 :root, html[data-hh-theme="light"] {
+  --hh-u: clamp(10px, min(0.9vw, 1.6vh), 36px);
   --hh-bg: #F5F6F8;
   --hh-card: #FFFFFF;
   --hh-border: #E5E7EB;
@@ -1108,6 +1108,7 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   --hh-st-zero: #9CA3AF;
 }
 html[data-hh-theme="dark"] {
+  --hh-u: clamp(10px, min(0.9vw, 1.6vh), 36px);
   --hh-bg: #0F1115;
   --hh-card: #181B22;
   --hh-border: #2A2F3A;
@@ -1125,8 +1126,35 @@ html[data-hh-theme="dark"] {
   --hh-st-wait: #7C8494;
   --hh-st-zero: #7C8494;
 }
+body.hhTv {
+  --hh-u: clamp(14px, min(1.1vw, 2vh), 40px);
+}
 
 /* ===== NOVO MONITOR GERAL CLEAN (v0.1.20) ===== */
+#hhPanelMonitor {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 140px);
+  min-height: 0;
+  overflow: hidden;
+}
+#hhMonitorFloor, #hhMonitorIndividual {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+#hhMonitorFloor > div, #hhMonitorIndividual > div {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+body.hhTv #hhPanelMonitor {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
 .hhCleanScreen {
   background: var(--hh-bg) !important;
   color: var(--hh-text) !important;
@@ -1137,6 +1165,9 @@ html[data-hh-theme="dark"] {
   flex-direction: column !important;
   gap: 20px !important;
   box-sizing: border-box !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 .hhCleanHeader {
   display: flex !important;
@@ -1281,10 +1312,14 @@ html[data-hh-theme="dark"] {
 
 /* Lista de células */
 .hhCleanCellsList {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: calc(1 * var(--hh-u, 14px)) !important;
+  display: grid !important;
+  grid-template-rows: repeat(var(--hh-cell-count, 4), minmax(0, 1fr)) !important;
+  gap: calc(0.7 * var(--hh-u, 14px)) !important;
   width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  flex: 1 !important;
+  overflow: hidden !important;
 }
 .hhCleanCellCard {
   background: var(--hh-card) !important;
@@ -1616,6 +1651,34 @@ html[data-hh-theme="dark"] .hhHourTooltip .ttVal.neg {
   transform: translateX(0) translateY(-2px) !important;
 }
 
+/* Variações de compactação para muitas células (Item 5) */
+.hhCleanScreen.hh-compact-mid .hhCleanCellCard {
+  padding: calc(0.5 * var(--hh-u, 14px)) calc(1 * var(--hh-u, 14px)) !important;
+}
+.hhCleanScreen.hh-compact-mid .hhCleanSummary {
+  display: none !important;
+}
+
+.hhCleanScreen.hh-compact-low .hhCleanSummary {
+  display: none !important;
+}
+.hhCleanScreen.hh-compact-low .hhCleanCellCard {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 2fr) !important;
+  padding: calc(0.3 * var(--hh-u, 14px)) calc(0.8 * var(--hh-u, 14px)) !important;
+}
+.hhCleanScreen.hh-compact-low .hhCleanColMetaHour {
+  display: none !important;
+}
+.hhCleanScreen.hh-compact-low .hhCleanCellSub {
+  display: none !important;
+}
+.hhCleanScreen.hh-compact-low .hhCleanHourVal {
+  display: none !important;
+}
+.hhCleanScreen.hh-compact-low .hhCleanHourTrack {
+  height: 22px !important;
+}
+
 /* Responsividade do monitor geral clean */
 @media(max-width: 1200px) {
   .hhCleanCellCard {
@@ -1911,13 +1974,15 @@ body.hhTv #viewHH {
   background: var(--hh-bg, #F5F6F8) !important;
   color: var(--hh-text, #111827) !important;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  padding: 24px !important;
+  padding: 20px !important;
   border-radius: 16px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 20px !important;
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  gap: 14px !important;
   box-sizing: border-box !important;
-  min-height: calc(100vh - 80px) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
 /* Cabeçalho limpo sem faixa colorida cheia */
@@ -2027,13 +2092,15 @@ body.hhTv #viewHH {
   margin-top: 4px !important;
 }
 
-/* Grade 3 colunas (~27% / ~47% / ~26%) */
+/* Grade 3 colunas (1fr / 1.8fr / 1fr) */
 .hhIndMainClean {
   display: grid !important;
-  grid-template-columns: 27fr 47fr 26fr !important;
-  gap: 16px !important;
+  grid-template-columns: 1fr 1.8fr 1fr !important;
+  gap: 14px !important;
   align-items: stretch !important;
-  flex: 1 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
 /* Cartões brancos do sistema visual */
@@ -2041,11 +2108,14 @@ body.hhTv #viewHH {
   background: #FFFFFF !important;
   border: 1px solid #E5E7EB !important;
   border-radius: 14px !important;
-  padding: 20px 24px !important;
+  padding: 16px 20px !important;
   box-sizing: border-box !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
   display: flex !important;
   flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
 .hhIndCardTitle {
@@ -2059,7 +2129,7 @@ body.hhTv #viewHH {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 8px !important;
 }
 .hhIndCardSubtitle {
   font-size: 12px !important;
@@ -2071,8 +2141,8 @@ body.hhTv #viewHH {
 .hhIndColSummary {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
-  gap: 12px !important;
+  justify-content: space-evenly !important;
+  gap: 8px !important;
 }
 .hhIndBlock {
   display: flex !important;
@@ -2125,16 +2195,66 @@ body.hhTv #viewHH {
 
 /* Coluna 2: Hora a Hora */
 .hhIndColHourly {
-  padding: 16px 20px !important;
+  padding: 14px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .hhIndTableWrapClean {
   flex: 1 !important;
-  overflow-x: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .hhIndTableClean {
   width: 100% !important;
+  height: 100% !important;
   border-collapse: collapse !important;
-  font-size: 13px !important;
+  font-size: max(14px, calc(1.2 * var(--hh-u, 14px))) !important;
+  display: grid !important;
+  grid-template-rows: auto repeat(var(--hh-ind-slot-count, 9), minmax(0, 1fr)) !important;
+}
+.hhIndTableClean thead, .hhIndTableClean tbody, .hhIndTableClean tr {
+  display: contents !important;
+}
+.hhIndTableClean th {
+  font-size: calc(0.85 * var(--hh-u, 14px)) !important;
+  font-weight: 600 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  color: #6B7280 !important;
+  padding: calc(0.5 * var(--hh-u, 14px)) calc(0.6 * var(--hh-u, 14px)) !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+.hhIndTableClean td {
+  padding: calc(0.4 * var(--hh-u, 14px)) calc(0.6 * var(--hh-u, 14px)) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 600 !important;
+  color: #111827 !important;
+  border-bottom: 1px solid #F3F4F6 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+.hhIndTableClean th.hCol, .hhIndTableClean td.hCol {
+  justify-content: flex-start !important;
+}
+.hhIndAgoraBadge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: calc(0.15 * var(--hh-u, 14px)) calc(0.5 * var(--hh-u, 14px)) !important;
+  border-radius: 999px !important;
+  background: #2563EB !important;
+  color: #FFFFFF !important;
+  font-size: calc(0.75 * var(--hh-u, 14px)) !important;
+  font-weight: 700 !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+  margin-left: calc(0.4 * var(--hh-u, 14px)) !important;
+  line-height: 1.2 !important;
 }
 .hhIndTableClean th {
   font-size: 11px !important;
@@ -2296,23 +2416,67 @@ body.hhTv #viewHH {
   color: #9CA3AF !important;
 }
 
-/* Responsividade Full HD / QHD / Telas Menores */
+/* Responsividade Full HD / QHD / Telas Menores (< 900px / < 1100px) */
 @media(max-width: 1100px) {
   .hhIndMainClean {
     grid-template-columns: 1fr !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
   }
   .hhIndHeaderClean {
     align-items: flex-start !important;
   }
 }
+@media(max-width: 900px) {
+  #hhPanelMonitor {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .hhCleanScreen {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 12px !important;
+    gap: 10px !important;
+  }
+  .hhIndividualScreen {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 12px !important;
+    gap: 8px !important;
+  }
+  .hhIndMainClean {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .hhIndColCard {
+    padding: 8px 12px !important;
+  }
+  .hhCleanSummary {
+    display: none !important;
+  }
+}
 
 /* Modo TV para a Tela 3 · Monitor da Célula */
 body.hhTv #hhMonitorIndividual.active .hhIndividualScreen {
-  min-height: 100vh !important;
-  max-height: 100vh !important;
-  height: 100vh !important;
-  padding: 20px 28px !important;
-  overflow: auto !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  height: 100dvh !important;
+  padding: 18px 24px !important;
+  overflow: hidden !important;
+}
+body.hhTv #hhMonitorFloor.active .hhCleanScreen {
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  padding: 18px 24px !important;
 }
 body.hhTv #hhMonitorIndividual.active .hhIndHeaderClean h1 {
   font-size: 34px !important;

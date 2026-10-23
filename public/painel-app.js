@@ -5114,8 +5114,45 @@ function hhMonV2FactoryClean(iso,now){
   '</div>'+
  '</section>';
 
+ // Dimensões do container e modo de densidade/paginação
+ const containerH = root.clientHeight || (window.innerHeight - 220);
+ const avgCellH = rows.length ? Math.floor(containerH / rows.length) : 200;
+ let compactMode = '';
+ if (avgCellH < 72) {
+  compactMode = 'hh-paginate';
+ } else if (avgCellH < 110) {
+  compactMode = 'hh-compact-low';
+ } else if (avgCellH < 150) {
+  compactMode = 'hh-compact-mid';
+ }
+
+ // Paginação quando altura por célula < 72px
+ const pageSize = 4;
+ const totalPages = (compactMode === 'hh-paginate' && rows.length > pageSize) ? Math.ceil(rows.length / pageSize) : 1;
+ if (!window._hhFactoryPage) window._hhFactoryPage = 0;
+ if (window._hhFactoryPage >= totalPages) window._hhFactoryPage = 0;
+ const curPage = window._hhFactoryPage;
+
+ if (totalPages > 1) {
+  if (!window._hhFactoryRotateTimer) {
+   window._hhFactoryRotateTimer = setInterval(function() {
+    window._hhFactoryPage = ((window._hhFactoryPage || 0) + 1) % totalPages;
+    try { hhMonV2FactoryClean(iso, new Date()); } catch(e) {}
+   }, 15000);
+  }
+ } else {
+  if (window._hhFactoryRotateTimer) {
+   clearInterval(window._hhFactoryRotateTimer);
+   window._hhFactoryRotateTimer = null;
+  }
+ }
+
+ const visibleRows = (totalPages > 1) ? rows.slice(curPage * pageSize, (curPage + 1) * pageSize) : rows;
+ root.style.setProperty('--hh-cell-count', String(visibleRows.length || 1));
+
  // Cartões das Células
- const cellCardsHtml=rows.map(function(x,i){
+ const cellCardsHtml=visibleRows.map(function(x,idx){
+  const i = (totalPages > 1) ? (curPage * pageSize + idx) : idx;
   const c=x.c, m=x.m;
   const slotRows=hhMonV2SlotRows(c,iso,d);
   const foc=m.focus;
@@ -5204,7 +5241,17 @@ function hhMonV2FactoryClean(iso,now){
    '</div>'+
   '</article>'; }).join('');
 
- root.innerHTML='<div class="hhCleanScreen">'+
+ const pagerHtml = (totalPages > 1) ? (
+  '<div class="hhCleanPager" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;font-weight:700;color:var(--hh-text2)">'+
+   '<button type="button" id="hhCleanPrevPage" class="hhActionBtn" style="padding:2px 8px;font-size:14px;cursor:pointer" aria-label="Página anterior">‹</button>'+
+   '<span>'+(curPage + 1)+' / '+totalPages+'</span>'+
+   '<button type="button" id="hhCleanNextPage" class="hhActionBtn" style="padding:2px 8px;font-size:14px;cursor:pointer" aria-label="Próxima página">›</button>'+
+  '</div>'
+ ) : '';
+
+ const extraCls = (compactMode && compactMode !== 'hh-paginate') ? (' ' + compactMode) : '';
+
+ root.innerHTML='<div class="hhCleanScreen'+extraCls+'">'+
   '<header class="hhCleanHeader">'+
    '<div class="hhCleanHeaderLeft">'+
     '<div class="company">D-LEAN SOLUTIONS</div>'+
@@ -5213,14 +5260,31 @@ function hhMonV2FactoryClean(iso,now){
    '<div class="hhCleanHeaderRight">'+
     '<div class="clock">'+clockStr+'</div>'+
     '<div class="sub">'+dateStr+(turnoStr?(' · '+turnoStr):'')+'</div>'+
+    pagerHtml+
    '</div>'+
   '</header>'+
   summaryHtml+
   '<section class="hhCleanCellsList">'+
-   (rows.length?cellCardsHtml:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+
+   (visibleRows.length?cellCardsHtml:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+
   '</section>'+
  '</div>';
-}
+
+ if (totalPages > 1) {
+  const prevBtn = document.getElementById('hhCleanPrevPage');
+  const nextBtn = document.getElementById('hhCleanNextPage');
+  if (prevBtn) {
+   prevBtn.addEventListener('click', function() {
+    window._hhFactoryPage = (window._hhFactoryPage - 1 + totalPages) % totalPages;
+    try { hhMonV2FactoryClean(iso, new Date()); } catch(e) {}
+   });
+  }
+  if (nextBtn) {
+   nextBtn.addEventListener('click', function() {
+    window._hhFactoryPage = (window._hhFactoryPage + 1) % totalPages;
+    try { hhMonV2FactoryClean(iso, new Date()); } catch(e) {}
+   });
+  }
+ }}
 function hhMonV2Factory431(iso,now){
  return hhMonV2FactoryClean(iso,now);
 }
@@ -5306,8 +5370,8 @@ function hhMonV2Individual431(iso,now){
  const clockFullStr=hh431ClockFull();
 
  const preservedSel=sel;
- root.innerHTML='<div class="hhIndividualScreen">'+
-  '<header class="hhIndHeaderClean">'+
+ root.style.setProperty('--hh-ind-slot-count', String(rows.length || 9));
+ root.innerHTML='<div class="hhIndividualScreen">'+  '<header class="hhIndHeaderClean">'+
    '<div class="hhIndHeaderLeft">'+
     '<div class="hhIndBrandClean">D-LEAN SOLUTIONS</div>'+
     '<div class="hhIndTitleRowClean">'+
