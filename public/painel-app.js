@@ -3625,7 +3625,7 @@ function hhMonitorTimeline(c,iso,now){
  if(String(iso)<today)return {mode:'closed',iso:iso,start:start,end:end,planMinute:end,actualMinute:1440,nowMinute:minute};
  if(minute<start)return {mode:'before',iso:iso,start:start,end:end,planMinute:start,actualMinute:minute,nowMinute:minute};
  if(minute>=end)return {mode:'closed',iso:iso,start:start,end:end,planMinute:end,actualMinute:1440,nowMinute:minute};
- const done=hhWorkIntervals(c,iso).filter(function(x){return x.end<=minute;}),cut=done.length?done[done.length-1].end:start;
+ const done=hhWorkIntervals(c).filter(function(x){return x.end<=minute;}),cut=done.length?done[done.length-1].end:start;
  return {mode:hhWorkMinutes(c,minute,minute+1)>0?'active':'break',iso:iso,start:start,end:end,planMinute:minute,actualMinute:minute,nowMinute:minute};
 }
 function hhApontAtivo(a){return !!a&&!a.excluido;}
@@ -3665,9 +3665,8 @@ function hhMeal(c){if(!c)return null;const ri=c.almocoIni===undefined?'':String(
 function hhWorkSegments(c){if(!c)return [];const start=hhScheduleStart(c),end=hhScheduleEnd(c);if(start===null||end===null||start<0||end>1440||end<=start)return [];const meal=hhMeal(c);if(meal&&meal.invalid)return [{start:start,end:end}];if(meal)return [{start:start,end:meal.start},{start:meal.end,end:end}].filter(function(x){return x.end>x.start;});return [{start:start,end:end}];}
 function hhShiftMinutes(c){return hhWorkSegments(c).reduce(function(n,x){return n+x.end-x.start;},0);}
 function hhWorkMinutes(c,from,to){return hhWorkSegments(c).reduce(function(n,x){return n+Math.max(0,Math.min(x.end,to)-Math.max(x.start,from));},0);}
-function hhSlotKeyMatch(aIntervalo,slotKey,iso){const ai=String(aIntervalo||''),sk=String(slotKey||'');if(ai===sk)return true;const dia=String(iso||hhDiaSelIso());if(dia<'2026-10-22')return false;if(sk==='450-540'&&(ai==='450-480'||ai==='480-540'))return true;const sm=sk.match(/^(\d+)-(\d+)$/);if(sm){const s=Number(sm[1]),e=Number(sm[2]);if(s%60===30&&e===s+90&&(ai===String(s)+'-'+String(s+30)||ai===String(s+30)+'-'+String(e)))return true;}return false;}
-function hhWorkIntervals(c,iso){const out=[],fin=c?hhFinalDe(c.id):'',shiftStart=hhScheduleStart(c),dia=String(iso||hhDiaSelIso()),gate90=(dia>='2026-10-22'),startsAt30=(gate90&&shiftStart!==null&&shiftStart%60===30);hhWorkSegments(c).forEach(function(seg){const isFirstSeg=(seg.start===shiftStart);let cur=seg.start;while(cur<seg.end){const isFirstBlock=(cur===seg.start&&isFirstSeg&&startsAt30);const next=isFirstBlock?Math.min(seg.end,cur+90):Math.min(seg.end,(Math.floor(cur/60)+1)*60);out.push({start:cur,end:next,hour:Math.floor(cur/60),minutes:next-cur,key:String(cur)+'-'+String(next),label:hhClockTxt(cur)+'–'+hhClockTxt(next),fase:!!fin,final:!!fin});cur=next;}});(c&&c.blocos||[]).forEach(function(b,i){const a=hhTimeMin(b.ini,null),z=hhTimeMin(b.fim,null);if(a===null||z===null||z<=a)return;out.push({start:a,end:z,hour:Math.floor(a/60),minutes:z-a,key:'bloco-'+i+'-'+a+'-'+z,label:(b.cod?escH(b.cod)+' · ':'')+'BLOCO '+hhClockTxt(a)+'–'+hhClockTxt(z),fase:!!fin,final:!!fin,bloco:true,blocoMeta:Number(b.meta)||0,blocoCod:b.cod||''});});out.sort(function(x,y){return x.start-y.start;});return out;}
-function hhIntervalFor(l,key){const c=hhCfg(l);const iso=hhDiaSelIso();return c?hhWorkIntervals(c,iso).find(function(x){return hhSlotKeyMatch(key,x.key,iso);})||null:null;}
+function hhWorkIntervals(c){const out=[],fin=c?hhFinalDe(c.id):'';hhWorkSegments(c).forEach(function(seg){let cur=seg.start;while(cur<seg.end){const next=Math.min(seg.end,(Math.floor(cur/60)+1)*60);out.push({start:cur,end:next,hour:Math.floor(cur/60),minutes:next-cur,key:String(cur)+'-'+String(next),label:hhClockTxt(cur)+'–'+hhClockTxt(next),fase:!!fin,final:!!fin});cur=next;}});(c&&c.blocos||[]).forEach(function(b,i){const a=hhTimeMin(b.ini,null),z=hhTimeMin(b.fim,null);if(a===null||z===null||z<=a)return;out.push({start:a,end:z,hour:Math.floor(a/60),minutes:z-a,key:'bloco-'+i+'-'+a+'-'+z,label:(b.cod?escH(b.cod)+' · ':'')+'BLOCO '+hhClockTxt(a)+'–'+hhClockTxt(z),fase:!!fin,final:!!fin,bloco:true,blocoMeta:Number(b.meta)||0,blocoCod:b.cod||''});});out.sort(function(x,y){return x.start-y.start;});return out;}
+function hhIntervalFor(l,key){const c=hhCfg(l);return c?hhWorkIntervals(c).find(function(x){return x.key===String(key);})||null:null;}
 function hhMinutesToClockHour(c,h){return hhWorkMinutes(c,Number(h)*60,(Number(h)+1)*60);}
 function hhHoursForConfig(c){const out=[];hhWorkSegments(c).forEach(function(seg){for(let h=Math.floor(seg.start/60);h<=Math.floor((seg.end-1)/60);h++){if(out.indexOf(h)<0)out.push(h);}});return out.sort(function(a,b){return a-b;});}
 function hhHorasCelula(l){return hhHoursForConfig(hhCfg(l));}
@@ -3701,7 +3700,7 @@ function hhProdNaHora(p,h){const j=hhProdJanelaMin(p);if(!j)return true;return h
 function hhProdNoSlot(p,slot){const j=hhProdJanelaMin(p);if(!j||!slot)return true;return slot.start<j.end&&slot.end>j.start;}
 function hhMetaElapsed(c,minuteOfDay){const m=Number(minuteOfDay)||0;const bl=(c&&c.blocos||[]).filter(function(b){const a=hhTimeMin(b.ini,null),z=hhTimeMin(b.fim,null);return a!==null&&z!==null&&z>a;}).sort(function(x,y){return hhTimeMin(x.ini,0)-hhTimeMin(y.ini,0);});if(bl.length){let acc=0;bl.forEach(function(b){const a=hhTimeMin(b.ini,0),z=hhTimeMin(b.fim,0);if(m>=z)acc+=Number(b.meta)||0;else if(m>a&&Number(b.meta)>0)acc+=(Number(b.meta)||0)*(m-a)/(z-a);});return acc;}const worked=hhWorkMinutes(c,0,m),total=hhShiftMinutes(c);if(total<=0)return 0;const fin=hhFinalDe(c.id),p=hhProdCfg.filter(function(x){return x.linha===c.id&&x.cod;});if(p.length){const fins=hhFinaisDaCelula(c.id);if(fins.length){const qt=fins.reduce(function(n,x){return n+(Number(x.qtdDia)||0);},0);if(qt>0){const mhTot=fins.reduce(function(n,x){return n+hhMetaHEf(x,c);},0);return mhTot>0?mhTot*worked/60:qt*worked/total;}const mhTot2=fins.reduce(function(n,x){return n+(Number(x.metaH)||0);},0);return mhTot2>0?mhTot2*worked/60:(Number(c.meta)||0)*worked/total;}const allPhase=p.every(function(x){const fr=hhFinalRowDe(x.cod);return fr&&fr.linha!==c.id;});if(allPhase)return 0;const qtAll=p.reduce(function(n,x){return n+(Number(x.qtdDia)||0);},0);if(qtAll>0){const mhAll=p.reduce(function(n,x){return n+hhMetaHEf(x,c);},0);return mhAll>0?mhAll*worked/60:qtAll*worked/total;}return (Number(c.meta)||0)*worked/total;}if(c&&hhProdCfg.filter(function(x){return x.linha===c.id&&x.cod;}).every(function(x){const fr=hhFinalRowDe(x.cod);return fr&&fr.linha!==c.id;})&&hhProdCfg.some(function(x){return x.linha===c.id&&x.cod;}))return 0;return (Number(c.meta)||0)*worked/total;}
 function hhMetaInterval(l,slot,cod){if(!slot)return 0;if(slot.bloco)return Number(slot.blocoMeta)||0;const c=hhCfg(l);if(c&&(c.blocos||[]).some(function(b){const a=hhTimeMin(b.ini,null),z=hhTimeMin(b.fim,null);return a!==null&&z!==null&&z>a;}))return 0;if(cod){const pr=hhProdCfg.find(function(x){return x.linha===l&&String(x.cod)===String(cod)&&hhProdNoSlot(x,slot);});if(pr)return (hhMetaHEf(pr,c)||Number(pr.metaH)||0)*slot.minutes/60;}const p=hhProdCfg.filter(function(x){return x.linha===l&&x.cod&&hhProdNoSlot(x,slot);});if(p.length)return p.reduce(function(n,x){return n+(hhMetaHEf(x,c)||0);},0)*slot.minutes/60;const total=hhShiftMinutes(c);return total>0?hhMetaPosto(l)*slot.minutes/total:0;}
-function hhProdLinhaSlot(l,iso,slot){let q=0,itens={},regimes={},legacy=0,qf=0,itensF={},regimesF={},legacyF=0;if(!slot)return {qtd:0,itens:itens,regimes:regimes,legacy:0,qtdFinal:0,itensFinal:itensF,regimesFinal:regimesF,fase:false,final:false};const fin=hhFinalDe(l);const slots=hhWorkIntervals(hhCfg(l),iso).filter(function(x){return x.hour===slot.hour;}),first=slots.length?slots[0].key:'';hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso)return;if(a.bloco){if(!slot.bloco||!hhSlotKeyMatch(a.intervalo,slot.key,iso))return;}else if(slot.bloco)return;else if(a.intervalo){if(!hhSlotKeyMatch(a.intervalo,slot.key,iso))return;}else if(Number(a.hora)===slot.hour){if(first!==slot.key){legacy+=Number(a.qtd)||0;if(fin&&String(a.cod)===fin)legacyF+=Number(a.qtd)||0;return;}}else return;const z=Number(a.qtd)||0,k=a.cod||'—';q+=z;itens[k]=(itens[k]||0)+z;const w=a.ward===true||(a.ward==null&&hhWardDe(k,l)),rk=(w?'WARD':'PV')+'|'+k;regimes[rk]=(regimes[rk]||0)+z;if(fin&&k===fin){qf+=z;itensF[k]=(itensF[k]||0)+z;regimesF[rk]=(regimesF[rk]||0)+z;}});return {qtd:q,itens:itens,regimes:regimes,legacy:legacy,qtdAll:q+legacy,qtdFinal:fin?qf+legacyF:q+legacy,itensFinal:itensF,regimesFinal:regimesF,fase:!!fin,final:!!fin};}
+function hhProdLinhaSlot(l,iso,slot){let q=0,itens={},regimes={},legacy=0,qf=0,itensF={},regimesF={},legacyF=0;if(!slot)return {qtd:0,itens:itens,regimes:regimes,legacy:0,qtdFinal:0,itensFinal:itensF,regimesFinal:regimesF,fase:false,final:false};const fin=hhFinalDe(l);const slots=hhWorkIntervals(hhCfg(l)).filter(function(x){return x.hour===slot.hour;}),first=slots.length?slots[0].key:'';hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso)return;if(a.bloco){if(!slot.bloco||String(a.intervalo)!==String(slot.key))return;}else if(slot.bloco)return;else if(a.intervalo){if(String(a.intervalo)!==slot.key)return;}else if(Number(a.hora)===slot.hour){if(first!==slot.key){legacy+=Number(a.qtd)||0;if(fin&&String(a.cod)===fin)legacyF+=Number(a.qtd)||0;return;}}else return;const z=Number(a.qtd)||0,k=a.cod||'—';q+=z;itens[k]=(itens[k]||0)+z;const w=a.ward===true||(a.ward==null&&hhWardDe(k,l)),rk=(w?'WARD':'PV')+'|'+k;regimes[rk]=(regimes[rk]||0)+z;if(fin&&k===fin){qf+=z;itensF[k]=(itensF[k]||0)+z;regimesF[rk]=(regimesF[rk]||0)+z;}});return {qtd:q,itens:itens,regimes:regimes,legacy:legacy,qtdAll:q+legacy,qtdFinal:fin?qf+legacyF:q+legacy,itensFinal:itensF,regimesFinal:regimesF,fase:!!fin,final:!!fin};}
 function hhProdClockHour(l,iso,h){const fin=hhFinalDe(l);let q=0,itens={},regimes={};hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso||Number(a.hora)!==h)return;if(fin&&String(a.cod)!==fin)return;if(!fin&&hhApFase(a))return;const z=Number(a.qtd)||0,k=a.cod||'—';q+=z;itens[k]=(itens[k]||0)+z;const w=a.ward===true||(a.ward==null&&hhWardDe(k,l)),rk=(w?'WARD':'PV')+'|'+k;regimes[rk]=(regimes[rk]||0)+z;});return {qtd:q,itens:itens,regimes:regimes};}
 function hhStopMin(v){return hhTimeMin(v,null);}
 function hhStopDuration(p){const a=hhStopMin(p.horaIni),b=hhStopMin(p.horaFim);return a!==null&&b!==null?Math.max(0,b-a):0;}
@@ -3776,7 +3775,6 @@ function hhLoad(){
       if(Array.isArray(ch.paradas)) hhParadas=ch.paradas;
       hhRevLocal=srvRev;
       try{ localStorage.setItem('hh|apont', JSON.stringify(hhApont)); }catch(e){}
-      window._hhDiaAplicado='';
     }
     hhRender();
   }).catch(function(){});
@@ -3926,7 +3924,7 @@ function hhChipsRender(){
   }
   // intervalo: faixas da jornada da célula (mesmas do select) — a sugerida vem em destaque
   const sug=hhIntervaloSugerido(lin);
-  const ivs=c?hhWorkIntervals(c,hhDiaSelIso()):[];
+  const ivs=c?hhWorkIntervals(c):[];
   const sigH=lin+'|'+ivs.map(function(s){return s.key;}).join(',')+'|sel='+(selH?selH.value:'')+'|sug='+(sug?sug.key:'');
   if(rowH.getAttribute('data-sig')!==sigH){
     rowH.innerHTML=ivs.map(function(s){
@@ -3971,7 +3969,7 @@ function hhChipsRender(){
 // sugestão: hora corrente → intervalo ANTERIOR (13:15 sugere 12–13; 13:00 em ponto ainda sugere 12–13)
 function hhIntervaloSugerido(lin){
   const c=hhCfg(lin); if(!c) return null;
-  const ivs=hhWorkIntervals(c,hhDiaSelIso()); if(!ivs.length) return null;
+  const ivs=hhWorkIntervals(c); if(!ivs.length) return null;
   const now=new Date(), cur=now.getHours()*60+now.getMinutes();
   const passados=ivs.filter(function(s){ return s.end<=cur; });
   if(passados.length) return passados[passados.length-1];
@@ -4036,7 +4034,7 @@ function hhEntryContextRender(){
   const out=document.getElementById('hhEntryContext');if(out){if(!c)out.innerHTML='<div class="hhEmpty">Nenhuma célula programada. Cadastre uma célula primeiro em Programação.</div>';else{
     const p=hhProdCfg.find(function(x){return x.linha===lin&&String(x.cod)===String(cod);}),rg=p?(p.ward?'WARD → Supermercado':'PV → Pedido associado'):(cod?'⚠ Não programado nesta célula':'Selecione o produto da célula'),meal=hhMeal(c),lunch=meal&&!meal.invalid?' · almoço '+hhTimeTxt(c.almocoIni)+'–'+hhTimeTxt(c.almocoFim):'',done=slot&&!fora?hhProdLinhaSlot(lin,hhDiaSelIso(),slot):{qtd:0,legacy:0};
     const blocoTxt=slot&&slot.bloco?' · ⧗ BLOCO '+hhClockTxt(slot.start)+'–'+hhClockTxt(slot.end)+(slot.blocoCod?' ('+escH(slot.blocoCod)+')':'')+' — meta própria':'';
-    out.innerHTML='<div class="hhEntryContextTop"><b>'+escH(c.nome)+'</b><span class="hhMetaTag">'+NF.format(c.pessoas||0)+' operadores</span><span class="hhMetaTag">'+NF.format(c.postos||0)+' postos</span><span class="hhMetaTag">'+hhTimeTxt(c.hIni,hhScheduleStart(c))+'–'+hhTimeTxt(c.hFim,hhScheduleEnd(c))+lunch+' · '+hhWorkIntervals(c,hhDiaSelIso()).length+' faixas</span></div><div class="hhEntryContextBottom">Meta do dia <b>'+NF.format(Math.round(hhMetaLinha(lin)))+' un</b> · '+(fora?'Fora da jornada — sem meta · motivo obrigatório':(slot?'Meta nesta faixa <b>'+NF.format(Math.round(hhMetaInterval(lin,slot)))+' un</b> · já lançado '+NF.format(done.qtd)+' un'+blocoTxt:'Selecione intervalo'))+' · '+escH(rg)+(done.legacy?' · '+NF.format(done.legacy)+' un legado sem faixa específica':'')+(meal&&meal.invalid?' · ⚠ almoço incompleto/fora da jornada; não descontado':'')+(cod&&!programado?' · ⚠ produto NÃO programado nesta célula — informe o motivo':'')+(fora?' · ⚠ fora da jornada — informe o motivo':'')+(slot&&slot.fase&&!slot.final?' · ℹ peça pronta / fase interna ('+hhFinalDe(lin)+' é o produto final desta célula) — não soma no total do dia':'')+'</div>';
+    out.innerHTML='<div class="hhEntryContextTop"><b>'+escH(c.nome)+'</b><span class="hhMetaTag">'+NF.format(c.pessoas||0)+' operadores</span><span class="hhMetaTag">'+NF.format(c.postos||0)+' postos</span><span class="hhMetaTag">'+hhTimeTxt(c.hIni,hhScheduleStart(c))+'–'+hhTimeTxt(c.hFim,hhScheduleEnd(c))+lunch+' · '+hhWorkIntervals(c).length+' faixas</span></div><div class="hhEntryContextBottom">Meta do dia <b>'+NF.format(Math.round(hhMetaLinha(lin)))+' un</b> · '+(fora?'Fora da jornada — sem meta · motivo obrigatório':(slot?'Meta nesta faixa <b>'+NF.format(Math.round(hhMetaInterval(lin,slot)))+' un</b> · já lançado '+NF.format(done.qtd)+' un'+blocoTxt:'Selecione intervalo'))+' · '+escH(rg)+(done.legacy?' · '+NF.format(done.legacy)+' un legado sem faixa específica':'')+(meal&&meal.invalid?' · ⚠ almoço incompleto/fora da jornada; não descontado':'')+(cod&&!programado?' · ⚠ produto NÃO programado nesta célula — informe o motivo':'')+(fora?' · ⚠ fora da jornada — informe o motivo':'')+(slot&&slot.fase&&!slot.final?' · ℹ peça pronta / fase interna ('+hhFinalDe(lin)+' é o produto final desta célula) — não soma no total do dia':'')+'</div>';
   }}
   const w=document.getElementById('hhEntryWindow');if(w)w.textContent=c?(c.nome+' · '+(slot?slot.label:'selecione intervalo')):'Aguardando programação';
   const exb=document.getElementById('hhExceBox');if(exb){exb.style.display=((fora||(cod&&!programado))?'block':'none');const et=document.getElementById('hhExceTxt');if(et)et.textContent=(fora&&cod&&!programado)?'fora da jornada + produto não programado':(fora?'fora da jornada':'produto não programado');}
@@ -4129,12 +4127,12 @@ function hhMetaStageElapsed(c,minute){
  return ps.reduce(function(n,p){const j=hhProdJanelaMin(p),a=j?j.start:hhScheduleStart(c),z=j?j.end:hhScheduleEnd(c),mins=hhWorkMinutes(c,a,Math.max(a,Math.min(z,m)));return n+(hhMetaHEf(p,c)||0)*mins/60;},0);
 }
 function hhStageAcum(l,iso,until){let q=0;const cut=Number(until)||0;hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso)return;if(hhApontJaOcorreu(a,cut))q+=Number(a.qtd)||0;});return q;}
-function hhStageSlot(l,iso,slot){if(!slot)return 0;let q=0;const hourly=hhWorkIntervals(hhCfg(l),iso).filter(function(x){return x.hour===slot.hour;}),first=hourly.length?hourly[0].key:'';hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso)return;if(slot.outside){if(a.fora&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.fora)return;if(slot.bloco){if(a.bloco&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.bloco)return;if(a.intervalo){if(hhSlotKeyMatch(a.intervalo,slot.key,iso))q+=Number(a.qtd)||0;return;}if(Number(a.hora)===slot.hour&&slot.key===first)q+=Number(a.qtd)||0;});return q;}
+function hhStageSlot(l,iso,slot){if(!slot)return 0;let q=0;const hourly=hhWorkIntervals(hhCfg(l)).filter(function(x){return x.hour===slot.hour;}),first=hourly.length?hourly[0].key:'';hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso)return;if(slot.outside){if(a.fora&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.fora)return;if(slot.bloco){if(a.bloco&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.bloco)return;if(a.intervalo){if(String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(Number(a.hora)===slot.hour&&slot.key===first)q+=Number(a.qtd)||0;});return q;}
 function hhMetaStageSlot(c,slot,cut){if(!slot||slot.outside)return 0;const end=Math.min(slot.end,cut===undefined?slot.end:Number(cut));return Math.max(0,hhMetaStageElapsed(c,end)-hhMetaStageElapsed(c,slot.start));}
-function hhActualProductSlot(l,iso,slot,cod){if(!slot)return 0;let q=0;hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso||String(a.cod)!==String(cod)||hhApFase(a))return;if(slot.outside){if(a.fora&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.fora)return;if(slot.bloco){if(a.bloco&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.bloco)return;if(a.intervalo){if(hhSlotKeyMatch(a.intervalo,slot.key,iso))q+=Number(a.qtd)||0;return;}if(Number(a.hora)===slot.hour)q+=Number(a.qtd)||0;});return q;}
+function hhActualProductSlot(l,iso,slot,cod){if(!slot)return 0;let q=0;hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso||String(a.cod)!==String(cod)||hhApFase(a))return;if(slot.outside){if(a.fora&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.fora)return;if(slot.bloco){if(a.bloco&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.bloco)return;if(a.intervalo){if(String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(Number(a.hora)===slot.hour)q+=Number(a.qtd)||0;});return q;}
 function hhMetaProdutoElapsed(p,c,minute){if(!p||!c)return 0;const bl=(c.blocos||[]).filter(function(b){const a=hhTimeMin(b.ini,null),z=hhTimeMin(b.fim,null);return a!==null&&z!==null&&z>a&&(!b.cod||String(b.cod)===String(p.cod));});if(bl.length)return bl.reduce(function(n,b){const a=hhTimeMin(b.ini,0),z=hhTimeMin(b.fim,0);return n+(Number(b.meta)||0)*(Math.max(0,Math.min(z,Number(minute)||0)-a))/Math.max(1,z-a);},0);const j=hhProdJanelaMin(p),a=j?j.start:hhScheduleStart(c),z=j?j.end:hhScheduleEnd(c);return (hhMetaHEf(p,c)||0)*hhWorkMinutes(c,a,Math.max(a,Math.min(z,Number(minute)||0)))/60;}
 function hhMetaProdutoSlot(p,c,slot,cut){if(!p||!c||!slot||slot.outside)return 0;const end=Math.min(slot.end,cut===undefined?slot.end:Number(cut));return Math.max(0,hhMetaProdutoElapsed(p,c,end)-hhMetaProdutoElapsed(p,c,slot.start));}
-function hhMonitorFocusSlot(c,t){const slots=hhWorkIntervals(c,t.iso);if(!slots.length)return null;const out=hhApontValidos().filter(function(a){return a.data===t.iso&&a.linha===c.id&&a.fora===true&&Number(a.inicioMin)<Number(a.fimMin);});if((t.mode==='future'||t.mode==='before')&&out.length){const a=out[out.length-1],ini=Number(a.inicioMin),fim=Number(a.fimMin);return {start:ini,end:fim,hour:Math.floor(ini/60),minutes:fim-ini,key:a.intervalo||('out-'+ini+'-'+fim),label:hhClockTxt(ini)+'–'+hhClockTxt(fim)+' · fora',outside:true};}if(t.mode==='future'||t.mode==='before'){const produced=slots.filter(function(x){return hhStageSlot(c.id,t.iso,x)>0;});return produced.length?produced[produced.length-1]:slots[0];}if(t.mode==='active'){const active=slots.find(function(x){return x.start<=t.nowMinute&&x.end>t.nowMinute;});if(active)return active;}const closed=slots.filter(function(x){return x.end<=t.planMinute;});return closed.length?closed[closed.length-1]:(slots.find(function(x){return x.start<=t.planMinute&&x.end>t.planMinute;})||slots[0]);}
+function hhMonitorFocusSlot(c,t){const slots=hhWorkIntervals(c);if(!slots.length)return null;const out=hhApontValidos().filter(function(a){return a.data===t.iso&&a.linha===c.id&&a.fora===true&&Number(a.inicioMin)<Number(a.fimMin);});if((t.mode==='future'||t.mode==='before')&&out.length){const a=out[out.length-1],ini=Number(a.inicioMin),fim=Number(a.fimMin);return {start:ini,end:fim,hour:Math.floor(ini/60),minutes:fim-ini,key:a.intervalo||('out-'+ini+'-'+fim),label:hhClockTxt(ini)+'–'+hhClockTxt(fim)+' · fora',outside:true};}if(t.mode==='future'||t.mode==='before'){const produced=slots.filter(function(x){return hhStageSlot(c.id,t.iso,x)>0;});return produced.length?produced[produced.length-1]:slots[0];}if(t.mode==='active'){const active=slots.find(function(x){return x.start<=t.nowMinute&&x.end>t.nowMinute;});if(active)return active;}const closed=slots.filter(function(x){return x.end<=t.planMinute;});return closed.length?closed[closed.length-1]:(slots.find(function(x){return x.start<=t.planMinute&&x.end>t.planMinute;})||slots[0]);}
 function hhMonitorCellMetrics(c,iso,now){const t=hhMonitorTimeline(c,iso,now),focus=hhMonitorFocusSlot(c,t),stageActual=hhStageAcum(c.id,iso,t.actualMinute),stagePlan=hhMetaStageElapsed(c,t.planMinute),stageGoal=hhMetaPosto(c.id),finalActual=hhProdLinhaAcum(c.id,iso,t.actualMinute),finalPlan=hhMetaElapsed(c,t.planMinute),finalGoal=hhMetaLinha(c.id),delta=stageActual-stagePlan;const stop=hhParadas.some(function(p){const a=hhStopMin(p.horaIni),b=hhStopMin(p.horaFim);return p.linha===c.id&&p.data===iso&&a!==null&&b!==null&&a<t.planMinute&&b>t.start;});let state='ok',text='NO RITMO';if(stop){state='stop';text='⛔ PARADA REGISTRADA';}else if(t.mode==='future'){state=stageActual?'ok':'idle';text=stageActual?'✓ PRODUÇÃO ANTECIPADA':'AGUARDANDO ABERTURA';}else if(t.mode==='before'){state=stageActual?'ok':'idle';text=stageActual?'✓ ADIANTADO':'ANTES DA ABERTURA';}else if(t.mode==='break'){state=delta>0.5?'ok':delta< -0.5?'warn':'idle';text=delta>0.5?'PAUSA · ADIANTADO':delta< -0.5?'PAUSA · ATRASADO':'PAUSA PROGRAMADA';}else if(t.mode==='closed'){state=stageActual>=stageGoal?'ok':(stageActual?'stop':'idle');text=stageActual>=stageGoal?'TURNO ENCERRADO · META ATINGIDA':(stageActual?'TURNO ENCERRADO · ABAIXO DA META':'TURNO ENCERRADO · SEM PRODUÇÃO');}else if(delta>0.5){state='ok';text='ADIANTADO';}else if(delta< -0.5){state='stop';text='ATRASADO · PRECISA DE APOIO';}const shift=hhShiftMinutes(c);return {timeline:t,focus:focus,stageActual:stageActual,stagePlan:stagePlan,stageGoal:stageGoal,delta:delta,state:state,text:text,shiftPct:shift?Math.min(100,Math.round(hhWorkMinutes(c,t.start,t.planMinute)/shift*100)):0,slotActual:hhStageSlot(c.id,iso,focus),slotPlan:hhMetaStageSlot(c,focus,t.mode==='active'?t.planMinute:undefined),finalActual:finalActual,finalPlan:finalPlan,finalGoal:finalGoal};}
 function hhMonitorProductMetrics(code,lines,iso,now){let actual=0,planned=0,goal=0,focusActual=0,focusPlan=0,focusLabel='',mode='future',elapsed=0;lines.forEach(function(l){const c=hhCfg(l),p=hhProdCfg.find(function(x){return x.linha===l&&String(x.cod)===String(code)&&(x.final===true||x.tipo==='sub');});if(!c||!p)return;const t=hhMonitorTimeline(c,iso,now),slot=hhMonitorFocusSlot(c,t);if(mode==='future'||mode==='before')mode=t.mode;hhApontValidos().forEach(function(a){if(a.linha===l&&a.data===iso&&String(a.cod)===String(code)&&!hhApFase(a)&&hhApontJaOcorreu(a,t.actualMinute))actual+=Number(a.qtd)||0;});planned+=hhMetaProdutoElapsed(p,c,t.planMinute);goal+=hhQtdDiaDe(p)||Math.round(hhMetaProdutoElapsed(p,c,hhScheduleEnd(c)));focusActual+=hhActualProductSlot(l,iso,slot,code);focusPlan+=hhMetaProdutoSlot(p,c,slot,t.mode==='active'?t.planMinute:undefined);if(slot)focusLabel=slot.label;if(t.mode==='active'&&slot){const from=hhWorkMinutes(c,t.start,slot.start),to=hhWorkMinutes(c,t.start,Math.min(slot.end,t.planMinute)),mins=hhShiftMinutes(c);if(mins)elapsed+=to/mins;}else{const mins=hhShiftMinutes(c);if(mins)elapsed+=hhWorkMinutes(c,t.start,t.planMinute)/mins;}});const delta=actual-planned,pct=planned?Math.min(999,Math.round(actual/planned*100)):(goal&&mode!=='future'&&mode!=='before'?0:(actual?100:0));let state='idle',text=mode==='future'?'AGUARDANDO ABERTURA':'SEM PRODUÇÃO';if(mode==='future'||mode==='before'){if(actual){state='ok';text='✓ PRODUÇÃO ANTECIPADA';}}else if(mode==='closed'){state=actual>=goal?'ok':(actual?'stop':'idle');text=actual>=goal?'TURNO ENCERRADO · META ATINGIDA':(actual?'TURNO ENCERRADO · ABAIXO DA META':'TURNO ENCERRADO · SEM PRODUÇÃO');}else if(delta>0.5){state='ok';text='ADIANTADO';}else if(delta< -0.5){state='stop';text='ATRASADO · PRECISA DE APOIO';}else{state='ok';text='NO RITMO';}return {actual:actual,planned:planned,goal:goal,delta:delta,pct:pct,state:state,text:text,focusActual:focusActual,focusPlan:focusPlan,focusLabel:focusLabel,shiftPct:lines.length?Math.round(elapsed/lines.length*100):0,mode:mode};}
 function hhMonitorSummaryRender(iso,hNow,nowMinute,now){
@@ -4337,8 +4335,8 @@ function hhRender(){
   hhChipsRender();
   hhProdSelRender();
   hhPostoDatalistsRender();
-  const sh=document.getElementById('hhSelHora'),line=(document.getElementById('hhSelLinha')||{}).value||((hhLinhasCfg[0]||{}).id||''),csel=hhCfg(line),hsig=csel?(csel.id+'|'+csel.hIni+'|'+csel.hFim+'|'+csel.almocoIni+'|'+csel.almocoFim+'|'+iso):'';
-  if(sh&&sh.getAttribute('data-sig')!==hsig){const cur=sh.value;sh.innerHTML='';hhWorkIntervals(csel,iso).forEach(function(slot){const o=document.createElement('option');o.value=slot.key;o.textContent=slot.label;sh.appendChild(o);});const oo=document.createElement('option');oo.value='__out';oo.textContent='⏱ Fora da jornada…';sh.appendChild(oo);sh.setAttribute('data-sig',hsig);if(Array.from(sh.options).some(function(o){return o.value===cur;}))sh.value=cur;else if(cur&&!String(cur).includes('-')){const old=hhWorkIntervals(csel,iso).find(function(slot){return slot.hour===Number(cur);});if(old)sh.value=old.key;}}
+  const sh=document.getElementById('hhSelHora'),line=(document.getElementById('hhSelLinha')||{}).value||((hhLinhasCfg[0]||{}).id||''),csel=hhCfg(line),hsig=csel?(csel.id+'|'+csel.hIni+'|'+csel.hFim+'|'+csel.almocoIni+'|'+csel.almocoFim):'';
+  if(sh&&sh.getAttribute('data-sig')!==hsig){const cur=sh.value;sh.innerHTML='';hhWorkIntervals(csel).forEach(function(slot){const o=document.createElement('option');o.value=slot.key;o.textContent=slot.label;sh.appendChild(o);});const oo=document.createElement('option');oo.value='__out';oo.textContent='⏱ Fora da jornada…';sh.appendChild(oo);sh.setAttribute('data-sig',hsig);if(Array.from(sh.options).some(function(o){return o.value===cur;}))sh.value=cur;else if(cur&&!String(cur).includes('-')){const old=hhWorkIntervals(csel).find(function(slot){return slot.hour===Number(cur);});if(old)sh.value=old.key;}}
   hhEntryContextRender(); hhMonitorSummaryRender(iso,hNow,nowMinute,now);
   // v0.0.409: sugestão da hora posterior — intervalo vazio ou "Fora" herdado → pré-seleciona o intervalo anterior à hora corrente
   if(sh&&hhLinhasCfg.length&&hhDiaSelIso()===hhHojeIso()&&(!sh.value||sh.value==='__out')){
@@ -4360,10 +4358,9 @@ function hhApontEditar(idx){
 }
 function hhApontEditarSalvar(e){
  e.preventDefault();if(!hhAdmin())return;const modal=document.getElementById('hhApontEditModal'),id=modal&&modal.dataset.apontamentoId,idx=hhApont.findIndex(function(x){return x&&x._hhId===id;});if(idx<0||!hhApontAtivo(hhApont[idx]))return;
- const a=hhApont[idx],data=(document.getElementById('hhEditData')||{}).value||a.data,linha=(document.getElementById('hhEditLinha')||{}).value||a.linha,conf=hhCfgPorDia[data],linhas=conf&&Array.isArray(conf.linhas)?conf.linhas:(data===hhDiaSelIso()?hhLinhasCfg:null),produtos=conf&&Array.isArray(conf.produtos)?conf.produtos:(data===hhDiaSelIso()?hhProdCfg:null),c=linhas&&linhas.find(function(x){return x.id===linha;}),cod=((document.getElementById('hhEditCod')||{}).value||'').trim(),rawQtd=((document.getElementById('hhEditQtd')||{}).value||'').trim(),ini=hhTimeMin((document.getElementById('hhEditIni')||{}).value||'',null),fim=hhTimeMin((document.getElementById('hhEditFim')||{}).value||'',null),motivo=((document.getElementById('hhEditMotivo')||{}).value||'').trim(),err=document.getElementById('hhApontEditErr'),fail=function(t){if(err){err.textContent=t;err.style.display='block';}};
- if(!c||!produtos){fail('A programação da célula/data não está carregada; não apliquei a mudança.');return;}if(!cod||rawQtd===''||isNaN(Number(rawQtd))||Number(rawQtd)<0||ini===null||fim===null||fim<=ini||!motivo){fail('Informe produto, quantidade válida (0 ou mais), horários válidos e motivo.');return;}
- const qtd=Number(rawQtd);
- const slot=hhWorkIntervals(c,data).find(function(x){return x.start===ini&&x.end===fim;}),blocos=c.blocos||[],bi=blocos.findIndex(function(b){return hhTimeMin(b.ini,null)===ini&&hhTimeMin(b.fim,null)===fim;}),bloco=bi>=0?blocos[bi]:null,inside=hhWorkMinutes(c,ini,fim)===fim-ini;if(inside&&!slot&&!bloco){fail('O horário deve coincidir com um intervalo ou bloco configurado.');return;}
+ const a=hhApont[idx],data=(document.getElementById('hhEditData')||{}).value||a.data,linha=(document.getElementById('hhEditLinha')||{}).value||a.linha,conf=hhCfgPorDia[data],linhas=conf&&Array.isArray(conf.linhas)?conf.linhas:(data===hhDiaSelIso()?hhLinhasCfg:null),produtos=conf&&Array.isArray(conf.produtos)?conf.produtos:(data===hhDiaSelIso()?hhProdCfg:null),c=linhas&&linhas.find(function(x){return x.id===linha;}),cod=((document.getElementById('hhEditCod')||{}).value||'').trim(),qtd=Number((document.getElementById('hhEditQtd')||{}).value),ini=hhTimeMin((document.getElementById('hhEditIni')||{}).value||'',null),fim=hhTimeMin((document.getElementById('hhEditFim')||{}).value||'',null),motivo=((document.getElementById('hhEditMotivo')||{}).value||'').trim(),err=document.getElementById('hhApontEditErr'),fail=function(t){if(err){err.textContent=t;err.style.display='block';}};
+ if(!c||!produtos){fail('A programação da célula/data não está carregada; não apliquei a mudança.');return;}if(!cod||!(qtd>0)||ini===null||fim===null||fim<=ini||!motivo){fail('Informe produto, quantidade maior que zero, horários válidos e motivo.');return;}
+ const slot=hhWorkIntervals(c).find(function(x){return x.start===ini&&x.end===fim;}),blocos=c.blocos||[],bi=blocos.findIndex(function(b){return hhTimeMin(b.ini,null)===ini&&hhTimeMin(b.fim,null)===fim;}),bloco=bi>=0?blocos[bi]:null,inside=hhWorkMinutes(c,ini,fim)===fim-ini;if(inside&&!slot&&!bloco){fail('O horário deve coincidir com um intervalo ou bloco configurado.');return;}
  const before=JSON.parse(JSON.stringify(a)),prod=produtos.find(function(x){return x.linha===linha&&String(x.cod)===cod;}),finalDaCelula=produtos.find(function(x){return x.linha===linha&&x.final===true;});a.data=data;a.linha=linha;a.cod=cod;a.qtd=qtd;a.hora=String(Math.floor(ini/60));a.inicioMin=ini;a.fimMin=fim;a.intervalo=slot?slot.key:(bloco?'bloco-'+bi+'-'+ini+'-'+fim:'out-'+ini+'-'+fim);a.fora=!inside;a.ward=prod?!!prod.ward:hhWardDe(cod,linha);a.fase=!!finalDaCelula&&String(finalDaCelula.cod)!==cod;a.pv=prod&&!prod.ward?String(prod.pv||''):'';a.operador=((document.getElementById('hhEditOperador')||{}).value||'').trim();a.posto=((document.getElementById('hhEditPosto')||{}).value||'').trim();if(bloco)a.bloco={ini:hhClockTxt(ini),fim:hhClockTxt(fim),cod:bloco.cod||'',meta:Number(bloco.meta)||0};else delete a.bloco;if(!inside||!prod)a.motivo=motivo;a.editadoEm=new Date().toISOString();a.editadoPor=hhQuem();a.motivoEdicao=motivo;
  hhApontAuditAdd('editar',before,a,motivo);hhSave('Apontamento corrigido · '+cod+' · '+motivo);modal.hidden=true;hhEntryErr('');hhRender();
 }
@@ -4488,9 +4485,8 @@ function hhInit(){
       if(sMin===null||eMin===null){hhFlash('⚠ informe início/fim válidos do intervalo fora da jornada');hhEntryErr('⚠ Informe início/fim válidos do intervalo fora da jornada.');return;}
       slot={hour:Math.floor(sMin/60),start:sMin,end:eMin,minutes:eMin-sMin,key:'out-'+sMin+'-'+eMin,label:hhClockTxt(sMin)+'–'+hhClockTxt(eMin)+' (fora)'};
     } else slot=sh&&sh.value?hhIntervalFor(lin,sh.value):null;
-    const rawQtd=((document.getElementById('hhQtd')||{}).value||'').trim();
-    if(!lin||!cod||!slot||rawQtd===''||isNaN(Number(rawQtd))||Number(rawQtd)<0){hhFlash('⚠ informe célula, produto, intervalo e quantidade');hhEntryErr('⚠ Não registrou — '+(lin?(cod?'':'informe o produto. '):'selecione a célula. ')+(cod?'':'Informe o produto. ')+(!slot&&lin?'Selecione o intervalo. ':'')+(rawQtd===''||isNaN(Number(rawQtd))||Number(rawQtd)<0?'Informe a quantidade.':''));return;}
-    const qtd=Number(rawQtd);
+    const qtd=Number((document.getElementById('hhQtd')||{}).value)||0;
+    if(!lin||!cod||!slot||qtd<=0){hhFlash('⚠ informe célula, produto, intervalo e quantidade');hhEntryErr('⚠ Não registrou — '+(lin?(cod?'':'informe o produto. '):'selecione a célula. ')+(cod?'':'Informe o produto. ')+(!slot&&lin?'Selecione o intervalo. ':'')+(qtd<=0?'Informe a quantidade (maior que zero).':''));return;}
     const programado=hhProdCfg.some(function(p){return p.linha===lin&&String(p.cod)===String(cod);});
     const mEl=document.getElementById('hhMotivo'),motivo=mEl&&mEl.style.display!=='none'?(mEl.value||'').trim():'';
     if((fora||!programado)&&!motivo){hhFlash('⚠ exceção exige motivo — '+(fora?'fora da jornada':'produto não programado'));const mf2=document.getElementById('hhMotivoField');if(mf2)mf2.style.display='flex';if(mEl)mEl.focus();hhEntryErr('⚠ Produto '+(fora?'FORA da jornada':'não programado nesta célula')+' — escreva o Motivo da exceção antes de registrar.');return;}
@@ -4528,7 +4524,7 @@ function hhInit(){
             const pEl=document.getElementById('hhSelProd'); if(pEl){pEl.value=fin;pEl.dispatchEvent(new Event('change',{bubbles:true}));}
             const qEl=document.getElementById('hhQtd'); if(qEl)qEl.value=String(restante);
             const sEl=document.getElementById('hhSelHora');
-            const ivs=hhWorkIntervals(hhCfg(lin),iso);
+            const ivs=hhWorkIntervals(hhCfg(lin));
             const alvo=ivs.find(function(x){return x.final;})||ivs[ivs.length-1];
             if(sEl&&alvo){sEl.value=alvo.key;sEl.dispatchEvent(new Event('change',{bubbles:true}));}
             hhFlash('💡 Sugestão '+restante+' un de '+fin+' — confira e registre (veredito é seu)');
@@ -4820,13 +4816,13 @@ function hhMonV2Applies(a,l,iso,cut){return a&&a.linha===l&&a.data===iso&&hhApon
 function hhMonV2ActualLine(l,iso,cut){let q=0;hhApontValidos().forEach(function(a){if(a.linha===l&&a.data===iso&&hhApontAtivo(a))q+=Number(a.qtd)||0;});return q;}
 function hhMonV2SlotActual(l,iso,slot,cut){
  if(!slot)return 0;let q=0;
- const first=(hhWorkIntervals(hhCfg(l),iso).filter(function(x){return x.hour===slot.hour;})[0]||{}).key;
+ const first=(hhWorkIntervals(hhCfg(l)).filter(function(x){return x.hour===slot.hour;})[0]||{}).key;
  hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso||!hhApontAtivo(a))return;
   if(slot.outside){if(a.fora&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}
   if(a.fora)return;
   if(slot.bloco){if(a.bloco&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}
   if(a.bloco)return;
-  if(a.intervalo){if(hhSlotKeyMatch(a.intervalo,slot.key,iso))q+=Number(a.qtd)||0;return;}
+  if(a.intervalo){if(String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}
   if(Number(a.hora)===slot.hour&&slot.key===first)q+=Number(a.qtd)||0;
  });return q;
 }
@@ -4835,7 +4831,7 @@ function hhMonV2ProductSlot(l,iso,slot,cut,cod){
  hhApontValidos().forEach(function(a){if(a.linha!==l||a.data!==iso||!hhApontAtivo(a)||String(a.cod)!==String(cod)||hhApFase(a))return;
   if(slot.outside){if(a.fora&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}
   if(a.fora)return;if(slot.bloco){if(a.bloco&&String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(a.bloco)return;
-  if(a.intervalo){if(hhSlotKeyMatch(a.intervalo,slot.key,iso))q+=Number(a.qtd)||0;return;}if(Number(a.hora)===slot.hour)q+=Number(a.qtd)||0;
+  if(a.intervalo){if(String(a.intervalo)===String(slot.key))q+=Number(a.qtd)||0;return;}if(Number(a.hora)===slot.hour)q+=Number(a.qtd)||0;
  });return q;
 }
 function hhMonV2State(c,iso,now){
@@ -4849,7 +4845,7 @@ function hhMonV2State(c,iso,now){
  else if(expected>0){const rel=delta/expected;if(rel>=0){state=delta>0.5?'ahead':'steady';label=delta>0.5?'ADIANTADO':'NO RITMO';}else if(rel>=-0.05){state='warn';label='ATENÇÃO';}else{state='late';label='ATRASADO';}}
  else if(actual>0){state='ahead';label='ADIANTADO · PRODUÇÃO ANTECIPADA';}
  const tline={mode:!current?(String(iso)>hhHojeIso()?'future':'closed'):(cut<start?'before':cut>=end?'closed':(hhWorkMinutes(c,cut,cut+1)>0?'active':'break'))};
- let focus=hhMonitorFocusSlot(c,t);if(!focus){const slots=hhWorkIntervals(c,iso);focus=slots[0]||null;}
+ let focus=hhMonitorFocusSlot(c,t);if(!focus){const slots=hhWorkIntervals(c);focus=slots[0]||null;}
  const slotActual=hhMonV2SlotActual(c.id,iso,focus,actualCut);
  const slotGoal=focus?hhMetaStageSlot(c,focus):0;
  const slotExpected=focus?hhMetaStageSlot(c,focus,Math.max(focus.start,Math.min(cut,focus.end))):0;
@@ -4857,7 +4853,7 @@ function hhMonV2State(c,iso,now){
 }
 function hhMonV2SlotRows(c,iso,now){
  const cut=hhMonV2Cut(c,iso,now),actualCut=hhMonV2ActualCut(c,iso,now);
- return hhWorkIntervals(c,iso).map(function(slot){const actual=hhMonV2SlotActual(c.id,iso,slot,actualCut),goal=hhMetaStageSlot(c,slot),elapsed=Math.max(0,Math.min(cut,slot.end)-slot.start),expected=elapsed>0?hhMetaStageSlot(c,slot,cut):0;const early=cut<hhScheduleStart(c)&&actual>0&&slot.start<=hhScheduleStart(c),isFuture=cut<=slot.start&&!early,closed=cut>=slot.end;return {slot:slot,actual:actual,goal:goal,expected:expected,future:isFuture,early:early,closed:closed,current:!isFuture&&!closed,delta:actual-(closed?goal:expected)};});
+ return hhWorkIntervals(c).map(function(slot){const actual=hhMonV2SlotActual(c.id,iso,slot,actualCut),goal=hhMetaStageSlot(c,slot),elapsed=Math.max(0,Math.min(cut,slot.end)-slot.start),expected=elapsed>0?hhMetaStageSlot(c,slot,cut):0;const early=cut<hhScheduleStart(c)&&actual>0&&slot.start<=hhScheduleStart(c),isFuture=cut<=slot.start&&!early,closed=cut>=slot.end;return {slot:slot,actual:actual,goal:goal,expected:expected,future:isFuture,early:early,closed:closed,current:!isFuture&&!closed,delta:actual-(closed?goal:expected)};});
 }
 function hhMonV2Products(c,iso,now,metrics){
  const prods=hhProdCfg.filter(function(p){return p.linha===c.id&&p.cod;});
@@ -4906,7 +4902,25 @@ function hhMonV2Factory(iso,now){
  root.innerHTML='<div class="hhFactoryScreen"><header class="hhFactoryHead"><div class="hhFactoryBrand">D-LEAN SOLUTIONS<strong>Andon · Produção</strong></div><div class="hhFactoryHero"><div class="lbl">Realizado / Meta dia</div><div class="num">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="sub">'+(sums.goal?Math.round(sums.actual/sums.goal*100):0)+'% da meta · VS. ESPERADO AGORA <b style="color:'+(sums.delta>=0?'#86EFAC':'#FCA5A5')+'">'+(sums.delta>0?'+':'')+NF.format(Math.round(sums.delta))+' pc</b>'+'</div></div><div class="hhFactoryCounts">'+[['ahead','ADIANTADAS / NO RITMO',''],['warn','ATENÇÃO','warn'],['late','ATRASADAS','late'],['stop','PARADA','stop'],['wait','AGUARDANDO','wait']].map(function(x){const count=x[0]==='ahead'?(sums.ahead+sums.steady):(sums[x[0]]||0);return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[3]+'"></i><b>'+NF.format(count)+'</b> '+x[1]+'</div>';}).join('')+'</div><div class="hhFactoryClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div><div class="date">'+dateShort+'</div></div></header><div class="hhFactoryCards">'+(rows.length?hhMonV2FactoryTiles(rows,iso,d):'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div><div class="hhFactoryLegend"><span><i class="hhFactoryDot"></i> Adiantado / no ritmo</span><span><i class="hhFactoryDot warn"></i> Atenção até −5%</span><span><i class="hhFactoryDot late"></i> Atrasado abaixo de −5%</span><span>🟥 P = parada ativa</span><span><i class="hhLegendLine"></i> Meta da faixa</span></div><div class="hhFactoryFoot"><span>Esperado = meta proporcional ao tempo trabalhado do turno.</span><span>Atualizado '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+'</span></div></div>';
 }
 function hhMonV2CellScreen(iso,now){
- return hhMonV2Individual431(iso,now);
+ const root=document.getElementById('hhIndividualScreen');if(!root)return;
+ const d=now||new Date(),sel=document.getElementById('hhMonCellSelect');let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
+ let c=hhLinhasCfg.find(function(x){return x.id===id;});if(!c){c=hhLinhasCfg[0];id=c&&c.id;}
+ if(!c){root.innerHTML='<div class="hhEmpty">Nenhuma célula programada.</div>';return;}
+ if(sel&&sel.value!==id)sel.value=id;window._hhMonV2CellId=id;
+ const m=hhMonV2State(c,iso,d),rows=hhMonV2SlotRows(c,iso,d),pr=hhMonV2Products(c,iso,d,m),focus=m.focus;
+ const remaining=Math.max(0,m.goal-m.actual),left=hhWorkMinutes(c,Math.max(m.cut,hhScheduleStart(c)),hhScheduleEnd(c)),rate=remaining&&left?Math.ceil(remaining/(left/60)):0;
+ const pct=m.goal?Math.min(100,Math.round(m.actual/m.goal*100)):0;
+ let acumActual=0,acumExpected=0;
+ const peakHour=Math.max(1,...rows.map(function(r){return Math.max(r.actual,r.goal);}));const table=rows.map(function(r){if(!r.future){acumActual+=r.actual;acumExpected+=r.closed?r.goal:r.expected;}const dh=r.future?'—':((r.delta>0?'+':'')+NF.format(Math.round(r.delta))),da=r.future?'—':((acumActual-acumExpected>0?'+':'')+NF.format(Math.round(acumActual-acumExpected))),barWidth=Math.min(100,Math.round(r.actual/peakHour*100));return '<tr class="'+(r.current?'current ':'')+(r.early?'early ':'')+(r.future?'future':'')+'"><td>'+escH(r.slot.label)+(r.early?' · ADIANTADA':(r.current?' · AGORA':''))+'</td><td>'+NF.format(Math.round(r.goal))+'</td><td>'+NF.format(r.actual)+(r.actual?'<span class="hhIndBar"><i style="width:'+barWidth+'%"></i></span>':'')+'</td><td class="'+(r.future?'future':(r.delta>=0?'pos':'neg'))+'">'+dh+'</td><td class="'+(r.future?'future':(acumActual-acumExpected>=0?'pos':'neg'))+'">'+da+'</td></tr>';}).join('');
+ const next=pr.queue.slice(0,4);const running=pr.running;
+ let productPanel='';
+ if(running){const p=running.p,meta=Number(p.qtdDia)||0,day=hhMonV2ActualLine(c.id,iso,m.cut),stopText=m.stop?hhMonV2StopText(m.stop,c,m.cut):'';productPanel='<div class="hhIndProduct"><div class="state">'+(m.label.indexOf('ADIANTADO')>=0?'PRODUÇÃO ADIANTADA · ':'EM PRODUÇÃO · ')+escH(focus?focus.label:'faixa atual')+'</div><div class="name">'+hhMonV2ProductDescription(p)+'</div><div class="qty">'+NF.format(running.q)+' / '+NF.format(Math.round(m.slotGoal))+' pc na faixa · '+NF.format(day)+' / '+NF.format(meta)+' pc no dia'+(p.pv?' · PV '+escH(p.pv):'')+(p.posto?' · '+escH(String(p.posto))+' posto(s)':'')+'</div></div>'+stopText;}
+ else if(m.tline.mode==='before'||m.tline.mode==='future'){const p=pr.all[0];productPanel='<div class="hhIndProduct"><div class="state">AGUARDANDO INÍCIO · PRÓXIMA PRODUÇÃO</div><div class="name">'+(p?hhMonV2ProductDescription(p):'Sem produto na programação')+'</div><div class="qty">'+(p?'Programado: '+NF.format(Number(p.qtdDia)||0)+' pc · início previsto '+hhTimeTxt(focus&&focus.start):'')+'</div></div>';}
+ else productPanel='<div class="hhIndProduct"><div class="state">EM PRODUÇÃO</div><div class="name">Sem apontamento de produto na faixa vigente</div><div class="qty">Nenhum produto foi marcado como iniciado; não inferi OP ou cliente.</div></div>';
+ const shift='Turno A · '+hhTimeTxt(c.hIni,hhScheduleStart(c))+'–'+hhTimeTxt(c.hFim,hhScheduleEnd(c))+(hhMeal(c)&&!hhMeal(c).invalid?' · almoço '+hhTimeTxt(c.almocoIni)+'–'+hhTimeTxt(c.almocoFim):'');
+ const expectedNow=Math.round(m.expected),currentSlot=focus?focus.label:'—',minuteLeft=left;
+ const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(minuteLeft)+' min · ritmo nec.: '+NF.format(rate)+' pc/h'):'meta diária atingida';
+ root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndHead"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2></div><div class="turno">'+shift+'<br>'+hhMonV2DateLabel(iso)+'</div><div class="state '+m.state+'">'+m.label+(m.delta!==0?' · '+(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' pc':'')+'</div></header><div class="hhIndMain"><section class="hhIndPanel hhIndSummary"><h3>Resumo da célula</h3><div class="hhIndKpis"><div class="hhIndKpi"><div class="lbl">Realizado / Meta dia</div><div class="big">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hint">'+pct+'% da meta · esperado agora: '+NF.format(expectedNow)+' pc</div><div class="hhIndProgress"><i style="width:'+pct+'%"></i></div></div><div class="hhIndKpi"><div class="lbl">Vs. esperado agora</div><div class="big '+(m.delta>=0?'pos':'neg')+'">'+(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' <small>pc</small></div><div class="hint">Esperado agora: '+NF.format(expectedNow)+' pc</div></div><div class="hhIndKpi"><div class="lbl">Meta hora · '+escH(currentSlot)+'</div><div class="big">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">Esperado agora: '+NF.format(Math.round(m.slotExpected))+' pc</div></div><div class="hhIndKpi"><div class="lbl">Faltam p/ meta dia</div><div class="big">'+NF.format(remaining)+' <small>pc</small></div><div class="hint">'+missingHint+'</div></div></div></section><section class="hhIndPanel hhIndHourly"><h3>HORA A HORA</h3><div class="hhIndTableWrap"><table class="hhIndTable"><thead><tr><th>Hora</th><th>Meta</th><th>Real</th><th>Δ hora</th><th>Δ acum.</th></tr></thead><tbody>'+table+'</tbody></table></div></section><div class="hhIndRight"><section class="hhIndPanel"><h3>EM PRODUÇÃO</h3>'+productPanel+'</section><section class="hhIndPanel" style="margin-top:10px"><h3>PRÓXIMOS NA FILA</h3><ol class="hhIndQueue">'+(next.length?next.map(function(p){return '<li><b>'+hhMonV2ProductDescription(p)+'</b> · '+NF.format(Number(p.qtdDia)||0)+' pc</li>';}).join(''):'<li>Sem próximo produto na programação.</li>')+'</ol></section></div></div><footer class="hhIndFooter"><span>Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span><span>atualizado '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+'</span></footer></div>'
 }
 function hhMonV2Render(iso,now){
  const s=window._hhMonitorScreen||'chao';
@@ -4921,32 +4935,14 @@ window._hhRenderOperationalBase=hhRender;
 hhRender=function(){window._hhRenderOperationalBase();hhMonV2Render(hhDiaSelIso(),new Date());};
 window.hhRender=hhRender;
 // Screen-specific presentation mode; fullscreen follows the currently selected monitor.
-window._hhTvFs = window._hhTvFs || false;
 hhTvToggle=function(){
- const body=document.body;
- const on = !body.classList.contains('hhTv');
- window._hhTvFs = on;
- const screen=window._hhMonitorScreen||'chao';
+ const body=document.body,on=!body.classList.contains('hhTv'),screen=window._hhMonitorScreen||'chao';
  body.classList.toggle('hhTv',on);body.classList.toggle('hhTvIndividual',on&&screen==='individual');
  const bt=document.getElementById('hhTvBtn');if(bt)bt.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';
- document.querySelectorAll('#hhTvBtn, .hhTvBtn').forEach(function(b){b.textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';});
  let x=document.getElementById('hhTvExit');if(on){if(!x){x=document.createElement('button');x.id='hhTvExit';x.textContent='✕';x.title='Sair da tela cheia (ESC)';x.addEventListener('click',function(){if(document.body.classList.contains('hhTv'))hhTvToggle();});document.body.appendChild(x);}x.style.display='block';try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}catch(e){}}
  else{if(x)x.style.display='none';try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
  try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}
 };
-function hhBindTvButtons(){
- const on = document.body.classList.contains('hhTv') || !!window._hhTvFs;
- document.querySelectorAll('#hhTvBtn, .hhTvBtn').forEach(function(tv){
-  tv.textContent = on ? '✕ Sair da tela cheia' : '⛶ Tela cheia';
-  if(!tv._hhBound){
-   tv._hhBound = true;
-   tv.addEventListener('click', function(e){
-    e.preventDefault(); e.stopPropagation();
-    hhTvToggle();
-   });
-  }
- });
-}
 function hhMonV2InitScreen(){
  document.querySelectorAll('#viewHH [data-hh-view]').forEach(function(b){
   if(b._hhMonV2Bound)return;b._hhMonV2Bound=true;
@@ -4955,21 +4951,8 @@ function hhMonV2InitScreen(){
  const sel=document.getElementById('hhMonCellSelect');
  if(sel&&!sel._hhMonV2Bound){sel._hhMonV2Bound=true;sel.addEventListener('change',function(){window._hhMonV2CellId=sel.value;hhRender();});}
  if(sel){const sig=hhLinhasCfg.map(function(c){return c.id+':'+c.nome;}).join('|');if(sel.getAttribute('data-sig')!==sig){const current=window._hhMonV2CellId||sel.value;sel.innerHTML=hhLinhasCfg.map(function(c){return '<option value="'+escH(c.id)+'">'+escH(c.nome)+'</option>';}).join('');sel.setAttribute('data-sig',sig);if(current&&hhLinhasCfg.some(function(c){return c.id===current;}))sel.value=current;}if(!sel.value&&hhLinhasCfg.length)sel.value=hhLinhasCfg[0].id;window._hhMonV2CellId=sel.value;}
- hhBindTvButtons();
-}
-if(!window._hhTvDocEventsBound){
- window._hhTvDocEventsBound=true;
- document.addEventListener('fullscreenchange',function(){
-  const isFs=!!document.fullscreenElement;
-  if(!isFs && document.body.classList.contains('hhTv')){
-   hhTvToggle();
-  }
- });
- document.addEventListener('keydown',function(e){
-  if(e.key==='Escape' && document.body.classList.contains('hhTv')){
-   hhTvToggle();
-  }
- });
+ const tv=document.getElementById('hhTvBtn');
+ if(tv&&!tv._hhMonV2Bound){tv._hhMonV2Bound=true;tv.addEventListener('click',function(){hhTvToggle();});}
 }
 
 hhMonV2InitScreen();
@@ -4980,7 +4963,7 @@ setInterval(function(){const v=document.getElementById('viewHH');if(v&&v.classLi
 setTimeout(function(){try{hhMonV2InitScreen();if(typeof hhInit==='function')hhInit();if(typeof hhRender==='function')hhRender();}catch(e){}},0);
 
 // ===== v0.0.431 OVERRIDE — Monitores Geral/Individual DARK conforme modelo Dante (TV 1920x1080) =====
-function hh431DateLabel(iso){try{const d=new Date(String(iso)+'T12:00:00');const mo=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()];return ['dom','seg','ter','qua','qui','sex','sáb'][d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+' '+mo+' '+d.getFullYear();}catch(e){return String(iso);}}
+function hh431DateLabel(iso){try{const d=new Date(String(iso)+'T12:00:00');const mo=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()];return ['dom','seg','ter','qua','qui','sex','sáb'][d.getDay()]+' · '+String(d.getDate()).padStart(2,'0')+' '+mo+' '+d.getFullYear();}catch(e){return String(iso);}}
 function hh431ClockFull(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
 function hh431Delta(v){return (v>0?'+':'')+NF.format(Math.round(v));}
 function hh431Icon(m){if(m.stop)return '■';if(m.state==='late')return '▼';if(m.state==='warn')return '⚠';if(m.state==='ahead')return '▲';return '○';}
@@ -5001,22 +4984,7 @@ function hh431FactoryCard(c,index,iso,now,m){
  const progress=Math.min(100,m.progress),falta=Math.max(0,m.goal-m.actual);
  const slotLabel=foc?foc.label:'—',future=m.tline.mode==='before'||m.tline.mode==='future';
  const peak=Math.max(1,...rows.map(function(r){return Math.max(r.actual,r.goal);}));
- const chart=rows.map(function(r){
-  const realPct=Math.min(100,r.actual/peak*100),targetPct=Math.min(100,r.goal/peak*100);
-  let cls=r.future?'future':(r.delta>=-0.5?'':(r.delta/Math.max(1,r.expected)>=-0.05?'warn':'late'));
-  let deltaHtml='';
-  if(r.closed&&r.goal>0){
-   const dVal=r.actual-r.goal;
-   const dClass=dVal>0?'pos':(dVal<0?'neg':'zero');
-   const dTxt=(dVal>0?'+':'')+NF.format(Math.round(dVal));
-   deltaHtml='<span class="hhFcHourDelta '+dClass+'">'+dTxt+'</span>';
-  }
-  const actualTxt=NF.format(r.actual);
-  return '<div class="hhFcHour" title="'+escH(r.slot.label)+' · meta '+NF.format(Math.round(r.goal))+' · real '+actualTxt+'">'+
-   '<div class="hhFcHourVal"><span class="hhFcHourActual">'+actualTxt+'</span>'+deltaHtml+'</div>'+
-   '<div class="hhFcPlot"><i class="hhFcBar '+cls+'" style="height:'+realPct+'%"></i><i class="hhFcTarget" style="bottom:'+targetPct+'%"></i></div>'+
-   '<small>'+String(Math.floor(r.slot.start/60)).padStart(2,'0')+(r.slot.start%60?':'+String(r.slot.start%60).padStart(2,'0'):'')+'</small></div>';
- }).join('');
+ const chart=rows.map(function(r){const realPct=Math.min(100,r.actual/peak*100),targetPct=Math.min(100,r.goal/peak*100);let cls=r.future?'future':(r.delta>=-0.5?'':(r.delta/Math.max(1,r.expected)>=-0.05?'warn':'late'));return '<div class="hhFcHour" title="'+escH(r.slot.label)+' · meta '+NF.format(Math.round(r.goal))+' · real '+NF.format(r.actual)+'"><div class="hhFcPlot"><i class="hhFcBar '+cls+'" style="height:'+realPct+'%"></i><i class="hhFcTarget" style="bottom:'+targetPct+'%"></i></div><small>'+String(Math.floor(r.slot.start/60)).padStart(2,'0')+(r.slot.start%60?':'+String(r.slot.start%60).padStart(2,'0'):'')+'</small></div>';}).join('');
  let emProd;
  if(pr.running){const p=pr.running.p,day=hh431ProductDay(c.id,iso,p.cod);emProd='<div class="hhFcProduct"><span class="tag '+(future?'gray':hh431TagClass(m))+'">'+(future?'PRÓXIMA':'EM PRODUÇÃO')+'</span><span class="prod">'+hhMonV2ProductDescription(p)+'</span><span class="qty">'+NF.format(day)+' / '+NF.format(Number(p.qtdDia)||0)+' pc</span></div>';}
  else{const p=pr.all[0];emProd='<div class="hhFcProduct"><span class="tag gray">EM PRODUÇÃO</span><span class="prod">'+(p?hhMonV2ProductDescription(p):'Sem produto programado')+'</span><span class="qty">'+(p?NF.format(Number(p.qtdDia)||0)+' pc':'—')+'</span></div>';}
@@ -5032,443 +5000,59 @@ function hh431FactoryCard(c,index,iso,now,m){
  bottom+stop+
  '</div></article>';
 }
-// ===== v0.1.20 THEME CONTROLLER (Fixed Light Theme — Modo Escuro Removido) =====
-(function(){
- function hhApplyLightOnly(){
-  try{
-   document.documentElement.setAttribute('data-hh-theme','light');
-   // Remove persistência antiga sem falhar
-   try{localStorage.removeItem('hh|theme');}catch(e){}
-   // Esconde quaisquer botões de tema que ainda existam
-   document.querySelectorAll('#hhThemeBtn, .hhThemeBtn').forEach(function(b){
-    b.style.display='none';
-   });
-  }catch(e){}
- }
- window.hhToggleTheme=function(){ /* Modo escuro desativado a pedido do usuário */ };
- if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',hhApplyLightOnly);
- }else{
-  hhApplyLightOnly();
- }
- setTimeout(hhApplyLightOnly,300);
- setTimeout(hhApplyLightOnly,1500);
-})();
-
-// ===== v0.1.20 NOVO RENDER CLEAN DO MONITOR GERAL (Modelo do usuário / PNG) =====
-function hhMonV2FactoryClean(iso,now){
+function hhMonV2Factory431(iso,now){
  const root=document.getElementById('hhFactoryScreen');if(!root)return;
  const d=now||new Date(),cells=hhLinhasCfg.slice(),rows=cells.map(function(c){return {c:c,m:hhMonV2State(c,iso,d)};});
- const sums=rows.reduce(function(a,x){
-  a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;
-  if(x.m.stop)a.stop++;
-  else if(x.m.state==='late')a.late++;
-  else if(x.m.state==='warn')a.warn++;
-  else if(x.m.state==='ahead'||x.m.state==='steady')a.ritmo++;
-  else a.wait++;
-  return a;
- },{actual:0,goal:0,expected:0,delta:0,ritmo:0,warn:0,late:0,stop:0,wait:0});
-
- const first=cells[0];
- const turnoStr=first?('Turno A · '+hhClockTxt(hhScheduleStart(first))+' – '+hhClockTxt(hhScheduleEnd(first))):'';
- const dtIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- const dateStr=hh431DateLabel(dtIso);
- const clockStr=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-
- const totalPct=sums.goal?Math.min(100,Math.round(sums.actual/sums.goal*100)):0;
- const totalDeltaCls=sums.delta<0?'neg':(sums.delta>0?'pos':'');
- const totalDeltaTxt=(sums.delta>0?'+':'')+NF.format(Math.round(sums.delta))+' pc';
-
- // Status counts
- const stRows=[
-  {key:'ahead',label:'No ritmo',count:sums.ritmo},
-  {key:'warn',label:'Atenção',count:sums.warn},
-  {key:'late',label:'Atrasadas',count:sums.late},
-  {key:'stop',label:'Paradas',count:sums.stop},
-  {key:'wait',label:'Aguardando',count:sums.wait}
- ];
- const statusHtml=stRows.map(function(s){
-  const zCls=s.count===0?' zero':'';
-  return '<div class="hhCleanStatusItem">'+
-   '<div class="hhCleanStatusLeft"><i class="hhCleanStatusDot '+s.key+'"></i><span>'+s.label+'</span></div>'+
-   '<span class="hhCleanStatusCount'+zCls+'">'+NF.format(s.count)+'</span>'+
-  '</div>';
- }).join('');
-
- // Resumo 3 cards
- const summaryHtml='<section class="hhCleanSummary">'+
-  '<div class="hhCleanCard">'+
-   '<div class="hhCleanLbl">REALIZADO / META DO DIA</div>'+
-   '<div class="hhCleanBigVal">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div>'+
-   '<div class="hhCleanProgress"><i style="width:'+totalPct+'%"></i></div>'+
-   '<div class="hhCleanSub">'+totalPct+'% da meta</div>'+
-  '</div>'+
-  '<div class="hhCleanCard">'+
-   '<div class="hhCleanLbl">VS. ESPERADO AGORA</div>'+
-   '<div class="hhCleanBigVal '+totalDeltaCls+'">'+totalDeltaTxt+'</div>'+
-   '<div class="hhCleanSub">esperado: '+NF.format(Math.round(sums.expected))+' pc</div>'+
-  '</div>'+
-  '<div class="hhCleanCard">'+
-   '<div class="hhCleanLbl">CÉLULAS</div>'+
-   '<div class="hhCleanStatusList">'+statusHtml+'</div>'+
-  '</div>'+
- '</section>';
-
- // Dimensões do container e modo de densidade/paginação
- const containerH = root.clientHeight || (window.innerHeight - 220);
- const avgCellH = rows.length ? Math.floor(containerH / rows.length) : 200;
- let compactMode = '';
- if (avgCellH < 72) {
-  compactMode = 'hh-paginate';
- } else if (avgCellH < 110) {
-  compactMode = 'hh-compact-low';
- } else if (avgCellH < 150) {
-  compactMode = 'hh-compact-mid';
- }
-
- // Paginação quando altura por célula < 72px
- const pageSize = 4;
- const totalPages = (compactMode === 'hh-paginate' && rows.length > pageSize) ? Math.ceil(rows.length / pageSize) : 1;
- if (!window._hhFactoryPage) window._hhFactoryPage = 0;
- if (window._hhFactoryPage >= totalPages) window._hhFactoryPage = 0;
- const curPage = window._hhFactoryPage;
-
- if (totalPages > 1) {
-  if (!window._hhFactoryRotateTimer) {
-   window._hhFactoryRotateTimer = setInterval(function() {
-    window._hhFactoryPage = ((window._hhFactoryPage || 0) + 1) % totalPages;
-    try { hhMonV2FactoryClean(iso, new Date()); } catch(e) {}
-   }, 15000);
-  }
- } else {
-  if (window._hhFactoryRotateTimer) {
-   clearInterval(window._hhFactoryRotateTimer);
-   window._hhFactoryRotateTimer = null;
-  }
- }
-
- const visibleRows = (totalPages > 1) ? rows.slice(curPage * pageSize, (curPage + 1) * pageSize) : rows;
- root.style.setProperty('--hh-cell-count', String(visibleRows.length || 1));
-
- // Cartões das Células
- const cellCardsHtml=visibleRows.map(function(x,idx){
-  const i = (totalPages > 1) ? (curPage * pageSize + idx) : idx;
-  const c=x.c, m=x.m;
-  const slotRows=hhMonV2SlotRows(c,iso,d);
-  const foc=m.focus;
-  const progress=Math.min(100,m.progress);
-  const falta=Math.max(0,m.goal-m.actual);
-  const deltaCls=m.delta<0?'neg':(m.delta>0?'pos':'');
-  const deltaTxt=(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' pc';
-
-  // Selo de status
-  const badgeCls=m.stop?'stop':(m.state==='late'?'late':(m.state==='warn'?'warn':(m.state==='ahead'||m.state==='steady'?'ahead':'wait')));
-  const badgeLabel=m.stop?'Parada':(m.state==='late'?'Atrasado':(m.state==='warn'?'Atenção':(m.state==='ahead'?'Adiantado':(m.state==='steady'?'No ritmo':'Aguardando'))));
-
-  // Meta hora atual
-  const slotLabel=foc?foc.label:'09:00–10:00';
-  const slotGoalRounded=Math.round(m.slotGoal);
-
-  // Hora a hora
-  const hourlyCols=slotRows.map(function(r){
-   const isNow=!!r.current;
-   const isFuture=!!r.future;
-   const actualTxt=isFuture?'':NF.format(r.actual);
-   const barPct=(r.goal>0)?Math.min(100,Math.round(r.actual/r.goal*100)):0;
-   // Legenda exibe a hora FINAL do bloco (ex.: 07:30–09:00 vira 09)
-   const hEnd=String(Math.floor(r.slot.end/60)).padStart(2,'0');
-   const hLbl=(r.slot.end%60)?(hEnd+':'+String(r.slot.end%60).padStart(2,'0')):hEnd;
-
-   // Tooltip rico para hover/toque/foco
-   const dVal=Math.round(r.delta);
-   let deltaFormatted='';
-   if(dVal>0) deltaFormatted='+'+NF.format(dVal)+' pc';
-   else if(dVal<0) deltaFormatted='−'+NF.format(Math.abs(dVal))+' pc';
-   else deltaFormatted='0 pc';
-   const deltaCls=dVal>0?'pos':(dVal<0?'neg':'zero');
-
-   let tooltipHtml='';
-   if(isFuture){
-    tooltipHtml='<div class="hhHourTooltip" role="tooltip">'+
-     '<div class="ttRange">'+escH(r.slot.label)+'</div>'+
-     '<div class="ttRow"><span class="ttLbl">Previsto</span><span class="ttVal">'+NF.format(Math.round(r.goal))+' pc</span></div>'+
-    '</div>';
-   } else {
-    tooltipHtml='<div class="hhHourTooltip" role="tooltip">'+
-     '<div class="ttRange">'+escH(r.slot.label)+'</div>'+
-     '<div class="ttRow"><span class="ttLbl">Previsto</span><span class="ttVal">'+NF.format(Math.round(r.goal))+' pc</span></div>'+
-     '<div class="ttRow"><span class="ttLbl">Executado</span><span class="ttVal">'+NF.format(r.actual)+' pc</span></div>'+
-     '<div class="ttRow"><span class="ttLbl">Variação</span><span class="ttVal '+deltaCls+'">'+deltaFormatted+'</span></div>'+
-    '</div>';
-   }
-
-   const valHtml='<span class="hhCleanHourVal"><span class="actual">'+actualTxt+'</span></span>';
-
-   return '<div class="hhCleanHourCol'+(isNow?' is-now':'')+'" tabindex="0" aria-label="'+escH(r.slot.label)+' - previsto '+NF.format(Math.round(r.goal))+' pc'+(isFuture?'':', executado '+NF.format(r.actual)+' pc, variação '+deltaFormatted)+'">'+
-    valHtml+
-    '<div class="hhCleanHourTrack">'+
-     (isFuture?'':'<div class="hhCleanHourBar" style="height:'+barPct+'%"></div>')+
-    '</div>'+
-    '<span class="hhCleanHourLbl">'+hLbl+'</span>'+
-    tooltipHtml+
-   '</div>';
-  }).join('');
-
-  return '<article class="hhCleanCellCard">'+
-   '<div class="hhCleanCellCol hhCleanColName">'+
-    '<div class="hhCleanLbl">CÉLULA '+String(i+1).padStart(2,'0')+'</div>'+
-    '<div class="hhCleanCellName" title="'+escH(c.nome)+'">'+escH(c.nome)+'</div>'+
-    '<span class="hhCleanBadge '+badgeCls+'">'+badgeLabel+'</span>'+
-   '</div>'+
-   '<div class="hhCleanCellCol hhCleanColActualGoal">'+
-    '<div class="hhCleanLbl">REALIZADO / META DO DIA</div>'+
-    '<div class="hhCleanCellNumVal">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div>'+
-    '<div class="hhCleanCellProgress"><i style="width:'+progress+'%"></i></div>'+
-    '<div class="hhCleanCellSub">'+progress+'% da meta · '+NF.format(falta)+' pc faltantes</div>'+
-   '</div>'+
-   '<div class="hhCleanCellCol hhCleanColVsExpected">'+
-    '<div class="hhCleanLbl">VS. ESPERADO</div>'+
-    '<div class="hhCleanCellNumVal '+deltaCls+'">'+deltaTxt+'</div>'+
-    '<div class="hhCleanCellSub">esperado: '+NF.format(Math.round(m.expected))+' pc</div>'+
-   '</div>'+
-   '<div class="hhCleanCellCol hhCleanColMetaHour">'+
-    '<div class="hhCleanLbl">META HORA · '+escH(slotLabel)+'</div>'+
-    '<div class="hhCleanCellNumVal">'+NF.format(m.slotActual)+' <small>/ '+NF.format(slotGoalRounded)+' pc</small></div>'+
-    '<div class="hhCleanCellSub">esperado: '+NF.format(Math.round(m.slotExpected))+' pc</div>'+
-   '</div>'+
-   '<div class="hhCleanCellCol hhCleanColHourly">'+
-    '<div class="hhCleanHourly">'+hourlyCols+'</div>'+
-   '</div>'+
-  '</article>'; }).join('');
-
- const pagerHtml = (totalPages > 1) ? (
-  '<div class="hhCleanPager" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12px;font-weight:700;color:var(--hh-text2)">'+
-   '<button type="button" id="hhCleanPrevPage" class="hhActionBtn" style="padding:2px 8px;font-size:14px;cursor:pointer" aria-label="Página anterior">‹</button>'+
-   '<span>'+(curPage + 1)+' / '+totalPages+'</span>'+
-   '<button type="button" id="hhCleanNextPage" class="hhActionBtn" style="padding:2px 8px;font-size:14px;cursor:pointer" aria-label="Próxima página">›</button>'+
-  '</div>'
- ) : '';
-
- const extraCls = (compactMode && compactMode !== 'hh-paginate') ? (' ' + compactMode) : '';
-
- root.innerHTML='<div class="hhCleanScreen'+extraCls+'">'+
-  '<header class="hhCleanHeader">'+
-   '<div class="hhCleanHeaderLeft">'+
-    '<div class="company">D-LEAN SOLUTIONS</div>'+
-    '<h1>Andon · Produção</h1>'+
-   '</div>'+
-   '<div class="hhCleanHeaderRight">'+
-    '<div class="clock">'+clockStr+'</div>'+
-    '<div class="sub">'+dateStr+(turnoStr?(' · '+turnoStr):'')+'</div>'+
-    pagerHtml+
-   '</div>'+
-  '</header>'+
-  summaryHtml+
-  '<section class="hhCleanCellsList">'+
-   (visibleRows.length?cellCardsHtml:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+
-  '</section>'+
+ const sums=rows.reduce(function(a,x){a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;a[x.m.state]=(a[x.m.state]||0)+1;return a;},{actual:0,goal:0,expected:0,delta:0,ahead:0,steady:0,warn:0,late:0,stop:0,wait:0});
+ const first=cells[0],turno=first?('Turno A · '+hhClockTxt(hhScheduleStart(first))+' - '+hhClockTxt(hhScheduleEnd(first))):'';
+ const cards=rows.map(function(x,i){return hh431FactoryCard(x.c,i,iso,d,x.m);}).join('');
+ const countsArr=[['','ADIANTADAS / NO RITMO',(sums.ahead+sums.steady)],['warn','ATENÇÃO',sums.warn],['late','ATRASADAS',sums.late],['stop','PARADA',sums.stop],['wait','AGUARDANDO',sums.wait]];
+ const counts=countsArr.map(function(x){return '<div class="hhFactoryCount"><i class="hhFactoryDot '+x[0]+'"></i><b>'+NF.format(x[2])+'</b> '+x[1]+'</div>';}).join('');
+ const countsRows=countsArr.map(function(x){return '<div class="hhFabCountRow"><i class="hhFactoryDot '+x[0]+'"></i><span>'+x[1]+'</span><b>'+NF.format(x[2])+'</b></div>';}).join('');
+ const fabPct=sums.goal?Math.min(100,Math.round(sums.actual/sums.goal*100)):0;
+ const fabIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ const fabCard='<article class="hhFactoryCard hhFactoryCardFab"><header class="hhFactoryCardHead"><div class="cellname"><span class="cellnum">D-LEAN SOLUTIONS</span>Andon · Produção</div><span class="status hhFabClock">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' · '+hh431DateLabel(fabIso)+'</span></header><div class="hhFactoryCardBody">'+
+ '<div class="hhFcRow hhFcRow3">'+
+ '<div class="hhFcMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></div><div class="hhFcProgress"><i style="width:'+fabPct+'%"></i></div><div class="hint">'+fabPct+'% da meta · '+escH(turno)+'</div></div>'+
+ '<div class="hhFcMetric"><div class="lbl">Vs. esperado ('+NF.format(Math.round(sums.expected))+')</div><div class="delta '+(sums.delta<0?'neg':'')+'">'+hh431Delta(sums.delta)+' pc</div><div class="hint">esperado agora: '+NF.format(Math.round(sums.expected))+'</div></div>'+
+ '<div class="hhFcMetric"><div class="lbl">Células · status</div><div class="hhFabCounts">'+countsRows+'</div></div>'+
+ '</div></div></article>';
+ root.innerHTML='<div class="hhFactoryScreen">'+
+ '<div class="hhFactoryCards">'+(rows.length?fabCard+cards:'<div class="hhEmpty">Sem células programadas para esta data.</div>')+'</div>'+
  '</div>';
-
- if (totalPages > 1) {
-  const prevBtn = document.getElementById('hhCleanPrevPage');
-  const nextBtn = document.getElementById('hhCleanNextPage');
-  if (prevBtn) {
-   prevBtn.addEventListener('click', function() {
-    window._hhFactoryPage = (window._hhFactoryPage - 1 + totalPages) % totalPages;
-    try { hhMonV2FactoryClean(iso, new Date()); } catch(e) {}
-   });
-  }
-  if (nextBtn) {
-   nextBtn.addEventListener('click', function() {
-    window._hhFactoryPage = (window._hhFactoryPage + 1) % totalPages;
-    try { hhMonV2FactoryClean(iso, new Date()); } catch(e) {}
-   });
-  }
- }}
-function hhMonV2Factory431(iso,now){
- return hhMonV2FactoryClean(iso,now);
 }
 function hhMonV2Individual431(iso,now){
  const root=document.getElementById('hhIndividualScreen');if(!root)return;
- let sel=document.getElementById('hhMonCellSelect');
- let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
+ const d=now||new Date(),sel=document.getElementById('hhMonCellSelect');let id=(window._hhMonV2CellId)||(sel&&sel.value)||((hhLinhasCfg[0]||{}).id||'');
  let c=hhLinhasCfg.find(function(x){return x.id===id;});if(!c){c=hhLinhasCfg[0];id=c&&c.id;}
  if(!c){root.innerHTML='<div class="hhEmpty">Nenhuma célula programada.</div>';return;}
  if(sel&&sel.value!==id)sel.value=id;window._hhMonV2CellId=id;
- const d=now||new Date();
  const m=hhMonV2State(c,iso,d),rows=hhMonV2SlotRows(c,iso,d),pr=hhMonV2Products(c,iso,d,m),focus=m.focus;
  const remaining=Math.max(0,m.goal-m.actual),left=hhWorkMinutes(c,Math.max(m.cut,hhScheduleStart(c)),hhScheduleEnd(c)),rate=remaining&&left?Math.ceil(remaining/(left/60)):0;
  const pct=m.goal?Math.min(100,Math.round(m.actual/m.goal*100)):0;
- const cellIdxStr=String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0');
-
+ const progCls=m.stop||m.state==='late'?'red':(m.state==='warn'?'warn':(m.state==='wait'?'gray':''));
  let acumA=0,acumE=0;
- const table=rows.map(function(r){
-  if(!r.future){
-   acumA+=r.actual;
-   acumE+=r.closed?r.goal:r.expected;
-  }
-  const realTxt=r.future?'—':NF.format(r.actual);
-  const dh=r.future?'—':hh431Delta(r.delta);
-  const da=r.future?'—':hh431Delta(acumA-acumE);
-  const dhCls=r.future?'future':(r.delta<0?'neg':(r.delta>0?'pos':''));
-  const daCls=r.future?'future':((acumA-acumE)<0?'neg':((acumA-acumE)>0?'pos':''));
-
-  let horaLabelHtml='<span class="hhIndSlotName">'+escH(r.slot.label)+'</span>';
-  if(r.current){
-   horaLabelHtml+=' <span class="hhIndAgoraBadge">agora</span>';
-  }else if(r.early){
-   horaLabelHtml+=' <span class="hhIndAgoraBadge" style="background:#DCFCE7;color:#166534">adiantada</span>';
-  }
-
-  return '<tr class="'+(r.current?'current ':'')+(r.early?'early ':'')+(r.future?'future':'')+'">'+
-   '<td class="hCol">'+horaLabelHtml+'</td>'+
-   '<td>'+NF.format(Math.round(r.goal))+'</td>'+
-   '<td>'+realTxt+'</td>'+
-   '<td class="'+dhCls+'">'+dh+'</td>'+
-   '<td class="'+daCls+'">'+da+'</td>'+
-  '</tr>';
- }).join('');
-
+ const table=rows.map(function(r){if(!r.future){acumA+=r.actual;acumE+=r.closed?r.goal:r.expected;}const dh=r.future?'—':hh431Delta(r.delta),da=r.future?'—':hh431Delta(acumA-acumE);return '<tr class="'+(r.current?'current ':'')+(r.early?'early ':'')+(r.future?'future':'')+'"><td>'+escH(r.slot.label)+(r.early?' · adiantada':(r.current?' · agora':''))+'</td><td>'+NF.format(Math.round(r.goal))+'</td><td>'+NF.format(r.actual)+'</td><td class="'+(r.future?'future':(r.delta>=0?'pos':'neg'))+'">'+dh+'</td><td class="'+(r.future?'future':(acumA-acumE>=0?'pos':'neg'))+'">'+da+'</td></tr>';}).join('');
  let prodPanel;
- if(pr.running){
-  const p=pr.running.p,meta=Number(p.qtdDia)||0,day=hh431ProductDay(c.id,iso,p.cod);
-  const stopText=m.stop?hhMonV2StopText(m.stop,c,m.cut):'';
-  prodPanel='<div class="hhIndProductCard">'+
-   '<div class="hhIndProdHead"><span class="hhIndProdDot on"></span><span class="hhIndProdStatus">Em produção</span></div>'+
-   '<div class="hhIndProdName" title="'+escH(hhMonV2ProductDescription(p))+'">'+escH(hhMonV2ProductDescription(p))+'</div>'+
-   '<div class="hhIndProdSub">'+(day>0?('Realizado hoje: '+NF.format(day)+(meta?(' / '+NF.format(meta)+' pc'):' pc')):'Sem apontamento na faixa vigente')+'</div>'+
-   stopText+
-  '</div>';
- } else {
-  const p=pr.all[0];
-  prodPanel='<div class="hhIndProductCard">'+
-   '<div class="hhIndProdHead"><span class="hhIndProdDot on"></span><span class="hhIndProdStatus">Em produção</span></div>'+
-   '<div class="hhIndProdName" title="'+(p?escH(hhMonV2ProductDescription(p)):'—')+'">'+(p?escH(hhMonV2ProductDescription(p)):'—')+'</div>'+
-   '<div class="hhIndProdSub">Sem apontamento na faixa vigente</div>'+
-  '</div>';
- }
-
- const emP=pr.running?pr.running.p:pr.all[0];
- const queueItems=pr.queue.filter(function(p){return !emP||String(p.cod)!==String(emP.cod);}).slice(0,3);
- const queueHtml=queueItems.length?queueItems.map(function(p,i){
-  return '<li class="hhIndQueueItem"><span class="n">'+(i+1)+'</span><span class="who"><b>'+hhMonV2ProductDescription(p)+'</b><small>'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD':'—'))+'</small></span><span class="qty">'+NF.format(Number(p.qtdDia)||0)+' pc</span></li>';
- }).join(''):'<div class="hhIndQueueEmpty">Sem próximo produto na programação.</div>';
-
- const shift='Turno A · '+hhClockTxt(hhScheduleStart(c))+' – '+hhClockTxt(hhScheduleEnd(c));
- const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(left)+' min · ritmo necessário: '+NF.format(rate)+' pc/h'):'meta diária atingida';
- const focusLabel=focus?focus.label:'15:00–16:00';
-
- // Selo de status central
- const badgeCls=m.stop?'late':(m.state==='late'?'late':(m.state==='warn'?'warn':(m.state==='ahead'||m.state==='steady'?'ahead':'wait')));
- const badgeIcon=m.stop?'■':(m.state==='late'?'▼':(m.state==='warn'?'⚠':(m.state==='ahead'?'▲':'●')));
- const deltaFmt=(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' pc';
- const badgeLabel=m.stop?'Parada '+(m.delta?deltaFmt:''):(m.state==='late'?('Atrasado '+deltaFmt):(m.state==='warn'?('Atenção '+deltaFmt):(m.state==='ahead'?('Adiantado '+deltaFmt):(m.state==='steady'?('No ritmo '+deltaFmt):'Aguardando'))));
-
- const dtIso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
- const dateStr=hh431DateLabel(dtIso);
- const clockStr=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
- const clockFullStr=hh431ClockFull();
-
- const preservedSel=sel;
- root.style.setProperty('--hh-ind-slot-count', String(rows.length || 9));
- root.innerHTML='<div class="hhIndividualScreen">'+  '<header class="hhIndHeaderClean">'+
-   '<div class="hhIndHeaderLeft">'+
-    '<div class="hhIndBrandClean">D-LEAN SOLUTIONS</div>'+
-    '<div class="hhIndTitleRowClean">'+
-     '<h1>Célula '+cellIdxStr+' · '+escH(c.nome)+'</h1>'+
-     '<div id="hhIndSelSlot" class="hhIndSelSlot"></div>'+
-    '</div>'+
-    '<div class="hhIndShiftClean">'+escH(shift)+'</div>'+
-   '</div>'+
-   '<div class="hhIndHeaderCenter">'+
-    '<div class="hhIndStatusBadgeClean '+badgeCls+'">'+
-     '<span class="ic">'+badgeIcon+'</span> '+escH(badgeLabel)+
-    '</div>'+
-   '</div>'+
-   '<div class="hhIndHeaderRight">'+
-    '<div class="hhIndClockClean">'+clockStr+'</div>'+
-    '<div class="hhIndDateClean">'+dateStr+'</div>'+
-   '</div>'+
-  '</header>'+
-  '<div class="hhIndMainClean">'+
-   '<section class="hhIndColCard hhIndColSummary">'+
-    '<div class="hhIndCardTitle">RESUMO DA CÉLULA</div>'+
-    '<div class="hhIndBlock">'+
-     '<div class="hhIndLbl">REALIZADO / META DO DIA</div>'+
-     '<div class="hhIndBigNum">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div>'+
-     '<div class="hhIndProgressBar"><i style="width:'+pct+'%"></i></div>'+
-     '<div class="hhIndSubHint">'+pct+'% da meta · esperado agora: '+NF.format(Math.round(m.expected))+'</div>'+
-    '</div>'+
-    '<div class="hhIndDivider"></div>'+
-    '<div class="hhIndBlock">'+
-     '<div class="hhIndLbl">META DA HORA · '+escH(focusLabel)+'</div>'+
-     '<div class="hhIndBigNum">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div>'+
-     '<div class="hhIndSubHint">esperado agora: '+NF.format(Math.round(m.slotExpected))+' pc</div>'+
-    '</div>'+
-    '<div class="hhIndDivider"></div>'+
-    '<div class="hhIndBlock">'+
-     '<div class="hhIndLbl">FALTAM PARA A META DO DIA</div>'+
-     '<div class="hhIndBigNum">'+NF.format(remaining)+' <small>pc</small></div>'+
-     '<div class="hhIndSubHint">'+escH(missingHint)+'</div>'+
-    '</div>'+
-   '</section>'+
-   '<section class="hhIndColCard hhIndColHourly">'+
-    '<div class="hhIndCardTitleBar">'+
-     '<span class="hhIndCardTitle">HORA A HORA</span>'+
-     '<span class="hhIndCardSubtitle">Δ = realizado − meta</span>'+
-    '</div>'+
-    '<div class="hhIndTableWrapClean">'+
-     '<table class="hhIndTableClean">'+
-      '<thead><tr><th class="hCol">HORA</th><th>META</th><th>REAL</th><th>Δ HORA</th><th>Δ ACUM.</th></tr></thead>'+
-      '<tbody>'+table+'</tbody>'+
-     '</table>'+
-    '</div>'+
-   '</section>'+
-   '<div class="hhIndColRightClean">'+
-    '<section class="hhIndColCard hhIndCardProd">'+
-     '<div class="hhIndCardTitle">EM PRODUÇÃO</div>'+
-     prodPanel+
-    '</section>'+
-    '<section class="hhIndColCard hhIndCardQueue">'+
-     '<div class="hhIndCardTitle">PRÓXIMOS NA FILA</div>'+
-     '<div class="hhIndQueueWrap">'+queueHtml+'</div>'+
-    '</section>'+
-   '</div>'+
-  '</div>'+
-  '<footer class="hhIndFooterClean">'+
-   '<span>Precisa de ajuda? Acione o andon da célula: líder, qualidade, manutenção ou logística.</span>'+
-   '<span>Atualizado às '+clockFullStr+'</span>'+
-   '<span class="ver">v0.1.20</span>'+
-  '</footer>'+
- '</div>';
- const slot=document.getElementById('hhIndSelSlot');
- if(slot){
-  let targetSel=preservedSel;
-  if(!targetSel||!targetSel.parentNode){
-   targetSel=document.createElement('select');
-   targetSel.id='hhMonCellSelect';
-   targetSel.setAttribute('aria-label','Selecionar célula do monitor individual');
-  }
-  targetSel.className='hhMonCellSelectInHeader';
-  const sig=hhLinhasCfg.map(function(x){return x.id+':'+x.nome;}).join('|');
-  if(targetSel.getAttribute('data-sig')!==sig){
-   targetSel.innerHTML=hhLinhasCfg.map(function(x){return '<option value="'+escH(x.id)+'">'+escH(x.nome)+'</option>';}).join('');
-   targetSel.setAttribute('data-sig',sig);
-  }
-  targetSel.value=id;
-  if(!targetSel._hhMonV2Bound){
-   targetSel._hhMonV2Bound=true;
-   targetSel.addEventListener('change',function(){
-    window._hhMonV2CellId=targetSel.value;
-    if(typeof hhRender==='function')hhRender();
-    else hhMonV2Render(hhDiaSelIso(),new Date());
-   });
-  }
-  slot.appendChild(targetSel);
- }
+ if(pr.running){const p=pr.running.p,meta=Number(p.qtdDia)||0,day=hh431ProductDay(c.id,iso,p.cod),pctP=meta?Math.min(100,Math.round(day/meta*100)):0,stopText=m.stop?hhMonV2StopText(m.stop,c,m.cut):'';
+  prodPanel='<div class="hhIndProduct"><span class="tag '+hh431TagClass(m)+'">EM PRODUÇÃO</span><div class="name">'+hhMonV2ProductDescription(p)+'</div><div class="meta">'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD (Supermercado)':'sem destino definido'))+' · '+escH(focus?focus.label:'faixa atual')+'</div><div class="qty">'+NF.format(day)+' / '+NF.format(meta)+' pc</div><div class="bar"><i style="width:'+pctP+'%"></i></div><div class="hint">faltam '+NF.format(Math.max(0,meta-day))+' pc p/ a quantidade do dia</div></div>'+stopText;}
+ else{const p=pr.all[0];prodPanel='<div class="hhIndProduct"><span class="tag gray">EM PRODUÇÃO</span><div class="name">'+(p?hhMonV2ProductDescription(p):'Sem produto programado')+'</div><div class="meta">'+(m.tline.mode==='before'||m.tline.mode==='future'?'aguardando abertura da célula':'sem apontamento na faixa vigente')+'</div></div>';}
+ const emP=pr.running?pr.running.p:pr.all[0];const queue=pr.queue.filter(function(p){return !emP||String(p.cod)!==String(emP.cod);}).slice(0,3).map(function(p,i){return '<li><span class="n">'+(i+1)+'</span><span class="who"><b>'+hhMonV2ProductDescription(p)+'</b><small>'+(p.pv?'PV '+escH(p.pv):(p.ward?'Lote WARD':'—'))+'</small></span><span class="qty">'+NF.format(Number(p.qtdDia)||0)+' pc</span></li>';}).join('');
+ const shift='Turno A · '+hhClockTxt(hhScheduleStart(c))+' - '+hhClockTxt(hhScheduleEnd(c));
+ const missingHint=remaining?(m.tline.mode==='before'?'abre em '+NF.format(Math.max(0,hhScheduleStart(c)-m.cut))+' min · ritmo nec.: '+NF.format(rate)+' pc/h':'em '+NF.format(left)+' min · ritmo nec.: '+NF.format(rate)+' pc/h'):'meta diária atingida';
+ root.innerHTML='<div class="hhIndividualScreen"><header class="hhIndBanner '+m.state+'"><div><div class="hhIndBrand">D-LEAN SOLUTIONS</div><h2>CÉLULA '+String(hhLinhasCfg.indexOf(c)+1).padStart(2,'0')+' — '+escH(c.nome).toUpperCase()+'</h2><div class="turno">'+escH(shift)+'</div></div>'+
+ '<div class="hhIndState">'+hh431Icon(m)+' '+escH(m.label)+'<small>'+hh431Delta(m.delta)+' pc</small></div>'+
+ '<div class="hhIndClock"><div class="time">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</div><div class="date">'+hh431DateLabel(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))+'</div></div></header>'+
+ '<div class="hhIndMain"><section class="hhIndPanel hhIndSummary"><h3>RESUMO DA CÉLULA</h3>'+
+ '<div class="lbl">Realizado / Meta dia</div><div class="big">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hint">'+pct+'% da meta · esperado agora: '+NF.format(Math.round(m.expected))+' pc</div><div class="hhIndProgress '+progCls+'"><i style="width:'+pct+'%"></i></div>'+
+ '<div class="lbl">Meta hora · '+escH(focus?focus.label:'—')+'</div><div class="big">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">esperado agora: '+NF.format(Math.round(m.slotExpected))+' pc</div>'+
+ '<div class="lbl">Faltam p/ meta dia</div><div class="big">'+NF.format(remaining)+' <small>pc</small></div><div class="hint">'+escH(missingHint)+'</div></section>'+
+ '<section class="hhIndPanel"><h3>HORA A HORA <small>Δ = realizado − meta</small></h3><table class="hhIndTable"><thead><tr><th>Hora</th><th>Meta</th><th>Real</th><th>Δ hora</th><th>Δ acum.</th></tr></thead><tbody>'+table+'</tbody></table></section>'+
+ '<div class="hhIndRight"><section class="hhIndPanel"><h3>EM PRODUÇÃO</h3>'+prodPanel+'</section><section class="hhIndPanel"><h3>PRÓXIMOS NA FILA</h3><ol class="hhIndQueue">'+(queue||'<li>Sem próximo produto na programação.</li>')+'</ol></section></div></div>'+
+ '<footer class="hhIndFooter"><span>Precisa de ajuda? Acione o andon da célula — líder, qualidade, manutenção ou logística.</span><span>atualizado '+hh431ClockFull()+'</span></footer></div>';
 }
 hhMonV2Render=function(iso,now){
- try{hhMonV2FactoryClean(iso,now);}catch(e){console.error('hh431 clean geral',e);}
+ try{hhMonV2Factory431(iso,now);}catch(e){console.error('hh431 geral',e);}
  try{hhMonV2Individual431(iso,now);}catch(e){console.error('hh431 individual',e);}
 };
 setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0);
@@ -5518,6 +5102,4 @@ setTimeout(function(){try{hhMonV2Render(hhDiaSelIso(),new Date());}catch(e){}},0
  setTimeout(hh441BindTabs,600);
  setTimeout(hh441BindTabs,2000);
 })();
-
-// Compass 2.2 — Andon de Produção · v0.1.20
 
