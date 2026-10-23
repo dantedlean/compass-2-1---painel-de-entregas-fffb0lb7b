@@ -5142,54 +5142,67 @@ function hhMonV2FactoryClean(iso,now){
    const hEnd=String(Math.floor(r.slot.end/60)).padStart(2,'0');
    const hLbl=(r.slot.end%60)?(hEnd+':'+String(r.slot.end%60).padStart(2,'0')):hEnd;
 
-   // Delta pequeno de 8px ao lado do valor total produzido
-   let deltaSmallHtml='';
-   if(!isFuture){
-    const dVal=Math.round(r.delta);
-    const dClass=dVal<0?'neg':(dVal>0?'pos':'zero');
-    const dTxt=(dVal>0?'+':'')+NF.format(dVal);
-    deltaSmallHtml='<span class="hhCleanHourDelta '+dClass+'">'+dTxt+'</span>';
+   // Tooltip rico para hover/toque/foco
+   const dVal=Math.round(r.delta);
+   let deltaFormatted='';
+   if(dVal>0) deltaFormatted='+'+NF.format(dVal)+' pc';
+   else if(dVal<0) deltaFormatted='−'+NF.format(Math.abs(dVal))+' pc';
+   else deltaFormatted='0 pc';
+   const deltaCls=dVal>0?'pos':(dVal<0?'neg':'zero');
+
+   let tooltipHtml='';
+   if(isFuture){
+    tooltipHtml='<div class="hhHourTooltip" role="tooltip">'+
+     '<div class="ttRange">'+escH(r.slot.label)+'</div>'+
+     '<div class="ttRow"><span class="ttLbl">Previsto</span><span class="ttVal">'+NF.format(Math.round(r.goal))+' pc</span></div>'+
+    '</div>';
+   } else {
+    tooltipHtml='<div class="hhHourTooltip" role="tooltip">'+
+     '<div class="ttRange">'+escH(r.slot.label)+'</div>'+
+     '<div class="ttRow"><span class="ttLbl">Previsto</span><span class="ttVal">'+NF.format(Math.round(r.goal))+' pc</span></div>'+
+     '<div class="ttRow"><span class="ttLbl">Executado</span><span class="ttVal">'+NF.format(r.actual)+' pc</span></div>'+
+     '<div class="ttRow"><span class="ttLbl">Variação</span><span class="ttVal '+deltaCls+'">'+deltaFormatted+'</span></div>'+
+    '</div>';
    }
 
-   const valHtml='<span class="hhCleanHourVal"><span class="actual">'+actualTxt+'</span>'+deltaSmallHtml+'</span>';
+   const valHtml='<span class="hhCleanHourVal"><span class="actual">'+actualTxt+'</span></span>';
 
-   return '<div class="hhCleanHourCol'+(isNow?' is-now':'')+'">'+
+   return '<div class="hhCleanHourCol'+(isNow?' is-now':'')+'" tabindex="0" aria-label="'+escH(r.slot.label)+' - previsto '+NF.format(Math.round(r.goal))+' pc'+(isFuture?'':', executado '+NF.format(r.actual)+' pc, variação '+deltaFormatted)+'">'+
     valHtml+
     '<div class="hhCleanHourTrack">'+
      (isFuture?'':'<div class="hhCleanHourBar" style="height:'+barPct+'%"></div>')+
     '</div>'+
     '<span class="hhCleanHourLbl">'+hLbl+'</span>'+
+    tooltipHtml+
    '</div>';
   }).join('');
 
   return '<article class="hhCleanCellCard">'+
-   '<div class="hhCleanCellCol">'+
+   '<div class="hhCleanCellCol hhCleanColName">'+
     '<div class="hhCleanLbl">CÉLULA '+String(i+1).padStart(2,'0')+'</div>'+
     '<div class="hhCleanCellName" title="'+escH(c.nome)+'">'+escH(c.nome)+'</div>'+
     '<span class="hhCleanBadge '+badgeCls+'">'+badgeLabel+'</span>'+
    '</div>'+
-   '<div class="hhCleanCellCol">'+
+   '<div class="hhCleanCellCol hhCleanColActualGoal">'+
     '<div class="hhCleanLbl">REALIZADO / META DO DIA</div>'+
     '<div class="hhCleanCellNumVal">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div>'+
     '<div class="hhCleanCellProgress"><i style="width:'+progress+'%"></i></div>'+
     '<div class="hhCleanCellSub">'+progress+'% da meta · '+NF.format(falta)+' pc faltantes</div>'+
    '</div>'+
-   '<div class="hhCleanCellCol">'+
+   '<div class="hhCleanCellCol hhCleanColVsExpected">'+
     '<div class="hhCleanLbl">VS. ESPERADO</div>'+
     '<div class="hhCleanCellNumVal '+deltaCls+'">'+deltaTxt+'</div>'+
     '<div class="hhCleanCellSub">esperado: '+NF.format(Math.round(m.expected))+' pc</div>'+
    '</div>'+
-   '<div class="hhCleanCellCol">'+
+   '<div class="hhCleanCellCol hhCleanColMetaHour">'+
     '<div class="hhCleanLbl">META HORA · '+escH(slotLabel)+'</div>'+
     '<div class="hhCleanCellNumVal">'+NF.format(m.slotActual)+' <small>/ '+NF.format(slotGoalRounded)+' pc</small></div>'+
     '<div class="hhCleanCellSub">esperado: '+NF.format(Math.round(m.slotExpected))+' pc</div>'+
    '</div>'+
    '<div class="hhCleanCellCol hhCleanColHourly">'+
-    '<div class="hhCleanLbl">PRODUÇÃO POR HORA</div>'+
     '<div class="hhCleanHourly">'+hourlyCols+'</div>'+
    '</div>'+
-  '</article>';
- }).join('');
+  '</article>'; }).join('');
 
  root.innerHTML='<div class="hhCleanScreen">'+
   '<header class="hhCleanHeader">'+
