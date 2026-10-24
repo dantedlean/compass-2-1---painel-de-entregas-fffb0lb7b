@@ -973,11 +973,60 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px">
     <b style="font-size:12px;color:#334155">Semana:</b>
     <select id="hhSemSel" style="padding:5px 10px;border:1px solid var(--hh-line);border-radius:8px;font-size:13px;background:#fff;cursor:pointer"></select>
-    <button id="hhBtnFirmar" class="hhActionBtn" style="background:#1D4ED8;color:#fff;border-color:#1D4ED8" title="Salva a programação deste dia como FIRME — fica fixa neste dia"><span>💾</span> Salvar dia como programação firme</button>
-    <button id="hhBtnCopiar" class="hhActionBtn" title="Copia as células/produtos do dia anterior mais próximo com programação"><span>⧉</span> Copiar prog. do dia anterior</button>
   </div>
   <div class="wbtns" id="hhDiaBtns" style="margin-bottom:12px"></div>
   <div class="hhKpis" id="hhPlanKpis"></div>
+<style>
+#viewHH .hhPgCard{margin-bottom:14px}
+#viewHH .hhPgGrid{display:grid;grid-template-columns:var(--hhpg-cols);gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #E2E8F0}
+#viewHH .hhPgGrid.h{font-size:11px;font-weight:800;color:#64748B;letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #CBD5E1}
+#viewHH .hhPgGrid input:not([type=checkbox]),#viewHH .hhPgGrid select{border:1px solid #CBD5E1;background:#fff;border-radius:8px;padding:7px 9px;min-height:40px;font-size:14px;color:var(--hh-text);width:100%;min-width:0;box-sizing:border-box}
+#viewHH .hhPgGrid .r{text-align:right}
+#viewHH .hhPgScroll{overflow-x:auto}
+#viewHH .hhPgScroll>div{min-width:var(--hhpg-mw,640px)}
+#viewHH .hhPgCellBox{border:1px solid #CBD5E1;border-radius:12px;padding:12px;margin-bottom:12px;display:grid;gap:10px;background:#F8FAFC}
+#viewHH .hhPgMetas{display:flex;flex-wrap:wrap;gap:8px}
+#viewHH .hhPgMetas .hhEntryField{min-width:96px;flex:1 1 96px}
+#viewHH .hhPgToolRow{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+#viewHH .hhPgPri{background:#1D4ED8;color:#fff;border-color:#1D4ED8}
+#viewHH .hhPgDanger{color:#991B1B;border-color:#FCA5A5}
+#viewHH .hhPgFaixaRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+#viewHH .hhPgFaixaRow input{border:1px solid #CBD5E1;border-radius:8px;padding:7px 9px;min-height:40px;font-size:14px}
+#viewHH .hhPgNote{background:#FEF9C3;border:1px solid #FDE68A;color:#713F12;border-radius:9px;padding:9px 12px;font-size:13px;font-weight:700;margin-bottom:12px}
+#viewHH .hhPgLegacy{margin:14px 0}#viewHH .hhPgLegacy>summary{cursor:pointer;font-weight:800;color:var(--hh-teal);padding:10px 4px;font-size:14px}
+#viewHH .hhPgFoot{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-top:14px}
+#viewHH .hhPgFoot .hhSubmitBtn{width:auto;min-width:240px;padding:0 18px}
+#viewHH .hhPgMx{display:grid;gap:4px;align-items:stretch}
+#viewHH .hhPgMx .c{border:1px solid #E2E8F0;border-radius:8px;padding:8px 4px;text-align:center;font-size:13px;font-weight:800;background:#fff;min-height:40px}
+#viewHH .hhPgMx .hd{font-size:11px;font-weight:800;color:#64748B;text-align:center}
+#viewHH .hhPgMx .n{font-weight:800;font-size:13px;display:flex;align-items:center}
+#viewHH .hhPgMx button.c{cursor:pointer}
+#viewHH .hhPgMx .o{background:#DCFCE7;border-color:#86EFAC;color:#166534}
+#viewHH .hhPgMx .l{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
+#viewHH .hhPgMx .m{background:#FEF9C3;border-color:#FDE68A;color:#713F12}
+#viewHH .hhPgMx .f{color:#94A3B8}
+#viewHH .hhPgMx .sel{outline:2px solid var(--hh-teal)}
+</style>
+  <div id="hhPgPlan">
+    <section class="card hhPgCard" id="hhPgCells"></section>
+    <section class="card hhPgCard" id="hhPgTools">
+      <div class="hhCardHead"><div><h2 id="hhPgToolsTitle">2 · Programação do dia</h2><p>copie um dia pronto, revise metas e produtos e salve</p></div></div>
+      <div class="hhPgToolRow">
+        <div class="hhPgToolRow hhPgEd">
+          <div class="hhEntryField"><label>Do dia anterior</label><button id="hhBtnCopiar" class="hhActionBtn" title="Copia as células/produtos/faixas do dia anterior mais próximo com programação"><span>⧉</span> Copiar prog. do dia anterior</button></div>
+          <div class="hhEntryField"><label for="hhPgCopyFrom">De um dia do histórico</label><select id="hhPgCopyFrom" aria-label="Dia do histórico para copiar"></select></div>
+          <button id="hhPgCopyBtn" class="hhActionBtn" type="button">Copiar dia escolhido</button>
+          <button id="hhBtnFirmar" class="hhActionBtn hhPgPri" title="Salva a programação deste dia como FIRME — fica fixa neste dia"><span>💾</span> Salvar programação do dia</button>
+        </div>
+        <div class="hhEntryField"><label for="hhPgHora">Hora de teste (só neste aparelho)</label><input id="hhPgHora" type="time" step="60" aria-label="Hora de teste"></div>
+        <button id="hhPgHoraClear" class="hhActionBtn" type="button">Usar hora real</button>
+      </div>
+      <p class="hhNote" style="margin:10px 0 0">A hora de teste simula outro horário na tela de Apontamento deste aparelho (faixa sugerida), útil para treinar a equipe fora do turno. O Monitoramento continua com a hora real.</p>
+    </section>
+    <section class="card hhPgCard"><div class="hhCardHead"><div><h2>3 · Metas e produtos por célula</h2><p>meta por faixa em peças · só aparecem as células ativas · o sistema converte em meta/h por produto</p></div></div><div id="hhPgMetas"></div></section>
+    <section class="card hhPgCard" id="hhPgFaixas"></section>
+  </div>
+  <details id="hhPgLegacyPlan" class="hhPgLegacy"><summary>Edição avançada — tabelas completas (modo, jornada, almoço, blocos, tipo de saída, OK por produto)</summary>
   <div class="card hhCfgCard"><div class="hhCardHead"><div><h2>Células de produção</h2><p>O nome pode mudar; o identificador interno mantém o histórico. Horário e capacidade podem variar por dia.</p></div><button id="hhCfgAdd" class="hhActionBtn"><span>＋</span> Adicionar célula</button></div>
     <div class="tblwrap hhCfg"><table id="hhCfgTbl"><thead><tr><th style="text-align:left" scope="col">Célula (nome editável)</th><th scope="col">Operadores</th><th scope="col">Postos</th><th title="Qtd: define qtds por produto e horários · Aberto: produção decide o horário · Auto: meta única distribuída na jornada" scope="col">Modo</th><th scope="col">Atalho</th><th scope="col">Jornada (início/fim)</th><th scope="col">Almoço (opcional)</th><th scope="col">Meta dia</th><th scope="col"></th></tr></thead><tbody id="hhCfgTb"></tbody></table></div>
   </div>
@@ -986,9 +1035,26 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
     <div class="hhRegimeLegend"><span><i class="hhDot hhDotPV"></i><b>PV</b> — produção ligada a um pedido de venda</span><span><i class="hhDot hhDotWard"></i><b>WARD</b> — lote para o Supermercado</span><span><b>Saída</b> — <b>Peça pronta</b>: não soma no total do dia · <b>Subconjunto pronto</b>: entra no estoque de subconjuntos · <b>Produto final</b>: é a CONTAGEM do dia (meta e produzido contam só dele — geralmente na linha de montagem)</span></div>
     <div id="hhPostosAudit" class="hhPostosAudit"></div>
   </div>
+  </details>
 </div>
 <div id="hhPanelEntry" class="hhPanel" role="tabpanel" aria-labelledby="hhTabEntry" hidden="">
   <div class="hhSectionHead"><div><h2>Apontamento hora a hora</h2><p>Registre quantidade produzida por célula, produto e intervalo. O histórico alimenta o monitor e a sugestão de capacidade.</p></div></div>
+  <div id="hhPgEntry">
+    <section class="card hhPgCard">
+      <div class="hhCardHead"><div><h2>Apontamento · tela única</h2><p>todas as células numa tela · informe a quantidade de cada produto na faixa horária</p></div><span class="hhGatePill" id="hhPgEntDia"></span></div>
+      <div class="hhChipRow"><span class="hhChipLbl">Faixa horária</span><div class="hhChips" id="hhPgFxChips"></div></div>
+      <div class="hhPgScroll"><div id="hhPgEntRows" style="--hhpg-mw:720px"></div></div>
+      <div class="hhPgFoot hhPgEd">
+        <div class="hhEntryField"><label for="hhPgOper">Quem está lançando (opcional)</label><input id="hhPgOper" aria-label="Operador" autocomplete="off"></div>
+        <div class="hhEntryField" id="hhPgMotivoWrap" style="display:none;flex:1 1 280px"><label for="hhPgMotivo">Motivo (produto não programado)</label><input id="hhPgMotivo" aria-label="Motivo da exceção" placeholder="obrigatório para produto fora da programação"></div>
+        <button id="hhPgLancar" class="hhSubmitBtn" type="button"><span>✓</span> Lançar faixa</button>
+      </div>
+      <div id="hhPgEntErr" role="alert" style="display:none;background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;font-weight:800;font-size:14px;border-radius:9px;padding:10px 12px;margin:10px 0 0"></div>
+    </section>
+    <section class="card hhPgCard"><div class="hhCardHead"><div><h2>Situação do dia por célula e faixa</h2><p>toque numa faixa para lançar nela · amarelo = faixa encerrada sem lançamento</p></div></div><div class="hhPgScroll"><div id="hhPgMx"></div></div></section>
+    <div class="hhPoka" id="hhPoka"></div>
+  </div>
+  <details id="hhPgLegacyEntry" class="hhPgLegacy"><summary>Lançamento avulso por intervalo (fora da jornada, bloco, posto/operador por hora)</summary>
   <div class="card hhEntryCard">
     <div style="display:none" aria-hidden="true"><div class="hhEntryField"><label for="hhSelLinha">Célula</label><select id="hhSelLinha" aria-label="Linha/célula"></select></div><div class="hhEntryField"><label for="hhSelHora">Intervalo</label><select id="hhSelHora" aria-label="Hora"></select></div></div>
     <div id="hhEntryContext" class="hhEntryContext"></div>
@@ -1003,11 +1069,14 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
       <div class="hhMotivoField" id="hhMotivoField"><label for="hhMotivo">Motivo (exceção)</label><input id="hhMotivo" placeholder="explique o motivo — obrigatório para produto não programado ou fora da jornada" aria-label="Motivo da exceção"></div>
       <div id="hhEntryErr" role="alert" style="display:none;background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;font-weight:800;font-size:14px;border-radius:9px;padding:10px 12px;margin:0 0 10px"></div>
       <button id="hhBtnAdd" class="hhSubmitBtn"><span>✓</span> Registrar apontamento</button>
+    </div>
+  </div>
+  </details>
+  <div class="card hhEntryCard hhPgRegs"><div>
       <section class="hhApontCard" aria-labelledby="hhApontTitle"><div class="hhApontHead"><div><h3 id="hhApontTitle">Registros desta data</h3><p>Corrija ou cancele um lançamento errado; o histórico fica preservado.</p></div><span id="hhApontCount" class="hhGatePill"></span></div><div class="tblwrap hhCfg"><table class="hhTbl"><thead><tr><th>Horário</th><th>Célula</th><th>Produto</th><th>Qtd</th><th>Operador / posto</th><th>Status</th><th>Ações</th></tr></thead><tbody id="hhApontLista"></tbody></table></div></section>
       <div id="hhApontEditModal" class="hhApontEditModal" hidden role="dialog" aria-modal="true" aria-labelledby="hhApontEditTitle"><form id="hhApontEditForm" class="hhApontEditPanel"><div class="hhApontHead"><div><h3 id="hhApontEditTitle">Corrigir apontamento</h3><p>Motivo obrigatório; valor anterior, autor e horário ficam na auditoria.</p></div><button type="button" id="hhApontEditClose" class="hhActionBtn" aria-label="Fechar">✕</button></div><div class="hhApontEditGrid"><label>Data<input type="date" id="hhEditData" required></label><label>Célula<select id="hhEditLinha" required></select></label><label>Produto / código<input id="hhEditCod" list="hhEditCodList" required><datalist id="hhEditCodList"></datalist></label><label>Quantidade<input type="number" id="hhEditQtd" min="0.001" step="any" required></label><label>Início<input type="time" id="hhEditIni" required></label><label>Fim<input type="time" id="hhEditFim" required></label><label>Operador<input id="hhEditOperador"></label><label>Posto<input id="hhEditPosto"></label><label class="hhEditReason">Motivo da correção<input id="hhEditMotivo" required placeholder="obrigatório"></label></div><div class="hhApontEditActions"><button type="button" id="hhApontEditCancel" class="hhActionBtn">Voltar</button><button type="button" id="hhApontEditSave" class="hhActionBtn hhEditSave">Salvar correção</button></div><div id="hhApontEditErr" role="alert" class="hhApontEditErr" style="display:none"></div></form></div>
     </div>
   </div>
-  <div class="hhPoka" id="hhPoka"></div>
   <div class="hhEntryBottom"><div class="card hhInlineCard"><div class="hhInlineHead"><div><h3>Resumo do apontamento de hoje</h3><p>Os totais por hora e célula aparecem no Monitoramento.</p></div><span class="hhGatePill">Salvamento contínuo</span></div><div class="hhEntryContext"><b>Apontamentos sempre associados à célula, produto e intervalo selecionados.</b><br>A tela de Monitoramento apresenta o consolidado para chão de fábrica e gestores.</div></div>
     <div class="card hhParCard"><div class="hhInlineHead"><div><h3>Parada / perda da hora</h3><p>Registre o motivo e a ação combinada; o sistema não bloqueia o apontamento.</p></div></div><div class="hhStopForm"><div class="hhEntryField"><label for="hhParLinha">Célula</label><select id="hhParLinha" aria-label="Célula da parada"></select></div><div class="hhEntryField"><label for="hhParPosto">Posto</label><input id="hhParPosto" list="hhPostoDL" aria-label="Posto da parada" placeholder="segue o posto do apontamento" autocomplete="off"></div><div class="hhEntryField"><label for="hhParIni">Início</label><input id="hhParIni" type="time" step="60" aria-label="Início da parada"></div><div class="hhEntryField"><label for="hhParFim">Fim</label><input id="hhParFim" type="time" step="60" aria-label="Fim da parada"></div><div class="hhEntryField"><label for="hhParMotivo">Motivo</label><select id="hhParMotivo" aria-label="Motivo da parada"><option value="">Selecione…</option><option>Falta de material</option><option>Quebra de equipamento</option><option>Falta de pessoas</option><option>Qualidade/retrabalho</option><option>Setup/troca de produto</option><option>Sem demanda</option><option>Outro</option></select></div><div class="hhEntryField hhStopObs"><label for="hhParObs">Observação / ação</label><input id="hhParObs" placeholder="O que aconteceu e próximo passo"></div><button id="hhParAdd" class="hhActionBtn">＋ Registrar parada</button></div><div class="tblwrap hhCfg hhStopTable"><table class="hhTbl" id="hhParTbl"><thead><tr><th style="text-align:left" scope="col">Célula</th><th scope="col">Posto</th><th scope="col">Início</th><th scope="col">Fim</th><th style="text-align:left" scope="col">Motivo</th><th style="text-align:left" scope="col">Observação</th><th scope="col"></th></tr></thead><tbody id="hhParTb"></tbody></table></div></div>
   </div>
