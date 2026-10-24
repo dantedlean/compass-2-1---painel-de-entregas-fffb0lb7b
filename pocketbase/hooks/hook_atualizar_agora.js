@@ -8,23 +8,19 @@
 // latência típica do botão: ~1-2 min (vs. até 60 min da rodada automática).
 // Nada é escrito no MaxiProd.
 // ─────────────────────────────────────────────────────────────────────────────
-routerAdd(
-  'POST',
-  '/backend/v1/compass2/atualizar-agora',
-  (e) => {
-    var out = (function () {
-      try {
-        var col = $app.findCollectionByNameOrId('atualizar_pedidos')
-        var rec = new Record(col)
-        rec.set('pedido_em', new Date().toISOString())
-        rec.set('origem', 'botao_painel')
-        rec.set('atendido_em', '')
-        $app.save(rec)
-        return { ok: true, message: 'Pedido registrado — o painel sera atualizado em ~1-2 min.' }
-      } catch (err) {
-        return { ok: false, error: String(err).slice(0, 300) }
-      }
-    })()
-    return e.json(out.ok ? 200 : 500, out)
-  })
-)
+routerAdd('POST', '/backend/v1/compass2/atualizar-agora', (e) => {
+  var out = (function () {
+    try {
+      var col = $app.findCollectionByNameOrId('atualizar_pedidos')
+      var rec = new Record(col)
+      rec.set('pedido_em', new Date().toISOString())
+      rec.set('origem', 'botao_painel')
+      rec.set('atendido_em', '')
+      $app.save(rec)
+      return { ok: true, message: 'Pedido registrado — o painel sera atualizado em ~1-2 min.' }
+    } catch (err) {
+      return { ok: false, error: String(err).slice(0, 300) }
+    }
+  })()
+  return e.json(out.ok ? 200 : 500, out)
+})
