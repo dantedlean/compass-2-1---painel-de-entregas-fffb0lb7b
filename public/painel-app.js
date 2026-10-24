@@ -3570,6 +3570,15 @@ document.addEventListener('keydown', function(e){
         // o build REAL sempre aparece primeiro no atributo body data-build="..." (o código JS vem depois)
         const m = t.match(/data-build="([^"]+)"/);
         if(m && m[1] && m[1] !== BUILD){
+          // v0.0.516: se o build novo veio do próprio botão "Atualizar agora"
+          // (janela de 15 min após o clique), recarrega direto — SEM banner.
+          let ts = 0;
+          try { ts = parseInt(sessionStorage.getItem('atualizouAgoraEm')||'0',10)||0; } catch(e){}
+          if(ts && (Date.now()-ts) < 900000){
+            try { sessionStorage.removeItem('atualizouAgoraEm'); } catch(e){}
+            location.reload(true);
+            return;
+          }
           let bar = document.getElementById('verBar');
           if(!bar){
             bar = document.createElement('div');
@@ -3597,6 +3606,7 @@ document.addEventListener('keydown', function(e){
 function atualizarAgora(){
   const btn=document.getElementById('btnAtualizarAgora');
   if(!btn || btn.disabled) return;
+  try { sessionStorage.setItem('atualizouAgoraEm', String(Date.now())); } catch(e){}
   btn.disabled=true;
   const rotulo=btn.innerHTML;
   btn.innerHTML='⟳ Verificando…';
