@@ -3602,7 +3602,7 @@ function atualizarAgora(){
   btn.innerHTML='⟳ Verificando…';
   let feito=false;
   try{
-    fetch('/backend/v1/compass2/atualizar-agora?cb='+Date.now(), {method:'GET', cache:'no-store'})
+    fetch('https://painel-entregas-semanais-708f0.shrd00.internal.goskip.dev/backend/v1/compass2/atualizar-agora?cb='+Date.now(), {method:'GET', cache:'no-store'})
       .then(function(r){ return r.json(); })
       .then(function(j){
         feito=true;
