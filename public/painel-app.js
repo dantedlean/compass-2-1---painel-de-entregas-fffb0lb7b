@@ -3588,6 +3588,42 @@ document.addEventListener('keydown', function(e){
   setInterval(checkVer, 300000);
 })();
 
+// ==================== v0.0.504: BOTÃO "ATUALIZAR AGORA" (Dante, 24/10) ====================
+// Dispara a atualização manual do painel sem esperar a rodada horária:
+// 1. chama o endpoint /backend/v1/compass2/atualizar-agora no Skip (dispara o
+//    check de mudança + publish condicional no Maestro);
+// 2. em paralelo, continua checando a versão publicada — quando o build mudar,
+//    mostra a barra "nova versão" e o Dante clica para recarregar.
+function atualizarAgora(){
+  const btn=document.getElementById('btnAtualizarAgora');
+  if(!btn || btn.disabled) return;
+  btn.disabled=true;
+  const rotulo=btn.innerHTML;
+  btn.innerHTML='⟳ Verificando…';
+  let feito=false;
+  try{
+    fetch('/backend/v1/compass2/atualizar-agora', {method:'POST', cache:'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        feito=true;
+        const mudou=j && (j.mudou===true || j.publish===true);
+        btn.innerHTML = mudou ? '✓ Atualizando… recarregue em instantes' : '✓ Sem novidades no MaxiProd';
+        setTimeout(function(){ btn.innerHTML=rotulo; btn.disabled=false; }, 8000);
+      })
+      .catch(function(){
+        feito=true;
+        btn.innerHTML='⚠ Falhou — tente de novo';
+        setTimeout(function(){ btn.innerHTML=rotulo; btn.disabled=false; }, 8000);
+      });
+  }catch(e){
+    feito=true;
+    btn.innerHTML='⚠ Falhou — tente de novo';
+    setTimeout(function(){ btn.innerHTML=rotulo; btn.disabled=false; }, 8000);
+  }
+  // segurança: se o fetch não responder em 30s, reabilita o botão
+  setTimeout(function(){ if(!feito){ btn.innerHTML=rotulo; btn.disabled=false; } }, 30000);
+}
+
 
 ;
 
