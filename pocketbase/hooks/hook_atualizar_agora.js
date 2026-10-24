@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Atualização manual do painel (v0.0.504, pedido Dante 24/10)
-// Rota: POST /backend/v1/compass2/atualizar-agora (pública, leitura apenas)
+// Rota: GET /backend/v1/compass2/atualizar-agora (pública; nginx do Skip bloqueia POST externo)
 // O botão "⟳ Atualizar agora" do painel chama esta rota. Ela NÃO roda o publish
 // (isso acontece no Maestro, onde os scripts vivem): grava um pedido de
 // atualização com timestamp e o Maestro o consome no seu polling horário.
@@ -8,7 +8,7 @@
 // latência típica do botão: ~1-2 min (vs. até 60 min da rodada automática).
 // Nada é escrito no MaxiProd.
 // ─────────────────────────────────────────────────────────────────────────────
-routerAdd('POST', '/backend/v1/compass2/atualizar-agora', (e) => {
+routerAdd('GET', '/backend/v1/compass2/atualizar-agora', (e) => {
   var out = (function () {
     try {
       var col = $app.findCollectionByNameOrId('atualizar_pedidos')

@@ -3602,7 +3602,7 @@ function atualizarAgora(){
   btn.innerHTML='⟳ Verificando…';
   let feito=false;
   try{
-    fetch('/backend/v1/compass2/atualizar-agora', {method:'POST', cache:'no-store'})
+    fetch('/backend/v1/compass2/atualizar-agora?cb='+Date.now(), {method:'GET', cache:'no-store'})
       .then(function(r){ return r.json(); })
       .then(function(j){
         feito=true;
