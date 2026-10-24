@@ -24,3 +24,20 @@ routerAdd('POST', '/backend/v1/compass2/atualizar-agora', (e) => {
   })()
   return e.json(out.ok ? 200 : 500, out)
 })
+
+// Leitura pública dos pedidos pendentes — consumida pelo Maestro (polling).
+// ?consumir=1 marca os pendentes como atendidos (o Maestro assume o publish).
+routerAdd('GET', '/backend/v1/compass2/atualizar-pendentes', (e) => {
+  var consumir = String(e.request.url.query.get('consumir') || '') === '1'
+  var recs = $app.findRecordsByFilter('atualizar_pedidos', 'atendido_em = ""', '-pedido_em', 50, 0)
+  var pendentes = []
+  for (var i = 0; i < recs.length; i++) {
+    var r = recs[i]
+    pendentes.push({ pedido_em: r.getString('pedido_em'), origem: r.getString('origem') })
+    if (consumir) {
+      r.set('atendido_em', new Date().toISOString())
+      $app.save(r)
+    }
+  }
+  return e.json(200, { ok: true, pendentes: pendentes, total: pendentes.length })
+})
