@@ -29,7 +29,7 @@ routerAdd('GET', '/backend/v1/compass2/atualizar-agora', (e) => {
 // ?consumir=1 marca os pendentes como atendidos (o Maestro assume o publish).
 routerAdd('GET', '/backend/v1/compass2/atualizar-pendentes', (e) => {
   var consumir = String(e.request.url.query.get('consumir') || '') === '1'
-  var recs = $app.findRecordsByFilter('atualizar_pedidos', '', '-pedido_em', 50, 0)
+  var recs = $app.findRecordsByFilter('atualizar_pedidos', '', '-created', 50, 0)
   var pendentes = []
   for (var i = 0; i < recs.length; i++) {
     var r = recs[i]
