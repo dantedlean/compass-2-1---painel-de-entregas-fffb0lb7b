@@ -17,7 +17,19 @@ routerAdd('GET', '/backend/v1/compass2/atualizar-agora', (e) => {
       rec.set('origem', 'botao_painel')
       rec.set('atendido_em', '')
       $app.save(rec)
-      return { ok: true, message: 'Pedido registrado — o painel sera atualizado em ~1-2 min.' }
+      // Acorda o Maestro imediatamente (webhook FRIDA) — atualização em ~1-3 min, sem esperar o cron.
+      try {
+        $http.send({
+          url: 'https://maestro.adapta.one/webhooks/generic/1df3344cdd4361b238ee31474d0d70908da08b0ea0164c75266c404bff681cdb?secret=ad9c245aa50c5349fdd552f58d461c8f65c57260c7ca1bfe81316c0981554949',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origem: 'botao_painel', pedido_em: new Date().toISOString() }),
+          timeout: 10,
+        })
+      } catch (e2) {
+        // falha do webhook não derruba o pedido — o cron horário consome depois
+      }
+      return { ok: true, message: 'Pedido registrado — o painel sera atualizado em ~1-3 min.' }
     } catch (err) {
       return { ok: false, error: String(err).slice(0, 300) }
     }
