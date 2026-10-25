@@ -5810,7 +5810,7 @@ const ABAF = {"gerado":"2026-10-25 11:14:13","fontes":{"pulso":"PocketBase 57383
     let html = '';
     t.forEach(function (r) {
       var cls, lbl;
-      if (r.risco >= 2) { cls = 'af-b-red'; lbl = 'Investigar agora'; }
+      if (r.risco >= 1.5) { cls = 'af-b-red'; lbl = 'Investigar agora'; }
       else if (r.risco >= 1) { cls = 'af-b-amb'; lbl = 'Revisar'; }
       else { cls = 'af-b-grn'; lbl = 'Rotina'; }
       html += '<div class="af-tri"><span class="af-badge ' + cls + '">' + lbl + '</span>' +
