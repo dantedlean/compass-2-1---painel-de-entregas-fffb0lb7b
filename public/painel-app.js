@@ -2885,7 +2885,8 @@ function showView(v){
     ['pa','viewProgAuto'],
     ['fat','viewFat'],
     ['hh','viewHH'],
-    ['hs','viewHS']
+    ['hs','viewHS'],
+    ['af','viewAF']
   ];
   views.forEach(function(pair){
     const e=document.getElementById(pair[1]);
@@ -2895,7 +2896,7 @@ function showView(v){
     e.style.display=active?'block':'none';
     e.setAttribute('aria-hidden', active?'false':'true');
   });
-  const tabs = [['nf','tabNf'],['ent','tabEnt'],['entv','tabEntV'],['pa','tabPA'],['fat','tabFat'],['hh','tabHH'],['hs','tabHS']];
+  const tabs = [['nf','tabNf'],['ent','tabEnt'],['entv','tabEntV'],['pa','tabPA'],['fat','tabFat'],['hh','tabHH'],['hs','tabHS'],['af','tabAF']];
   tabs.forEach(function(pair){const e=document.getElementById(pair[1]);if(e)e.classList.toggle('on',pair[0]===v);});
   if(v==='pa' && !window._paInit){ renderProgAuto(); window._paInit = true; }
   if((v==='ent'||v==='entv') && !window._apInit){ apInitModal(); window._apInit = true; }
