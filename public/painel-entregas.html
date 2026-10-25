@@ -127,6 +127,7 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
         <button id="tabFat" onclick="showView('fat')"><span class="ic">💰</span> Produtos a Faturar</button>
     <button id="tabHH" onclick="showView('hh')"><span class="ic">🏭</span> Andon — Produção</button>
     <button id="tabHS" onclick="showView('hs')"><span class="ic">🏭</span> Andon — Produção (Claude)</button>
+    <button id="tabAF" onclick="showView('af')"><span class="ic">👻</span> OPs Fantasma</button>
   </nav>
 
   <div class="sideFoot">
@@ -1323,6 +1324,75 @@ body.hhTv .hhFactoryCardBody{gap:6px!important;padding:0 12px 8px!important}
 <iframe id="hsFrame" title="Andon — Produção (app Claude standalone)" src="https://dantedlean.github.io/andon/" allow="fullscreen" referrerpolicy="no-referrer"></iframe>
 </div>
 <div class="hsNote">App Andon — Produção (modelo desenvolvido no Claude, publicado em dantedlean.github.io/andon) embutido sem alterações. Login, programação, apontamento e monitoramento rodam dentro do quadro acima.</div>
+</div>
+<div id="viewAF" class="view" style="display:none">
+<style>
+#viewAF{font-size:15px;color:var(--ink)}
+#viewAF .af-note{background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:15px;line-height:1.5}
+#viewAF .af-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+#viewAF .af-card{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px}
+#viewAF .af-card .lbl{font-size:15px;color:var(--mut);margin-bottom:6px}
+#viewAF .af-card .val{font-size:26px;font-weight:700;color:var(--ink);line-height:1.15}
+#viewAF .af-card .sub{font-size:15px;color:var(--mut);margin-top:4px}
+#viewAF .af-card.warn .val{color:#dc2626}
+#viewAF .af-card.amber .val{color:#d97706}
+#viewAF .af-box{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+#viewAF .af-box h3{margin:0 0 10px;font-size:18px;color:var(--ink)}
+#viewAF .af-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:16px}
+#viewAF .af-grid2 .af-box{margin-bottom:0}
+#viewAF .af-chart{width:100%;height:320px}
+#viewAF .af-scroll{overflow-x:auto}
+#viewAF .af-tbl{width:100%;border-collapse:collapse;font-size:15px}
+#viewAF .af-tbl th{text-align:left;padding:8px 10px;border-bottom:1.5px solid var(--line);color:var(--mut);font-weight:600;white-space:nowrap;background:#fff;position:sticky;top:0}
+#viewAF .af-tbl td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--ink)}
+#viewAF .af-tbl td.num,#viewAF .af-tbl th.num{text-align:right;white-space:nowrap}
+#viewAF .af-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:15px;font-weight:600;white-space:nowrap}
+#viewAF .af-b-red{background:#fee2e2;color:#b91c1c}
+#viewAF .af-b-amb{background:#fef3c7;color:#b45309}
+#viewAF .af-b-grn{background:#dcfce7;color:#15803d}
+#viewAF .af-b-gry{background:#f1f5f9;color:#475569}
+#viewAF .af-tri{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+#viewAF .af-tri .t-main{flex:1 1 220px;min-width:0}
+#viewAF .af-tri .t-sub{color:var(--mut);font-size:15px}
+#viewAF .af-chip{display:inline-block;background:#f8fafc;border:1.5px solid var(--line);border-radius:999px;padding:6px 14px;margin:0 8px 8px 0;font-size:15px}
+#viewAF .af-filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;align-items:center}
+#viewAF .af-filters select,#viewAF .af-filters input{font-size:15px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);min-width:150px}
+#viewAF .af-count{color:var(--mut);font-size:15px;margin-left:auto}
+#viewAF .af-drill{max-height:400px;overflow:auto;border:1.5px solid var(--line);border-radius:10px}
+#viewAF .af-empty{color:var(--mut);padding:10px 0}
+</style>
+
+<div class="af-note" id="afNote"></div>
+<div class="af-cards" id="afCards"></div>
+
+<div class="af-box"><h3>Baixas por dia</h3><div id="afChart1" class="af-chart"></div></div>
+
+<div class="af-grid2">
+  <div class="af-box"><h3>Quem baixou</h3><div id="afChart2" class="af-chart"></div></div>
+  <div class="af-box"><h3>Teoria × Real (Pulso vs ERP)</h3><div id="afChart3" class="af-chart"></div></div>
+</div>
+
+<div class="af-box"><h3>Por empresa</h3><div class="af-scroll" id="afTblEmp"></div></div>
+<div class="af-box"><h3>Top itens por custo (ERP real)</h3><div class="af-scroll" id="afTblItens"></div></div>
+<div class="af-box"><h3>Triagem Jev (IA)</h3><div id="afTri"></div></div>
+<div class="af-box"><h3>Backlog aberto</h3><div class="af-scroll" id="afBacklog"></div></div>
+<div class="af-box"><h3>Fluxo terceiro</h3><div id="afTerceiro"></div></div>
+
+<div class="af-box">
+  <h3>Todas as movimentações</h3>
+  <div class="af-filters">
+    <select id="afFEmp"></select>
+    <select id="afFAut"></select>
+    <select id="afFSt">
+      <option value="">Todos os status</option>
+      <option value="lancada">Lançada</option>
+      <option value="erro">Erro</option>
+    </select>
+    <input id="afFItem" type="text" placeholder="Filtrar item...">
+    <span class="af-count" id="afCount"></span>
+  </div>
+  <div class="af-drill"><div id="afTblMovs"></div></div>
+</div>
 </div>
 </div>
 </div>
