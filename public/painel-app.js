@@ -5908,3 +5908,19 @@ const ABAF = {"gerado":"2026-10-25 11:00:15","fontes":{"pulso":"PocketBase 57383
   window.afRender = afRender;
 })();
 
+  /* hook: renderiza a aba quando mostrada (idempotente — NÃO altera showView existente) */
+  function afHookShowView() {
+    if (typeof window.showView === 'function' && !window.showView.__afPatched) {
+      var orig = window.showView;
+      var wrapped = function (v) {
+        var r = orig.apply(this, arguments);
+        if (v === 'af') setTimeout(function () { try { afRender(); } catch (e) { console.error('afRender', e); } }, 60);
+        return r;
+      };
+      wrapped.__afPatched = true;
+      window.showView = wrapped;
+    }
+  }
+  afHookShowView();
+  setTimeout(afHookShowView, 400);
+
