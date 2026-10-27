@@ -4223,12 +4223,16 @@ function tercRenderTabs(){
   wrap.innerHTML=(window.tercList||[]).map(function(t){
     const loc='T:'+t.id;
     const on=ativo===loc;
-    return '<button class="tercTab'+(on?' on':'')+'" onclick="showView(\'terc\')" data-terc="'+t.id+'" style="'+(on?'':'background:#f8fafc;')+'"><span class="ic">🏭</span> '+escH(t.nome)+(u==='admin'?' <span title="Remover fornecedor" onclick="event.stopPropagation();tercRemove(\''+t.id+'\')" style="color:#991b1b;font-weight:800;cursor:pointer;padding:0 3px">×</span>':'')+'</button>';
+    return '<button class="tercTab'+(on?' on':'')+'" onclick="tercAbrir(\''+t.id+'\')" data-terc="'+t.id+'" style="'+(on?'':'background:#f8fafc;')+'"><span class="ic">🏭</span> '+escH(t.nome)+(u==='admin'?' <span title="Remover fornecedor" onclick="event.stopPropagation();tercRemove(\''+t.id+'\')" style="color:#991b1b;font-weight:800;cursor:pointer;padding:0 3px">×</span>':'')+'</button>';
   }).join('');
-  Array.prototype.forEach.call(wrap.querySelectorAll('[data-terc]'), function(b){
-    b.addEventListener('click', function(){ tercSel=b.getAttribute('data-terc'); window.UNID='T:'+tercSel; });
-  });
 }
+function tercAbrir(id){
+  tercSel=id;
+  window.UNID='T:'+id;
+  tercRenderTabs();
+  showView('terc');
+}
+window.tercAbrir = tercAbrir;
 window.tercRenderTabs = tercRenderTabs;
 let tercSel=null;
 function tercRemove(id){
