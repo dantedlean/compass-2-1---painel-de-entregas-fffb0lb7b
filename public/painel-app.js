@@ -109,7 +109,7 @@ function aplicarSmktNaProgramacao(prods, dia){ return prods; }
 // saldo da carteira (não saiu via NF) − programado nas declarações (agenda + rascunho)
 let apQ = '';
 // data sugerida: 1º dia útil livre a partir de amanhã (carga = declarações existentes + rascunho)
-function apSugerirData(){
+function apSugerirDataCarga(){
   const hoje = new Date(); hoje.setDate(hoje.getDate()+1);
   const carga = {};
   declDaUnid().forEach(function(d){
@@ -124,6 +124,29 @@ function apSugerirData(){
     if((carga[iso]||0) <= med*1.5) return iso;
   }
   return hoje.toISOString().slice(0,10);
+}
+
+// v0.0.521 (Dante): data sugerida do "A Programar" considera o DESTINO (trânsito).
+// Se algum item com saldo precisa estar produzido antes do dia sugerido pela carga
+// (produzir até = coleta máx. − 1 DU), a sugestão antecipa para o dia mais urgente.
+function apSugerirData(){
+  const cargaIso = apSugerirDataCarga();
+  let maisUrgente=null;
+  const hj=new Date(); hj.setHours(0,0,0,0);
+  const hojeIso=isoD(hj);
+  DATA.rows.forEach(function(r){
+    if(!r.iso || r.frete) return;
+    if(Number(r.qtd)<=0) return;
+    const tab=(window.UNID==='V')?TRANSITO_VINHEDO:TRANSITO;
+    const cid=cidadeDeOrig(r.cliente, window.UNID==='V'?'V':undefined);
+    if(!cid || !tab[cid]) return;
+    const coleta=subDU(new Date(r.iso+'T12:00:00'), tab[cid][0]);
+    const pIso=isoD(subDU(coleta,1)); // produzir até
+    if(pIso < hojeIso) return; // urgência passada não adianta — carga manda
+    if(!maisUrgente || pIso<maisUrgente) maisUrgente=pIso;
+  });
+  if(maisUrgente && maisUrgente < cargaIso) return maisUrgente;
+  return cargaIso;
 }
 // modal de qtd ao programar (arrasto ou botão 📅)
 function apAbrirModal(cod, aProg, dataIso, viaDrag){
@@ -2393,6 +2416,59 @@ const ANDON_SYNC = {
     return true;
   },
   // v0.0.240: leitura PÚBLICA do último rascunho (sem token) — modo somente visualização
+  // v0.0.521: EMBARQUES — mesmo padrão de snapshot do SMKT (escrita admin-only)
+  async pushEmb(list){
+    if(!this.connected()) return false;
+    if(document.body.classList.contains('viewerMode')) return false;
+    const body = {
+      cycle_id: 'flrv0lcbha5hh5v',
+      event_type: 'system',
+      occurred_at: new Date().toISOString(),
+      reason: 'Embarques Andon — agenda de coletas',
+      source: 'andon-embarques',
+      changes: { embarques: list||[], rev: Date.now() },
+      before_snapshot: { field: 'andon_embarques', value: 'v'+Date.now() }
+    };
+    const r = await fetch(this.api+'/api/collections/reprogramming_events/records', {
+      method:'POST', headers:this.headers(), body: JSON.stringify(body)
+    });
+    if(r.status===400||r.status===401||r.status===403){ this._authFail(); return 'auth'; }
+    if(!r.ok){ throw new Error('push embarques falhou ('+r.status+')'); }
+    this.lastPush = Date.now(); this.expired = false;
+    if(this.onPushed){ try{ this.onPushed(); }catch(e){} }
+    return true;
+  },
+  async syncEmbFromServer(){
+    if(!this.connected()) return false;
+    const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-embarques')";
+    const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
+    const r = await fetch(url, {headers:this.headers()});
+    if(!r.ok) return false;
+    const d = await r.json();
+    if(!d.items || !d.items.length) return false;
+    const ch = d.items[0].changes || {};
+    if(!Array.isArray(ch.embarques)) return false;
+    const locRev = Number(localStorage.getItem('andon|emb-rev')||0);
+    const srvRev = Number(ch.rev||0);
+    if(locRev > srvRev) return false; // local mais novo — push prevalece
+    localStorage.setItem(EMB_KEY, JSON.stringify(ch.embarques));
+    window.embList = ch.embarques;
+    localStorage.setItem('andon|emb-rev', String(srvRev));
+    return true;
+  },
+  async pullEmbPublic(){
+    const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-embarques')";
+    const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
+    const r = await fetch(url);
+    if(!r.ok) return false;
+    const d = await r.json();
+    if(!d.items || !d.items.length) return false;
+    const ch = d.items[0].changes || {};
+    if(!Array.isArray(ch.embarques)) return false;
+    localStorage.setItem(EMB_KEY, JSON.stringify(ch.embarques));
+    window.embList = ch.embarques;
+    return true;
+  },
   async pullPublic(){
     const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-draft')";
     const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
@@ -2467,6 +2543,9 @@ window.andonToggleConn = andonToggleConn;
     }).catch(function(){})
     .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncSmktFromServer() : ANDON_SYNC.pullSmktPublic(); }).then(function(pulled){
       if(pulled && typeof renderSmkt==='function'){ renderSmkt(); renderSemana(); renderKpis(); renderGantt(); renderTimeline(); renderTabela(); }
+    }).catch(function(){})
+    .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncEmbFromServer() : ANDON_SYNC.pullEmbPublic(); }).then(function(pulled){
+      if(pulled && typeof embRender==='function'){ embRender(); }
     }).catch(function(){})
     .finally(function(){ _pullBusy=false; });
   }, 60000);
@@ -2908,6 +2987,7 @@ function showView(v){
   if(v==='ent'||v==='entv'){ progBuildFromDecls(); progDia=null; progDate=null; renderProg(); }
   if(v==='hh' && window.hhRender){try{window.hhRender();}catch(e){}}
   const lbl=document.getElementById('unidLabel'); if(lbl) lbl.textContent = (window.UNID==='V')?'Vinhedo':'Curitiba';
+  const lblE=document.getElementById('embUnidLabel'); if(lblE) lblE.textContent = (window.UNID==='V')?'Vinhedo':'Curitiba';
 }
 
 // ACESSIBILIDADE: scope nas tabelas + labels dos inputs sem label explícito
@@ -3634,6 +3714,282 @@ function atualizarAgora(){
   // segurança: se o fetch não responder em 30s, reabilita o botão
   setTimeout(function(){ if(!feito){ btn.innerHTML=rotulo; btn.disabled=false; } }, 30000);
 }
+
+// ==================== PROGRAMAÇÃO DE EMBARQUES (v0.0.521 — pedido Dante 26/10) ====================
+// Agenda de COLETAS/EMBARQUES separada da produção. Sugestões pela tabela de distâncias
+// (TRANSITO/TRANSITO_VINHEDO): coleta máx. = entrega − trânsito (DU). Status próprio:
+// Sugerido → Aceito → Coletado (data real + transportadora). Nada é gravado no MaxiProd.
+// Sync no servidor mesmo padrão do SMKT: source='andon-embarques', escrita admin-only.
+// Visão encadeada (produção → estoque → embarque) LIGADA por padrão; desligar é exceção
+// consciente (toggle admin, registrado no histórico do rascunho).
+const EMB_KEY = 'emb|embarques';
+function embLoad(){
+  try{ const a=JSON.parse(localStorage.getItem(EMB_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+}
+function embSave(list){
+  try{ localStorage.setItem(EMB_KEY, JSON.stringify(list||[])); }catch(e){}
+  if(window.ANDON_SYNC && window.ANDON_SYNC.connected()){
+    localStorage.setItem('andon|emb-rev', String(Date.now()));
+    try{ window.ANDON_SYNC.pushEmb(list||[]).catch(function(){}); }catch(e){}
+  }
+}
+window.embList = embLoad();
+window.embChainOn = (function(){ try{ return localStorage.getItem('emb|chain')!=='0'; }catch(e){ return true; } })();
+function embChainSave(v){ try{ localStorage.setItem('emb|chain', v?'1':'0'); }catch(e){} window.embChainOn=v; }
+let embSeq = 0;
+function embNextId(){ return 'EMB-'+Date.now()+'-'+(embSeq++); }
+function embDaUnid(){ const u=window.UNID||'C'; return (window.embList||[]).filter(function(e){ return (e.local||'C')===u; }); }
+// trânsito da unidade ATIVA para o cliente (usa a tabela certa)
+function embTransito(cli){
+  const tab = (window.UNID==='V') ? TRANSITO_VINHEDO : TRANSITO;
+  const cid = cidadeDeOrig(cli, window.UNID==='V'?'V':undefined);
+  if(!cid || !tab[cid]) return null;
+  return {cid:cid, tdu:tab[cid][0], km:tab[cid][1]};
+}
+// sugestões da semana: PVs com saldo cuja coleta máx. cai na semana selecionada
+function embSugestoes(){
+  const sel = document.getElementById('embSemSel');
+  const segStr = sel ? semanaSegunda(sel.value) : null;
+  let seg, fim;
+  if(segStr){ seg=new Date(segStr+'T12:00:00'); fim=new Date(seg.getTime()); fim.setDate(fim.getDate()+4); }
+  else { const hj=new Date(); hj.setHours(0,0,0,0); seg=new Date(hj); const dw=hj.getDay()===0?7:hj.getDay(); seg.setDate(hj.getDate()-(dw-1)); fim=new Date(seg.getTime()); fim.setDate(seg.getDate()+4); }
+  const out=[];
+  const seen={};
+  DATA.rows.forEach(function(r){
+    if(!r.iso || r.frete) return;
+    if(Number(r.qtd)<=0) return;
+    const t=embTransito(r.cliente); if(!t) return;
+    const ent=new Date(r.iso+'T12:00:00');
+    const coleta=subDU(ent,t.tdu);
+    const coletaIso=isoD(coleta);
+    if(coleta<seg || coleta>fim) return;
+    // já embarcado (aceito/coletado) para este PV? não sugere de novo
+    const ja=embDaUnid().some(function(e){ return String(e.pv)===String(r.pv) && e.cod===r.codigo && e.status!=='Cancelado'; });
+    if(ja) return;
+    const k=String(r.pv)+'|'+r.codigo;
+    if(seen[k]) return; seen[k]=1;
+    const prod=subDU(coleta,1);
+    out.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:Number(r.qtd)||0,
+      coletaIso:coletaIso, prodIso:isoD(prod), entregaIso:r.iso, cid:t.cid, tdu:t.tdu, km:t.km,
+      local:window.UNID||'C'});
+  });
+  out.sort(function(a,b){ return a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod); });
+  return out;
+}
+function embRender(){
+  const card=document.getElementById('cardEmb'); if(!card) return;
+  const lbl=document.getElementById('embUnidLabel'); if(lbl) lbl.textContent=(window.UNID==='V')?'Vinhedo':'Curitiba';
+  // seletor de semanas (mesmo formato dos botões S## da aba)
+  const sel=document.getElementById('embSemSel');
+  if(sel && !sel.options.length){
+    (SEM||[]).forEach(function(s,i){ const o=document.createElement('option'); o.value=s; o.textContent=s; if(i===0) o.selected=true; sel.appendChild(o); });
+    sel.addEventListener('change', function(){ embRender(); });
+  }
+  const chainTgl=document.getElementById('embChainToggle');
+  if(chainTgl){
+    const u=(function(){try{return (JSON.parse(localStorage.getItem('andon|user')||'{}').role)||'';}catch(e){return '';}})();
+    chainTgl.style.display = u==='admin' ? 'inline-flex' : 'none';
+    const chk=document.getElementById('chkChain');
+    if(chk){ chk.checked=!!window.embChainOn; if(!chk._embBound){ chk._embBound=true; chk.addEventListener('change', function(){ embChainSave(chk.checked); embRender(); const st=document.getElementById('declStatus'); if(st) st.textContent='Visão encadeada '+(chk.checked?'LIGADA':'DESLIGADA — embarques sem vínculo com produção (exceção consciente)'); }); } }
+  }
+  const list=embDaUnid();
+  const hj=new Date(); const hojeISO=hj.getFullYear()+'-'+String(hj.getMonth()+1).padStart(2,'0')+'-'+String(hj.getDate()).padStart(2,'0');
+  document.getElementById('trhE').innerHTML='<th>Data coleta</th><th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino (trânsito)</th><th>Entrega cliente</th><th>Status</th><th>Coletado em / Transportadora</th><th></th>';
+  let tq=0, tc=0;
+  const rows=list.slice().sort(function(a,b){ return String(a.coletaIso||'').localeCompare(String(b.coletaIso||'')); }).map(function(e,ix){
+    tq+=Number(e.qtd)||0; if(e.status==='Coletado') tc+=Number(e.qtd)||0;
+    const t=e.tdu?('DU '+e.tdu+' · '+e.km+' km'):'fora da tabela';
+    const stTag = e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
+      : e.status==='Aceito' ? '<span class="tagP">ACEITO</span>'
+      : '<span class="tagS">SUGERIDO</span>';
+    // selo de dependência da produção (visão encadeada)
+    let selo='';
+    if(window.embChainOn && e.status!=='Coletado'){
+      const prodOk = embProducaoCobre(e);
+      selo = prodOk ? '<div style="font-size:10px;color:#166534;font-weight:700">produção: ✓ cobre</div>'
+        : '<div style="font-size:10px;color:#991b1b;font-weight:800">⚠ produção não cobre — embarque antes de produzir</div>';
+    }
+    const coletadoBox = e.status==='Coletado'
+      ? (e.coletaReal||'—')+(e.transp?' · '+escH(e.transp):'')
+      : '<input type="date" data-e="creal" value="'+escH(e.coletaReal||'')+'" style="width:118px;font-size:11.5px;padding:3px"><input type="text" data-e="transp" value="'+escH(e.transp||'')+'" placeholder="Transportadora" style="width:110px;font-size:11.5px;padding:3px">';
+    return '<tr data-eix="'+ix+'"'+(e.status==='Cancelado'?' style="opacity:.45"':'')+'>'+
+      '<td><b>'+(e.coletaIso?dtBR(e.coletaIso):'—')+'</b></td>'+
+      '<td><div class="cod">'+escH(e.cod)+'</div><div class="dsc">'+escH((e.desc||'').slice(0,40))+'</div>'+selo+'</td>'+
+      '<td><b>'+escH(e.pv||'—')+'</b> '+escH((e.cliente||'').slice(0,22))+'</td>'+
+      '<td class="num"><input type="number" min="0" step="1" data-e="qtd" value="'+(Number(e.qtd)||0)+'" style="width:74px;text-align:right;font-size:11.5px;padding:3px"></td>'+
+      '<td>'+escH(e.cid||'—')+' <span style="font-size:10px;color:#64748b">('+t+')</span></td>'+
+      '<td>'+(e.entregaIso?dtBR(e.entregaIso):'—')+'</td>'+
+      '<td>'+stTag+'</td>'+
+      '<td>'+coletadoBox+'</td>'+
+      '<td class="exec">'+
+        (e.status!=='Coletado' && e.status!=='Cancelado' ? '<button class="exRl" data-eact="aceitar" title="Confirma este embarque (Sugerido → Aceito)">Aceitar</button>' : '')+
+        (e.status==='Aceito' ? '<button class="exRl" data-eact="coletar" style="background:#dcfce7;border-color:#bbf7d0;color:#166534" title="Marca como coletado com a data/transportadora informados">✓ Coletado</button>' : '')+
+        (e.status==='Sugerido' ? '<button class="exRl" data-eact="descartar" title="Descarta a sugestão (volta a aparecer se a semana for re-gerada)">Descartar</button>' : '')+
+        '<button class="exRl" data-eact="del" title="Remove o embarque do rascunho">✕</button>'+
+      '</td></tr>';
+  }).join('') || '<tr><td colspan="9">Sem embarques nesta unidade. Use "↯ Gerar sugestões da semana" (coleta máx. = entrega − trânsito) ou "+ Embarque manual".</td></tr>';
+  document.getElementById('tbbE').innerHTML=rows;
+  document.getElementById('trfE').innerHTML='<td>'+list.filter(function(e){return e.status!=='Cancelado';}).length+' embarques</td><td colspan="2"></td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="3"></td><td class="num" style="color:#166534;font-weight:800">coletado '+NF.format(tc)+'</td><td></td>';
+  embRenderChain();
+  embPoka();
+}
+// produção cobre o embarque? (visão encadeada) — produzido/declarado + SMKT ≥ qtd do embarque
+function embProducaoCobre(e){
+  const q=Number(e.qtd)||0;
+  let done=0, sm=0;
+  try{ done=declaradoTotal(e.cod); }catch(err){}
+  try{ sm=Math.max(0,Number(smktExtraTotal(e.cod))||0); }catch(err){}
+  // produção PROGRAMADA até a coleta também conta (vai produzir antes)
+  let progAte=0;
+  const coleta=e.coletaIso||'';
+  declDaUnid().forEach(function(d){
+    if(d.status==='Cancelado'||d.cod!==e.cod||!d.data||Number(d.qtd)<=0) return;
+    if(coleta && progIso(d.data)<=coleta) progAte+=Number(d.qtd);
+  });
+  return (done+sm+progAte) >= q-0.0001;
+}
+// tabela encadeada por produto: produção → disponível → embarques
+function embRenderChain(){
+  const box=document.getElementById('embChainBox'); if(!box) return;
+  box.style.display = window.embChainOn ? 'block' : 'none';
+  if(!window.embChainOn) return;
+  const map={};
+  declDaUnid().forEach(function(d){
+    if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0) return;
+    const o=map[d.cod]=map[d.cod]||{prog:0,real:0};
+    o.prog+=Number(d.qtd);
+    if(d.status==='Realizado') o.real+=Number(d.qtd);
+  });
+  embDaUnid().forEach(function(e){
+    if(e.status==='Cancelado') return;
+    const o=map[e.cod]=map[e.cod]||{prog:0,real:0};
+    o.emb=(o.emb||0)+Number(e.qtd)||0;
+    o.embDet=(o.embDet||[]);
+    o.embDet.push((e.coletaIso?dtBR(e.coletaIso):'—')+' ×'+NF.format(Number(e.qtd)||0)+(e.status==='Coletado'?' ✓':''));
+  });
+  Object.keys(map).forEach(function(cod){
+    let sm=0; try{ sm=Math.max(0,Number(smktExtraTotal(cod))||0); }catch(e){}
+    map[cod].disp=(map[cod].real||0)+sm;
+  });
+  const cods=Object.keys(map).sort();
+  document.getElementById('tbbEmbChain').innerHTML = cods.length ? cods.map(function(cod){
+    const o=map[cod];
+    const emb=o.emb||0;
+    const fraco = emb > (o.disp||0) + (o.prog||0);
+    const elo = fraco ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ fraco — embarque > produção+estoque</span>'
+      : emb>0 ? '<span class="tagF" style="background:#dcfce7;color:#166534">ok</span>' : '<span style="color:#64748b">—</span>';
+    return '<tr><td><div class="cod">'+escH(cod)+'</div><div class="dsc">'+escH(descDe(cod).slice(0,44))+'</div></td>'+
+      '<td class="num">'+NF.format(o.prog||0)+'</td><td class="num">'+NF.format(o.disp||0)+'</td>'+
+      '<td>'+(o.embDet&&o.embDet.length?o.embDet.join(' · '):'—')+' <b class="num">'+NF.format(emb)+'</b></td>'+
+      '<td>'+elo+'</td></tr>';
+  }).join('') : '<tr><td colspan="5">Sem produção nem embarques declarados nesta unidade.</td></tr>';
+}
+// poka-yoke do card de embarques: coleta máx. comprometida / embarque antes de produzir
+function embPoka(){
+  const w=document.getElementById('embPoka'); if(!w) return;
+  if(!window.embChainOn){ w.style.display='none'; w.innerHTML=''; return; }
+  const avisos=[];
+  embDaUnid().forEach(function(e){
+    if(e.status==='Cancelado'||e.status==='Coletado') return;
+    const q=Number(e.qtd)||0; if(q<=0) return;
+    if(!embProducaoCobre(e)){
+      avisos.push('<b>'+escH(e.cod)+'</b> ×'+NF.format(q)+' p/ '+escH(e.pv||'—')+' em '+(e.coletaIso?dtBR(e.coletaIso):'—')+' — produção programada/realizada + SMKT não cobre');
+    }
+  });
+  // 2) produção REALIZADA sem embarque agendado e sem saldo no SMKT (poka-yoke extra — aprovado Dante)
+  const avisos2=[];
+  const real={};
+  declDaUnid().forEach(function(d){ if(d.status==='Realizado'&&d.cod&&Number(d.qtd)>0) real[d.cod]=(real[d.cod]||0)+Number(d.qtd); });
+  Object.keys(real).forEach(function(cod){
+    const temEmb=embDaUnid().some(function(e){ return e.cod===cod && (e.status==='Aceito'||e.status==='Coletado'); });
+    let sm=0; try{ sm=Math.max(0,Number(smktSaldo(cod))||0); }catch(err){}
+    if(!temEmb && sm<=0) avisos2.push('<b>'+escH(cod)+'</b> ×'+NF.format(real[cod])+' realizada sem embarque agendado e sem saldo no SMKT');
+  });
+  if(!avisos.length && !avisos2.length){ w.style.display='none'; w.innerHTML=''; return; }
+  w.style.display='block';
+  let html='';
+  if(avisos.length){
+    html+='<div style="font-size:14px;margin-bottom:6px">⚠ EMBARQUE ANTES DE PRODUZIR <span style="font-weight:600;font-size:11px">(visão encadeada)</span></div>'+
+      '<div>• '+avisos.slice(0,8).join('<br>• ')+(avisos.length>8?'<br>… +'+(avisos.length-8):'')+'</div>';
+  }
+  if(avisos2.length){
+    html+='<div style="font-size:14px;margin:8px 0 6px">⚠ PRODUÇÃO REALIZADA SEM DESTINO <span style="font-weight:600;font-size:11px">(sem embarque agendado e sem SMKT)</span></div>'+
+      '<div>• '+avisos2.slice(0,8).join('<br>• ')+(avisos2.length>8?'<br>… +'+(avisos2.length-8):'')+'</div>';
+  }
+  html+='<div style="font-weight:600;font-size:11.5px;margin-top:6px;color:#7f1d1d">Nada foi bloqueado — produza antes da coleta, desloque o embarque ou desligue a visão encadeada (exceção consciente).</div>';
+  w.innerHTML=html;
+}
+// interações do card (delegação — bind único)
+(function(){
+  const tb=document.getElementById('tbbE'); if(!tb || tb._embBound) return; tb._embBound=true;
+  function embListIdx(tr){
+    const ix=parseInt(tr.getAttribute('data-eix'),10);
+    const list=embDaUnid().slice().sort(function(a,b){ return String(a.coletaIso||'').localeCompare(String(b.coletaIso||'')); });
+    return list[ix];
+  }
+  function globalIndexOf(e){ return window.embList.indexOf(e); }
+  tb.addEventListener('input', function(ev){
+    const x=ev.target.closest('[data-e]'); if(!x) return;
+    const tr=x.closest('tr'); const e=embListIdx(tr); if(!e) return;
+    const f=x.getAttribute('data-e');
+    if(f==='qtd') e.qtd=Number(x.value)||0;
+    else if(f==='creal') e.coletaReal=x.value;
+    else if(f==='transp') e.transp=x.value;
+    embSave(window.embList);
+  });
+  tb.addEventListener('change', function(ev){ if(ev.target.closest('[data-e]')){ embRender(); } });
+  tb.addEventListener('click', function(ev){
+    const b=ev.target.closest('[data-eact]'); if(!b) return;
+    const tr=b.closest('tr'); const e=embListIdx(tr); if(!e) return;
+    const act=b.getAttribute('data-eact');
+    if(act==='aceitar'){ e.status='Aceito'; embSave(window.embList); embRender(); }
+    else if(act==='coletar'){
+      if(!e.coletaReal){ alert('Informe a data real da coleta antes de marcar ✓ Coletado.'); return; }
+      e.status='Coletado'; embSave(window.embList); embRender();
+      const st=document.getElementById('embStatus'); if(st) st.textContent='✓ Coletado: '+e.cod+' ×'+NF.format(Number(e.qtd)||0)+' em '+dtBR(e.coletaReal)+(e.transp?' · '+e.transp:'');
+    }
+    else if(act==='descartar'){ if(!confirm('Descartar esta sugestão de embarque?')) return; e.status='Cancelado'; e.obs=(e.obs||'')+' · descartado'; embSave(window.embList); embRender(); }
+    else if(act==='del'){ if(!confirm('Remover este embarque do rascunho?')) return; window.embList.splice(globalIndexOf(e),1); embSave(window.embList); embRender(); }
+  });
+  // gerar sugestões
+  const bs=document.getElementById('btnEmbSug');
+  if(bs && !bs._embBound){ bs._embBound=true; bs.addEventListener('click', function(){
+    const sug=embSugestoes();
+    if(!sug.length){ alert('Nada a sugerir: nenhum PV com coleta máx. nesta semana (ou todos já embarcados). Verifique a semana no seletor.'); return; }
+    if(!confirm('Adicionar '+sug.length+' sugestão(ões) de embarque (coleta máx. = entrega − trânsito)?')) return;
+    sug.forEach(function(s){ window.embList.push({id:embNextId(), pv:s.pv, cliente:s.cliente, cod:s.cod, desc:s.desc, qtd:s.qtd, coletaIso:s.coletaIso, prodIso:s.prodIso, entregaIso:s.entregaIso, cid:s.cid, tdu:s.tdu, km:s.km, local:s.local, status:'Sugerido', criado:new Date().toISOString(), obs:'sugestão automática (distância)'}); });
+    embSave(window.embList); embRender();
+    const st=document.getElementById('embStatus'); if(st) st.textContent=sug.length+' sugestão(ões) adicionada(s) — revise, aceite ou descarte';
+  }); }
+  // embarque manual
+  const bn=document.getElementById('btnEmbNew');
+  if(bn && !bn._embBound){ bn._embBound=true; bn.addEventListener('click', function(){
+    const cod=(prompt('Código do produto (ex.: 404-0001):')||'').trim(); if(!cod) return;
+    const pv=(prompt('Nº do PV (opcional):')||'').trim();
+    const qtd=Number(prompt('Qtd a embarcar:')||0)||0; if(qtd<=0) return;
+    const data=(prompt('Data da coleta (AAAA-MM-DD):')||'').trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(data)){ alert('Data inválida.'); return; }
+    const cli=pv?(function(){ const r=DATA.rows.find(function(x){return String(x.pv)===String(pv)&&x.codigo===cod;}); return r?r.cliente:''; })():'';
+    const t=cli?embTransito(cli):null;
+    window.embList.push({id:embNextId(), pv:pv, cliente:cli, cod:cod, desc:descDe(cod), qtd:qtd, coletaIso:data, entregaIso:'', cid:t?t.cid:'', tdu:t?t.tdu:null, km:t?t.km:null, local:window.UNID||'C', status:'Aceito', criado:new Date().toISOString(), obs:'manual'});
+    embSave(window.embList); embRender();
+  }); }
+  // baixar Excel
+  const bd=document.getElementById('btnEmbDl');
+  if(bd && !bd._embBound){ bd._embBound=true; bd.addEventListener('click', function(){
+    try{
+      const rows=[['Data coleta','Produto','Descrição','PV','Cliente','Qtd','Destino','Trânsito (DU)','KM','Entrega cliente','Status','Coletado em','Transportadora','Unidade','Obs']];
+      embDaUnid().forEach(function(e){ rows.push([e.coletaIso||'',e.cod||'',e.desc||'',e.pv||'',e.cliente||'',Number(e.qtd)||0,e.cid||'',e.tdu||'',e.km||'',e.entregaIso||'',e.status||'',e.coletaReal||'',e.transp||'',(e.local==='V'?'Vinhedo':'Curitiba'),e.obs||'']); });
+      const ws=XLSX.utils.aoa_to_sheet(rows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Embarques');
+      XLSX.writeFile(wb,'embarques_'+(window.UNID==='V'?'vinhedo':'curitiba')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    }catch(e){ alert('Falha ao gerar Excel: '+e.message); }
+  }); }
+})();
+// re-render junto com a aba (showView chama renderProg — aproveitamos o mesmo gancho)
+(function(){
+  const _origRP = window.renderProg;
+  if(typeof _origRP==='function'){ window.renderProg=function(){ try{ _origRP.apply(this,arguments); }finally{ try{ embRender(); }catch(e){ console.error('embRender',e); } } }; }
+  else { document.addEventListener('DOMContentLoaded', function(){ try{ embRender(); }catch(e){} }); }
+})();
 
 
 ;
