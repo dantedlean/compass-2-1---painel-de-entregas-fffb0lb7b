@@ -3909,7 +3909,7 @@ function embSugestoes(){
     }
     // 4) necessidade do cliente sem produção suficiente até a coleta — AVISO
     x.classe='nec';
-    x.motivo='SEM produção até a coleta — falta '+NF.format(falta)+' un'+
+    x.motivo='SEM programação de produção até a coleta — falta '+NF.format(falta)+' un'+
       ((usaSm+antes+noDia)>0?' (só '+NF.format(usaSm+antes+noDia)+' disponível: SMKT '+NF.format(usaSm)+' + produção '+NF.format(antes+noDia)+')':'');
   });
   // ordena para exibição: sem produção → do dia → D+1 → SMKT; dentro, por data
@@ -4047,7 +4047,7 @@ function embRenderTabela(){
       : (e.classe==='smkt' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT — certo</span>'
         : e.classe==='dia' ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ DO DIA — risco</span>'
         : e.classe==='d1' ? '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 D+1</span>'
-        : '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PRODUÇÃO</span>');
+        : '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PROGRAMAÇÃO</span>');
     const selo='';
     const coletadoBox = e.status==='Coletado'
       ? (e.coletaReal||'—')+(e.transp?' · '+escH(e.transp):'')
@@ -4111,7 +4111,7 @@ function embRenderTabela(){
     if(box.style.display==='block'){ box.style.display='none'; return; } // toggle
     const sug=embSugestoes();
     if(!sug.length){ alert('Nada a sugerir: nenhum PV com coleta máx. nesta semana (ou todos já embarcados).'); return; }
-    // legenda das 4 categorias (Dante 27/10): SMKT certo · programado do dia (risco) · programado D+1 · necessidade sem produção
+    // legenda das 4 categorias (Dante 27/10): SMKT certo · programado do dia (risco) · programado D+1 · necessidade sem programação
     const cont={smkt:0,dia:0,d1:0,nec:0};
     sug.forEach(function(x){ cont[x.classe]=(cont[x.classe]||0)+1; });
     const tagClasse=function(c){
@@ -4256,7 +4256,7 @@ function uniCatLabel(x){
   if(c==='smkt') return '✓ SMKT';
   if(c==='dia') return '⚠ DO DIA';
   if(c==='d1') return '📦 D+1';
-  if(c==='nec') return '⚠ SEM PRODUÇÃO';
+  if(c==='nec') return '⚠ SEM PROGRAMAÇÃO';
   return x.sug ? '—' : 'Salvo';
 }
 function uniStatusLabel(x){ return x.sug ? 'Sugestão' : (x.e.status||'Sugerido'); }
@@ -4397,7 +4397,7 @@ function uniRender(){
     const tagCls = e.classe==='smkt' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT</span>'
       : e.classe==='dia' ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ DO DIA</span>'
       : e.classe==='d1' ? '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 D+1</span>'
-      : e.classe==='nec' ? '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PRODUÇÃO</span>'
+      : e.classe==='nec' ? '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PROGRAMAÇÃO</span>'
       : '<span style="color:#94a3b8">—</span>';
     const stTag = x.sug ? '<span class="tagS" title="Preview — para salvar, use ↯ Sugestões → ✓ Aplicar na aba da unidade">SUGESTÃO</span>'
       : e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
