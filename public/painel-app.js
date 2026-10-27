@@ -2469,6 +2469,52 @@ const ANDON_SYNC = {
     window.embList = ch.embarques;
     return true;
   },
+  // v0.0.558: TERCEIROS — lista de fornecedores com aba própria (escrita admin-only)
+  async pushTerc(list){
+    if(!this.connected()) return false;
+    if(document.body.classList.contains('viewerMode')) return false;
+    const body = {
+      cycle_id: 'flrv0lcbha5hh5v', event_type: 'system', occurred_at: new Date().toISOString(),
+      reason: 'Fornecedores (terceiros) do Andon', source: 'andon-terceiros',
+      changes: { terceiros: list||[], rev: Date.now() },
+      before_snapshot: { field: 'andon_terceiros', value: 'v'+Date.now() }
+    };
+    const r = await fetch(this.api+'/api/collections/reprogramming_events/records', { method:'POST', headers:this.headers(), body: JSON.stringify(body) });
+    if(r.status===400||r.status===401||r.status===403){ this._authFail(); return 'auth'; }
+    if(!r.ok){ throw new Error('push terceiros falhou ('+r.status+')'); }
+    this.lastPush = Date.now(); this.expired = false;
+    if(this.onPushed){ try{ this.onPushed(); }catch(e){} }
+    return true;
+  },
+  async syncTercFromServer(){
+    if(!this.connected()) return false;
+    const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-terceiros')";
+    const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
+    const r = await fetch(url, {headers:this.headers()});
+    if(!r.ok) return false;
+    const d = await r.json();
+    if(!d.items || !d.items.length) return false;
+    const ch = d.items[0].changes || {};
+    if(!Array.isArray(ch.terceiros)) return false;
+    if(Number(localStorage.getItem('andon|terc-rev')||0) > Number(ch.rev||0)) return false;
+    localStorage.setItem(TERC_KEY, JSON.stringify(ch.terceiros));
+    window.tercList = ch.terceiros; tercRenderTabs();
+    localStorage.setItem('andon|terc-rev', String(ch.rev||0));
+    return true;
+  },
+  async pullTercPublic(){
+    const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-terceiros')";
+    const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
+    const r = await fetch(url);
+    if(!r.ok) return false;
+    const d = await r.json();
+    if(!d.items || !d.items.length) return false;
+    const ch = d.items[0].changes || {};
+    if(!Array.isArray(ch.terceiros)) return false;
+    localStorage.setItem(TERC_KEY, JSON.stringify(ch.terceiros));
+    window.tercList = ch.terceiros; tercRenderTabs();
+    return true;
+  },
   async pullPublic(){
     const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-draft')";
     const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
@@ -2953,14 +2999,17 @@ function showView(v){
   // O display inline funciona como segunda proteção contra CSS quebrado/futuro.
   if(v==='ent') window.UNID='C';
   if(v==='entv') window.UNID='V';
+  if(v==='terc' && tercSel) window.UNID='T:'+tercSel;
   // v0.0.445: trocar de fábrica reconstrói o card (dias/tabela) com as declarações da unidade
-  if((v==='ent'||v==='entv') && typeof progBuildFromDecls==='function' && typeof declDraft!=='undefined' && Array.isArray(declDraft)){
+  if((v==='ent'||v==='entv'||v==='terc') && typeof progBuildFromDecls==='function' && typeof declDraft!=='undefined' && Array.isArray(declDraft)){
     try{ progBuildFromDecls(); progDia=null; progDate=null; renderProg(); }catch(e){}
   }
   const views = [
     ['nf','viewNf'],
     ['ent','viewEnt'],
     ['entv','viewEnt'],
+    ['terc','viewEnt'],
+    ['entu','viewUni'],
     ['pa','viewProgAuto'],
     ['fat','viewFat'],
     ['hh','viewHH'],
@@ -2975,19 +3024,20 @@ function showView(v){
     e.style.display=active?'block':'none';
     e.setAttribute('aria-hidden', active?'false':'true');
   });
-  const tabs = [['nf','tabNf'],['ent','tabEnt'],['entv','tabEntV'],['pa','tabPA'],['fat','tabFat'],['hh','tabHH'],['hs','tabHS'],['af','tabAF']];
+  const tabs = [['nf','tabNf'],['ent','tabEnt'],['entv','tabEntV'],['entu','tabEntU'],['pa','tabPA'],['fat','tabFat'],['hh','tabHH'],['hs','tabHS'],['af','tabAF']];
   tabs.forEach(function(pair){const e=document.getElementById(pair[1]);if(e)e.classList.toggle('on',pair[0]===v);});
   if(v==='pa' && !window._paInit){ renderProgAuto(); window._paInit = true; }
   if((v==='ent'||v==='entv') && !window._apInit){ apInitModal(); window._apInit = true; }
   if(v==='fat' && !window._fatInit){ renderFat(); window._fatInit = true; }
   if(v==='nf' && !window._nfInit){ renderNf(); window._nfInit = true; }
-  if((v==='ent'||v==='entv') && !window._rlpvInit){ rlpvInitModal(); window._rlpvInit=true; rlpvCache=rlpvAllLoad(); }
+  if((v==='ent'||v==='entv'||v==='terc') && !window._rlpvInit){ rlpvInitModal(); window._rlpvInit=true; rlpvCache=rlpvAllLoad(); }
   if(v==='nf' && window._nfCharts){ setTimeout(function(){ window._nfCharts.forEach(function(c){ c.resize(); }); }, 50); }
   if((v==='ent'||v==='entv') && (gChart||tChart)){ setTimeout(function(){ if(gChart) gChart.resize(); if(tChart) tChart.resize(); }, 50); }
-  if(v==='ent'||v==='entv'){ progBuildFromDecls(); progDia=null; progDate=null; renderProg(); }
+  if(v==='ent'||v==='entv'||v==='terc'){ progBuildFromDecls(); progDia=null; progDate=null; renderProg(); }
   if(v==='hh' && window.hhRender){try{window.hhRender();}catch(e){}}
-  const lbl=document.getElementById('unidLabel'); if(lbl) lbl.textContent = (window.UNID==='V')?'Vinhedo':'Curitiba';
-  const lblE=document.getElementById('embUnidLabel'); if(lblE) lblE.textContent = (window.UNID==='V')?'Vinhedo':'Curitiba';
+  const lbl=document.getElementById('unidLabel'); if(lbl) lbl.textContent = tercLabel(window.UNID||'C');
+  const lblE=document.getElementById('embUnidLabel'); if(lblE) lblE.textContent = tercLabel(window.UNID||'C');
+  if(v==='entu'){ try{ uniRender(); }catch(e){ console.error('uniRender',e); } }
 }
 
 // ACESSIBILIDADE: scope nas tabelas + labels dos inputs sem label explícito
@@ -3752,8 +3802,19 @@ function embNextId(){ return 'EMB-'+Date.now()+'-'+(embSeq++); }
 let embDia = null, embDate = null; // dia selecionado na grade (modelo da produção)
 function embDaUnid(){ const u=window.UNID||'C'; return (window.embList||[]).filter(function(e){ return (e.local||'C')===u; }); }
 function embTransito(cli){
-  const tab = (window.UNID==='V') ? TRANSITO_VINHEDO : TRANSITO;
-  const cid = cidadeDeOrig(cli, window.UNID==='V'?'V':undefined);
+  const u=window.UNID||'C';
+  // FORNECEDOR (terceiro): prazo próprio em DU, se cadastrado; senão cai na tabela por destino
+  if(String(u).indexOf('T:')===0){
+    const t=tercDe(String(u).slice(2));
+    const cid=cidadeDeOrig(cli, undefined);
+    const tab=TRANSITO;
+    const base=cid&&tab[cid]?tab[cid]:null;
+    if(t && t.prazoDU) return {cid:(t.nome+' (prazo '+t.prazoDU+' DU)'), tdu:t.prazoDU, km:base?base[1]:null, fornecedor:t.nome};
+    if(!base) return null;
+    return {cid:base?cid:t.nome, tdu:base[0], km:base[1], fornecedor:t?t.nome:null};
+  }
+  const tab = (u==='V') ? TRANSITO_VINHEDO : TRANSITO;
+  const cid = cidadeDeOrig(cli, u==='V'?'V':undefined);
   if(!cid || !tab[cid]) return null;
   return {cid:cid, tdu:tab[cid][0], km:tab[cid][1]};
 }
@@ -4105,6 +4166,174 @@ function embRenderTabela(){
   const _origRP = window.renderProg;
   if(typeof _origRP==='function'){ window.renderProg=function(){ try{ _origRP.apply(this,arguments); }finally{ try{ embRender(); }catch(e){ console.error('embRender',e); } } }; }
   else { document.addEventListener('DOMContentLoaded', function(){ try{ embRender(); }catch(e){} }); }
+})();
+
+// ==================== TERCEIROS (fornecedores) + ABA UNIFICADA (v0.0.558 — Dante 27/10) ====================
+// PCP clona a aba Programação para um FORNECEDOR: mesmos parâmetros de Curitiba/Vinhedo
+// (grade de dias, calendário útil, tabela, embarques). A unidade vira um "local" adicional
+// em declDraft[].local e embList[].local — nada muda no modelo de dados existente.
+const TERC_KEY = 'terc|fornecedores';
+function tercLoad(){ try{ const a=JSON.parse(localStorage.getItem(TERC_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function tercSave(a){
+  try{ localStorage.setItem(TERC_KEY, JSON.stringify(a||[])); }catch(e){}
+  if(window.ANDON_SYNC && window.ANDON_SYNC.connected()){
+    localStorage.setItem('andon|terc-rev', String(Date.now()));
+    try{ window.ANDON_SYNC.pushTerc(a||[]).catch(function(){}); }catch(e){}
+  }
+}
+window.tercList = tercLoad();
+// código da unidade do fornecedor = 'T:<id>' (nunca colide com 'C'/'V')
+function tercDe(id){ return (window.tercList||[]).find(function(t){ return t.id===id; })||null; }
+function tercLabel(local){
+  if(local==='V') return 'Vinhedo';
+  if(local==='C') return 'Curitiba';
+  if(String(local||'').indexOf('T:')===0){ const t=tercDe(String(local).slice(2)); return t?t.nome:'Fornecedor'; }
+  return 'Curitiba';
+}
+window.tercLabel = tercLabel;
+// TODAS as unidades existentes (fábricas + fornecedores) — usado pela visão unificada
+function todasUnidades(){
+  const out=[{local:'C', nome:'Curitiba'}, {local:'V', nome:'Vinhedo'}];
+  (window.tercList||[]).forEach(function(t){ out.push({local:'T:'+t.id, nome:t.nome, forn:t}); });
+  return out;
+}
+window.todasUnidades = todasUnidades;
+// PCP cria a aba do fornecedor
+function pcpAddTerceiro(){
+  const u=(function(){try{return (JSON.parse(localStorage.getItem('andon|user')||'{}').role)||'';}catch(e){return '';}})();
+  const conectado=!!(window.ANDON_SYNC && window.ANDON_SYNC.connected());
+  if(!conectado || u!=='admin'){ alert('Somente o PCP (admin logado) pode criar aba de fornecedor.'); return; }
+  const nome=(prompt('Nome do fornecedor (terceiro) — será o nome da aba:')||'').trim();
+  if(!nome) return;
+  if((window.tercList||[]).some(function(t){ return t.nome.toLowerCase()===nome.toLowerCase(); })){ alert('Já existe fornecedor com esse nome.'); return; }
+  const prazo=prompt('Prazo de entrega do fornecedor em dias úteis (vazio = usar trânsito por destino):')||'';
+  const id='F'+Date.now();
+  window.tercList.push({id:id, nome:nome, prazoDU:(prazo?Number(prazo):null), criado:new Date().toISOString()});
+  tercSave(window.tercList);
+  tercRenderTabs();
+  const st=document.getElementById('declStatus');
+  if(st) st.textContent='Fornecedor "'+nome+'" criado — aba pronta com os mesmos parâmetros';
+}
+window.pcpAddTerceiro = pcpAddTerceiro;
+// desenha os botões de aba dos fornecedores
+function tercRenderTabs(){
+  const wrap=document.getElementById('tabTercWrap'); if(!wrap) return;
+  const u=(function(){try{return (JSON.parse(localStorage.getItem('andon|user')||'{}').role)||'';}catch(e){return '';}})();
+  const ativo=(window.UNID||'C');
+  wrap.innerHTML=(window.tercList||[]).map(function(t){
+    const loc='T:'+t.id;
+    const on=ativo===loc;
+    return '<button class="tercTab'+(on?' on':'')+'" onclick="showView(\'terc\')" data-terc="'+t.id+'" style="'+(on?'':'background:#f8fafc;')+'"><span class="ic">🏭</span> '+escH(t.nome)+(u==='admin'?' <span title="Remover fornecedor" onclick="event.stopPropagation();tercRemove(\''+t.id+'\')" style="color:#991b1b;font-weight:800;cursor:pointer;padding:0 3px">×</span>':'')+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(wrap.querySelectorAll('[data-terc]'), function(b){
+    b.addEventListener('click', function(){ tercSel=b.getAttribute('data-terc'); window.UNID='T:'+tercSel; });
+  });
+}
+window.tercRenderTabs = tercRenderTabs;
+let tercSel=null;
+function tercRemove(id){
+  const t=tercDe(id); if(!t) return;
+  if(!confirm('Remover a aba do fornecedor "'+t.nome+'"?\n\nOs embarques e a programação dele continuam salvos no rascunho (não apagamos histórico) — a aba só deixa de aparecer.')) return;
+  window.tercList=window.tercList.filter(function(x){ return x.id!==id; });
+  tercSave(window.tercList); tercRenderTabs();
+}
+window.tercRemove = tercRemove;
+// ---------- ABA UNIFICADA DE EMBARQUES (todas as fábricas + fornecedores) ----------
+let uniDia=null;
+function uniRender(){
+  const sel=document.getElementById('uniSemSel');
+  if(sel && !sel.options.length){
+    const hj=new Date(); const dow=(hj.getDay()+6)%7;
+    const segHj=new Date(hj); segHj.setDate(hj.getDate()-dow);
+    const segIso=isoD(segHj);
+    (SEM||[]).forEach(function(s){
+      const seg=semanaSegunda(s); if(!seg) return;
+      const fimD=new Date(seg+'T12:00:00'); fimD.setDate(fimD.getDate()+4);
+      const p=seg.split('-'); const num=(function(d){const t=new Date(d);t.setDate(t.getDate()+3);const j4=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-j4)/86400000-3+((j4.getDay()+6)%7))/7);})(new Date(seg+'T12:00:00'));
+      const o=document.createElement('option'); o.value=seg;
+      o.textContent='S'+num+' · '+p[2]+'.'+p[1]+'-'+String(fimD.getDate()).padStart(2,'0')+'.'+String(fimD.getMonth()+1).padStart(2,'0')+(seg===segIso?' (atual)':'');
+      if(seg===segIso) o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function(){ uniDia=null; uniRender(); });
+  }
+  const segStr=sel?sel.value:null;
+  if(!segStr) return;
+  const seg=new Date(segStr+'T12:00:00'); const fim=new Date(seg.getTime()); fim.setDate(fim.getDate()+4);
+  // todos os embarques de TODAS as unidades, na semana
+  const todos=[];
+  (window.embList||[]).forEach(function(e){
+    if(e.status==='Cancelado') return;
+    const iso=e.coletaIso?progIso(e.coletaIso):'';
+    const d=iso?new Date(iso+'T12:00:00'):null;
+    if(!d || d<seg || d>fim) return;
+    todos.push({e:e, iso:iso, unid:tercLabel(e.local||'C'), local:e.local||'C'});
+  });
+  todos.sort(function(a,b){ return a.iso.localeCompare(b.iso) || a.unid.localeCompare(b.unid); });
+  // grade de dias da semana
+  const nomeDia=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const diasBox=document.getElementById('uniDias');
+  if(diasBox){
+    const porDia={};
+    todos.forEach(function(x){ porDia[x.iso]=(porDia[x.iso]||0)+1; });
+    let hb='<button class="dlbtn'+(!uniDia?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="">Todos ('+todos.length+')</button>';
+    for(let i=0;i<6;i++){
+      const d=new Date(seg); d.setDate(d.getDate()+i);
+      const iso=isoD(d);
+      const n=porDia[iso]||0;
+      const sel2=uniDia===iso;
+      hb+='<button class="dlbtn'+(sel2?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="'+iso+'">'+nomeDia[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+'/10 ('+n+')</button>';
+    }
+    diasBox.innerHTML=hb;
+    if(!diasBox._uniBound){ diasBox._uniBound=true; diasBox.addEventListener('click', function(ev){
+      const b=ev.target.closest('[data-udia]'); if(!b) return;
+      uniDia=b.getAttribute('data-udia')||null; uniRender();
+    }); }
+  }
+  const lista=uniDia?todos.filter(function(x){ return x.iso===uniDia; }):todos;
+  let tq=0;
+  document.getElementById('tbbUni').innerHTML = lista.length ? lista.map(function(x){
+    const e=x.e; tq+=Number(e.qtd)||0;
+    const tagCls = e.classe==='smkt' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT</span>'
+      : e.classe==='dia' ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ DO DIA</span>'
+      : e.classe==='d1' ? '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 D+1</span>'
+      : e.classe==='nec' ? '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PRODUÇÃO</span>'
+      : '<span style="color:#94a3b8">—</span>';
+    const stTag = e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
+      : e.status==='Aceito' ? '<span class="tagP">ACEITO</span>' : '<span class="tagS">SUGERIDO</span>';
+    return '<tr><td><b>'+dtBR(x.iso)+'</b></td><td><b>'+escH(x.unid)+'</b></td>'+
+      '<td><div class="cod">'+escH(e.cod)+'</div><div class="dsc">'+escH((e.desc||'').slice(0,32))+'</div></td>'+
+      '<td>'+escH(e.pv||'—')+' '+escH((e.cliente||'').slice(0,18))+'</td>'+
+      '<td class="num">'+NF.format(Number(e.qtd)||0)+'</td><td>'+escH(e.cid||'—')+'</td>'+
+      '<td>'+(e.entregaIso?dtBR(e.entregaIso):'—')+'</td><td>'+tagCls+'</td><td>'+stTag+'</td></tr>';
+  }).join('') : '<tr><td colspan="9">Nenhum embarque na semana para as unidades existentes.</td></tr>';
+  document.getElementById('trfUni').innerHTML='<td colspan="4"><b>'+lista.length+' embarques</b>'+(uniDia?' · '+dtBR(uniDia):' · semana inteira')+'</td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="4"></td>';
+  const info=document.getElementById('uniInfo');
+  if(info){
+    const porUnid={};
+    lista.forEach(function(x){ porUnid[x.unid]=(porUnid[x.unid]||0)+1; });
+    info.textContent=Object.keys(porUnid).length?Object.keys(porUnid).map(function(k){return k+': '+porUnid[k];}).join(' · '):'sem embarques';
+  }
+}
+window.uniRender = uniRender;
+
+// boot: desenha as abas de fornecedores e esconde o botão de criação para quem não é admin
+(function(){
+  function paint(){
+    try{ tercRenderTabs(); }catch(e){}
+    const u=(function(){try{return (JSON.parse(localStorage.getItem('andon|user')||'{}').role)||'';}catch(e){return '';}})();
+    const btn=document.getElementById('tabAddTerc');
+    if(btn) btn.style.display = (u==='admin') ? '' : 'none';
+  }
+  paint();
+  setInterval(paint, 3000);
+  // puxa a lista de fornecedores do servidor (leitura pública quando não conectado)
+  setTimeout(function(){
+    try{
+      const p = (window.ANDON_SYNC && window.ANDON_SYNC.connected()) ? window.ANDON_SYNC.syncTercFromServer() : window.ANDON_SYNC.pullTercPublic();
+      if(p && p.then) p.then(function(){ tercRenderTabs(); }).catch(function(){});
+    }catch(e){}
+  }, 1500);
 })();
 
 
