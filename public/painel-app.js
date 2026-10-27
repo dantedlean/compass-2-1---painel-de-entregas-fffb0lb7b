@@ -3733,6 +3733,20 @@ function embSave(list){
   }
 }
 window.embList = embLoad();
+// MIGRAÇÃO v0.0.552 (Dante 01:13): a versão anterior gerava sugestões direto no rascunho e
+// deixava os dias cheios. Limpa UMA vez por navegador os itens antigos de sugestão automática.
+(function(){
+  try{
+    if(localStorage.getItem('emb|mig552')==='1') return;
+    const antes=(window.embList||[]).length;
+    window.embList=(window.embList||[]).filter(function(e){
+      return !(String(e.obs||'').indexOf('sugestão automática')>=0 || e.status==='Sugerido');
+    });
+    try{ localStorage.setItem(EMB_KEY, JSON.stringify(window.embList)); }catch(x){}
+    localStorage.setItem('emb|mig552','1');
+    if(antes!==window.embList.length) console.log('embarques: '+antes+' → '+window.embList.length+' (sugestões antigas removidas)');
+  }catch(e){}
+})();
 let embSeq = 0;
 function embNextId(){ return 'EMB-'+Date.now()+'-'+(embSeq++); }
 let embDia = null, embDate = null; // dia selecionado na grade (modelo da produção)
