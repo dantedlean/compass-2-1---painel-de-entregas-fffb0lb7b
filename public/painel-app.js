@@ -3794,9 +3794,13 @@ function embRender(){
   }
   const list=embDaUnid();
   const hj=new Date(); const hojeISO=hj.getFullYear()+'-'+String(hj.getMonth()+1).padStart(2,'0')+'-'+String(hj.getDate()).padStart(2,'0');
-  document.getElementById('trhE').innerHTML='<th>Data coleta</th><th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino (trânsito)</th><th>Entrega cliente</th><th>Status</th><th>Coletado em / Transportadora</th><th></th>';
+  document.getElementById('trhE').innerHTML='<th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino (trânsito)</th><th>Entrega cliente</th><th>Status</th><th>Coletado em / Transportadora</th><th></th>';
   let tq=0, tc=0;
-  const rows=list.slice().sort(function(a,b){ return String(a.coletaIso||'').localeCompare(String(b.coletaIso||'')); }).map(function(e,ix){
+  // AGENDA POR DIA (v0.0.547 — pedido Dante): linhas agrupadas sob cabeçalho do dia,
+  // igual à Programação de produção. data-eix continua = índice na lista ordenada.
+  const ordenada=list.slice().sort(function(a,b){ return String(a.coletaIso||'').localeCompare(String(b.coletaIso||'')); });
+  const nomeDiaE=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const rows=ordenada.map(function(e,ix){
     tq+=Number(e.qtd)||0; if(e.status==='Coletado') tc+=Number(e.qtd)||0;
     const t=e.tdu?('DU '+e.tdu+' · '+e.km+' km'):'fora da tabela';
     const stTag = e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
@@ -3827,9 +3831,32 @@ function embRender(){
         (e.status==='Sugerido' ? '<button class="exRl" data-eact="descartar" title="Descarta a sugestão (volta a aparecer se a semana for re-gerada)">Descartar</button>' : '')+
         '<button class="exRl" data-eact="del" title="Remove o embarque do rascunho">✕</button>'+
       '</td></tr>';
-  }).join('') || '<tr><td colspan="9">Sem embarques nesta unidade. Use "↯ Gerar sugestões da semana" (coleta máx. = entrega − trânsito) ou "+ Embarque manual".</td></tr>';
-  document.getElementById('tbbE').innerHTML=rows;
-  document.getElementById('trfE').innerHTML='<td>'+list.filter(function(e){return e.status!=='Cancelado';}).length+' embarques</td><td colspan="2"></td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="3"></td><td class="num" style="color:#166534;font-weight:800">coletado '+NF.format(tc)+'</td><td></td>';
+  });
+  const rowsSplit=rows;
+  // cabeçalhos de dia: percorre a lista ordenada e insere uma linha de dia antes de cada grupo
+  const trs=[];
+  let diaAtual=null, nDia=0, qDia=0;
+  const cells=ordenada.map(function(e,ix){ return {e:e, ix:ix}; });
+  const htmlDia=function(iso,n,q){
+    let dt=null; try{ dt=new Date(iso+'T12:00:00'); }catch(e){}
+    const rot=dt?nomeDiaE[dt.getDay()]+' · '+dtBR(iso):'Sem data';
+    const hj=new Date(); const hjIso=hj.getFullYear()+'-'+String(hj.getMonth()+1).padStart(2,'0')+'-'+String(hj.getDate()).padStart(2,'0');
+    const hoje=iso===hjIso;
+    return '<tr class="emb-dia"><td colspan="8" style="background:'+(hoje?'#1e3a8a':'#f1f5f9')+';color:'+(hoje?'#fff':'#334155')+';font-weight:800;font-size:12.5px;padding:7px 10px;border-radius:8px;margin:2px 0">'+(hoje?'📍 HOJE — ':'📅 ')+rot+' — '+n+' embarque(s) · '+NF.format(q)+' un</td></tr>';
+  };
+  cells.forEach(function(c){
+    const iso=c.e.coletaIso||'';
+    if(diaAtual===null || iso!==diaAtual){
+      if(diaAtual!==null) trs.push(htmlDia(diaAtual,nDia,qDia));
+      diaAtual=iso; nDia=0; qDia=0;
+    }
+    if(c.e.status!=='Cancelado'){ nDia++; qDia+=Number(c.e.qtd)||0; }
+    trs.push(rowsSplit[c.ix]);
+  });
+  if(diaAtual!==null) trs.push(htmlDia(diaAtual,nDia,qDia));
+  const rowsFinal = trs.length ? trs.join('') : '<tr><td colspan="8">Sem embarques nesta unidade. Use "↯ Gerar sugestões da semana" (coleta máx. = entrega − trânsito) ou "+ Embarque manual".</td></tr>';
+  document.getElementById('tbbE').innerHTML=rowsFinal;
+  document.getElementById('trfE').innerHTML='<td>'+list.filter(function(e){return e.status!=='Cancelado';}).length+' embarques</td><td colspan="1"></td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="3"></td><td class="num" style="color:#166534;font-weight:800">coletado '+NF.format(tc)+'</td><td></td>';
   embRenderChain();
   embPoka();
 }
