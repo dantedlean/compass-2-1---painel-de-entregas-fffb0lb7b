@@ -3766,6 +3766,20 @@ function embSugestoes(){
   if(!segStr) return [];
   const seg=new Date(segStr+'T12:00:00'); const fim=new Date(seg.getTime()); fim.setDate(fim.getDate()+4);
   const out=[]; const seen={};
+  const hojeIso=isoD(new Date());
+  // ---- produção programada por código/dia (para as 4 categorias) ----
+  const progPorCod={}; // cod -> {iso: qtd}
+  declDaUnid().forEach(function(d){
+    if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0) return;
+    const iso=progIso(d.data);
+    progPorCod[d.cod]=progPorCod[d.cod]||{};
+    progPorCod[d.cod][iso]=(progPorCod[d.cod][iso]||0)+Number(d.qtd);
+  });
+  const progAte=function(cod, isoLimite){
+    const m=progPorCod[cod]||{};
+    let t=0; Object.keys(m).forEach(function(k){ if(!isoLimite||k<=isoLimite) t+=m[k]; }); return t;
+  };
+  const progNoDia=function(cod, iso){ return ((progPorCod[cod]||{})[iso])||0; };
   DATA.rows.forEach(function(r){
     if(!r.iso || r.frete) return;
     if(Number(r.qtd)<=0) return;
@@ -3777,12 +3791,30 @@ function embSugestoes(){
     if(ja) return;
     const k=String(r.pv)+'|'+r.codigo;
     if(seen[k]) return; seen[k]=1;
+    // ---- as 4 categorias (Dante 27/10 01:20) ----
+    // 1) smkt  : produto pronto no supermercado → embarque CERTO
+    // 2) dia   : programado NO MESMO dia da coleta → RISCO (produz e embarca igual)
+    // 3) d1    : programado D+1 antes da coleta → fábrica em um dia, embarca no outro
+    // 4) nec   : necessidade do cliente sem produção programada até a coleta → AVISO
     let sm=0; try{ sm=Math.max(0,Number(smktSaldo(r.codigo))||0); }catch(e){}
-    out.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:Number(r.qtd)||0,
+    const qNecess=Number(r.qtd)||0;
+    const pNoDia=progNoDia(r.codigo, coletaIso);
+    const pAte=progAte(r.codigo, coletaIso);
+    const diaAnt=isoD(subDU(new Date(coletaIso+'T12:00:00'),1));
+    const pDiaAnt=progNoDia(r.codigo, diaAnt);
+    let classe, motivo;
+    if(sm>0){ classe='smkt'; motivo='produto pronto no SMKT ×'+NF.format(Math.min(sm,qNecess)); }
+    else if(pAte>=qNecess){ classe='d1'; motivo='programado até a coleta ('+NF.format(pAte)+' un)'; }
+    else if(pNoDia>0){ classe='dia'; motivo='RISCO — produção no MESMO dia da coleta ('+NF.format(pNoDia)+' un)'; }
+    else if(pDiaAnt>0){ classe='d1'; motivo='fábrica em '+dtBR(diaAnt)+', embarca '+dtBR(coletaIso)+' ('+NF.format(pDiaAnt)+' un)'; }
+    else { classe='nec'; motivo='necessidade do cliente SEM produção programada até a coleta'; }
+    out.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:qNecess,
       coletaIso:coletaIso, entregaIso:r.iso, cid:t.cid, tdu:t.tdu, km:t.km,
-      local:window.UNID||'C', classe:(sm>0)?'certa':'confirmar'});
+      local:window.UNID||'C', classe:classe, motivo:motivo, progAte:pAte, progNoDia:pNoDia, diaAnt:diaAnt});
   });
-  out.sort(function(a,b){ return a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod); });
+  // ordena: avisos primeiro, depois por data
+  const ordem={nec:0,dia:1,d1:2,smkt:3};
+  out.sort(function(a,b){ return (ordem[a.classe]-ordem[b.classe]) || a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod); });
   return out;
 }
 // grade de dias da semana selecionada — SEMPRE 6 dias Seg-Sáb, VAZIOS por padrão (modelo da produção)
@@ -3912,14 +3944,16 @@ function embRenderTabela(){
     const t=e.tdu?('DU '+e.tdu+' · '+e.km+' km'):'fora da tabela';
     const stTag = e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
       : e.status==='Aceito' ? '<span class="tagP">ACEITO</span>'
-      : (e.classe==='certa' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SUGESTÃO CERTA (SMKT)</span>'
-        : '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ A CONFIRMAR (só produção programada)</span>');
+      : (e.classe==='smkt' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT — certo</span>'
+        : e.classe==='dia' ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ DO DIA — risco</span>'
+        : e.classe==='d1' ? '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 D+1</span>'
+        : '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PRODUÇÃO</span>');
     const selo='';
     const coletadoBox = e.status==='Coletado'
       ? (e.coletaReal||'—')+(e.transp?' · '+escH(e.transp):'')
       : '<input type="date" data-e="creal" value="'+escH(e.coletaReal||'')+'" style="width:118px;font-size:11.5px;padding:3px"><input type="text" data-e="transp" value="'+escH(e.transp||'')+'" placeholder="Transportadora" style="width:110px;font-size:11.5px;padding:3px">';
     return '<tr data-eix="'+ix+'"'+(e.status==='Cancelado'?' style="opacity:.45"':'')+'>'+
-      '<td><div class="cod">'+escH(e.cod)+'</div><div class="dsc">'+escH((e.desc||'').slice(0,40))+'</div>'+selo+'</td>'+
+      '<td><div class="cod">'+escH(e.cod)+'</div><div class="dsc">'+escH((e.desc||'').slice(0,40))+'</div>'+selo+(e.status==='Sugerido'&&e.obs&&String(e.obs).indexOf('sugestão:')===0?'<div style="font-size:9.5px;color:#64748b;margin-top:1px">'+escH(String(e.obs).replace('sugestão: ','').slice(0,44))+'</div>':'')+'</td>'+
       '<td><b>'+escH(e.pv||'—')+'</b> '+escH((e.cliente||'').slice(0,22))+'</td>'+
       '<td class="num"><input type="number" min="0" step="1" data-e="qtd" value="'+(Number(e.qtd)||0)+'" style="width:74px;text-align:right;font-size:11.5px;padding:3px"></td>'+
       '<td>'+escH(e.cid||'—')+' <span style="font-size:10px;color:#64748b">('+t+')</span></td>'+
@@ -3977,21 +4011,36 @@ function embRenderTabela(){
     if(box.style.display==='block'){ box.style.display='none'; return; } // toggle
     const sug=embSugestoes();
     if(!sug.length){ alert('Nada a sugerir: nenhum PV com coleta máx. nesta semana (ou todos já embarcados).'); return; }
-    const nC=sug.filter(function(x){return x.classe==='certa';}).length;
-    box.innerHTML='<div style="font-weight:800;font-size:12.5px;color:#1e3a8a;margin-bottom:6px">Sugestões da semana — '+sug.length+' item(ns): '+nC+' ✓ certa(s) (SMKT) · '+(sug.length-nC)+' ⚠ a confirmar (só produção programada)</div>'+
-      '<div class="tblwrap" style="max-height:220px"><table style="font-size:11.5px"><thead><tr><th>Dia coleta</th><th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino</th><th>Entrega</th><th>Classe</th><th><label style="font-weight:600"><input type="checkbox" id="embSugAll" checked> todas</label></th></tr></thead><tbody>'+
+    // legenda das 4 categorias (Dante 27/10): SMKT certo · programado do dia (risco) · programado D+1 · necessidade sem produção
+    const cont={smkt:0,dia:0,d1:0,nec:0};
+    sug.forEach(function(x){ cont[x.classe]=(cont[x.classe]||0)+1; });
+    const tagClasse=function(c){
+      if(c==='smkt') return '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT — embarque certo</span>';
+      if(c==='dia')  return '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ PROGRAMADO DO DIA — risco</span>';
+      if(c==='d1')   return '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 PROGRAMADO D+1</span>';
+      return '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ NECESSIDADE — sem produção</span>';
+    };
+    box.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12.5px;font-weight:700">'+
+        '<span style="color:#166534">✓ SMKT '+cont.smkt+'</span>'+
+        '<span style="color:#991b1b">⚠ Do dia '+cont.dia+'</span>'+
+        '<span style="color:#1e3a8a">📦 D+1 '+cont.d1+'</span>'+
+        '<span style="color:#854d0e">⚠ Sem produção '+cont.nec+'</span>'+
+        '<span style="color:#64748b;font-weight:600">· '+sug.length+' no total</span>'+
+      '</div>'+
+      '<div class="tblwrap" style="max-height:260px"><table style="font-size:11.5px"><thead><tr><th>Coleta</th><th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino</th><th>Entrega</th><th>Categoria</th><th>Motivo</th><th><label style="font-weight:600"><input type="checkbox" id="embSugAll" checked> todas</label></th></tr></thead><tbody>'+
       sug.map(function(x,i){
-        const cl=x.classe==='certa'?'<span class="tagF" style="background:#dcfce7;color:#166534">✓ CERTA (SMKT)</span>':'<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ A CONFIRMAR</span>';
-        return '<tr><td>'+dtBR(x.coletaIso)+'</td><td>'+escH(x.cod)+' '+escH(x.desc.slice(0,26))+'</td><td><b>'+escH(x.pv)+'</b> '+escH(x.cliente.slice(0,18))+'</td><td class="num">'+NF.format(x.qtd)+'</td><td>'+escH(x.cid||'—')+'</td><td>'+dtBR(x.entregaIso)+'</td><td>'+cl+'</td><td><input type="checkbox" class="embSugChk" data-i="'+i+'" checked></td></tr>';
+        return '<tr><td>'+dtBR(x.coletaIso)+'</td><td>'+escH(x.cod)+' '+escH(x.desc.slice(0,24))+'</td><td><b>'+escH(x.pv)+'</b> '+escH(x.cliente.slice(0,16))+'</td><td class="num">'+NF.format(x.qtd)+'</td><td>'+escH(x.cid||'—')+'</td><td>'+dtBR(x.entregaIso)+'</td><td>'+tagClasse(x.classe)+'</td><td style="font-size:10.5px;color:#475569">'+escH(x.motivo||'')+'</td><td><input type="checkbox" class="embSugChk" data-i="'+i+'" checked></td></tr>';
       }).join('')+'</tbody></table></div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px;align-items:center"><button id="btnEmbSugOk" class="dlbtn" style="background:#16a34a;border-color:#16a34a;color:#fff">✓ Aplicar selecionadas</button><button id="btnEmbSugNo" class="dlbtn">Fechar</button><span class="note" style="margin:0">dias ficam vazios até você aplicar</span></div>';
+      '<div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><button id="btnEmbSugOk" class="dlbtn" style="background:#16a34a;border-color:#16a34a;color:#fff">✓ Aplicar selecionadas</button><button id="btnEmbSugNo" class="dlbtn">Fechar</button>'+
+      (cont.nec>0?'<span style="font-size:11.5px;font-weight:800;color:#991b1b">⚠ '+cont.nec+' item(ns) de necessidade do cliente SEM produção programada</span>':'')+
+      '</div>';
     box.style.display='block';
     document.getElementById('embSugAll').addEventListener('change', function(){ const on=this.checked; box.querySelectorAll('.embSugChk').forEach(function(c){ c.checked=on; }); });
     document.getElementById('btnEmbSugNo').addEventListener('click', function(){ box.style.display='none'; });
     document.getElementById('btnEmbSugOk').addEventListener('click', function(){
       const sel=[]; box.querySelectorAll('.embSugChk').forEach(function(c){ if(c.checked) sel.push(sug[Number(c.getAttribute('data-i'))]); });
       if(!sel.length){ alert('Nenhuma sugestão selecionada.'); return; }
-      sel.forEach(function(x){ window.embList.push({id:embNextId(), pv:x.pv, cliente:x.cliente, cod:x.cod, desc:x.desc, qtd:x.qtd, coletaIso:x.coletaIso, entregaIso:x.entregaIso, cid:x.cid, tdu:x.tdu, km:x.km, local:x.local, status:'Sugerido', classe:x.classe, criado:new Date().toISOString(), obs:'sugestão automática (distância)'}); });
+      sel.forEach(function(x){ window.embList.push({id:embNextId(), pv:x.pv, cliente:x.cliente, cod:x.cod, desc:x.desc, qtd:x.qtd, coletaIso:x.coletaIso, entregaIso:x.entregaIso, cid:x.cid, tdu:x.tdu, km:x.km, local:x.local, status:'Sugerido', classe:x.classe, criado:new Date().toISOString(), obs:'sugestão: '+(x.motivo||x.classe)}); });
       embSave(window.embList); box.style.display='none'; embRender();
       const st=document.getElementById('embStatus'); if(st) st.textContent=sel.length+' sugestão(ões) aplicada(s)';
     });
