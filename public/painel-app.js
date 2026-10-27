@@ -3933,8 +3933,8 @@ function embRenderTabela(){
         '<button class="exRl" data-eact="del" title="Remove o embarque do rascunho">✕</button>'+
       '</td></tr>';
   });
-  tb.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="8">Dia vazio — nenhum embarque em '+embDate+'. Use "↯ Gerar sugestões da semana" ou inclua um PV na barra acima.</td></tr>';
-  document.getElementById('trfE').innerHTML='<td>'+list.filter(function(e){return e.status!=='Cancelado';}).length+' embarques · '+embDate+'</td><td></td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="3"></td><td class="num" style="color:#166534;font-weight:800">coletado '+NF.format(tc)+'</td><td></td>';
+  tb.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="8">Dia vazio — nenhum embarque em '+embDate+'.</td></tr>';
+  document.getElementById('trfE').innerHTML='<td>'+list.filter(function(e){return e.status!=='Cancelado';}).length+' embarques</td><td></td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="3"></td><td class="num" style="color:#166534;font-weight:800">coletado '+NF.format(tc)+'</td><td></td>';
 }
 // tabela encadeada por produto (recolhida em <details>)
 // poka-yoke: embarque antes de produzir + produção realizada sem destino
