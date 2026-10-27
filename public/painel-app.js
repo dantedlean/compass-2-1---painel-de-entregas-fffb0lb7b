@@ -3829,7 +3829,7 @@ function embRender(){
       const bg=c<=0?'#f1f5f9':(t<=33?'#dcfce7':(t<=66?'#fef9c3':'#fecaca'));
       const fg=c<=0?'#94a3b8':(t<=33?'#166534':(t<=66?'#854d0e':'#991b1b'));
       const on=o.data===embDate;
-      return '<button data-d="'+o.dia+'" data-date="'+o.data+'" data-iso="'+o.iso+'" class="'+(on?'on':'')+'" style="background:'+bg+';color:'+fg+';'+(on?'outline:2px solid #1e3a8a;':'')+'">'+o.dia+' · '+o.data+(c>0?'<div style="font-size:9.5px;font-weight:700;margin-top:2px">🚚 '+NF.format(c)+' un</div>':'')+'</button>';
+      return '<button data-d="'+o.dia+'" data-date="'+o.data+'" data-iso="'+o.iso+'" class="'+(on?'on':'')+'"'+(o.vazia?' style="opacity:.55" title="Sábado — sempre vazio (planejamento é Seg-Sex)"':'')+'>'+o.dia+' · '+o.data+'</button>';
     }).join('');
     if(!box._embBound){ box._embBound=true; box.addEventListener('click', function(ev){
       const b=ev.target.closest('[data-date]'); if(!b) return;
@@ -3838,6 +3838,20 @@ function embRender(){
       b.classList.add('on');
       embRenderTabela();
     }); }
+    // pintura idêntica ao paintProgDayButtons (calor por carga + qtd no rodapé do botão)
+    Array.prototype.forEach.call(box.children, function(b){
+      const iso=b.getAttribute('data-iso');
+      const c=carga[iso]||0;
+      const t=Math.round(c/maxC*100);
+      const bgB=c<=0?'#f1f5f9':(t<=33?'#dcfce7':(t<=66?'#fef9c3':'#fecaca'));
+      const fgB=c<=0?'#94a3b8':(t<=33?'#166534':(t<=66?'#854d0e':'#991b1b'));
+      b.style.background=bgB; b.style.color=fgB;
+      b.style.display='inline-block'; b.style.minWidth='92px'; b.style.padding='6px 10px';
+      b.title='Carga: '+NF.format(c)+' un'+(c<=0?' — dia vazio':'')+' · '+t+'% do dia mais cheio';
+      let inner='<div style="font-weight:800">'+b.getAttribute('data-d')+' · '+b.getAttribute('data-date')+'</div>';
+      if(c>0) inner+='<div style="font-size:9.5px;font-weight:700;margin-top:2px">🚚 '+NF.format(c)+' un</div>';
+      b.innerHTML=inner;
+    });
   }
   // toggle da visão encadeada (admin)
   const chainTgl=document.getElementById('embChainToggle');
@@ -4041,16 +4055,41 @@ function embPoka(){
     else if(act==='descartar'){ if(!confirm('Descartar esta sugestão de embarque?')) return; e.status='Cancelado'; e.obs=(e.obs||'')+' · descartado'; embSave(window.embList); embRenderTabela(); }
     else if(act==='del'){ if(!confirm('Remover este embarque do rascunho?')) return; window.embList.splice(globalIndexOf(e),1); embSave(window.embList); embRenderTabela(); }
   });
-  // gerar sugestões da semana selecionada (classificação Dante: SMKT=certa / programado=a confirmar)
+  // gerar sugestões da semana selecionada — PREVIEW (dias ficam vazios até aplicar)
   const bs=document.getElementById('btnEmbSug');
   if(bs && !bs._embBound){ bs._embBound=true; bs.addEventListener('click', function(){
+    const box=document.getElementById('embSugBox'); if(!box) return;
+    if(box.style.display==='block'){ box.style.display='none'; return; } // toggle
     const sug=embSugestoes();
     if(!sug.length){ alert('Nada a sugerir: nenhum PV com coleta máx. nesta semana (ou todos já embarcados).'); return; }
     const nC=sug.filter(function(x){return x.classe==='certa';}).length;
-    if(!confirm('Adicionar '+sug.length+' sugestão(ões) — '+nC+' certa(s) (SMKT) e '+(sug.length-nC)+' a confirmar (só produção programada)?')) return;
-    sug.forEach(function(x){ window.embList.push({id:embNextId(), pv:x.pv, cliente:x.cliente, cod:x.cod, desc:x.desc, qtd:x.qtd, coletaIso:x.coletaIso, entregaIso:x.entregaIso, cid:x.cid, tdu:x.tdu, km:x.km, local:x.local, status:'Sugerido', classe:x.classe, criado:new Date().toISOString(), obs:'sugestão automática (distância)'}); });
+    box.innerHTML='<div style="font-weight:800;font-size:12.5px;color:#1e3a8a;margin-bottom:6px">Sugestões da semana — '+sug.length+' item(ns): '+nC+' ✓ certa(s) (SMKT) · '+(sug.length-nC)+' ⚠ a confirmar (só produção programada)</div>'+
+      '<div class="tblwrap" style="max-height:220px"><table style="font-size:11.5px"><thead><tr><th>Dia coleta</th><th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino</th><th>Entrega</th><th>Classe</th><th><label style="font-weight:600"><input type="checkbox" id="embSugAll" checked> todas</label></th></tr></thead><tbody>'+
+      sug.map(function(x,i){
+        const cl=x.classe==='certa'?'<span class="tagF" style="background:#dcfce7;color:#166534">✓ CERTA (SMKT)</span>':'<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ A CONFIRMAR</span>';
+        return '<tr><td>'+dtBR(x.coletaIso)+'</td><td>'+escH(x.cod)+' '+escH(x.desc.slice(0,26))+'</td><td><b>'+escH(x.pv)+'</b> '+escH(x.cliente.slice(0,18))+'</td><td class="num">'+NF.format(x.qtd)+'</td><td>'+escH(x.cid||'—')+'</td><td>'+dtBR(x.entregaIso)+'</td><td>'+cl+'</td><td><input type="checkbox" class="embSugChk" data-i="'+i+'" checked></td></tr>';
+      }).join('')+'</tbody></table></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px;align-items:center"><button id="btnEmbSugOk" class="dlbtn" style="background:#16a34a;border-color:#16a34a;color:#fff">✓ Aplicar selecionadas</button><button id="btnEmbSugNo" class="dlbtn">Fechar</button><span class="note" style="margin:0">dias ficam vazios até você aplicar</span></div>';
+    box.style.display='block';
+    document.getElementById('embSugAll').addEventListener('change', function(){ const on=this.checked; box.querySelectorAll('.embSugChk').forEach(function(c){ c.checked=on; }); });
+    document.getElementById('btnEmbSugNo').addEventListener('click', function(){ box.style.display='none'; });
+    document.getElementById('btnEmbSugOk').addEventListener('click', function(){
+      const sel=[]; box.querySelectorAll('.embSugChk').forEach(function(c){ if(c.checked) sel.push(sug[Number(c.getAttribute('data-i'))]); });
+      if(!sel.length){ alert('Nenhuma sugestão selecionada.'); return; }
+      sel.forEach(function(x){ window.embList.push({id:embNextId(), pv:x.pv, cliente:x.cliente, cod:x.cod, desc:x.desc, qtd:x.qtd, coletaIso:x.coletaIso, entregaIso:x.entregaIso, cid:x.cid, tdu:x.tdu, km:x.km, local:x.local, status:'Sugerido', classe:x.classe, criado:new Date().toISOString(), obs:'sugestão automática (distância)'}); });
+      embSave(window.embList); box.style.display='none'; embRender();
+      const st=document.getElementById('embStatus'); if(st) st.textContent=sel.length+' sugestão(ões) aplicada(s)';
+    });
+  }); }
+  // limpar rascunho (admin) — dias voltam a ficar vazios
+  const bc=document.getElementById('btnEmbClean');
+  if(bc && !bc._embBound){ bc._embBound=true; bc.addEventListener('click', function(){
+    const n=embDaUnid().filter(function(e){return e.status!=='Cancelado';}).length;
+    if(!n){ alert('Rascunho já está vazio nesta unidade.'); return; }
+    if(!confirm('Remover TODOS os '+n+' embarque(s) do rascunho desta unidade ('+(window.UNID==='V'?'Vinhedo':'Curitiba')+')? A carteira MaxiProd não será alterada.')) return;
+    window.embList=window.embList.filter(function(e){ return (e.local||'C')!==(window.UNID||'C'); });
     embSave(window.embList); embRender();
-    const st=document.getElementById('embStatus'); if(st) st.textContent=sug.length+' sugestão(ões) — '+nC+' certa(s) (SMKT), '+(sug.length-nC)+' a confirmar';
+    const st=document.getElementById('embStatus'); if(st) st.textContent='Rascunho limpo — dias vazios';
   }); }
   // baixar Excel
   const bd=document.getElementById('btnEmbDl');
