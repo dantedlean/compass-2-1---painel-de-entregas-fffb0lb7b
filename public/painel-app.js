@@ -3802,11 +3802,13 @@ function embSugestoes(){
     const pAte=progAte(r.codigo, coletaIso);
     const diaAnt=isoD(subDU(new Date(coletaIso+'T12:00:00'),1));
     const pDiaAnt=progNoDia(r.codigo, diaAnt);
+    // ordem correta (27/10): SMKT > produzido ANTES da coleta (D+1) > só no dia da coleta (risco) > sem produção
+    const pAntes=progAte(r.codigo, diaAnt); // tudo programado até o dia ANTERIOR à coleta
     let classe, motivo;
     if(sm>0){ classe='smkt'; motivo='produto pronto no SMKT ×'+NF.format(Math.min(sm,qNecess)); }
-    else if(pAte>=qNecess){ classe='d1'; motivo='programado até a coleta ('+NF.format(pAte)+' un)'; }
-    else if(pNoDia>0){ classe='dia'; motivo='RISCO — produção no MESMO dia da coleta ('+NF.format(pNoDia)+' un)'; }
-    else if(pDiaAnt>0){ classe='d1'; motivo='fábrica em '+dtBR(diaAnt)+', embarca '+dtBR(coletaIso)+' ('+NF.format(pDiaAnt)+' un)'; }
+    else if(pAntes>=qNecess){ classe='d1'; motivo='fábrica antes, embarca '+dtBR(coletaIso)+' ('+NF.format(pAntes)+' un programadas)'; }
+    else if(pNoDia>0){ classe='dia'; motivo='RISCO — produção no MESMO dia da coleta ('+NF.format(pNoDia)+' un)'+(pAntes>0?' · só '+NF.format(pAntes)+' antes':''); }
+    else if(pAntes>0){ classe='dia'; motivo='cobre só em parte antes ('+NF.format(pAntes)+' de '+NF.format(qNecess)+') — resto no dia ou sem produção'; }
     else { classe='nec'; motivo='necessidade do cliente SEM produção programada até a coleta'; }
     out.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:qNecess,
       coletaIso:coletaIso, entregaIso:r.iso, cid:t.cid, tdu:t.tdu, km:t.km,
