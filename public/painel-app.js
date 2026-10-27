@@ -2593,6 +2593,11 @@ window.andonToggleConn = andonToggleConn;
     .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncEmbFromServer() : ANDON_SYNC.pullEmbPublic(); }).then(function(pulled){
       if(pulled && typeof embRender==='function'){ embRender(); }
     }).catch(function(){})
+    .then(function(){
+      // v0.0.560: aba Unificada também refresca com o pull de 60s
+      const vu=document.getElementById('viewUni');
+      if(vu && vu.classList.contains('on') && typeof uniRender==='function'){ try{ uniRender(); }catch(e){} }
+    })
     .finally(function(){ _pullBusy=false; });
   }, 60000);
   // v0.0.200: salva o rascunho no servidor ao fechar/ocultar a aba (fire-and-forget)
@@ -4168,7 +4173,7 @@ function embRenderTabela(){
   else { document.addEventListener('DOMContentLoaded', function(){ try{ embRender(); }catch(e){} }); }
 })();
 
-// ==================== TERCEIROS (fornecedores) + ABA UNIFICADA (v0.0.558 — Dante 27/10) ====================
+// ==================== TERCEIROS (fornecedores) + ABA UNIFICADA (v0.0.560 — Dante 27/10) ====================
 // PCP clona a aba Programação para um FORNECEDOR: mesmos parâmetros de Curitiba/Vinhedo
 // (grade de dias, calendário útil, tabela, embarques). A unidade vira um "local" adicional
 // em declDraft[].local e embList[].local — nada muda no modelo de dados existente.
@@ -4259,6 +4264,7 @@ function uniRender(){
       if(seg===segIso) o.selected=true;
       sel.appendChild(o);
     });
+    if(!sel.value && sel.options.length){ sel.options[0].selected=true; sel.value=sel.options[0].value; } // semana atual fora da lista → 1ª disponível (não deixa a aba vazia)
     sel.addEventListener('change', function(){ uniDia=null; uniRender(); });
   }
   const segStr=sel?sel.value:null;
@@ -4274,19 +4280,48 @@ function uniRender(){
     todos.push({e:e, iso:iso, unid:tercLabel(e.local||'C'), local:e.local||'C'});
   });
   todos.sort(function(a,b){ return a.iso.localeCompare(b.iso) || a.unid.localeCompare(b.unid); });
+  // ── v0.0.560: SUGESTÕES CONSOLIDADAS (PREVIEW — não salvas; salvar na aba da unidade) ──
+  // Recalcula embSugestoes() por unidade (C/V/fornecedores) sem mudar a tela da unidade.
+  let sugs=[];
+  try{
+    const selEmb=document.getElementById('embSemSel');
+    if(selEmb){
+      if(!selEmb.options.length){
+        (SEM||[]).forEach(function(s){
+          const seg2=semanaSegunda(s); if(!seg2) return;
+          const o=document.createElement('option'); o.value=seg2; o.textContent=s;
+          if(seg2===segStr) o.selected=true;
+          selEmb.appendChild(o);
+        });
+      }
+      const temOp=Array.prototype.some.call(selEmb.options||[], function(o){ return o.value===segStr; });
+      if(temOp) selEmb.value=segStr;
+      if(selEmb.value===segStr){
+        const u0=window.UNID;
+        todasUnidades().forEach(function(u){
+          window.UNID=u.local;
+          try{ (embSugestoes()||[]).forEach(function(s2){
+            sugs.push({e:{cod:s2.cod,desc:s2.desc,pv:s2.pv,cliente:s2.cliente,qtd:s2.qtd,coletaIso:s2.coletaIso,entregaIso:s2.entregaIso,cid:s2.cid,classe:s2.classe,status:'Sugestão'}, iso:s2.coletaIso, unid:u.nome, local:u.local, sug:true});
+          }); }catch(e){}
+        });
+        window.UNID=u0;
+      }
+    }
+  }catch(e){}
+  const visuais=todos.concat(sugs).sort(function(a,b){ return a.iso.localeCompare(b.iso) || a.unid.localeCompare(b.unid) || (a.sug?1:0)-(b.sug?1:0); });
   // grade de dias da semana
   const nomeDia=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const diasBox=document.getElementById('uniDias');
   if(diasBox){
     const porDia={};
-    todos.forEach(function(x){ porDia[x.iso]=(porDia[x.iso]||0)+1; });
-    let hb='<button class="dlbtn'+(!uniDia?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="">Todos ('+todos.length+')</button>';
+    visuais.forEach(function(x){ porDia[x.iso]=(porDia[x.iso]||0)+1; });
+    let hb='<button class="dlbtn'+(!uniDia?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="">Todos ('+visuais.length+')</button>';
     for(let i=0;i<6;i++){
       const d=new Date(seg); d.setDate(d.getDate()+i);
       const iso=isoD(d);
       const n=porDia[iso]||0;
       const sel2=uniDia===iso;
-      hb+='<button class="dlbtn'+(sel2?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="'+iso+'">'+nomeDia[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+'/10 ('+n+')</button>';
+      hb+='<button class="dlbtn'+(sel2?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="'+iso+'">'+nomeDia[d.getDay()]+' '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' ('+n+')</button>';
     }
     diasBox.innerHTML=hb;
     if(!diasBox._uniBound){ diasBox._uniBound=true; diasBox.addEventListener('click', function(ev){
@@ -4294,7 +4329,7 @@ function uniRender(){
       uniDia=b.getAttribute('data-udia')||null; uniRender();
     }); }
   }
-  const lista=uniDia?todos.filter(function(x){ return x.iso===uniDia; }):todos;
+  const lista=uniDia?visuais.filter(function(x){ return x.iso===uniDia; }):visuais;
   let tq=0;
   document.getElementById('tbbUni').innerHTML = lista.length ? lista.map(function(x){
     const e=x.e; tq+=Number(e.qtd)||0;
@@ -4303,20 +4338,22 @@ function uniRender(){
       : e.classe==='d1' ? '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 D+1</span>'
       : e.classe==='nec' ? '<span class="tagF" style="background:#fef9c3;color:#854d0e">⚠ SEM PRODUÇÃO</span>'
       : '<span style="color:#94a3b8">—</span>';
-    const stTag = e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
+    const stTag = x.sug ? '<span class="tagS" title="Preview — para salvar, use ↯ Sugestões → ✓ Aplicar na aba da unidade">SUGESTÃO</span>'
+      : e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
       : e.status==='Aceito' ? '<span class="tagP">ACEITO</span>' : '<span class="tagS">SUGERIDO</span>';
     return '<tr><td><b>'+dtBR(x.iso)+'</b></td><td><b>'+escH(x.unid)+'</b></td>'+
       '<td><div class="cod">'+escH(e.cod)+'</div><div class="dsc">'+escH((e.desc||'').slice(0,32))+'</div></td>'+
       '<td>'+escH(e.pv||'—')+' '+escH((e.cliente||'').slice(0,18))+'</td>'+
       '<td class="num">'+NF.format(Number(e.qtd)||0)+'</td><td>'+escH(e.cid||'—')+'</td>'+
       '<td>'+(e.entregaIso?dtBR(e.entregaIso):'—')+'</td><td>'+tagCls+'</td><td>'+stTag+'</td></tr>';
-  }).join('') : '<tr><td colspan="9">Nenhum embarque na semana para as unidades existentes.</td></tr>';
+  }).join('') : '<tr><td colspan="9">Nenhum embarque nem sugestão na semana para as unidades existentes.</td></tr>';
   document.getElementById('trfUni').innerHTML='<td colspan="4"><b>'+lista.length+' embarques</b>'+(uniDia?' · '+dtBR(uniDia):' · semana inteira')+'</td><td class="num"><b>'+NF.format(tq)+'</b></td><td colspan="4"></td>';
   const info=document.getElementById('uniInfo');
   if(info){
     const porUnid={};
     lista.forEach(function(x){ porUnid[x.unid]=(porUnid[x.unid]||0)+1; });
-    info.textContent=Object.keys(porUnid).length?Object.keys(porUnid).map(function(k){return k+': '+porUnid[k];}).join(' · '):'sem embarques';
+    const nSug=lista.filter(function(x){ return x.sug; }).length;
+    info.textContent=(Object.keys(porUnid).length?Object.keys(porUnid).map(function(k){return k+': '+porUnid[k];}).join(' · '):'sem embarques')+(nSug?' · '+nSug+' sugestão(ões) em preview':'');
   }
 }
 window.uniRender = uniRender;
