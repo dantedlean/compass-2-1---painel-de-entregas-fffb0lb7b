@@ -3778,6 +3778,16 @@ function embSugestoes(){
   Object.keys(progPorCod).forEach(function(cod){
     fila[cod]=Object.keys(progPorCod[cod]).sort().map(function(iso){ return {iso:iso, qtd:progPorCod[cod][iso]}; });
   });
+  // FIFO do SMKT: o saldo do supermercado é do PRODUTO (genérico) — não de um PV específico.
+  // Sem consumir em ordem de coleta, todo PV do produto saía como "SMKT certo" (bug 27/10 01:32).
+  const smktFila={};
+  function smktDisp(cod){
+    if(smktFila[cod]===undefined){ let s0=0; try{ s0=Math.max(0,Number(smktSaldo(cod))||0); }catch(e){} smktFila[cod]=s0; }
+    return smktFila[cod];
+  }
+  function consumirSmkt(cod, qtd){
+    const d=smktDisp(cod); const t=Math.min(d, qtd); smktFila[cod]=d-t; return t;
+  }
   function consumirAntes(cod, isoLimite, qtd){
     const f=fila[cod]||[]; let falta=qtd;
     for(let i=0;i<f.length && falta>0;i++){ if(f[i].iso>=isoLimite) break; const t=Math.min(falta,f[i].qtd); f[i].qtd-=t; falta-=t; }
@@ -3807,21 +3817,34 @@ function embSugestoes(){
   cand.sort(function(a,b){ return a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod) || a.pv.localeCompare(b.pv); });
   cand.forEach(function(x){
     const qNecess=x.qtd;
-    let sm=0; try{ sm=Math.max(0,Number(smktSaldo(x.cod))||0); }catch(e){}
-    if(sm>0){
-      // produto pronto cobre primeiro (regra Dante 27/09: SMKT é real)
-      const usa=Math.min(sm,qNecess);
-      x.classe='smkt'; x.motivo='produto pronto no SMKT ×'+NF.format(usa)+(usa<qNecess?' · faltam '+NF.format(qNecess-usa):'');
-      if(usa<qNecess){ x.faltaSmkt=qNecess-usa; }
-      x.qtdSm=usa;
+    // 1) SMKT consome primeiro — em ordem de coleta (o saldo é do produto, não do PV)
+    const usaSm=consumirSmkt(x.cod, qNecess);
+    x.qtdSm=usaSm;
+    let falta=qNecess-usaSm;
+    if(falta<=0){
+      x.classe='smkt'; x.motivo='produto pronto no SMKT ×'+NF.format(qNecess);
       return;
     }
-    const antes=consumirAntes(x.cod, x.coletaIso, qNecess);
-    if(antes>=qNecess){ x.classe='d1'; x.motivo='fábrica antes, embarca '+dtBR(x.coletaIso)+' ('+NF.format(antes)+' un programadas)'; return; }
-    const noDia=consumirNoDia(x.cod, x.coletaIso, qNecess-antes);
-    if(antes+noDia>=qNecess){ x.classe='dia'; x.motivo='RISCO — produz e embarca no MESMO dia ('+dtBR(x.coletaIso)+')'+(antes>0?' · '+NF.format(antes)+' antes':''); return; }
+    // 2) produção programada ANTES do dia da coleta (fábrica em um dia, embarca no outro)
+    const antes=consumirAntes(x.cod, x.coletaIso, falta);
+    falta-=antes;
+    if(falta<=0){
+      x.classe='d1';
+      x.motivo=(usaSm>0?'SMKT '+NF.format(usaSm)+' + ':'')+'fábrica antes, embarca '+dtBR(x.coletaIso)+' ('+NF.format(antes)+' un programadas)';
+      return;
+    }
+    // 3) produção no MESMO dia da coleta — risco
+    const noDia=consumirNoDia(x.cod, x.coletaIso, falta);
+    falta-=noDia;
+    if(falta<=0){
+      x.classe='dia';
+      x.motivo='RISCO — produz e embarca no MESMO dia ('+dtBR(x.coletaIso)+')'+(usaSm>0?' · SMKT '+NF.format(usaSm):'')+(antes>0?' · '+NF.format(antes)+' antes':'');
+      return;
+    }
+    // 4) necessidade do cliente sem produção suficiente até a coleta — AVISO
     x.classe='nec';
-    x.motivo='SEM produção suficiente até a coleta — falta '+NF.format(qNecess-antes-noDia)+' un'+(antes+noDia>0?' (só '+NF.format(antes+noDia)+' programadas)':'');
+    x.motivo='SEM produção até a coleta — falta '+NF.format(falta)+' un'+
+      ((usaSm+antes+noDia)>0?' (só '+NF.format(usaSm+antes+noDia)+' disponível: SMKT '+NF.format(usaSm)+' + produção '+NF.format(antes+noDia)+')':'');
   });
   // ordena para exibição: sem produção → do dia → D+1 → SMKT; dentro, por data
   const ordem={nec:0,dia:1,d1:2,smkt:3};
