@@ -3765,59 +3765,68 @@ function embSugestoes(){
   const segStr=sel?sel.value:null;
   if(!segStr) return [];
   const seg=new Date(segStr+'T12:00:00'); const fim=new Date(seg.getTime()); fim.setDate(fim.getDate()+4);
-  const out=[]; const seen={};
-  const hojeIso=isoD(new Date());
-  // ---- produção programada por código/dia (para as 4 categorias) ----
-  const progPorCod={}; // cod -> {iso: qtd}
+  // ---- produção programada por código/dia ----
+  const progPorCod={};
   declDaUnid().forEach(function(d){
     if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0) return;
     const iso=progIso(d.data);
     progPorCod[d.cod]=progPorCod[d.cod]||{};
     progPorCod[d.cod][iso]=(progPorCod[d.cod][iso]||0)+Number(d.qtd);
   });
-  const progAte=function(cod, isoLimite){
-    const m=progPorCod[cod]||{};
-    let t=0; Object.keys(m).forEach(function(k){ if(!isoLimite||k<=isoLimite) t+=m[k]; }); return t;
-  };
-  const progNoDia=function(cod, iso){ return ((progPorCod[cod]||{})[iso])||0; };
+  // fila FIFO de produção por código (consumida em ordem de coleta — nunca conta 2×)
+  const fila={};
+  Object.keys(progPorCod).forEach(function(cod){
+    fila[cod]=Object.keys(progPorCod[cod]).sort().map(function(iso){ return {iso:iso, qtd:progPorCod[cod][iso]}; });
+  });
+  function consumirAntes(cod, isoLimite, qtd){
+    const f=fila[cod]||[]; let falta=qtd;
+    for(let i=0;i<f.length && falta>0;i++){ if(f[i].iso>=isoLimite) break; const t=Math.min(falta,f[i].qtd); f[i].qtd-=t; falta-=t; }
+    return qtd-falta;
+  }
+  function consumirNoDia(cod, iso, qtd){
+    const f=fila[cod]||[]; let falta=qtd;
+    for(let i=0;i<f.length && falta>0;i++){ if(f[i].iso!==iso) continue; const t=Math.min(falta,f[i].qtd); f[i].qtd-=t; falta-=t; }
+    return qtd-falta;
+  }
+  // ---- PASSO 1: candidatos (PV com coleta na semana, ainda sem embarque) ----
+  const cand=[]; const seen={};
   DATA.rows.forEach(function(r){
     if(!r.iso || r.frete) return;
     if(Number(r.qtd)<=0) return;
     const t=embTransito(r.cliente); if(!t) return;
     const coleta=subDU(new Date(r.iso+'T12:00:00'), t.tdu);
-    const coletaIso=isoD(coleta);
     if(coleta<seg || coleta>fim) return;
     const ja=embDaUnid().some(function(e){ return String(e.pv)===String(r.pv) && e.cod===r.codigo && e.status!=='Cancelado'; });
     if(ja) return;
     const k=String(r.pv)+'|'+r.codigo;
     if(seen[k]) return; seen[k]=1;
-    // ---- as 4 categorias (Dante 27/10 01:20) ----
-    // 1) smkt  : produto pronto no supermercado → embarque CERTO
-    // 2) dia   : programado NO MESMO dia da coleta → RISCO (produz e embarca igual)
-    // 3) d1    : programado D+1 antes da coleta → fábrica em um dia, embarca no outro
-    // 4) nec   : necessidade do cliente sem produção programada até a coleta → AVISO
-    let sm=0; try{ sm=Math.max(0,Number(smktSaldo(r.codigo))||0); }catch(e){}
-    const qNecess=Number(r.qtd)||0;
-    const pNoDia=progNoDia(r.codigo, coletaIso);
-    const pAte=progAte(r.codigo, coletaIso);
-    const diaAnt=isoD(subDU(new Date(coletaIso+'T12:00:00'),1));
-    const pDiaAnt=progNoDia(r.codigo, diaAnt);
-    // ordem correta (27/10): SMKT > produzido ANTES da coleta (D+1) > só no dia da coleta (risco) > sem produção
-    const pAntes=progAte(r.codigo, diaAnt); // tudo programado até o dia ANTERIOR à coleta
-    let classe, motivo;
-    if(sm>0){ classe='smkt'; motivo='produto pronto no SMKT ×'+NF.format(Math.min(sm,qNecess)); }
-    else if(pAntes>=qNecess){ classe='d1'; motivo='fábrica antes, embarca '+dtBR(coletaIso)+' ('+NF.format(pAntes)+' un programadas)'; }
-    else if(pNoDia>0){ classe='dia'; motivo='RISCO — produção no MESMO dia da coleta ('+NF.format(pNoDia)+' un)'+(pAntes>0?' · só '+NF.format(pAntes)+' antes':''); }
-    else if(pAntes>0){ classe='dia'; motivo='cobre só em parte antes ('+NF.format(pAntes)+' de '+NF.format(qNecess)+') — resto no dia ou sem produção'; }
-    else { classe='nec'; motivo='necessidade do cliente SEM produção programada até a coleta'; }
-    out.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:qNecess,
-      coletaIso:coletaIso, entregaIso:r.iso, cid:t.cid, tdu:t.tdu, km:t.km,
-      local:window.UNID||'C', classe:classe, motivo:motivo, progAte:pAte, progNoDia:pNoDia, diaAnt:diaAnt});
+    cand.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:Number(r.qtd)||0,
+      coletaIso:isoD(coleta), entregaIso:r.iso, cid:t.cid, tdu:t.tdu, km:t.km, local:window.UNID||'C'});
   });
-  // ordena: avisos primeiro, depois por data
+  // ---- PASSO 2: classifica em ORDEM DE COLETA (FIFO justo) ----
+  cand.sort(function(a,b){ return a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod) || a.pv.localeCompare(b.pv); });
+  cand.forEach(function(x){
+    const qNecess=x.qtd;
+    let sm=0; try{ sm=Math.max(0,Number(smktSaldo(x.cod))||0); }catch(e){}
+    if(sm>0){
+      // produto pronto cobre primeiro (regra Dante 27/09: SMKT é real)
+      const usa=Math.min(sm,qNecess);
+      x.classe='smkt'; x.motivo='produto pronto no SMKT ×'+NF.format(usa)+(usa<qNecess?' · faltam '+NF.format(qNecess-usa):'');
+      if(usa<qNecess){ x.faltaSmkt=qNecess-usa; }
+      x.qtdSm=usa;
+      return;
+    }
+    const antes=consumirAntes(x.cod, x.coletaIso, qNecess);
+    if(antes>=qNecess){ x.classe='d1'; x.motivo='fábrica antes, embarca '+dtBR(x.coletaIso)+' ('+NF.format(antes)+' un programadas)'; return; }
+    const noDia=consumirNoDia(x.cod, x.coletaIso, qNecess-antes);
+    if(antes+noDia>=qNecess){ x.classe='dia'; x.motivo='RISCO — produz e embarca no MESMO dia ('+dtBR(x.coletaIso)+')'+(antes>0?' · '+NF.format(antes)+' antes':''); return; }
+    x.classe='nec';
+    x.motivo='SEM produção suficiente até a coleta — falta '+NF.format(qNecess-antes-noDia)+' un'+(antes+noDia>0?' (só '+NF.format(antes+noDia)+' programadas)':'');
+  });
+  // ordena para exibição: sem produção → do dia → D+1 → SMKT; dentro, por data
   const ordem={nec:0,dia:1,d1:2,smkt:3};
-  out.sort(function(a,b){ return (ordem[a.classe]-ordem[b.classe]) || a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod); });
-  return out;
+  cand.sort(function(a,b){ return (ordem[a.classe]-ordem[b.classe]) || a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod); });
+  return cand;
 }
 // grade de dias da semana selecionada — SEMPRE 6 dias Seg-Sáb, VAZIOS por padrão (modelo da produção)
 function embDiasSemana(){
