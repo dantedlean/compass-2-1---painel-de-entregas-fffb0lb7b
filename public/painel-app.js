@@ -3735,6 +3735,8 @@ function embSave(list){
 }
 window.embList = embLoad();
 window.embChainOn = (function(){ try{ return localStorage.getItem('emb|chain')!=='0'; }catch(e){ return true; } })();
+window.embDiaFiltro = (function(){ try{ return localStorage.getItem('emb|dia')||''; }catch(e){ return ''; } })();
+function embDiaSave(v){ try{ localStorage.setItem('emb|dia', v||''); }catch(e){} window.embDiaFiltro=v||''; }
 function embChainSave(v){ try{ localStorage.setItem('emb|chain', v?'1':'0'); }catch(e){} window.embChainOn=v; }
 let embSeq = 0;
 function embNextId(){ return 'EMB-'+Date.now()+'-'+(embSeq++); }
@@ -3792,7 +3794,31 @@ function embRender(){
     const chk=document.getElementById('chkChain');
     if(chk){ chk.checked=!!window.embChainOn; if(!chk._embBound){ chk._embBound=true; chk.addEventListener('change', function(){ embChainSave(chk.checked); embRender(); const st=document.getElementById('declStatus'); if(st) st.textContent='Visão encadeada '+(chk.checked?'LIGADA':'DESLIGADA — embarques sem vínculo com produção (exceção consciente)'); }); } }
   }
-  const list=embDaUnid();
+  let list=embDaUnid();
+  // BARRA DE DIAS (v0.0.548 — Dante): botão por dia com contagem; clique filtra; "Todos" limpa
+  const diaBar=document.getElementById('embDias');
+  if(diaBar){
+    const hjB=new Date(); const hjIsoB=hjB.getFullYear()+'-'+String(hjB.getMonth()+1).padStart(2,'0')+'-'+String(hjB.getDate()).padStart(2,'0');
+    const porDia={};
+    embDaUnid().forEach(function(e){ if(e.status==='Cancelado') return; const k=e.coletaIso||'—'; porDia[k]=(porDia[k]||0)+1; });
+    const diasOrd=Object.keys(porDia).sort();
+    const nomeDiaB=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    let htmlB='<button class="dlbtn'+(window.embDiaFiltro?'':'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff')+'" data-embdia="">Todos ('+embDaUnid().filter(function(e){return e.status!=='Cancelado';}).length+')</button>';
+    diasOrd.forEach(function(iso){
+      const sel=String(window.embDiaFiltro||'')===iso;
+      let rot=iso;
+      try{ const d=new Date(iso+'T12:00:00'); rot=nomeDiaB[d.getDay()]+' · '+dtBR(iso); }catch(e){}
+      if(iso===hjIsoB) rot='📍 '+rot;
+      htmlB+='<button class="dlbtn'+(sel?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-embdia="'+iso+'">'+rot+' ('+porDia[iso]+')</button>';
+    });
+    diaBar.innerHTML=htmlB;
+    if(!diaBar._embBound){ diaBar._embBound=true; diaBar.addEventListener('click', function(ev){
+      const b=ev.target.closest('[data-embdia]'); if(!b) return;
+      embDiaSave(b.getAttribute('data-embdia'));
+      embRender();
+    }); }
+    if(window.embDiaFiltro) list=list.filter(function(e){ return (e.coletaIso||'')===window.embDiaFiltro; });
+  }
   const hj=new Date(); const hojeISO=hj.getFullYear()+'-'+String(hj.getMonth()+1).padStart(2,'0')+'-'+String(hj.getDate()).padStart(2,'0');
   document.getElementById('trhE').innerHTML='<th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino (trânsito)</th><th>Entrega cliente</th><th>Status</th><th>Coletado em / Transportadora</th><th></th>';
   let tq=0, tc=0;
@@ -3878,7 +3904,7 @@ function embProducaoCobre(e){
 // tabela encadeada por produto: produção → disponível → embarques
 function embRenderChain(){
   const box=document.getElementById('embChainBox'); if(!box) return;
-  box.style.display = window.embChainOn ? 'block' : 'none';
+  box.style.display = window.embChainOn ? '' : 'none';
   if(!window.embChainOn) return;
   const map={};
   declDaUnid().forEach(function(d){
