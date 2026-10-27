@@ -4249,6 +4249,65 @@ function tercRemove(id){
 window.tercRemove = tercRemove;
 // ---------- ABA UNIFICADA DE EMBARQUES (todas as fábricas + fornecedores) ----------
 let uniDia=null;
+// ── v0.0.561: FILTROS do cabeçalho (Origem, Destino, Categoria, Status + busca produto/PV/cliente) ──
+let uniF={origem:'',dest:'',cat:'',st:'',q:''};
+function uniCatLabel(x){
+  const c=x.e.classe;
+  if(c==='smkt') return '✓ SMKT';
+  if(c==='dia') return '⚠ DO DIA';
+  if(c==='d1') return '📦 D+1';
+  if(c==='nec') return '⚠ SEM PRODUÇÃO';
+  return x.sug ? '—' : 'Salvo';
+}
+function uniStatusLabel(x){ return x.sug ? 'Sugestão' : (x.e.status||'Sugerido'); }
+const UNI_FDEFS=[
+  ['origem','Origem',function(x){ return x.unid; }],
+  ['dest','Destino',function(x){ return x.e.cid; }],
+  ['cat','Categoria',uniCatLabel],
+  ['st','Status',uniStatusLabel]
+];
+function uniFPopula(visuais){
+  const box=document.getElementById('uniFiltros'); if(!box) return;
+  if(!box._built){
+    box._built=true;
+    const stSel='padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;max-width:210px';
+    box.innerHTML=UNI_FDEFS.map(function(d){ return '<select id="uniF_'+d[0]+'" style="'+stSel+'"><option value="">'+d[1]+': todos</option></select>'; }).join('')+
+      '<input id="uniF_q" placeholder="Buscar produto, PV ou cliente…" aria-label="Buscar produto, PV ou cliente" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px">'+
+      '<button id="uniFClr" class="dlbtn" title="Limpar todos os filtros">✕ Filtros</button>';
+    UNI_FDEFS.forEach(function(d){
+      document.getElementById('uniF_'+d[0]).addEventListener('change', function(ev){ uniF[d[0]]=ev.target.value; uniRender(); });
+    });
+    let _qt=null;
+    document.getElementById('uniF_q').addEventListener('input', function(ev){
+      clearTimeout(_qt); const v=ev.target.value;
+      _qt=setTimeout(function(){ uniF.q=v.toLowerCase(); uniRender(); }, 250);
+    });
+    document.getElementById('uniFClr').addEventListener('click', function(){
+      uniF={origem:'',dest:'',cat:'',st:'',q:''};
+      const qi=document.getElementById('uniF_q'); if(qi) qi.value='';
+      uniRender();
+    });
+  }
+  UNI_FDEFS.forEach(function(d){
+    const sel=document.getElementById('uniF_'+d[0]); if(!sel) return;
+    const s={}; visuais.forEach(function(x){ const v=String(d[2](x)||'—'); s[v]=(s[v]||0)+1; });
+    const cur=uniF[d[0]];
+    if(cur && !s[cur]) uniF[d[0]]='';
+    sel.innerHTML='<option value="">'+d[1]+': todos</option>'+Object.keys(s).sort().map(function(v){
+      return '<option value="'+escH(v)+'"'+(v===uniF[d[0]]?' selected':'')+'>'+escH(v)+' ('+s[v]+')</option>';
+    }).join('');
+  });
+}
+function uniFiltra(visuais){
+  return visuais.filter(function(x){
+    if(uniF.origem && x.unid!==uniF.origem) return false;
+    if(uniF.dest && String(x.e.cid||'—')!==uniF.dest) return false;
+    if(uniF.cat && uniCatLabel(x)!==uniF.cat) return false;
+    if(uniF.st && uniStatusLabel(x)!==uniF.st) return false;
+    if(uniF.q){ const t=((x.e.cod||'')+' '+(x.e.desc||'')+' '+(x.e.pv||'')+' '+(x.e.cliente||'')).toLowerCase(); if(t.indexOf(uniF.q)<0) return false; }
+    return true;
+  });
+}
 function uniRender(){
   const sel=document.getElementById('uniSemSel');
   if(sel && !sel.options.length){
@@ -4309,13 +4368,15 @@ function uniRender(){
     }
   }catch(e){}
   const visuais=todos.concat(sugs).sort(function(a,b){ return a.iso.localeCompare(b.iso) || a.unid.localeCompare(b.unid) || (a.sug?1:0)-(b.sug?1:0); });
-  // grade de dias da semana
+  uniFPopula(visuais);
+  // grade de dias da semana (conta só o que passa pelos filtros)
+  const filtrados=uniFiltra(visuais);
   const nomeDia=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const diasBox=document.getElementById('uniDias');
   if(diasBox){
     const porDia={};
-    visuais.forEach(function(x){ porDia[x.iso]=(porDia[x.iso]||0)+1; });
-    let hb='<button class="dlbtn'+(!uniDia?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="">Todos ('+visuais.length+')</button>';
+    filtrados.forEach(function(x){ porDia[x.iso]=(porDia[x.iso]||0)+1; });
+    let hb='<button class="dlbtn'+(!uniDia?'" style="background:#1e3a8a;border-color:#1e3a8a;color:#fff':'')+'" data-udia="">Todos ('+filtrados.length+')</button>';
     for(let i=0;i<6;i++){
       const d=new Date(seg); d.setDate(d.getDate()+i);
       const iso=isoD(d);
@@ -4329,7 +4390,7 @@ function uniRender(){
       uniDia=b.getAttribute('data-udia')||null; uniRender();
     }); }
   }
-  const lista=uniDia?visuais.filter(function(x){ return x.iso===uniDia; }):visuais;
+  const lista=uniDia?filtrados.filter(function(x){ return x.iso===uniDia; }):filtrados;
   let tq=0;
   document.getElementById('tbbUni').innerHTML = lista.length ? lista.map(function(x){
     const e=x.e; tq+=Number(e.qtd)||0;
