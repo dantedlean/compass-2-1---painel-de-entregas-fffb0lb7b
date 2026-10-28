@@ -149,6 +149,66 @@ function apSugerirData(){
   return cargaIso;
 }
 // modal de qtd ao programar (arrasto ou botão 📅)
+function apBuscarPvsProduto(cod){
+  const pvsMap = {};
+  DATA.rows.filter(function(r){ return r.codigo===cod; }).forEach(function(r){
+    const pvStr = String(r.pv);
+    if(!pvsMap[pvStr]){
+      pvsMap[pvStr] = {pv:pvStr, cli:r.cliente||'', iso:r.iso||'', saldo:0, empresa:r.empresa||''};
+    }
+    pvsMap[pvStr].saldo += Number(r.qtd||0);
+  });
+  return Object.values(pvsMap).sort(function(a,b){ return (a.iso||'').localeCompare(b.iso||''); });
+}
+
+function apRenderPvRow(pvsList, defPv, defQtd){
+  const opts = '<option value="">— selecione o PV —</option>' + pvsList.map(function(p){
+    const sel = String(p.pv) === String(defPv||'') ? ' selected' : '';
+    return '<option value="'+p.pv+'" data-saldo="'+p.saldo+'"'+sel+'>PV '+p.pv+' · '+(p.cli||'').slice(0,20)+' (saldo '+NF.format(p.saldo)+' un)</option>';
+  }).join('');
+  return '<div class="apPvRowItem" style="display:flex;gap:6px;align-items:center">'+
+    '<select class="apPvSel" style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px">'+opts+'</select>'+
+    '<input type="number" min="1" value="'+(defQtd>0?defQtd:'')+'" placeholder="Qtd" class="apPvQtd" style="width:80px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;text-align:right;font-weight:700">'+
+    '<button type="button" class="apPvRemBtn dlbtn" style="padding:4px 8px;color:#991b1b;border-color:#fecaca" title="Remover este PV">✕</button>'+
+  '</div>';
+}
+
+function apAtualizarTotaisPv(){
+  const box = document.getElementById('apQtdBox'); if(!box) return;
+  const totQtd = Number(document.getElementById('apQtdInput').value)||0;
+  const rows = box.querySelectorAll('.apPvRowItem');
+  let soma = 0;
+  let saldoEstourado = false;
+  rows.forEach(function(r){
+    const sel = r.querySelector('.apPvSel');
+    const inp = r.querySelector('.apPvQtd');
+    const opt = sel.options[sel.selectedIndex];
+    const saldo = Number(opt ? opt.getAttribute('data-saldo') : 0)||0;
+    const q = Number(inp.value)||0;
+    if(q > 0) soma += q;
+    if(q > saldo && saldo > 0){
+      saldoEstourado = true;
+      inp.style.borderColor = '#ef4444';
+      inp.style.backgroundColor = '#fee2e2';
+    } else {
+      inp.style.borderColor = 'var(--line)';
+      inp.style.backgroundColor = '#fff';
+    }
+  });
+
+  const totEl = document.getElementById('apPvTotais');
+  if(totEl){
+    if(!rows.length){
+      totEl.innerHTML = 'Nenhum PV explícito definido — a alocação seguirá o FIFO automático da carteira.';
+    } else {
+      const sobra = totQtd - soma;
+      totEl.innerHTML = 'Soma por PV: <b style="color:'+(soma>totQtd?'#dc2626':'#16a34a')+'">'+NF.format(soma)+' un</b> / '+NF.format(totQtd)+' un'+
+        (sobra > 0 ? ' · <span style="color:#b45309">'+NF.format(sobra)+' un sem PV explícito (FIFO)</span>' : (sobra===0 ? ' · <span style="color:#16a34a;font-weight:700">✓ 100% coberto</span>' : ' · <span style="color:#dc2626;font-weight:700">⚠ excede em '+NF.format(Math.abs(sobra))+' un</span>'))+
+        (saldoEstourado ? '<br><span style="color:#dc2626;font-weight:700">⚠ Atenção: quantidade maior que o saldo do PV na carteira.</span>' : '');
+    }
+  }
+}
+
 function apAbrirModal(cod, aProg, dataIso, viaDrag){
   const box=document.getElementById('apQtdBox'); if(!box) return;
   const desc=descDe(cod);
@@ -157,6 +217,16 @@ function apAbrirModal(cod, aProg, dataIso, viaDrag){
   document.getElementById('apQtdData').value=dataIso;
   const sel=document.getElementById('apQtdLocal'); if(sel) sel.value=window.UNID||'C';
   box.dataset.cod=cod; box.dataset.aprog=aProg;
+
+  // Carrega lista de PVs do produto para o sub-rateio opcional
+  const pvsList = apBuscarPvsProduto(cod);
+  window._apCurrentPvsList = pvsList;
+  const rowsContainer = document.getElementById('apPvRows');
+  if(rowsContainer){
+    rowsContainer.innerHTML = '';
+  }
+  apAtualizarTotaisPv();
+
   // POKA-YOKE (v0.0.207): aviso vermelho quando programar ESTE dia ultrapassaria o saldo com PV
   const warn=document.getElementById('apQtdWarn');
   if(warn){
@@ -172,10 +242,46 @@ function apAbrirModal(cod, aProg, dataIso, viaDrag){
   box.style.display='flex';
   setTimeout(function(){ const inp=document.getElementById('apQtdInput'); inp.focus(); inp.select(); },50);
 }
+
 function apInitModal(){
   const box=document.getElementById('apQtdBox'); if(!box||box._bound) return; box._bound=true;
   document.getElementById('apQtdCancel').addEventListener('click',function(){ box.style.display='none'; });
   box.addEventListener('click',function(e){ if(e.target===box) box.style.display='none'; });
+
+  // Adicionar nova linha de PV
+  const addBtn = document.getElementById('apPvAddBtn');
+  if(addBtn){
+    addBtn.addEventListener('click', function(){
+      const rowsContainer = document.getElementById('apPvRows');
+      const pvsList = window._apCurrentPvsList || [];
+      if(!rowsContainer || !pvsList.length){
+        alert('Nenhum PV disponível para este produto na carteira.');
+        return;
+      }
+      const tmpDiv = document.createElement('div');
+      tmpDiv.innerHTML = apRenderPvRow(pvsList, '', '');
+      rowsContainer.appendChild(tmpDiv.firstElementChild);
+      apAtualizarTotaisPv();
+    });
+  }
+
+  // Delegação no apPvRows para exclusão e input
+  const rowsContainer = document.getElementById('apPvRows');
+  if(rowsContainer){
+    rowsContainer.addEventListener('click', function(e){
+      const rem = e.target.closest('.apPvRemBtn');
+      if(rem){
+        const row = rem.closest('.apPvRowItem');
+        if(row){ row.remove(); apAtualizarTotaisPv(); }
+      }
+    });
+    rowsContainer.addEventListener('input', function(e){
+      if(e.target.matches('.apPvQtd') || e.target.matches('.apPvSel')) apAtualizarTotaisPv();
+    });
+  }
+
+  document.getElementById('apQtdInput').addEventListener('input', apAtualizarTotaisPv);
+
   document.getElementById('apQtdOk').addEventListener('click',function(){
     const cod=box.dataset.cod; if(!cod) return;
     const qtd=Number(document.getElementById('apQtdInput').value);
@@ -185,17 +291,62 @@ function apInitModal(){
     if(!dataIso){ alert('Informe a data.'); return; }
     const aProg=Number(box.dataset.aprog)||0;
     if(qtd>aProg && !confirm('Qtd ('+qtd+') maior que o saldo a programar ('+Math.round(aProg)+'). Confirmar mesmo assim?')) return;
+
+    // Coleta rateio explícito se configurado
+    const pvRows = box.querySelectorAll('.apPvRowItem');
+    const rateio = [];
+    let somaPv = 0;
+    let pvInvalido = false;
+    pvRows.forEach(function(r){
+      const pvVal = (r.querySelector('.apPvSel').value||'').trim();
+      const qVal = Number(r.querySelector('.apPvQtd').value)||0;
+      if(pvVal && qVal > 0){
+        rateio.push({pv: pvVal, qtd: qVal});
+        somaPv += qVal;
+      } else if(pvVal && qVal <= 0){
+        pvInvalido = true;
+      }
+    });
+
+    if(pvInvalido){
+      alert('Informe a quantidade para cada PV selecionado.');
+      return;
+    }
+    if(somaPv > qtd){
+      alert('A soma das quantidades dos PVs ('+somaPv+' un) não pode exceder a quantidade total a produzir ('+qtd+' un).');
+      return;
+    }
+
     box.style.display='none';
-    apProgramar(cod, qtd, dataIso, local);
+    apProgramar(cod, qtd, dataIso, local, rateio);
   });
 }
-function apProgramar(cod, qtd, dataIso, local){
+
+function apProgramar(cod, qtd, dataIso, local, rateio){
   if(!Array.isArray(declDraft)) declDraft=[];
   const d=new Date(dataIso+'T12:00:00');
   const nomeDia=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-  declDraft.push({dia:nomeDia[d.getDay()],data:dataIso,cod:cod,qtd:qtd,local:local||window.UNID||'C',pv:'',id:'PR-AP-'+Date.now(),obs:'programado via A Programar',status:'Planejado'});
+  const rat = Array.isArray(rateio) && rateio.length ? rateio : null;
+  const pvUnico = (rat && rat.length === 1 && rat[0].qtd === qtd) ? rat[0].pv : '';
+  const novaDecl = {
+    dia: nomeDia[d.getDay()],
+    data: dataIso,
+    cod: cod,
+    qtd: qtd,
+    local: local||window.UNID||'C',
+    pv: pvUnico,
+    id: 'PR-AP-'+Date.now(),
+    obs: 'programado via A Programar',
+    status: 'Planejado'
+  };
+  if(rat && rat.length){
+    novaDecl.rateio = rat;
+  }
+  declDraft.push(novaDecl);
   declSave(); progBuildFromDecls(); renderDeclEditor(); progDia=null; progDate=null; renderProg();
-  const st=document.getElementById('declStatus'); if(st) st.textContent=cod+' ×'+qtd+' programado para '+dataIso.split('-').reverse().join('/')+' ('+(local==='V'?'Vinhedo':'Curitiba')+') · nada gravado no MaxiProd';
+  const st=document.getElementById('declStatus');
+  const ratTxt = rat ? ' ['+rat.map(function(it){ return 'PV '+it.pv+': '+it.qtd; }).join(', ')+']' : '';
+  if(st) st.textContent=cod+' ×'+qtd+ratTxt+' programado para '+dataIso.split('-').reverse().join('/')+' ('+(local==='V'?'Vinhedo':'Curitiba')+') · nada gravado no MaxiProd';
 }
 window.apProgramar=apProgramar;
 // ==================== REALOCAÇÃO MANUAL DE PV (06/10, v0.0.235) ====================
@@ -326,6 +477,194 @@ document.addEventListener('keydown', function(e){
   const st=document.getElementById('declStatus'); if(st) st.textContent='Realocação desfeita — PV '+ult.de+' voltou a ter as '+NF.format(ult.qtd)+' un';
 });
 
+// ==================== EDITOR DE DESTINO POR PV (v0.1.21) ====================
+// Permite definir rateio explícito {pv, qtd} para uma linha da programação firme (ex.: PV 611 -> 3, PV 614 -> 3)
+function pvDestEditorAbrirModal(cod, progIso){
+  const box = document.getElementById('pvDestBox'); if(!box) return;
+  const pd = String(progIso||'');
+  const dIso = pd.length===5 ? progIso(pd) : pd;
+  const alvo = (typeof declDraft!=='undefined') ? declDraft.filter(function(d){ return d.cod===cod && progIso(d.data)===dIso && d.status!=='Cancelado'; }) : [];
+  if(!alvo.length){ alert('Sem declaração para '+cod+' neste dia.'); return; }
+  const decl = alvo[0];
+  const qtdProg = alvo.reduce(function(s,d){ return s+(Number(d.qtd)||0); },0);
+
+  // Busca todos os PVs do PRODUTO com saldo na carteira
+  const pvsMap = {};
+  DATA.rows.filter(function(r){ return r.codigo===cod; }).forEach(function(r){
+    const pvStr = String(r.pv);
+    if(!pvsMap[pvStr]){
+      pvsMap[pvStr] = {pv:pvStr, cli:r.cliente||'', iso:r.iso||'', saldo:0, empresa:r.empresa||''};
+    }
+    pvsMap[pvStr].saldo += Number(r.qtd||0);
+  });
+  const pvsList = Object.values(pvsMap).sort(function(a,b){ return (a.iso||'').localeCompare(b.iso||''); });
+
+  // Rateio prévio já existente na declaração
+  const rateioMap = {};
+  if(Array.isArray(decl.rateio) && decl.rateio.length){
+    decl.rateio.forEach(function(it){ if(it && it.pv) rateioMap[String(it.pv)] = Number(it.qtd)||0; });
+  } else if(decl.pv){
+    rateioMap[String(decl.pv)] = qtdProg;
+  }
+
+  // Se houver PVs no rateio que não estão na lista (ex: saldo acabou), adiciona
+  Object.keys(rateioMap).forEach(function(pvK){
+    if(!pvsMap[pvK]){
+      pvsList.push({pv:pvK, cli:pvTagDe(cod,pvK)||'—', iso:'', saldo:0, empresa:''});
+    }
+  });
+
+  const infoEl = document.getElementById('pvDestInfo');
+  if(infoEl){
+    infoEl.innerHTML = 'Produto: <b>'+cod+'</b> — '+descDe(cod).slice(0,50)+'<br>Data: <b>'+dtBR(dIso)+'</b> · Qtd total programada no dia: <b>'+NF.format(qtdProg)+' un</b>';
+  }
+
+  const tblEl = document.getElementById('pvDestTbl');
+  if(tblEl){
+    if(!pvsList.length){
+      tblEl.innerHTML = '<div style="padding:10px;color:#991b1b;background:#fee2e2;border-radius:8px">Nenhum PV com saldo encontrado na carteira para este produto.</div>';
+    } else {
+      tblEl.innerHTML = pvsList.map(function(p){
+        const vQtd = rateioMap[String(p.pv)] !== undefined ? rateioMap[String(p.pv)] : '';
+        const saldoStr = NF.format(p.saldo);
+        const estourou = (Number(vQtd)||0) > p.saldo;
+        return '<div class="pvDestRow" data-pv="'+p.pv+'" data-saldo="'+p.saldo+'" style="display:flex;gap:10px;align-items:center;padding:8px 10px;background:#f8fafc;border:1px solid var(--line);border-radius:8px">'+
+          '<div style="min-width:70px;font-weight:800;color:#1e3a8a">PV '+p.pv+'</div>'+
+          '<div style="flex:1;min-width:0;font-size:12px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+p.cli+'">'+p.cli+' '+(p.iso?'<span style="color:#64748b">('+dtBR(p.iso)+')</span>':'')+'</div>'+
+          '<div style="min-width:90px;font-size:11.5px;color:#64748b;text-align:right">Saldo: <b>'+saldoStr+'</b></div>'+
+          '<div style="min-width:110px">'+
+            '<input type="number" min="0" max="'+p.saldo+'" value="'+(vQtd>0?vQtd:'')+'" placeholder="0" data-pvd-input="'+p.pv+'" style="width:100%;padding:5px 8px;border:1px solid '+(estourou?'#ef4444':'var(--line)')+';border-radius:6px;font-size:13px;text-align:right;font-weight:700">'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }
+  }
+
+  box.dataset.cod = cod;
+  box.dataset.iso = dIso;
+  box.dataset.qtdprog = qtdProg;
+
+  pvDestAtualizarTotais();
+  box.style.display = 'flex';
+}
+
+function pvDestAtualizarTotais(){
+  const box = document.getElementById('pvDestBox'); if(!box) return;
+  const qtdProg = Number(box.dataset.qtdprog)||0;
+  const inputs = box.querySelectorAll('input[data-pvd-input]');
+  let soma = 0;
+  let saldoEstourado = false;
+  inputs.forEach(function(inp){
+    const row = inp.closest('.pvDestRow');
+    const saldo = Number(row ? row.dataset.saldo : 0)||0;
+    const v = Number(inp.value)||0;
+    if(v > 0) soma += v;
+    if(v > saldo){
+      saldoEstourado = true;
+      inp.style.borderColor = '#ef4444';
+      inp.style.backgroundColor = '#fee2e2';
+    } else {
+      inp.style.borderColor = 'var(--line)';
+      inp.style.backgroundColor = '#fff';
+    }
+  });
+
+  const totEl = document.getElementById('pvDestTotais');
+  const warnEl = document.getElementById('pvDestWarn');
+  const resta = qtdProg - soma;
+
+  if(totEl){
+    totEl.innerHTML = '<div>Soma rateada: <b style="color:'+(soma>qtdProg?'#dc2626':'#16a34a')+'">'+NF.format(soma)+' un</b> / '+NF.format(qtdProg)+' un</div>'+
+      '<div>'+(resta>0 ? '<span style="color:#b45309">Faltam definir: <b>'+NF.format(resta)+' un</b> (irão via FIFO)</span>' : (resta===0 ? '<span style="color:#16a34a;font-weight:700">✓ 100% distribuído</span>' : '<span style="color:#dc2626;font-weight:700">⚠ Excesso: '+NF.format(Math.abs(resta))+' un</span>'))+'</div>';
+  }
+
+  if(warnEl){
+    const avisos = [];
+    if(soma > qtdProg){
+      avisos.push('A soma dos PVs ('+soma+' un) excede a quantidade programada da linha ('+qtdProg+' un). Ajuste antes de gravar.');
+    }
+    if(saldoEstourado){
+      avisos.push('Atenção: uma ou mais quantidades excedem o saldo disponível do respectivo PV na carteira.');
+    }
+    if(avisos.length){
+      warnEl.style.display = 'block';
+      warnEl.innerHTML = avisos.join('<br>');
+    } else {
+      warnEl.style.display = 'none';
+      warnEl.innerHTML = '';
+    }
+  }
+}
+
+function pvDestInitModal(){
+  const box = document.getElementById('pvDestBox'); if(!box || box._bound) return; box._bound = true;
+  document.getElementById('pvDestCancel').addEventListener('click', function(){ box.style.display = 'none'; });
+  box.addEventListener('click', function(e){ if(e.target === box) box.style.display = 'none'; });
+  box.addEventListener('input', function(e){
+    if(e.target.matches('input[data-pvd-input]')) pvDestAtualizarTotais();
+  });
+
+  // Limpar rateio explícito -> volta ao FIFO automático da carteira
+  document.getElementById('pvDestLimpar').addEventListener('click', function(){
+    const cod = box.dataset.cod, dIso = box.dataset.iso;
+    if(!cod || !dIso) return;
+    const alvo = declDraft.filter(function(d){ return d.cod===cod && progIso(d.data)===dIso && d.status!=='Cancelado'; });
+    if(!alvo.length) return;
+    alvo.forEach(function(d){
+      delete d.rateio;
+      d.pv = '';
+    });
+    declSave(); progBuildFromDecls(); renderProgTabela();
+    box.style.display = 'none';
+    const st = document.getElementById('declStatus'); if(st) st.textContent = cod+': rateio explícito removido (volta a consumir por FIFO da carteira)';
+  });
+
+  // Gravar rateio explícito
+  document.getElementById('pvDestSalvar').addEventListener('click', function(){
+    const cod = box.dataset.cod, dIso = box.dataset.iso, qtdProg = Number(box.dataset.qtdprog)||0;
+    if(!cod || !dIso) return;
+    const inputs = box.querySelectorAll('input[data-pvd-input]');
+    const rateio = [];
+    let soma = 0;
+    inputs.forEach(function(inp){
+      const v = Number(inp.value)||0;
+      const pv = inp.getAttribute('data-pvd-input');
+      if(v > 0){
+        rateio.push({pv: pv, qtd: v});
+        soma += v;
+      }
+    });
+
+    if(soma > qtdProg){
+      alert('A soma das quantidades dos PVs ('+soma+' un) não pode ser maior que o total programado ('+qtdProg+' un).');
+      return;
+    }
+
+    const alvo = declDraft.filter(function(d){ return d.cod===cod && progIso(d.data)===dIso && d.status!=='Cancelado'; });
+    if(!alvo.length){ alert('Declaração não encontrada.'); return; }
+
+    // Aplica o rateio explícito nas declarações do produto no dia
+    // Se a soma for menor que a programada, o restante fica sem rateio explícito (consumido via FIFO)
+    alvo[0].rateio = rateio;
+    if(rateio.length === 1 && soma === qtdProg){
+      alvo[0].pv = rateio[0].pv;
+    } else {
+      alvo[0].pv = ''; // múltiplos PVs ou rateio parcial: gerenciado pelo rateio[]
+    }
+    // Se existiam outras declarações do mesmo código no mesmo dia, unifica ou limpa rateio duplicado
+    for(let i=1; i<alvo.length; i++){
+      delete alvo[i].rateio;
+      alvo[i].pv = '';
+    }
+
+    declSave(); progBuildFromDecls(); renderProgTabela();
+    box.style.display = 'none';
+    const st = document.getElementById('declStatus');
+    const resumoRat = rateio.map(function(it){ return 'PV '+it.pv+': '+it.qtd; }).join(', ');
+    if(st) st.textContent = cod+' ('+dtBR(dIso)+'): rateio definido ['+(resumoRat||'FIFO')+'] · salvo no rascunho';
+  });
+}
+
 window._rlpvCache = (function(){ try{ return JSON.parse(localStorage.getItem('rlpv|all')||'{}'); }catch(e){ return {}; } })();
 function rlpvAllLoad(){
   // carrega as realocações de TODOS os códigos (localStorage) para o cache da sessão
@@ -416,14 +755,21 @@ function progBuildFromDecls(){
   const avail={}; DATA.rows.forEach(function(r){const k=r.codigo+'|'+r.pv+'|'+r.empresa;avail[k]=(avail[k]||0)+Number(r.qtd||0);});
   const dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']; const out=[];
   window.fosseisCache=[];
-  declDaUnid().forEach(function(d){if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0)return;
+  // Prioridade de consumo da carteira:
+  // 1. Declarações com rateio explícito (rateio: [{pv, qtd}]) ou pv único explícito
+  // 2. Declarações sem PV / FIFO genérico
+  // Ordena declarações: explícitas primeiro (rateio com itens > pv único > sem pv)
+  const decls = declDaUnid().slice().sort(function(a,b){
+    const aTemRateio = (Array.isArray(a.rateio) && a.rateio.length) ? 2 : (a.pv ? 1 : 0);
+    const bTemRateio = (Array.isArray(b.rateio) && b.rateio.length) ? 2 : (b.pv ? 1 : 0);
+    return bTemRateio - aTemRateio;
+  });
+
+  decls.forEach(function(d){if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0)return;
     const dt=new Date(d.data+'T12:00:00'),day=dias[dt.getDay()],date=d.data.slice(8,10)+'/'+d.data.slice(5,7);let left=Number(d.qtd);
-    let cand=DATA.rows.filter(function(r){return r.codigo===d.cod&&(!d.pv||String(r.pv)===String(d.pv));}).sort(function(a,b){return a.iso.localeCompare(b.iso);});
-    // POKA-YOKE: declaração sem NENHUM saldo correspondente na carteira = fóssil (PV já faturado ou inexistente) — não vira linha fantasma
-    if(!cand.length){ window.fosseisCache.push({cod:d.cod,qtd:Number(d.qtd),pv:d.pv||'—',data:d.data,motivo:d.pv?('PV '+d.pv+' faturado/sem saldo — NF já saiu?'):'código sem saldo na carteira'}); return; }
     const prodIso=d.data; // coleta real parte da PRODUÇÃO declarada (1º DU após), não da entrega
-    cand.forEach(function(r){const k=r.codigo+'|'+r.pv+'|'+r.empresa,q=Math.min(left,avail[k]||0);if(q<=0)return;
-      // chegada prevista = coleta (1º DU após a produção) + trânsito; atrasado quando chega DEPOIS da entrega
+
+    function alocarItemCarteira(r, qAloc){
       let atrasado = r.semana==='ATRASADO';
       let chegTxt;
       const cid=cidadeDeOrig(r.cliente, d.local);
@@ -437,8 +783,49 @@ function progBuildFromDecls(){
         if(cheg>de)atrasado=true;
       } else if(d.local==='V'){ chegTxt='fora da tabela'; }
       else { chegTxt=dtBR(r.iso)+' · fora da tabela'; }
-      out.push({dia:day,data:date,cod:d.cod,desc:r.desc,qtd:q,pv:String(r.pv),cli:r.cliente,emp:r.empresa,vtot:r.qtd?r.vtot*q/r.qtd:0,sit:atrasado?'ATRASADO':'em dia',cheg:chegTxt,local:d.local==='V'?'Vinhedo':'Curitiba',firme:r.iso,cidade:cid||'',prog_id:d.id||'',obs:d.obs||'',status:d.status||'Planejado'});avail[k]-=q;left-=q;});
-    if(left>0){const vu=(cand.length&&cand[0].qtd)?(cand[0].vtot/cand[0].qtd):0;out.push({dia:day,data:date,cod:d.cod,desc:descDe(d.cod),qtd:left,pv:d.pv||'—',cli:'',emp:'',vtot:vu*left,sit:'Sem PV associado',cheg:'—',local:d.local==='V'?'Vinhedo':'Curitiba',semPv:true,prog_id:d.id||'',obs:d.obs||'',status:d.status||'Planejado'});}
+      out.push({dia:day,data:date,cod:d.cod,desc:r.desc,qtd:qAloc,pv:String(r.pv),cli:r.cliente,emp:r.empresa,vtot:r.qtd?r.vtot*qAloc/r.qtd:0,sit:atrasado?'ATRASADO':'em dia',cheg:chegTxt,local:d.local==='V'?'Vinhedo':'Curitiba',firme:r.iso,cidade:cid||'',prog_id:d.id||'',obs:d.obs||'',status:d.status||'Planejado'});
+    }
+
+    // FASE A: RATEIO EXPLÍCITO (múltiplos {pv, qtd})
+    const rateioValido = (Array.isArray(d.rateio) ? d.rateio : []).filter(function(it){ return it && it.pv && Number(it.qtd)>0; });
+    if(rateioValido.length){
+      rateioValido.forEach(function(itemRat){
+        if(left<=0) return;
+        let ratLeft = Math.min(Number(itemRat.qtd)||0, left);
+        const candRat = DATA.rows.filter(function(r){ return r.codigo===d.cod && String(r.pv)===String(itemRat.pv); }).sort(function(a,b){ return a.iso.localeCompare(b.iso); });
+        candRat.forEach(function(r){
+          if(ratLeft<=0) return;
+          const k=r.codigo+'|'+r.pv+'|'+r.empresa;
+          const q=Math.min(ratLeft, avail[k]||0);
+          if(q<=0) return;
+          alocarItemCarteira(r, q);
+          avail[k]-=q;
+          ratLeft-=q;
+          left-=q;
+        });
+        // Se o PV específico não teve saldo suficiente na carteira, marca o restante dele como linha com o PV pedido
+        if(ratLeft>0){
+          const vuRat = (candRat.length && candRat[0].qtd) ? (candRat[0].vtot/candRat[0].qtd) : (vuDe(d.cod)||0);
+          out.push({dia:day,data:date,cod:d.cod,desc:descDe(d.cod),qtd:ratLeft,pv:String(itemRat.pv),cli:pvTagDe(d.cod, itemRat.pv)||'',emp:'',vtot:vuRat*ratLeft,sit:'Sem saldo na carteira',cheg:'—',local:d.local==='V'?'Vinhedo':'Curitiba',prog_id:d.id||'',obs:d.obs||'',status:d.status||'Planejado'});
+          left-=ratLeft;
+        }
+      });
+      // Se sobrou alguma qtd não coberta pelo rateio, ela segue para o FIFO abaixo
+    }
+
+    let cand=DATA.rows.filter(function(r){return r.codigo===d.cod&&(!d.pv||String(r.pv)===String(d.pv));}).sort(function(a,b){return a.iso.localeCompare(b.iso);});
+    // POKA-YOKE: declaração sem NENHUM saldo correspondente na carteira = fóssil (PV já faturado ou inexistente) — não vira linha fantasma
+    if(!cand.length && !rateioValido.length){ window.fosseisCache.push({cod:d.cod,qtd:Number(d.qtd),pv:d.pv||'—',data:d.data,motivo:d.pv?('PV '+d.pv+' faturado/sem saldo — NF já saiu?'):'código sem saldo na carteira'}); return; }
+
+    if(left>0){
+      cand.forEach(function(r){
+        if(left<=0) return;
+        const k=r.codigo+'|'+r.pv+'|'+r.empresa,q=Math.min(left,avail[k]||0);if(q<=0)return;
+        alocarItemCarteira(r, q);
+        avail[k]-=q;left-=q;
+      });
+    }
+    if(left>0){const vu=(cand.length&&cand[0].qtd)?(cand[0].vtot/cand[0].qtd):(vuDe(d.cod)||0);out.push({dia:day,data:date,cod:d.cod,desc:descDe(d.cod),qtd:left,pv:d.pv||'—',cli:'',emp:'',vtot:vu*left,sit:'Sem PV associado',cheg:'—',local:d.local==='V'?'Vinhedo':'Curitiba',semPv:true,prog_id:d.id||'',obs:d.obs||'',status:d.status||'Planejado'});}
   });
   // REALOCAÇÃO MANUAL DE PV (v0.0.235): move qtd entre PVs da MESMA declaração (mesma
   // data+produto) — a produção continua igual, muda só o destino. Regra Dante: só entre
@@ -836,6 +1223,7 @@ function renderProgTabela(){
       '<option value="">PV atual ('+pvList.map(function(v){return v.pv;}).join('/')+')</option>' +
       '<option value="__SMKT__">🛒 Supermercado (produto pronto)</option>' +
       outrosPVs.map(function(r){ return '<option value="'+r.pv+'|'+r.cliente+'">'+r.pv+' · '+r.cliente.slice(0,22)+' ('+NF.format(r.qtd)+' un)</option>'; }).join('');
+    const btnDestino = '<button class="exRl" data-p="editdest" data-cod="'+p.cod+'" style="margin-top:4px;background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a;font-weight:700" title="Editar destinos por PV (ex: PV 611: 3 un, PV 614: 3 un) — define o rateio exato deste produto no dia">🎯 Destino por PV</button>';
     const det = '<tr class="detrow" data-det="'+ix+'"><td colspan="9"><table class="mini">'+
       '<tr><th>PV</th><th>Cliente</th><th>Qtd</th><th>Valor</th><th>Chegada prevista</th><th>Local</th><th>Situação</th><th>Realocar</th></tr>'+
       pvRows+'</table></td></tr>';
@@ -843,10 +1231,10 @@ function renderProgTabela(){
     const chegTxt = chegs.length ? (chegs.length===1 ? chegs[0] : chegs[0]+' … '+chegs[chegs.length-1]) : '—';
     const exInfo = ex.rl ? '<div style="font-size:10px;color:#92400e;font-weight:700;margin-top:3px">→ '+ex.rl+' ('+NF.format(ex.saldo)+' un)</div>' : '';
     const pvTrocado = ex.pvNovo ? '<div style="font-size:10px;color:#1e3a8a;font-weight:700;margin-top:3px">PV '+ex.pvNovo.split('|')[0]+'</div>' : '';
-    return '<tr class="prow'+(ex.ok?' exOK':'')+(smLinha>0?' smktRow':'')+'" data-ix="'+ix+'" data-cod="'+p.cod+'" draggable="true" title="Arraste até um dia acima para reprogramar · Ctrl+C copia · Ctrl+V cola como nova linha"><td><div class="cod">'+p.cod+'</div><div class="dsc">'+p.desc+'</div>'+(smLinha>0?'<div style="margin-top:3px">'+smSelo+'</div>':'')+'<button class="exRl" data-p="del" data-cod="'+p.cod+'" style="margin-top:4px;background:#fee2e2;border-color:#fecaca;color:#991b1b" title="Excluir TODAS as linhas deste produto neste dia (nada gravado no MaxiProd)">🗑 Excluir linha</button></td>'+
+    return '<tr class="prow'+(ex.ok?' exOK':'')+(smLinha>0?' smktRow':'')+'" data-ix="'+ix+'" data-cod="'+p.cod+'" draggable="true" title="Arraste até um dia acima para reprogramar · Ctrl+C copia · Ctrl+V cola como nova linha"><td><div class="cod">'+p.cod+'</div><div class="dsc">'+p.desc+'</div>'+(smLinha>0?'<div style="margin-top:3px">'+smSelo+'</div>':'')+'<div style="display:flex;gap:4px;flex-wrap:wrap"><button class="exRl" data-p="del" data-cod="'+p.cod+'" style="margin-top:4px;background:#fee2e2;border-color:#fecaca;color:#991b1b" title="Excluir TODAS as linhas deste produto neste dia (nada gravado no MaxiProd)">🗑 Excluir</button>'+btnDestino+'</div></td>'+
       '<td class="num"><input type="number" min="0" value="'+Math.round(p.qtd)+'" data-p="editqtd" data-cod="'+p.cod+'" style="width:74px;text-align:right;padding:3px;border:1px solid var(--line);border-radius:6px;font-weight:700" title="Editar qtd a fabricar — ajusta as linhas deste produto no dia"></td>'+
       '<td class="num">'+FMT.format(p.vtot)+'</td>'+
-      '<td class="num">'+pvList.length+' PV'+(pvList.length>1?'s':'')+'</td>'+
+      '<td class="num" style="cursor:pointer" data-p="editdest" data-cod="'+p.cod+'" title="Clique para editar o destino por PV deste produto">'+pvList.length+' PV'+(pvList.length>1?'s':'')+' <span style="font-size:10px;color:#1d4ed8;font-weight:700">✎</span></td>'+
       '<td>'+chegTxt+'</td>'+
       '<td>'+(p.atrasado?'<span class="tagF" style="background:#fee2e2;color:#991b1b">ATRASADO</span>':'<span class="tagP">em dia</span>')+'</td>'+
       '<td class="exec"><input type="checkbox" data-p="ok" '+(ex.ok?'checked':'')+'></td>'+
@@ -958,6 +1346,16 @@ function renderProgTabela(){
       declDraft.forEach(function(d){ if(d.cod===cod && d.data===progIso){ d.qtd=0; d.status='Cancelado'; } });
       declSave(); progBuildFromDecls(); renderProgTabela(); if(typeof renderAProg==='function') renderAProg();
       const st=document.getElementById('declStatus'); if(st) st.textContent=cod+' excluído de '+progDate+' — voltou para o card A Programar · nada gravado no MaxiProd';
+    });
+    // EDITOR DE DESTINO POR PV (v0.1.21): rateio explícito em popover/modal
+    tb.addEventListener('click', function(e){
+      const bDest = e.target.closest ? e.target.closest('[data-p="editdest"]') : null; if(!bDest) return;
+      e.stopPropagation();
+      const cod = bDest.getAttribute('data-cod');
+      if(!cod || !progDate) return;
+      const pd=String(progDate).split('/'); const yy=new Date().getFullYear();
+      const progIso=pd.length===3?(pd[2]+'-'+pd[1]+'-'+pd[0]):(pd.length===2?yy+'-'+pd[1]+'-'+pd[0]:progDate);
+      if(typeof pvDestEditorAbrirModal==='function') pvDestEditorAbrirModal(cod, progIso);
     });
     // REALOCAÇÃO DE PV (v0.0.235): botão na caixa de PVs do card Programação
     tb.addEventListener('click', function(e){
@@ -2281,7 +2679,7 @@ if(document.getElementById('btnDlDecl')){
 }
 
 // v0.0.64: rascunho SEMPRE carrega do localStorage (regressão v0.0.62: sem isso, mover item apagava os demais e o reload voltava ao estado original)
-declDraft=declLoad(); progBuildFromDecls(); rlpvInitModal(); apInitModal(); viewerUISet();
+declDraft=declLoad(); progBuildFromDecls(); rlpvInitModal(); pvDestInitModal(); apInitModal(); viewerUISet();
   // v0.0.256 (Opção B): leitura da agenda/SMKT exige LOGIN — anônimo vê só carteira/
   // faturamento/semanas (dados estáticos); agenda carrega só para quem conecta.
 // SUGESTÃO da próxima semana: semeia o rascunho com a fila do plano quando a semana declarada acabou
@@ -2560,7 +2958,7 @@ function viewerUISet(){
     'body.viewerMode #btnFirmaSel,body.viewerMode #smAdd,body.viewerMode #smEntradaBox,',
     'body.viewerMode #paBtnAll{display:none!important}',
     'body.viewerMode .exec{visibility:hidden}',
-    'body.viewerMode #tbbP button[data-p=del],body.viewerMode #tbbAProg button[data-apbtn],',
+    'body.viewerMode #tbbP button[data-p=del],body.viewerMode #tbbP button[data-p=editdest],body.viewerMode #tbbAProg button[data-apbtn],',
     'body.viewerMode #tbbP .detrow button[data-rlpv],body.viewerMode #tbbS button[data-firma],',
     'body.viewerMode #tbbS .firmaFlag,body.viewerMode #tbbS button.exRl,',
     'body.viewerMode #smNfAlert button.exRl,body.viewerMode #tbbSmktHist button[data-undo]{display:none!important}'

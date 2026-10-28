@@ -4,7 +4,7 @@
 // 2. type="password" nativo no campo de senha.
 // 3. Botões "📋 Colar" com leitura de clipboard e aviso discreto em caso de bloqueio.
 // 4. Enter dispara o envio em ambos os campos.
-// 5. Atualização da versão para v0.1.20 nos cabeçalhos e rodapés.
+// 5. Atualização da versão para v0.1.21 nos cabeçalhos e rodapés.
 
 ;(function () {
   'use strict'
@@ -175,7 +175,7 @@
       })
     }
 
-    // Atualiza versão v0.1.20 no cabeçalho
+    // Atualiza versão v0.1.21 no cabeçalho
     const headerSub = document.querySelector('header .sub')
     if (headerSub) {
       let verBadge = document.getElementById('panelVersionBadge')
@@ -185,20 +185,20 @@
         verBadge.className = 'version-tag'
         verBadge.style.cssText =
           'margin-left:8px;font-weight:700;color:#93c5fd;background:rgba(255,255,255,0.12);padding:2px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.25);'
-        verBadge.textContent = 'v0.1.20'
+        verBadge.textContent = 'v0.1.21'
         headerSub.appendChild(verBadge)
       } else {
-        verBadge.textContent = 'v0.1.20'
+        verBadge.textContent = 'v0.1.21'
       }
     }
 
-    // Atualiza versão v0.1.20 nos rodapés (exceto o rodapé interno do monitor individual)
+    // Atualiza versão v0.1.21 nos rodapés (exceto o rodapé interno do monitor individual)
     document.querySelectorAll('footer:not(.hhIndFooterClean)').forEach(function (f) {
       const curVer = f.getAttribute('data-ver-updated')
-      if (curVer !== 'v0.1.20') {
-        f.setAttribute('data-ver-updated', 'v0.1.20')
+      if (curVer !== 'v0.1.21') {
+        f.setAttribute('data-ver-updated', 'v0.1.21')
         // remove versão anterior se já inserida
-        f.innerHTML = f.innerHTML.replace(/\s*·\s*<b[^>]*>v0\.1\.[0-9]+<\/b>/g, '').trim() + ' · <b style="color:var(--acc, #1e3a8a)">v0.1.20</b>'
+        f.innerHTML = f.innerHTML.replace(/\s*·\s*<b[^>]*>v0\.1\.[0-9]+<\/b>/g, '').trim() + ' · <b style="color:var(--acc, #1e3a8a)">v0.1.21</b>'
       }
     })
   }
