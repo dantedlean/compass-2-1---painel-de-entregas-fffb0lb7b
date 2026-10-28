@@ -1465,7 +1465,8 @@ function renderProgTabela(){
       const prev = getProgExec(p.cod, progDate) || {};
       const ok = tr.querySelector('input[data-p=ok]').checked;
       const qtd = parseFloat(tr.querySelector('input[data-p=qtd]').value) || 0;
-      const pvSel = tr.querySelector('select[data-p=pv]').value;
+      const selEl = tr.querySelector('select[data-p=pv]');
+      const pvSel = selEl ? selEl.value : '';
       // DESTINO SMKT (decisão Dante 26/09 00h05): o produto vai para o estoque de prontos e
       // a alocação por PV acontece LÁ (automática pela NF emitida ou manual no card Supermercado).
       // O card principal não aloca por PV nesta linha — só o botão Desfazer (no histórico) reverte.

@@ -71,7 +71,7 @@
     if (!token || !isAdmin()) return false;
 
     var api = getApiBase();
-    var filter = "(dia='" + encodeURIComponent(dia) + "' && codigo='" + encodeURIComponent(codigo) + "')";
+    var filter = "(dia='" + dia + "' && codigo='" + codigo + "')";
     var headers = {
       'Authorization': token,
       'Content-Type': 'application/json'
@@ -212,7 +212,7 @@
       if (!dias.length) return false;
 
       // Monta filtro por dias
-      var filterParts = dias.map(function (d) { return "dia='" + encodeURIComponent(d) + "'"; });
+      var filterParts = dias.map(function (d) { return "dia='" + d + "'"; });
       var filter = '(' + filterParts.join(' || ') + ')';
       var url = api + '/api/collections/andon_progexec/records?filter=' + encodeURIComponent(filter) + '&perPage=200';
 
