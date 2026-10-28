@@ -301,6 +301,7 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
       <b style="font-size:12.5px">+ Incluir item:</b>
       <select id="addModo" style="padding:6px;border:1px solid var(--line);border-radius:8px;font-size:12px"><option value="pv">Por PV</option><option value="prod">Por produto</option></select>
       <input id="addPv" placeholder="Nº do PV" list="pvDigList" inputmode="numeric" style="width:100px;padding:6px;border:1px solid var(--line);border-radius:8px;font-weight:700">
+      <select id="addPvProdSel" style="display:none;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:12px;max-width:240px" title="Escolha o produto deste PV"></select>
       <input id="addProd" placeholder="Código do produto" list="prodDigList" style="width:160px;padding:6px;border:1px solid var(--line);border-radius:8px;font-weight:700;display:none">
       <span id="addInfo" class="note" style="flex:1;min-width:240px;margin:0">digite o PV — produto, cliente, saldo e entrega aparecem aqui</span>
       <label class="note" style="margin:0">Qtd</label>
@@ -561,6 +562,14 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;padding:8px}
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
       <label class="note" style="margin:0;min-width:90px">Qtd a produzir:</label>
       <input id="apQtdInput" type="number" min="1" style="flex:1;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;text-align:right;font-weight:700">
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <label class="note" style="margin:0;min-width:90px">PV destino:</label>
+      <select id="apQtdPvSel" style="flex:1;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px"></select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <label class="note" style="margin:0;min-width:90px">ou digite o PV:</label>
+      <input id="apQtdPvDig" inputmode="numeric" placeholder="nº do PV (opcional)…" style="flex:1;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px">
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
       <label class="note" style="margin:0;min-width:90px">Produzir em:</label>
