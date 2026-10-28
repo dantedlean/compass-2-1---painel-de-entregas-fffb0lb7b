@@ -157,18 +157,6 @@ function apAbrirModal(cod, aProg, dataIso, viaDrag){
   document.getElementById('apQtdData').value=dataIso;
   const sel=document.getElementById('apQtdLocal'); if(sel) sel.value=window.UNID||'C';
   box.dataset.cod=cod; box.dataset.aprog=aProg;
-
-  // Seletor / digitação de PV (mesmo padrão da realocação rlpv)
-  const pvSel=document.getElementById('apQtdPvSel');
-  const pvDig=document.getElementById('apQtdPvDig');
-  if(pvDig) pvDig.value='';
-  if(pvSel){
-    const destinos=rlpvDestinos(cod,'');
-    pvSel.innerHTML='<option value="">— Automático (FIFO da carteira) —</option>'+destinos.map(function(o){
-      return '<option value="'+o.pv+'">PV '+o.pv+' · '+o.cli.slice(0,24)+' · saldo '+NF.format(o.livre)+' un'+(o.atr?' · ATRASADO':'')+' · entrega '+dtBR(o.iso)+'</option>';
-    }).join('');
-  }
-
   // POKA-YOKE (v0.0.207): aviso vermelho quando programar ESTE dia ultrapassaria o saldo com PV
   const warn=document.getElementById('apQtdWarn');
   if(warn){
@@ -188,23 +176,6 @@ function apInitModal(){
   const box=document.getElementById('apQtdBox'); if(!box||box._bound) return; box._bound=true;
   document.getElementById('apQtdCancel').addEventListener('click',function(){ box.style.display='none'; });
   box.addEventListener('click',function(e){ if(e.target===box) box.style.display='none'; });
-  const pvDigInp=document.getElementById('apQtdPvDig');
-  if(pvDigInp){
-    pvDigInp.addEventListener('input',function(){
-      const q=this.value.trim(); const warn=document.getElementById('apQtdWarn');
-      if(!q){ if(warn) warn.style.display='none'; return; }
-      const o=pvLookup(q);
-      const ok=o && o.itens.some(function(r){ return r.codigo===box.dataset.cod; });
-      if(!ok){
-        if(warn){
-          warn.style.display='block';
-          warn.innerHTML='⚠ PV '+q+' não tem saldo a entregar do produto '+box.dataset.cod+'.';
-        }
-      } else {
-        if(warn) warn.style.display='none';
-      }
-    });
-  }
   document.getElementById('apQtdOk').addEventListener('click',function(){
     const cod=box.dataset.cod; if(!cod) return;
     const qtd=Number(document.getElementById('apQtdInput').value);
@@ -214,44 +185,17 @@ function apInitModal(){
     if(!dataIso){ alert('Informe a data.'); return; }
     const aProg=Number(box.dataset.aprog)||0;
     if(qtd>aProg && !confirm('Qtd ('+qtd+') maior que o saldo a programar ('+Math.round(aProg)+'). Confirmar mesmo assim?')) return;
-
-    // Resolução do PV escolhido (se informado)
-    let pvEscolhido='';
-    const dig=(document.getElementById('apQtdPvDig')?document.getElementById('apQtdPvDig').value.trim():'');
-    const selPv=(document.getElementById('apQtdPvSel')?document.getElementById('apQtdPvSel').value:'');
-    if(dig){
-      const o=pvLookup(dig);
-      const ok=o && o.itens.some(function(r){ return r.codigo===cod; });
-      if(!ok){ alert('PV '+dig+' não tem saldo do produto '+cod+' (regra).'); return; }
-      pvEscolhido=String(o.pv);
-    } else if(selPv){
-      pvEscolhido=String(selPv);
-    }
-
-    if(pvEscolhido){
-      const destList=rlpvDestinos(cod,'');
-      const dest=destList.find(function(d){ return String(d.pv)===String(pvEscolhido); });
-      if(!dest){
-        alert('PV '+pvEscolhido+' sem saldo a entregar deste produto.');
-        return;
-      }
-      if(qtd>dest.livre){
-        if(!confirm('PV '+pvEscolhido+' tem saldo de apenas '+NF.format(dest.livre)+' un do produto '+cod+'. Continuar com '+NF.format(qtd)+' un? O excedente ficará sem PV.')) return;
-      }
-    }
-
     box.style.display='none';
-    apProgramar(cod, qtd, dataIso, local, pvEscolhido);
+    apProgramar(cod, qtd, dataIso, local);
   });
 }
-function apProgramar(cod, qtd, dataIso, local, pvEscolhido){
+function apProgramar(cod, qtd, dataIso, local){
   if(!Array.isArray(declDraft)) declDraft=[];
   const d=new Date(dataIso+'T12:00:00');
   const nomeDia=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-  const obs = pvEscolhido ? ('programado p/ PV '+pvEscolhido) : 'programado via A Programar';
-  declDraft.push({dia:nomeDia[d.getDay()],data:dataIso,cod:cod,qtd:qtd,local:local||window.UNID||'C',pv:pvEscolhido||'',id:'PR-AP-'+Date.now(),obs:obs,status:'Planejado'});
+  declDraft.push({dia:nomeDia[d.getDay()],data:dataIso,cod:cod,qtd:qtd,local:local||window.UNID||'C',pv:'',id:'PR-AP-'+Date.now(),obs:'programado via A Programar',status:'Planejado'});
   declSave(); progBuildFromDecls(); renderDeclEditor(); progDia=null; progDate=null; renderProg();
-  const st=document.getElementById('declStatus'); if(st) st.textContent=cod+' ×'+qtd+(pvEscolhido?' (PV '+pvEscolhido+')':'')+' programado para '+dataIso.split('-').reverse().join('/')+' ('+(local==='V'?'Vinhedo':'Curitiba')+') · nada gravado no MaxiProd';
+  const st=document.getElementById('declStatus'); if(st) st.textContent=cod+' ×'+qtd+' programado para '+dataIso.split('-').reverse().join('/')+' ('+(local==='V'?'Vinhedo':'Curitiba')+') · nada gravado no MaxiProd';
 }
 window.apProgramar=apProgramar;
 // ==================== REALOCAÇÃO MANUAL DE PV (06/10, v0.0.235) ====================
@@ -472,13 +416,7 @@ function progBuildFromDecls(){
   const avail={}; DATA.rows.forEach(function(r){const k=r.codigo+'|'+r.pv+'|'+r.empresa;avail[k]=(avail[k]||0)+Number(r.qtd||0);});
   const dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']; const out=[];
   window.fosseisCache=[];
-  // Processar primeiro as declarações com PV explícito para reservar o saldo do PV escolhido
-  const unidDecls = declDaUnid().slice().sort(function(a,b){
-    const aPv = (a.pv && String(a.pv).trim() && a.pv!=='—') ? 1 : 0;
-    const bPv = (b.pv && String(b.pv).trim() && b.pv!=='—') ? 1 : 0;
-    return bPv - aPv;
-  });
-  unidDecls.forEach(function(d){if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0)return;
+  declDaUnid().forEach(function(d){if(d.status==='Cancelado'||!d.cod||!d.data||Number(d.qtd)<=0)return;
     const dt=new Date(d.data+'T12:00:00'),day=dias[dt.getDay()],date=d.data.slice(8,10)+'/'+d.data.slice(5,7);let left=Number(d.qtd);
     let cand=DATA.rows.filter(function(r){return r.codigo===d.cod&&(!d.pv||String(r.pv)===String(d.pv));}).sort(function(a,b){return a.iso.localeCompare(b.iso);});
     // POKA-YOKE: declaração sem NENHUM saldo correspondente na carteira = fóssil (PV já faturado ou inexistente) — não vira linha fantasma
@@ -1514,35 +1452,7 @@ function setExec(r, v){ if(v && (v.ok || v.qtd || v.rl)) localStorage.setItem(ex
 // execução da programação diária (por código + dia)
 function progKey(cod, dia){ return 'prog|'+cod+'|'+dia; }
 function getProgExec(cod, dia){ try{ return JSON.parse(localStorage.getItem(progKey(cod,dia)) || 'null'); }catch(e){ return null; } }
-function getAllProgExecMap(){
-  const map={};
-  try{
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i);
-      if(k && k.indexOf('prog|')===0){
-        try{ map[k]=JSON.parse(localStorage.getItem(k)||'null'); }catch(e){}
-      }
-    }
-  }catch(e){}
-  return map;
-}
-let _progExecPushTimer = null;
-function scheduleProgExecPush(){
-  if(document.body.classList.contains('viewerMode')) return;
-  if(!window.ANDON_SYNC || !window.ANDON_SYNC.connected()) return;
-  if(_progExecPushTimer) clearTimeout(_progExecPushTimer);
-  _progExecPushTimer = setTimeout(function(){
-    _progExecPushTimer = null;
-    const map = getAllProgExecMap();
-    localStorage.setItem('andon|progexec-rev', String(Date.now()));
-    window.ANDON_SYNC.pushProgExec(map).catch(function(){});
-  }, 1000);
-}
-function setProgExec(cod, dia, v){
-  if(v && (v.ok || v.qtd || v.rl || v.pvNovo || v.smkt)) localStorage.setItem(progKey(cod,dia), JSON.stringify(v));
-  else localStorage.removeItem(progKey(cod,dia));
-  scheduleProgExecPush();
-}
+function setProgExec(cod, dia, v){ if(v && (v.ok || v.qtd || v.rl || v.pvNovo || v.smkt)) localStorage.setItem(progKey(cod,dia), JSON.stringify(v)); else localStorage.removeItem(progKey(cod,dia)); }
 
 function nfLista(){
  const nb=DATA.nfBaixadas||{}; if(Array.isArray(nb.nfs)) return nb.nfs;
@@ -2284,12 +2194,10 @@ window.progAddLine = progAddLineFn;
     dl.innerHTML=Array.from(cods).sort(cmpCod).map(function(c){ return '<option value="'+c+'">'+c+' · '+descDe(c).slice(0,40)+'</option>'; }).join('');
     document.body.appendChild(dl);
   })();
-  const pvProdSel = document.getElementById('addPvProdSel');
   // troca de modo: PV ↔ produto
   modo.addEventListener('change', function(){
     const prod = modo.value==='prod';
     inp.style.display = prod?'none':''; inpProd.style.display = prod?'':'none';
-    if(pvProdSel) pvProdSel.style.display = 'none';
     pvSel=null; inp.value=''; inpProd.value=''; qtd.value='';
     info.innerHTML = prod ? 'digite o código do produto — PVs cobertos e saldo aparecem aqui' : 'digite o PV — produto, cliente, saldo e entrega aparecem aqui';
   });
@@ -2297,40 +2205,13 @@ window.progAddLine = progAddLineFn;
     if(modo.value==='prod'){ showInfoProd(); return; }
     const o=pvLookup(inp.value);
     if(!o){ pvSel=null;
-      if(pvProdSel){ pvProdSel.style.display='none'; pvProdSel.innerHTML=''; }
       info.innerHTML = inp.value.trim() ? '<span style="color:#dc2626">PV '+inp.value.trim()+' não encontrado na carteira</span>' : 'digite o PV — produto, cliente, saldo e entrega aparecem aqui';
       return;
     }
     pvSel=o;
-    // Seletor de produto para PV com múltiplos itens (Item 3)
-    if(pvProdSel){
-      if(o.itens && o.itens.length > 1){
-        const curVal = pvProdSel.value;
-        pvProdSel.innerHTML = o.itens.map(function(it, idx){
-          return '<option value="'+it.codigo+'"'+(idx===0?' selected':'')+'>'+it.codigo+' ('+NF.format(it.qtd)+' un)</option>';
-        }).join('');
-        pvProdSel.style.display = '';
-        if(curVal && o.itens.some(function(it){ return it.codigo===curVal; })) pvProdSel.value = curVal;
-      } else {
-        pvProdSel.style.display = 'none';
-        pvProdSel.innerHTML = '';
-      }
-    }
-    const codAtivo = (pvProdSel && pvProdSel.style.display!=='none' && pvProdSel.value) ? pvProdSel.value : (o.itens[0]&&o.itens[0].codigo);
-    const itemAtivo = o.itens.find(function(it){ return it.codigo===codAtivo; }) || o.itens[0];
-    const itens=o.itens.map(function(r){ return (r.codigo===codAtivo?'<b style="color:#1e3a8a">':'<b>')+r.codigo+'</b> '+(r.desc||'').slice(0,40); }).join(' · ');
-    info.innerHTML = '<b style="color:#16a34a">PV '+o.pv+' · '+o.cli+' · '+o.emp+'</b> — '+itens+' · saldo do item <b>'+NF.format(itemAtivo.qtd)+' un</b> · entrega '+(o.itens.map(function(r){return dtBR(r.iso);}).join(', '))+(o.atr?' <span class="tagF">ATRASADO</span>':'');
-    if(!qtd.value) qtd.value = itemAtivo.qtd;
-  }
-  if(pvProdSel){
-    pvProdSel.addEventListener('change', function(){
-      if(!pvSel || !pvSel.itens) return;
-      const codAtivo = pvProdSel.value;
-      const itemAtivo = pvSel.itens.find(function(it){ return it.codigo===codAtivo; }) || pvSel.itens[0];
-      qtd.value = itemAtivo.qtd;
-      const itens=pvSel.itens.map(function(r){ return (r.codigo===codAtivo?'<b style="color:#1e3a8a">':'<b>')+r.codigo+'</b> '+(r.desc||'').slice(0,40); }).join(' · ');
-      info.innerHTML = '<b style="color:#16a34a">PV '+pvSel.pv+' · '+pvSel.cli+' · '+pvSel.emp+'</b> — '+itens+' · saldo do item <b>'+NF.format(itemAtivo.qtd)+' un</b> · entrega '+(pvSel.itens.map(function(r){return dtBR(r.iso);}).join(', '))+(pvSel.atr?' <span class="tagF">ATRASADO</span>':'');
-    });
+    const itens=o.itens.map(function(r){ return '<b>'+r.codigo+'</b> '+(r.desc||'').slice(0,40); }).join(' · ');
+    info.innerHTML = '<b style="color:#16a34a">PV '+o.pv+' · '+o.cli+' · '+o.emp+'</b> — '+itens+' · saldo <b>'+NF.format(o.qtd)+' un</b> · entrega '+(o.itens.map(function(r){return dtBR(r.iso);}).join(', '))+(o.atr?' <span class="tagF">ATRASADO</span>':'');
+    if(!qtd.value) qtd.value=o.qtd;
   }
   function showInfoProd(){
     const cod=(inpProd.value||'').trim().toUpperCase();
@@ -2370,14 +2251,9 @@ window.progAddLine = progAddLineFn;
     if(!pvSel){ alert('Digite um PV válido primeiro — o Andon traz os dados do item.'); return; }
     const q=Number(qtd.value)||0;
     if(q<=0){ alert('Informe a quantidade.'); return; }
-    // Usa o produto escolhido no dropdown quando houver múltiplos itens; senão o 1º item como antes
-    let codItem = pvSel.itens[0].codigo;
-    if(pvProdSel && pvProdSel.style.display!=='none' && pvProdSel.value){
-      codItem = pvProdSel.value;
-    }
-    declDraft.push({dia:progDia||'Segunda',data:iso,cod:codItem,qtd:q,local:window.UNID||document.getElementById('addLocal').value,pv:pvSel.pv,id:'PR-ADD-'+Date.now(),obs:'incluído via PV '+pvSel.pv+' ('+codItem+')',status:'Planejado'});
+    declDraft.push({dia:progDia||'Segunda',data:iso,cod:pvSel.itens[0].codigo,qtd:q,local:window.UNID||document.getElementById('addLocal').value,pv:pvSel.pv,id:'PR-ADD-'+Date.now(),obs:'incluído via PV '+pvSel.pv,status:'Planejado'});
     declSave(); progBuildFromDecls(); renderProg();
-    inp.value=''; qtd.value=''; pvSel=null; if(pvProdSel){ pvProdSel.style.display='none'; pvProdSel.innerHTML=''; } if(document.getElementById('addData'))document.getElementById('addData').value='';
+    inp.value=''; qtd.value=''; pvSel=null; if(document.getElementById('addData'))document.getElementById('addData').value='';
     info.innerHTML='<span style="color:#16a34a">✔ Incluído em '+iso.split('-').reverse().join('/')+' — nada gravado no MaxiProd</span>';
   });
   // limpar declarações inválidas (fósseis do aviso vermelho)
@@ -2593,72 +2469,6 @@ const ANDON_SYNC = {
     window.embList = ch.embarques;
     return true;
   },
-  // v0.0.561: PROGEXEC — sincronização da execução (Exec/Realizada) da programação firme
-  async pushProgExec(map){
-    if(!this.connected()) return false;
-    if(document.body.classList.contains('viewerMode')) return false;
-    const body = {
-      cycle_id: 'flrv0lcbha5hh5v',
-      event_type: 'system',
-      occurred_at: new Date().toISOString(),
-      reason: 'Execução da Programação Firme Andon',
-      source: 'andon-progexec',
-      changes: { progexec: map||{}, rev: Date.now() },
-      before_snapshot: { field: 'andon_progexec', value: 'v'+Date.now() }
-    };
-    const r = await fetch(this.api+'/api/collections/reprogramming_events/records', {
-      method:'POST', headers:this.headers(), body: JSON.stringify(body)
-    });
-    if(r.status===400||r.status===401||r.status===403){ this._authFail(); return 'auth'; }
-    if(!r.ok){ throw new Error('push progexec falhou ('+r.status+')'); }
-    this.lastPush = Date.now(); this.expired = false;
-    if(this.onPushed){ try{ this.onPushed(); }catch(e){} }
-    return true;
-  },
-  async syncProgExecFromServer(){
-    if(!this.connected()) return false;
-    const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-progexec')";
-    const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
-    const r = await fetch(url, {headers:this.headers()});
-    if(!r.ok) return false;
-    const d = await r.json();
-    if(!d.items || !d.items.length) return false;
-    const ch = d.items[0].changes || {};
-    const srvMap = ch.progexec || {};
-    const locRev = Number(localStorage.getItem('andon|progexec-rev')||0);
-    const srvRev = Number(ch.rev||0);
-    if(locRev > srvRev) return false;
-    // Mesclar: servidor como fonte de verdade para as chaves recebidas, mantendo chaves locais não sobrescritas
-    Object.keys(srvMap).forEach(function(k){
-      if(k && k.indexOf('prog|')===0){
-        const val = srvMap[k];
-        if(val && (val.ok || val.qtd || val.rl || val.pvNovo || val.smkt)){
-          localStorage.setItem(k, JSON.stringify(val));
-        }
-      }
-    });
-    localStorage.setItem('andon|progexec-rev', String(srvRev));
-    return true;
-  },
-  async pullProgExecPublic(){
-    const f = "(cycle_id='flrv0lcbha5hh5v' && event_type='system' && source='andon-progexec')";
-    const url = this.api+'/api/collections/reprogramming_events/records?filter='+encodeURIComponent(f)+'&sort=-created&perPage=1';
-    const r = await fetch(url);
-    if(!r.ok) return false;
-    const d = await r.json();
-    if(!d.items || !d.items.length) return false;
-    const ch = d.items[0].changes || {};
-    const srvMap = ch.progexec || {};
-    Object.keys(srvMap).forEach(function(k){
-      if(k && k.indexOf('prog|')===0){
-        const val = srvMap[k];
-        if(val && (val.ok || val.qtd || val.rl || val.pvNovo || val.smkt)){
-          localStorage.setItem(k, JSON.stringify(val));
-        }
-      }
-    });
-    return true;
-  },
   // v0.0.558: TERCEIROS — lista de fornecedores com aba própria (escrita admin-only)
   async pushTerc(list){
     if(!this.connected()) return false;
@@ -2780,9 +2590,6 @@ window.andonToggleConn = andonToggleConn;
     .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncSmktFromServer() : ANDON_SYNC.pullSmktPublic(); }).then(function(pulled){
       if(pulled && typeof renderSmkt==='function'){ renderSmkt(); renderSemana(); renderKpis(); renderGantt(); renderTimeline(); renderTabela(); }
     }).catch(function(){})
-    .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncProgExecFromServer() : ANDON_SYNC.pullProgExecPublic(); }).then(function(pulled){
-      if(pulled && typeof renderProgTabela==='function'){ renderProgTabela(); }
-    }).catch(function(){})
     .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncEmbFromServer() : ANDON_SYNC.pullEmbPublic(); }).then(function(pulled){
       if(pulled && typeof embRender==='function'){ embRender(); }
     }).catch(function(){})
@@ -2808,9 +2615,6 @@ window.andonToggleConn = andonToggleConn;
     _pullBusy=true;
     Promise.resolve(ANDON_SYNC.syncFromServer()).then(function(pulled){
       if(pulled){ renderProg(); const st=document.getElementById('declStatus'); if(st) st.textContent='Rascunho atualizado do servidor ('+(new Date()).toLocaleTimeString('pt-BR')+')'; }
-    }).catch(function(){})
-    .then(function(){ return ANDON_SYNC.connected() ? ANDON_SYNC.syncProgExecFromServer() : ANDON_SYNC.pullProgExecPublic(); }).then(function(pulled){
-      if(pulled && typeof renderProgTabela==='function'){ renderProgTabela(); }
     }).catch(function(){})
     .finally(function(){ _pullBusy=false; });
   }
@@ -2875,7 +2679,6 @@ window.andonSyncStatus = andonSyncStatus;
         let carregou=false;
         try{ const pulled = await ANDON_SYNC.syncFromServer(); if(pulled){ renderProg(); carregou=true; } }catch(e){}
         try{ const ps = await ANDON_SYNC.syncSmktFromServer(); if(ps && typeof renderSmkt==='function'){ renderSmkt(); renderSemana(); renderKpis(); renderGantt(); renderTimeline(); renderTabela(); } }catch(e){}
-        try{ const pe = await ANDON_SYNC.syncProgExecFromServer(); if(pe && typeof renderProgTabela==='function'){ renderProgTabela(); } }catch(e){}
         const st=document.getElementById('declStatus');
         if(st) st.textContent='👁 Somente visualização'+(carregou?' — rascunho do servidor carregado':' — edições não gravam no servidor');
         return;
@@ -2887,9 +2690,7 @@ window.andonSyncStatus = andonSyncStatus;
       document.getElementById('connBox').style.display='none';
       // puxa o último snapshot do servidor e depois envia o estado atual se for mais novo
       try{ const pulled = await ANDON_SYNC.syncFromServer(); if(pulled){ renderProg(); if(st) st.textContent='Rascunho do servidor carregado'; } }catch(e){}
-      try{ const pe = await ANDON_SYNC.syncProgExecFromServer(); if(pe && typeof renderProgTabela==='function'){ renderProgTabela(); } }catch(e){}
       try{ if(Array.isArray(declDraft) && declDraft.length){ await ANDON_SYNC.push(declDraft, 'Sessão conectada — estado atual salvo'); } }catch(e){}
-      try{ const pem = getAllProgExecMap(); if(pem && Object.keys(pem).length){ await ANDON_SYNC.pushProgExec(pem); } }catch(e){}
     }catch(e){
       alert('Falha ao conectar: '+e.message);
     }finally{ go.disabled=false; go.textContent='Entrar'; }
@@ -2914,9 +2715,6 @@ window.andonSyncStatus = andonSyncStatus;
     }).catch(function(){});
     ANDON_SYNC.syncSmktFromServer().then(function(pulled){
       if(pulled && typeof renderSmkt==='function'){ renderSmkt(); renderSemana(); renderKpis(); renderGantt(); renderTimeline(); renderTabela(); }
-    }).catch(function(){});
-    ANDON_SYNC.syncProgExecFromServer().then(function(pulled){
-      if(pulled && typeof renderProgTabela==='function'){ renderProgTabela(); }
     }).catch(function(){});
   }
   // v0.0.200: status de push em tempo real no botão de conexão + indicador de sessão expirada
