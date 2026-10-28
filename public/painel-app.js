@@ -479,9 +479,9 @@ document.addEventListener('keydown', function(e){
 
 // ==================== EDITOR DE DESTINO POR PV (v0.1.21) ====================
 // Permite definir rateio explícito {pv, qtd} para uma linha da programação firme (ex.: PV 611 -> 3, PV 614 -> 3)
-function pvDestEditorAbrirModal(cod, progIso){
+function pvDestEditorAbrirModal(cod, diaIso){
   const box = document.getElementById('pvDestBox'); if(!box) return;
-  const pd = String(progIso||'');
+  const pd = String(diaIso||'');
   const dIso = pd.length===5 ? progIso(pd) : pd;
   const alvo = (typeof declDraft!=='undefined') ? declDraft.filter(function(d){ return d.cod===cod && progIso(d.data)===dIso && d.status!=='Cancelado'; }) : [];
   if(!alvo.length){ alert('Sem declaração para '+cod+' neste dia.'); return; }
@@ -1495,6 +1495,7 @@ function renderProgTabela(){
     tb.addEventListener('click', function(e){
       const btn = e.target;
       if(!btn.matches || !btn.matches('#tbbP .exRl')) return;
+      if(btn.getAttribute('data-p')==='editdest' || (btn.closest && btn.closest('[data-p="editdest"]'))) return;
       const tr = btn.closest('tr'); const ix = parseInt(tr.getAttribute('data-ix'),10);
       const p = progProdsCache[ix]; if(!p) return;
       if(btn.getAttribute('data-p')==='copy'){ progCopyLine(p); return; }
