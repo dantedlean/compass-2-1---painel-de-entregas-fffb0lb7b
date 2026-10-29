@@ -6142,6 +6142,92 @@ function hhMonV2CellCard(c,index,iso,now,stats){
   '<div class="hhFcMetric"><div class="lbl">Meta hora · '+escH(slotLabel)+'</div><div class="val">'+NF.format(m.slotActual)+' <small>/ '+NF.format(Math.round(m.slotGoal))+' pc</small></div><div class="hint">esperado agora: '+NF.format(Math.round(m.slotExpected))+(future?' · faixa futura':'')+'</div></div>'+hhMonV2Chart(c,iso,now,m)+emProd+queue+(stop?hhMonV2StopText(stop,c,m.cut):'')+'</div></article>';
 }
 function hhMonV2DateLabel(iso){const p=String(iso||'').split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]),wd=['dom','seg','ter','qua','qui','sex','sáb'][d.getDay()],mo=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d.getMonth()];return wd+' - '+String(d.getDate()).padStart(2,'0')+' '+mo+' '+d.getFullYear();}
+// ===== REDESIGN MONITOR GERAL (29/10) — layout do mockup Dante =====
+// Escopo: SOMENTE o Monitor Geral (hhFactoryScreen). Nao toca em programacao,
+// apontamento, monitor individual, gestao, dados, sync ou calculos.
+// Regras de cor/staat mantidas: vem de m.state (mesma fonte de hhMonV2CellCard).
+
+// Rotulo do eixo X: "HH:MM" ou "HH:MM-HH:MM" quando o intervalo completo pedido
+function hhRgSlotLabel(slot,completo){
+  function hm(m){m=Number(m)||0;var h=Math.floor(m/60),mi=m%60;return String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0');}
+  if(!slot)return '—';
+  var ini=hm(slot.start),fim=hm(slot.end);
+  if(completo)return ini+' - '+fim;
+  return ini;
+}
+
+// Lista PRODUTOS DO DIA (reaplicada de baa8bae/v0.1.23 — mesmos rotulos e regras)
+function hhRgProdutosDoDia(c,iso,pr,m){
+  var runningCod=(pr.running&&pr.running.p)?String(pr.running.p.cod):null;
+  var lista=(pr.all&&pr.all.length)?pr.all:[];
+  if(!lista.length)return '<div class="hhRgProdEmpty">Sem produto programado</div>';
+  return lista.map(function(p){
+    var day=hh431ProductDay(c.id,iso,p.cod),meta=Number(p.qtdDia)||0;
+    var isRunning=runningCod!==null&&String(p.cod)===runningCod;
+    var stText='PENDENTE',stCls='pend';
+    if(meta>0&&day>=meta){stText='CONCLUÍDO';stCls='done';}
+    else if(isRunning){
+      var cls=hh431TagClass(m);
+      stCls=cls==='red'?'late':(cls==='yellow'?'warn':'run');
+      stText='EM PRODUÇÃO';
+    }
+    var badge=p.pv?'<span class="hhRgBadge">PV '+escH(p.pv)+'</span>':(p.ward?'<span class="hhRgBadge">WARD</span>':'');
+    return '<div class="hhRgProdRow'+(isRunning?' running':'')+'">'+
+      '<span class="hhRgSt '+stCls+'">'+stText+'</span>'+
+      '<span class="hhRgProdName" title="'+escH(hhMonV2ProductDescription(p))+'">'+hhMonV2ProductDescription(p)+'</span>'+
+      badge+
+      '<span class="hhRgQty">'+NF.format(day)+' / '+NF.format(meta)+'</span>'+
+      '</div>';
+  }).join('');
+}
+
+// Card por celula — empilhado, largura total, ordem do cadastro (index de hhLinhasCfg)
+function hhRgCellCard(c,index,iso,now,stats){
+  var m=stats||hhMonV2State(c,iso,now);
+  var pr=hhMonV2Products(c,iso,now,m);
+  var stop=m.stop,cls=stop?'stop':m.state;
+  var foc=m.focus;
+  var slotLabel=foc?foc.label:'—';
+  var progress=Math.min(100,m.progress);
+  var horaAtual=hhRgSlotLabel(foc,true);
+  return '<article class="hhRgCard '+cls+'">'+
+    '<header class="hhRgHead"><div class="hhRgName"><span class="hhRgNum">CÉL '+String(index+1).padStart(2,'0')+'</span>'+escH(c.nome)+'</div><span class="hhRgStatus">'+escH(m.label)+'</span></header>'+
+    '<div class="hhRgBody">'+
+      '<div class="hhRgColLeft">'+
+        '<div class="hhRgMetric"><div class="lbl">Realizado / Meta dia</div><div class="val">'+NF.format(m.actual)+' <small>/ '+NF.format(m.goal)+' pc</small></div><div class="hhRgProgress"><i style="width:'+progress+'%"></i></div><div class="hint">'+m.progress+'% da meta · '+NF.format(Math.max(0,m.goal-m.actual))+' pc faltantes</div></div>'+
+        '<div class="hhRgMetric"><div class="lbl">Vs. esperado</div><div class="delta '+(m.delta<0?'neg':'')+'">'+(m.delta>0?'+':'')+NF.format(Math.round(m.delta))+' <small>pc</small></div><div class="hint">'+(m.state==='wait'?'esperado agora: '+NF.format(Math.round(m.expected)):(m.delta>=0?'adiantado do plano':'abaixo do esperado'))+'</div></div>'+
+        '<div class="hhRgMetric"><div class="lbl">Hora atual</div><div class="val hhRgHora">'+horaAtual+'</div><div class="hint">Meta hora · '+NF.format(Math.round(m.slotGoal))+' pc · feito '+NF.format(m.slotActual)+'</div></div>'+
+      '</div>'+
+      '<div class="hhRgChartWrap">'+
+        '<div class="hhRgChartTitle"><span>PRODUÇÃO POR HORA</span><span>meta · tracejada</span></div>'+
+        hhRgChart(c,iso,now,m)+
+      '</div>'+
+      '<div class="hhRgColRight">'+
+        '<div class="hhRgChartTitle"><span>PRODUTOS DO DIA</span><span>dia todo</span></div>'+
+        '<div class="hhRgProdList">'+hhRgProdutosDoDia(c,iso,pr,m)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<footer class="hhRgFoot"><span>'+(stop?'⛔ PARADA REGISTRADA':'Sem paradas registradas')+' · '+NF.format(c.pessoas||0)+' oper. · '+NF.format(c.postos||0)+' postos</span><span class="hhRgTurno">'+hhTimeTxt(c.hIni,hhScheduleStart(c))+'–'+hhTimeTxt(c.hFim,hhScheduleEnd(c))+'</span></footer>'+
+    '</article>';
+}
+
+// Grafico de barras com rotulo INICIO-FIM (pedido Dante) e sem sobreposicao
+function hhRgChart(c,iso,now,m){
+  var rows=hhMonV2SlotRows(c,iso,now);
+  var peak=1;rows.forEach(function(r){peak=Math.max(peak,r.actual,r.goal);});
+  var n=rows.length||1;
+  var completo=n<=14; // com muitas faixas o rotulo volta para HH:MM para nao sobrepor
+  var bars=rows.map(function(r){
+    var realPct=Math.min(100,r.actual/peak*100),targetPct=Math.min(100,r.goal/peak*100);
+    var st=r.future?'future':(r.delta>=-0.5?'':((r.delta/Math.max(1,r.expected))>=-0.05?'warn':'late'));
+    var lbl=hhRgSlotLabel(r.slot,completo);
+    return '<div class="hhRgBarCol" title="'+escH(lbl)+' · meta '+NF.format(Math.round(r.goal))+' · real '+NF.format(r.actual)+'">'+
+      '<div class="hhRgPlot"><i class="hhRgBar '+st+'" style="height:'+realPct+'%"></i><i class="hhRgTarget" style="bottom:'+targetPct+'%"></i></div>'+
+      '<small class="hhRgLbl">'+lbl+'</small></div>';
+  }).join('');
+  return '<div class="hhRgChart'+(completo?'':' compacto')+'">'+bars+'</div>';
+}
+
 function hhMonV2FactoryTiles(rows,iso,now){
  const active=rows.map(function(x,i){return hhMonV2CellCard(x.c,i,iso,now,x.m);});
  for(let i=active.length;i<6;i++)active.push('<article class="hhFactoryCard empty"><header class="hhFactoryCardHead"><div class="cellname"><span class="cellnum">CÉL '+String(i+1).padStart(2,'0')+'</span>Sem célula programada</div><span class="status">AGUARDANDO PROGRAMAÇÃO</span></header><div class="hhFactoryCardBody"><div class="hhFcMetric"><div class="lbl">Estado</div><div class="val">—</div><div class="hint">Nenhuma célula configurada para esta posição no dia selecionado.</div></div></div></article>');
@@ -6835,6 +6921,38 @@ function hhPgBind(){
     });
   }
 }
+
+
+// ===== REDESIGN MONITOR GERAL (29/10) — redirect do render ativo =====
+// hhMonV2Factory431 e a funcao realmente chamada por hhMonV2Render.
+// Redirecionada aqui (sem tocar no codigo original) para o layout do mockup.
+hhMonV2Factory431 = function(iso,now){
+  var root=document.getElementById('hhFactoryScreen');if(!root)return;
+  var d=now||new Date(),cells=hhLinhasCfg.slice(),rows=cells.map(function(c){return {c:c,m:hhMonV2State(c,iso,d)};});
+  var sums=rows.reduce(function(a,x){a.actual+=x.m.actual;a.goal+=x.m.goal;a.expected+=x.m.expected;a.delta+=x.m.delta;a[x.m.state]=(a[x.m.state]||0)+1;return a;},{actual:0,goal:0,expected:0,delta:0,ahead:0,steady:0,warn:0,late:0,stop:0,wait:0});
+  var d0=new Date(String(iso)+'T12:00:00'),mo=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][d0.getMonth()],dateShort=['dom','seg','ter','qua','qui','sex','sáb'][d0.getDay()]+' - '+String(d0.getDate()).padStart(2,'0')+' '+mo+' '+d0.getFullYear();
+  var pctMeta=sums.goal?Math.round(sums.actual/sums.goal*100):0;
+  var prevD=new Date(String(iso)+'T12:00:00');prevD.setDate(prevD.getDate()-1);
+  var prevIso=prevD.getFullYear()+'-'+String(prevD.getMonth()+1).padStart(2,'0')+'-'+String(prevD.getDate()).padStart(2,'0');
+  var prevRows=hhApontValidos().filter(function(a){return a.data===prevIso;});
+  var compare='Comparativo '+hhMonV2DateLabel(prevIso)+': sem apontamentos cadastrados';
+  if(prevRows.length){var prev=prevRows.reduce(function(n,a){return n+(Number(a.qtd)||0);},0);var diff=sums.actual-prev;compare='vs. '+hhMonV2DateLabel(prevIso)+': '+(diff>0?'+':'')+NF.format(diff)+' pc';}
+  var cards=rows.length?rows.map(function(x,i){return hhRgCellCard(x.c,i,iso,d,x.m);}).join(''):'<div class="hhEmpty">Sem células programadas para esta data.</div>';
+  root.innerHTML='<div class="hhRgScreen">'+
+   '<div class="hhRgTop">'+
+     '<div class="hhRgTopL"><span class="brand">D-LEAN SOLUTIONS · ANDON DE PRODUÇÃO</span>'+
+       '<span class="big">'+NF.format(sums.actual)+' <small>/ '+NF.format(sums.goal)+' pc</small></span>'+
+       '<span class="sub">'+pctMeta+'% da meta · VS. ESPERADO <b style="color:'+(sums.delta>=0?'#16A34A':'#DC2626')+'">'+(sums.delta>0?'+':'')+NF.format(Math.round(sums.delta))+' pc</b> · '+escH(compare)+'</span></div>'+
+     '<div class="hhRgTopR">'+
+       '<div class="hhRgCount'+(sums.ahead+sums.steady?'':' zero')+'"><i class="hhRgDot"></i><b>'+NF.format(sums.ahead+sums.steady)+'</b>no ritmo</div>'+
+       '<div class="hhRgCount'+(sums.warn?'':' zero')+'"><i class="hhRgDot warn"></i><b>'+NF.format(sums.warn||0)+'</b>atenção</div>'+
+       '<div class="hhRgCount'+(sums.late+sums.stop?'':' zero')+'"><i class="hhRgDot late"></i><b>'+NF.format((sums.late||0)+(sums.stop||0))+'</b>atrasadas/paradas</div>'+
+       '<div class="hhRgClock"><span class="t">'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'</span><span class="d">'+dateShort+'</span></div>'+
+     '</div>'+
+   '</div>'+
+   '<div class="hhRgCards">'+cards+'</div>'+
+  '</div>';
+};
 
 
 ;
