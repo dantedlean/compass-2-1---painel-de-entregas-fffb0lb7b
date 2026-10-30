@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T01:04:29.627Z",
+  "generatedAt": "2026-10-30T02:06:31.553Z",
   "collections": [
     {
       "name": "users",
@@ -456,7 +456,8 @@
         }
       ],
       "indexes": [
-        "CREATE INDEX idx_reprogramming_events_cycle_date ON reprogramming_events (cycle_id, occurred_at DESC)"
+        "CREATE INDEX idx_reprogramming_events_cycle_date ON reprogramming_events (cycle_id, occurred_at DESC)",
+        "CREATE INDEX `idx_reprog_events_sync` ON `reprogramming_events` (cycle_id, event_type, source, created DESC)"
       ]
     },
     {
