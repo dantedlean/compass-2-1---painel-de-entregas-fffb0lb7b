@@ -4280,9 +4280,30 @@ function embSugestoes(){
     cand.push({pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:Number(r.qtd)||0,
       coletaIso:isoD(coleta), entregaIso:r.iso, cid:t.cid, tdu:t.tdu, km:t.km, local:window.UNID||'C'});
   });
+  // PASSO 1b: PVs faturados (saldo fechado por NF) — fora da carteira, mas embarcáveis (rascunho)
+  try{
+    const fontesNF=[];
+    if(window._nfLive && Array.isArray(window._nfLive.nfs)) fontesNF.push(window._nfLive.nfs);
+    if(DATA.nfFat && Array.isArray(DATA.nfFat.nfs)) fontesNF.push(DATA.nfFat.nfs);
+    const embPvs={}; embDaUnid().forEach(function(e){ if(e.status!=='Cancelado') embPvs[String(e.pv)+'|'+e.cod]=1; });
+    fontesNF.forEach(function(nfs){
+      nfs.forEach(function(n){
+        if(!n || !Array.isArray(n.itens)) return;
+        n.itens.forEach(function(x){
+          const pv=String(x.pv||''); if(!pv) return;
+          if(DATA.rows.some(function(r){ return String(r.pv)===pv; })) return;
+          const k=pv+'|'+String(x.cod||''); if(embPvs[k]) return; embPvs[k]=1;
+          const t=embTransito(n.cliente);
+          cand.push({pv:pv, cliente:String(n.cliente||''), cod:String(x.cod||''), desc:String(x.desc||''), qtd:Number(x.qtd)||0,
+            coletaIso:'', entregaIso:null, cid:t?t.cid:'', tdu:t?t.tdu:null, km:t?t.km:null, local:window.UNID||'C',
+            classe:'fat', motivo:'saldo fechado por NF '+(n.nf||'')+' — sem carteira (faturado)'});
+        });
+      });
+    });
+  }catch(e){}
   // ---- PASSO 2: classifica em ORDEM DE COLETA (FIFO justo) ----
   cand.sort(function(a,b){ return a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod) || a.pv.localeCompare(b.pv); });
-  cand.forEach(function(x){
+  cand.forEach(function(x){ if(x.classe==='fat') return;
     const qNecess=x.qtd;
     // 1) SMKT consome primeiro — em ordem de coleta (o saldo é do produto, não do PV)
     const usaSm=consumirSmkt(x.cod, qNecess);
@@ -4314,7 +4335,7 @@ function embSugestoes(){
       ((usaSm+antes+noDia)>0?' (só '+NF.format(usaSm+antes+noDia)+' disponível: SMKT '+NF.format(usaSm)+' + produção '+NF.format(antes+noDia)+')':'');
   });
   // ordena para exibição: sem produção → do dia → D+1 → SMKT; dentro, por data
-  const ordem={nec:0,dia:1,d1:2,smkt:3};
+  const ordem={fat:0,nec:0,dia:1,d1:2,smkt:3};
   cand.sort(function(a,b){ return (ordem[a.classe]-ordem[b.classe]) || a.coletaIso.localeCompare(b.coletaIso) || a.cod.localeCompare(b.cod); });
   return cand;
 }
@@ -4398,6 +4419,23 @@ function embRender(){
       b.innerHTML=inner;
     });
   }
+  // PV com saldo fechado: busca dados do produto nas NFs do Faturamento (ao vivo ou estático)
+  function embPvNF(pv){
+    const fontes=[];
+    try{ if(window._nfLive && Array.isArray(window._nfLive.nfs)) fontes.push(window._nfLive.nfs); }catch(e){}
+    try{ if(DATA.nfFat && Array.isArray(DATA.nfFat.nfs)) fontes.push(DATA.nfFat.nfs); }catch(e){}
+    for(let f=0; f<fontes.length; f++){
+      const nfs=fontes[f];
+      for(let i=0; i<nfs.length; i++){
+        const n=nfs[i]; if(!n || !Array.isArray(n.itens)) continue;
+        let qtd=0, it=null;
+        n.itens.forEach(function(x){ if(String(x.pv||'')===String(pv)){ qtd+=Number(x.qtd)||0; it=it||x; } });
+        if(it) return {nf:String(n.nf||''), cliente:String(n.cliente||''), cod:String(it.cod||''), desc:String(it.desc||''), qtd:qtd};
+      }
+    }
+    return null;
+  }
+  window.embPvNF = embPvNF;
   // barra de inclusão: datalist de PVs (produto, cliente, saldo, entrega)
   const pvIn=document.getElementById('embAddPv');
   if(pvIn && !pvIn._embBound){
@@ -4407,7 +4445,12 @@ function embRender(){
       const info=document.getElementById('embAddInfo');
       if(!v){ info.textContent='digite o PV — produto, cliente, saldo e entrega aparecem aqui'; return; }
       const rs=DATA.rows.filter(function(r){ return String(r.pv)===v; });
-      if(!rs.length){ info.textContent='PV '+v+' não encontrado na carteira'; return; }
+      if(!rs.length){
+        const nf=embPvNF(v);
+        if(nf){ info.innerHTML='<span style="color:#854d0e">⚠ PV '+escH(v)+' · '+escH(nf.cliente.slice(0,30))+' · '+escH(nf.cod)+' '+escH(nf.desc.slice(0,28))+' · saldo fechado por NF '+escH(nf.nf)+' ('+NF.format(nf.qtd)+' un) — pode incluir (embarque é rascunho)</span>'; }
+        else { info.innerHTML='<span style="color:#854d0e">⚠ PV '+escH(v)+' sem saldo em aberto (faturado?) — pode incluir mesmo assim; produto ficará como digitação manual</span>'; }
+        return;
+      }
       const saldo=rs.reduce(function(a,r){ return a+(Number(r.qtd)||0); },0);
       info.textContent='PV '+v+' · '+rs[0].cliente.slice(0,30)+' · '+rs[0].codigo+' '+rs[0].desc.slice(0,28)+' · saldo '+NF.format(saldo)+' un · entrega '+dtBR(rs[0].iso);
     });
@@ -4420,7 +4463,19 @@ function embRender(){
     if(!pv){ alert('Digite o nº do PV.'); return; }
     if(qtd<=0){ alert('Informe a quantidade.'); return; }
     const rs=DATA.rows.filter(function(r){ return String(r.pv)===pv; });
-    if(!rs.length){ alert('PV '+pv+' não encontrado na carteira.'); return; }
+    if(!rs.length){
+      const nf=embPvNF(pv);
+      const cli=nf?nf.cliente:'';
+      const t2=cli?embTransito(cli):null;
+      window.embList.push({id:embNextId(), pv:String(pv), cliente:cli||'(cliente não informado)', cod:nf?nf.cod:'—', desc:nf?nf.desc:'(digitação manual — sem carteira/NF)', qtd:qtd,
+        coletaIso:progIso(embDate), entregaIso:null, cid:t2?t2.cid:'', tdu:t2?t2.tdu:null, km:t2?t2.km:null,
+        local:window.UNID||'C', status:'Aceito', classe:'fat', criado:new Date().toISOString(), obs:'incluído no dia '+embDate+' · ⚠ PV sem saldo em aberto (faturado?)'+(nf?' · NF '+nf.nf:'')});
+      document.getElementById('embAddPv').value=''; document.getElementById('embAddQtd').value='';
+      document.getElementById('embAddInfo').textContent='digite o PV — produto, cliente, saldo e entrega aparecem aqui';
+      embSave(window.embList); embRender();
+      const st2=document.getElementById('embStatus'); if(st2) st2.textContent='⚠ PV '+pv+' incluído sem saldo em aberto (faturado?) — rascunho · nada gravado no MaxiProd';
+      return;
+    }
     const r=rs[0];
     const t=embTransito(r.cliente);
     window.embList.push({id:embNextId(), pv:String(r.pv), cliente:r.cliente, cod:r.codigo, desc:r.desc, qtd:qtd,
@@ -4444,6 +4499,7 @@ function embRenderTabela(){
     tq+=Number(e.qtd)||0; if(e.status==='Coletado') tc+=Number(e.qtd)||0;
     const t=e.tdu?('DU '+e.tdu+' · '+e.km+' km'):'fora da tabela';
     const stTag = e.status==='Coletado' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ COLETADO</span>'
+      : e.classe==='fat' ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ PV sem saldo em aberto (faturado?)</span>'
       : e.status==='Aceito' ? '<span class="tagP">ACEITO</span>'
       : (e.classe==='smkt' ? '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT — certo</span>'
         : e.classe==='dia' ? '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ DO DIA — risco</span>'
@@ -4513,9 +4569,10 @@ function embRenderTabela(){
     const sug=embSugestoes();
     if(!sug.length){ alert('Nada a sugerir: nenhum PV com coleta máx. nesta semana (ou todos já embarcados).'); return; }
     // legenda das 4 categorias (Dante 27/10): SMKT certo · programado do dia (risco) · programado D+1 · necessidade sem programação
-    const cont={smkt:0,dia:0,d1:0,nec:0};
+    const cont={smkt:0,dia:0,d1:0,nec:0,fat:0};
     sug.forEach(function(x){ cont[x.classe]=(cont[x.classe]||0)+1; });
     const tagClasse=function(c){
+      if(c==='fat') return '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ FATURADO — sem saldo</span>';
       if(c==='smkt') return '<span class="tagF" style="background:#dcfce7;color:#166534">✓ SMKT — embarque certo</span>';
       if(c==='dia')  return '<span class="tagF" style="background:#fee2e2;color:#991b1b">⚠ PROGRAMADO DO DIA — risco</span>';
       if(c==='d1')   return '<span class="tagF" style="background:#dbeafe;color:#1e3a8a">📦 PROGRAMADO D+1</span>';
@@ -4526,6 +4583,7 @@ function embRenderTabela(){
         '<span style="color:#991b1b">⚠ Do dia '+cont.dia+'</span>'+
         '<span style="color:#1e3a8a">📦 D+1 '+cont.d1+'</span>'+
         '<span style="color:#854d0e">⚠ Sem produção '+cont.nec+'</span>'+
+        '<span style="color:#991b1b">⚠ Faturado '+cont.fat+'</span>'+
         '<span style="color:#64748b;font-weight:600">· '+sug.length+' no total</span>'+
       '</div>'+
       '<div class="tblwrap" style="max-height:260px"><table style="font-size:11.5px"><thead><tr><th>Coleta</th><th>Produto</th><th>PV / Cliente</th><th>Qtd</th><th>Destino</th><th>Entrega</th><th>Categoria</th><th>Motivo</th><th><label style="font-weight:600"><input type="checkbox" id="embSugAll" checked> todas</label></th></tr></thead><tbody>'+
@@ -4541,7 +4599,7 @@ function embRenderTabela(){
     document.getElementById('btnEmbSugOk').addEventListener('click', function(){
       const sel=[]; box.querySelectorAll('.embSugChk').forEach(function(c){ if(c.checked) sel.push(sug[Number(c.getAttribute('data-i'))]); });
       if(!sel.length){ alert('Nenhuma sugestão selecionada.'); return; }
-      sel.forEach(function(x){ window.embList.push({id:embNextId(), pv:x.pv, cliente:x.cliente, cod:x.cod, desc:x.desc, qtd:x.qtd, coletaIso:x.coletaIso, entregaIso:x.entregaIso, cid:x.cid, tdu:x.tdu, km:x.km, local:x.local, status:'Sugerido', classe:x.classe, criado:new Date().toISOString(), obs:'sugestão: '+(x.motivo||x.classe)}); });
+      sel.forEach(function(x){ window.embList.push({id:embNextId(), pv:x.pv, cliente:x.cliente, cod:x.cod, desc:x.desc, qtd:x.qtd, coletaIso:(x.classe==='fat'&&embDate)?progIso(embDate):x.coletaIso, entregaIso:x.entregaIso, cid:x.cid, tdu:x.tdu, km:x.km, local:x.local, status:'Sugerido', classe:x.classe, criado:new Date().toISOString(), obs:'sugestão: '+(x.motivo||x.classe)}); });
       embSave(window.embList); box.style.display='none'; embRender();
       const st=document.getElementById('embStatus'); if(st) st.textContent=sel.length+' sugestão(ões) aplicada(s)';
     });
@@ -4654,6 +4712,7 @@ let uniDia=null;
 let uniF={origem:'',dest:'',cat:'',st:'',q:''};
 function uniCatLabel(x){
   const c=x.e.classe;
+  if(c==='fat') return '⚠ FATURADO';
   if(c==='smkt') return '✓ SMKT';
   if(c==='dia') return '⚠ DO DIA';
   if(c==='d1') return '📦 D+1';
