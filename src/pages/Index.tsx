@@ -41,8 +41,14 @@ const Index = () => {
       if (!doc.getElementById('fix-paste-script')) {
         const s = doc.createElement('script')
         s.id = 'fix-paste-script'
-        s.src = '/painel-fix.js?v=0.1.21'
+        s.src = '/painel-fix.js?v=0.1.29'
         doc.head.appendChild(s)
+      }
+      if (!doc.getElementById('monitor-v3-script')) {
+        const m = doc.createElement('script')
+        m.id = 'monitor-v3-script'
+        m.src = '/painel-monitorv3.js?v=0.1.29'
+        doc.head.appendChild(m)
       }
     } catch {
       // ignore
@@ -63,7 +69,7 @@ const Index = () => {
   return (
     <div className="w-screen h-screen m-0 p-0 overflow-hidden bg-background">
       <iframe
-        src="/painel-entregas.html?v=0.1.21"
+        src="/painel-entregas.html?v=0.1.29"
         title="Painel de Entregas — Dlean"
         className="w-full h-full border-0 block m-0 p-0"
         allow="clipboard-read; clipboard-write; fullscreen"

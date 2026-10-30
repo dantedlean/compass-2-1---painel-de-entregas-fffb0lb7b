@@ -1049,81 +1049,112 @@ body.hhTv #viewHH .hhFactoryScreen,body.hhTv #viewHH .hhIndividualScreen{min-hei
 .hhRgClock .t{font-size:22px;font-weight:950;font-variant-numeric:tabular-nums;color:#0F172A}
 .hhRgClock .d{font-size:11px;color:#64748B;font-weight:700}
 
-/* Cards empilhados, largura total, rolagem vertical natural */
-.hhRgCards{display:flex;flex-direction:column;gap:14px}
-.hhRgCard{background:#fff;border:1px solid #E2E8F0;border-left:5px solid #16A34A;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+/* Cards: 3 por linha em desktop, altura expansível e vizinhos acompanham */
+.hhRgCards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.hhRgCard{background:#fff;border:1px solid #E2E8F0;border-left:5px solid #16A34A;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.05);display:flex;flex-direction:column;container-type:inline-size;container-name:hhcard;height:auto}
 .hhRgCard.warn{border-left-color:#D97706}
 .hhRgCard.late,.hhRgCard.stop{border-left-color:#DC2626}
 .hhRgCard.wait{border-left-color:#94A3B8}
-.hhRgHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
-.hhRgName{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:950;color:#0F172A}
-.hhRgNum{font-size:10px;font-weight:900;letter-spacing:.06em;color:#fff;background:#334155;border-radius:5px;padding:3px 7px}
-.hhRgStatus{font-size:12px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;padding:5px 11px;border-radius:99px;background:#DCFCE7;color:#166534;white-space:nowrap}
+.hhRgHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;flex-shrink:0}
+.hhRgName{display:flex;align-items:center;gap:8px;font-size:clamp(14px,3cqw,19px);font-weight:950;color:#0F172A;min-width:0}
+.hhRgNum{font-size:clamp(8.5px,1.8cqw,10.5px);font-weight:900;letter-spacing:.06em;color:#fff;background:#334155;border-radius:5px;padding:3px 6px;flex-shrink:0}
+.hhRgStatus{font-size:clamp(9.5px,2cqw,12px);font-weight:900;letter-spacing:.04em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:#DCFCE7;color:#166534;white-space:nowrap;flex-shrink:0}
 .hhRgCard.warn .hhRgStatus{background:#FEF3C7;color:#92400E}
 .hhRgCard.late .hhRgStatus,.hhRgCard.stop .hhRgStatus{background:#FEE2E2;color:#991B1B}
 .hhRgCard.wait .hhRgStatus{background:#F1F5F9;color:#475569}
 
-/* Corpo: 3 colunas — metricas | grafico | produtos */
-.hhRgBody{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(0,1.5fr) minmax(280px,1.1fr);gap:16px;padding:14px 16px;align-items:start}
-.hhRgColLeft{display:flex;flex-direction:column;gap:10px;min-width:0}
+/* Corpo: proporções fluidas sem larguras fixas — grafico prioritario */
+.hhRgBody{display:grid;grid-template-columns:minmax(0,0.95fr) minmax(0,1.55fr) minmax(0,1.15fr);gap:12px;padding:12px 14px;align-items:start;flex:1 1 auto;min-width:0}
+.hhRgColLeft{display:flex;flex-direction:column;gap:8px;min-width:0}
 .hhRgMetric{min-width:0}
-.hhRgMetric .lbl{font-size:10px;font-weight:950;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:2px}
-.hhRgMetric .val{font-size:26px;font-weight:950;color:#0F172A;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
-.hhRgMetric .val small{font-size:13px;color:#64748B;font-weight:800}
-.hhRgMetric .delta{font-size:26px;font-weight:950;font-variant-numeric:tabular-nums;color:#16A34A;line-height:1.15}
+.hhRgMetric .lbl{font-size:clamp(8.5px,1.8cqw,10px);font-weight:950;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:2px}
+.hhRgMetric .val{font-size:clamp(16px,4.2cqw,24px);font-weight:950;color:#0F172A;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
+.hhRgMetric .val small{font-size:clamp(10px,2.2cqw,13px);color:#64748B;font-weight:800}
+.hhRgMetric .delta{font-size:clamp(16px,4.2cqw,24px);font-weight:950;font-variant-numeric:tabular-nums;color:#16A34A;line-height:1.15}
 .hhRgMetric .delta.neg{color:#DC2626}
-.hhRgMetric .delta small{font-size:13px;font-weight:800}
-.hhRgMetric .hint{font-size:11px;color:#64748B;font-weight:700;margin-top:2px}
-.hhRgHora{font-size:22px !important;font-variant-numeric:tabular-nums}
-.hhRgProgress{height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden;margin-top:4px}
+.hhRgMetric .delta small{font-size:clamp(10px,2.2cqw,13px);font-weight:800}
+.hhRgMetric .hint{font-size:clamp(8.5px,1.8cqw,11px);color:#64748B;font-weight:700;margin-top:2px;line-height:1.25}
+.hhRgHora{font-size:clamp(13px,3.2cqw,20px)!important;font-variant-numeric:tabular-nums}
+.hhRgProgress{height:6px;background:#E2E8F0;border-radius:99px;overflow:hidden;margin-top:4px}
 .hhRgProgress i{display:block;height:100%;background:#16A34A;border-radius:inherit}
 .hhRgCard.warn .hhRgProgress i{background:#D97706}
 .hhRgCard.late .hhRgProgress i,.hhRgCard.stop .hhRgProgress i{background:#DC2626}
 
-/* Grafico */
+/* Grafico: nunca colapsa */
 .hhRgChartWrap,.hhRgColRight{min-width:0}
-.hhRgChartTitle{display:flex;justify-content:space-between;gap:8px;font-size:10px;font-weight:950;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:6px}
-.hhRgChart{display:flex;align-items:flex-end;gap:5px;height:118px;padding-top:4px}
-.hhRgBarCol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px}
-.hhRgPlot{position:relative;width:100%;height:88px;background:#F8FAFC;border-radius:4px;overflow:hidden;border:1px solid #F1F5F9}
-.hhRgBar{position:absolute;bottom:0;left:18%;width:64%;background:#16A34A;border-radius:2px 2px 0 0;z-index:1}
+.hhRgChartTitle{display:flex;justify-content:space-between;gap:6px;font-size:clamp(8.5px,1.8cqw,10px);font-weight:950;letter-spacing:.08em;color:#64748B;text-transform:uppercase;margin-bottom:6px}
+.hhRgChart{display:flex;align-items:flex-end;gap:4px;height:114px;padding-top:4px;width:100%;min-width:0}
+.hhRgBarCol{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.hhRgPlot{position:relative;width:100%;height:84px;background:#F8FAFC;border-radius:4px;overflow:hidden;border:1px solid #F1F5F9}
+.hhRgBar{position:absolute;bottom:0;left:14%;width:72%;background:#16A34A;border-radius:2px 2px 0 0;z-index:1}
 .hhRgBar.warn{background:#D97706}.hhRgBar.late{background:#DC2626}.hhRgBar.future{background:#E2E8F0}
 .hhRgTarget{position:absolute;left:0;right:0;border-top:2px dashed #475569;z-index:2}
-.hhRgLbl{display:block;width:100%;text-align:center;font-size:9.5px;font-weight:800;color:#475569;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
-.hhRgChart.compacto .hhRgLbl{font-size:8.5px}
+.hhRgLbl{display:block;width:100%;text-align:center;font-size:clamp(7.5px,1.6cqw,9.5px);font-weight:800;color:#475569;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.hhRgChart.compacto .hhRgLbl{font-size:clamp(7px,1.4cqw,8.5px)}
 
-/* Produtos do dia — coluna da direita */
-.hhRgProdList{display:flex;flex-direction:column;gap:4px;max-height:190px;overflow-y:auto}
-.hhRgProdRow{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;font-size:11.5px;min-height:24px}
+/* Produtos do dia: altura livre sem cortes */
+.hhRgProdList{display:flex;flex-direction:column;gap:4px;max-height:none;overflow:visible}
+.hhRgProdRow{display:flex;align-items:center;gap:5px;padding:3px 5px;border-radius:6px;font-size:clamp(9.5px,2cqw,11.5px);min-height:22px}
 .hhRgProdRow.running{background:#EFF6FF;border:1px solid #BFDBFE}
-.hhRgSt{font-size:9px;font-weight:900;letter-spacing:.03em;padding:2px 5px;border-radius:4px;flex-shrink:0;white-space:nowrap}
+.hhRgSt{font-size:clamp(7.5px,1.5cqw,9px);font-weight:900;letter-spacing:.03em;padding:2px 4px;border-radius:4px;flex-shrink:0;white-space:nowrap}
 .hhRgSt.pend{background:#FEF3C7;color:#92400E}
 .hhRgSt.done{background:#DCFCE7;color:#166534}
 .hhRgSt.run{background:#DBEAFE;color:#1E40AF}
 .hhRgSt.warn{background:#FEF3C7;color:#92400E}
 .hhRgSt.late{background:#FEE2E2;color:#991B1B}
-.hhRgProdName{font-weight:800;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-.hhRgBadge{font-size:9.5px;font-weight:800;padding:2px 5px;border-radius:4px;background:#E0E7FF;color:#3730A3;flex-shrink:0}
-.hhRgQty{margin-left:auto;font-weight:900;color:#0F172A;font-variant-numeric:tabular-nums;flex-shrink:0}
+.hhRgProdName{font-weight:800;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0}
+.hhRgBadge{font-size:clamp(8px,1.6cqw,9.5px);font-weight:800;padding:1px 4px;border-radius:4px;background:#E0E7FF;color:#3730A3;flex-shrink:0}
+.hhRgQty{margin-left:auto;font-weight:900;color:#0F172A;font-variant-numeric:tabular-nums;flex-shrink:0;font-size:clamp(9px,1.9cqw,11px)}
 .hhRgProdEmpty{font-size:11px;color:#64748B;padding:4px 0}
 
-.hhRgFoot{display:flex;justify-content:space-between;gap:10px;padding:8px 16px;background:#F8FAFC;border-top:1px solid #E2E8F0;font-size:11px;font-weight:800;color:#64748B}
+.hhRgFoot{display:flex;justify-content:space-between;gap:10px;padding:8px 14px;background:#F8FAFC;border-top:1px solid #E2E8F0;font-size:clamp(9px,1.8cqw,11px);font-weight:800;color:#64748B;flex-shrink:0}
 .hhRgTurno{font-variant-numeric:tabular-nums}
 
-/* Responsivo: mantem empilhado; grid interno colapsa */
-@media(max-width:1300px){.hhRgBody{grid-template-columns:minmax(190px,.9fr) minmax(0,1.4fr)}.hhRgColRight{grid-column:1/-1}}
-@media(max-width:860px){.hhRgBody{grid-template-columns:1fr}.hhRgChart{height:104px}.hhRgPlot{height:74px}}
+/* Breakpoints do grid considerando menu lateral (~320px) */
+@media(max-width:1240px){.hhRgCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.hhRgCards{grid-template-columns:1fr}}
 
-/* MODO TV: mesma tela, ocupa altura toda e escala a tipografia — segue o mockup (claro) */
-body.hhTv .hhRgScreen{background:#F1F5F9}
-body.hhTv .hhRgCard{break-inside:avoid}
-body.hhTv .hhRgName{font-size:26px}
-body.hhTv .hhRgMetric .val,body.hhTv .hhRgMetric .delta{font-size:34px}
-body.hhTv .hhRgChart{height:150px}
-body.hhTv .hhRgPlot{height:115px}
-body.hhTv .hhRgLbl{font-size:11px}
-body.hhTv .hhRgProdRow{font-size:13px;min-height:28px}
-body.hhTv .hhRgProdList{max-height:240px}
+/* Container queries para o interior do card */
+@container hhcard (max-width:620px){
+  .hhRgBody{grid-template-columns:minmax(0,1fr) minmax(0,1.45fr)}
+  .hhRgColRight{grid-column:1/-1;border-top:1px solid #F1F5F9;padding-top:8px;margin-top:2px}
+}
+@container hhcard (max-width:380px){
+  .hhRgBody{grid-template-columns:1fr}
+  .hhRgColRight{grid-column:1/-1;border-top:1px solid #F1F5F9;padding-top:8px}
+  .hhRgChart{height:100px}
+  .hhRgPlot{height:72px}
+}
+
+/* MODO TV: mesmo visual novo, sem 2x2 antigo, altura liberada e tipografia ampliada */
+body.hhTv .hhRgScreen{background:#F1F5F9;min-height:calc(100vh - 24px);height:auto;overflow:visible;padding:14px 18px;box-sizing:border-box}
+body.hhTv .hhRgCards{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:auto!important;height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important;gap:16px!important;padding:0!important}
+body.hhTv .hhRgCard{break-inside:avoid;height:auto;max-height:none;overflow:visible}
+body.hhTv .hhRgTop{padding:14px 20px}
+body.hhTv .hhRgTopL .brand{font-size:13px}
+body.hhTv .hhRgTopL .big{font-size:36px}
+body.hhTv .hhRgTopL .big small{font-size:18px}
+body.hhTv .hhRgTopL .sub{font-size:14px}
+body.hhTv .hhRgCount b{font-size:26px}
+body.hhTv .hhRgClock .t{font-size:26px}
+body.hhTv .hhRgHead{padding:12px 16px}
+body.hhTv .hhRgName{font-size:22px}
+body.hhTv .hhRgNum{font-size:11px;padding:4px 8px}
+body.hhTv .hhRgStatus{font-size:13px;padding:5px 12px}
+body.hhTv .hhRgMetric .lbl{font-size:11px}
+body.hhTv .hhRgMetric .val,body.hhTv .hhRgMetric .delta{font-size:30px}
+body.hhTv .hhRgMetric .val small,body.hhTv .hhRgMetric .delta small{font-size:15px}
+body.hhTv .hhRgHora{font-size:24px!important}
+body.hhTv .hhRgMetric .hint{font-size:12px}
+body.hhTv .hhRgChartTitle{font-size:11px}
+body.hhTv .hhRgChart{height:138px}
+body.hhTv .hhRgPlot{height:104px}
+body.hhTv .hhRgLbl{font-size:10.5px}
+body.hhTv .hhRgProdRow{font-size:13px;min-height:26px}
+body.hhTv .hhRgSt{font-size:10px}
+body.hhTv .hhRgBadge{font-size:10.5px}
+body.hhTv .hhRgQty{font-size:13px}
+body.hhTv .hhRgFoot{font-size:12px;padding:10px 16px}
 
 </style>
 <main class="hhMain">
@@ -1568,9 +1599,10 @@ body.hhTv .hhFactoryCardBody{gap:6px!important;padding:0 12px 8px!important}
 </div>
 </div>
 
-<script src="painel-data.js?v=b20261029220459"></script>
-<script src="painel-app.js?v=b20261029220459"></script>
-<script src="painel-progexec.js?v=b20261029220459"></script>
+<script src="painel-data.js?v=0.1.29"></script>
+<script src="painel-app.js?v=0.1.29"></script>
+<script src="painel-progexec.js?v=0.1.29"></script>
+<script src="painel-monitorv3.js?v=0.1.29"></script>
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7004b19d732d43b298810595cc4050b1","r":1,"spa":2}' crossorigin="anonymous"></script>
